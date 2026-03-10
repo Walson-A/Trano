@@ -1,65 +1,101 @@
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
+import useAppStore from './core/store/useAppStore';
+import { Card } from './ui/Card/Card';
+import { Typography } from './ui/Typography/Typography';
+import { Button } from './ui/Button/Button';
 import { useHA } from './context/HAContext';
-import './App.css';
 
 function App() {
-  const { status, error, entities } = useHA();
-  const [showJson, setShowJson] = useState(false);
+  const { theme, toggleTheme } = useAppStore();
+  const { isConnected, error } = useHA();
+
+  useEffect(() => {
+    document.body.className = theme;
+  }, [theme]);
+
+  // Background style to simulate a subtle gradient under the glassmorphism
+  const appStyle = {
+    padding: '2rem',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '2rem',
+    position: 'relative',
+    zIndex: 1,
+  };
 
   return (
-    <div className="app-container" style={{overflow: 'auto', padding: '20px', justifyContent: 'flex-start'}}>
-      {status === 'connecting' && <div className="status">Connexion à Home Assistant...</div>}
+    <>
+      <div 
+        style={{
+          position: 'fixed',
+          top: '-20%', left: '-10%',
+          width: '50vw', height: '50vw',
+          background: 'radial-gradient(circle, var(--accent-switch) 0%, transparent 60%)',
+          opacity: 0.05,
+          zIndex: 0,
+          pointerEvents: 'none',
+        }}
+      />
+      <div 
+        style={{
+          position: 'fixed',
+          bottom: '-20%', right: '-10%',
+          width: '60vw', height: '60vw',
+          background: 'radial-gradient(circle, var(--accent-light) 0%, transparent 60%)',
+          opacity: 0.03,
+          zIndex: 0,
+          pointerEvents: 'none',
+        }}
+      />
       
-      {status === 'error' && (
-        <div className="error-box">
-          <h2>Erreur de Connexion</h2>
-          <p>{error}</p>
-        </div>
-      )}
-      
-      {status === 'connected' && (
-        <div className="dashboard" style={{textAlign: 'left', width: '100%', maxWidth: '800px'}}>
-          <h1>Analyse des Entités</h1>
-          <p className="entity-count">{Object.keys(entities).length} entités trouvées.</p>
-          
-          <button 
-            onClick={() => setShowJson(!showJson)}
-            style={{padding: '10px 20px', cursor: 'pointer', margin: '20px 0', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px'}}
-          >
-            {showJson ? "Cacher les données brutes" : "Voir toutes les données brutes"}
-          </button>
-
-          {showJson && (
-            <pre style={{
-              background: '#1e293b', 
-              padding: '20px', 
-              borderRadius: '8px', 
-              overflowX: 'auto',
-              fontSize: '12px',
-              color: '#a5b4fc',
-              maxHeight: '600px',
-              overflowY: 'auto'
-            }}>
-              {JSON.stringify(entities, null, 2)}
-            </pre>
-          )}
-
-          <div style={{marginTop: '30px'}}>
-            <h2>Résumé rapide par type :</h2>
-            <ul style={{listStyle: 'none', padding: 0}}>
-              {Array.from(new Set(Object.keys(entities).map(id => id.split('.')[0]))).map(domain => {
-                const count = Object.keys(entities).filter(id => id.startsWith(domain + '.')).length;
-                return (
-                  <li key={domain} style={{padding: '10px', background: 'rgba(255,255,255,0.05)', marginBottom: '5px', borderRadius: '5px'}}>
-                    <strong>{domain}</strong> : {count} entité(s)
-                  </li>
-                );
-              })}
-            </ul>
+      <div style={appStyle}>
+        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <Typography variant="title">Home Assistant</Typography>
+            <Typography variant="subtitle" color="secondary">
+              {isConnected ? 'Connecté' : error ? 'Erreur de connexion' : 'Connexion en cours...'}
+            </Typography>
           </div>
+          <Button onClick={toggleTheme}>
+            {theme === 'dark' ? '☀️ Mode Clair' : '🌙 Mode Sombre'}
+          </Button>
+        </header>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+          <Card>
+            <Typography variant="subtitle" weight="bold">Salon</Typography>
+            <Typography variant="caption" color="secondary" style={{ marginBottom: '1.5rem', display: 'block' }}>
+              2 lumières allumées • 21.5°C
+            </Typography>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <Button active>Allumer tout</Button>
+              <Button>Éteindre</Button>
+            </div>
+          </Card>
+
+          <Card active>
+            <Typography variant="subtitle" weight="bold">Énergie & Solaire</Typography>
+            <Typography variant="caption" color="secondary" style={{ marginBottom: '1rem', display: 'block' }}>
+              Recharge Batterie en cours
+            </Typography>
+            <Typography variant="title" style={{ color: 'var(--accent-energy)' }}>
+              + 1.2 kW
+            </Typography>
+          </Card>
+
+          <Card>
+            <Typography variant="subtitle" weight="bold">Tesla Model 3</Typography>
+            <Typography variant="caption" color="secondary" style={{ marginBottom: '1.5rem', display: 'block' }}>
+              Stationné • 85%
+            </Typography>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <Button>Dégivrer</Button>
+              <Button>Ouvrir le coffre</Button>
+            </div>
+          </Card>
         </div>
-      )}
-    </div>
+      </div>
+    </>
   );
 }
 

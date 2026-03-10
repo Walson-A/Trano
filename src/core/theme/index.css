@@ -1,0 +1,39 @@
+:root {
+  /* Variables claires (Light Mode) par défaut */
+  --bg-color: #e5e5ea; /* Gris très doux (Type iOS) au lieu du blanc cassé éblouissant */
+  --text-main: #1c1c1e;
+  --text-muted: #8e8e93;
+  --card-bg: rgba(255, 255, 255, 0.6); /* Transparence ajustée pour contraster avec le fond gris */
+  --card-border: rgba(255, 255, 255, 0.8);
+
+  --accent-light: #ffcc00;
+  --accent-energy: #34c759;
+  --accent-switch: #007aff; /* Bleu Premium (Standard Apple/Tesla) / Moins "jouet" */
+  --error-color: #ff3b30;
+}
+
+body.dark {
+  /* Variables sombres (Dark Mode) */
+  --bg-color: #000000; /* Vrai Noir (Parfait pour les écrans OLED des tablettes / Contraste infini) */
+  --text-main: #ffffff;
+  --text-muted: #98989d;
+  --card-bg: rgba(28, 28, 30, 0.65); /* Gris carbone foncé semi-transparent */
+  --card-border: rgba(255, 255, 255, 0.1);
+  
+  --accent-switch: #0a84ff; /* Le même bleu premium, mais légèrement adapté pour l'affichage sur fond noir */
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  min-height: 100vh;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  user-select: none; /* Important for a touch dashboard to avoid text selection on long press */
+}
+
+* {
+  box-sizing: border-box;
+}

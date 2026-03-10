@@ -6,19 +6,19 @@ Pour obtenir une interface "Premium", minimaliste et agréable (particulièremen
 L'interface s'adaptera automatiquement en fonction de l'heure de la journée (Mode Clair la journée, Mode Sombre le soir/nuit).
 
 **Dark Mode (Nuit) :**
-*   **Fond principal :** Gris carbone profond (`#0f172a`).
-*   **Surface des "Cartes" :** Gris bleuté semi-transparent (`rgba(30, 41, 59, 0.7)`).
-*   **Texte Principal :** Blanc ou gris très clair (`#f8fafc`).
+*   **Fond principal :** Noir absolu (`#000000` - Parfait pour écran OLED/Tablette).
+*   **Surface des "Cartes" :** Gris carbone profond semi-transparent (`rgba(28, 28, 30, 0.65)`).
+*   **Texte Principal :** Blanc pur (`#ffffff`).
 
 **Light Mode (Jour) :**
-*   **Fond principal :** Gris ultra-clair, presque blanc (`#f1f5f9`).
-*   **Surface des "Cartes" :** Blanc semi-transparent (`rgba(255, 255, 255, 0.7)`).
-*   **Texte Principal :** Gris très foncé (`#0f172a`).
+*   **Fond principal :** Gris très doux style iOS (`#e5e5ea`) pour ne pas éblouir.
+*   **Surface des "Cartes" :** Blanc semi-transparent (`rgba(255, 255, 255, 0.6)`).
+*   **Texte Principal :** Gris très foncé (`#1c1c1e`).
 
 **Couleurs d'Accent (Partagées ou légèrement ajustées) :**
-*   *Lumières :* Orange/jaune chaud (`#fbbf24`) avec un léger effet de lueur.
-*   *Énergie/Batterie :* Vert d'eau / dynamique (`#10b981`).
-*   *Interrupteurs/Réseau :* Bleu électrique (`#3b82f6`).
+*   *Lumières :* Orange/jaune chaud (`#ffcc00`).
+*   *Énergie/Batterie :* Vert pur (`#34c759`).
+*   *Interrupteurs/Réseau :* Bleu Premium Apple/Tesla (`#007aff` et `#0a84ff` en dark).
 
 ## 2. Le style "Glassmorphism"
 L'effet "Tesla" ou "Apple Home" repose beaucoup sur la superposition et le flou.
