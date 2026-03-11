@@ -1,26 +1,49 @@
 :root {
   /* Variables claires (Light Mode) par défaut */
-  --bg-color: #e5e5ea; /* Gris très doux (Type iOS) au lieu du blanc cassé éblouissant */
-  --text-main: #1c1c1e;
-  --text-muted: #8e8e93;
-  --card-bg: rgba(255, 255, 255, 0.6); /* Transparence ajustée pour contraster avec le fond gris */
+  --bg-color: #f1f5f9;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --card-bg: rgba(255, 255, 255, 0.6);
   --card-border: rgba(255, 255, 255, 0.8);
+  --card-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
 
-  --accent-light: #ffcc00;
-  --accent-energy: #34c759;
-  --accent-switch: #007aff; /* Bleu Premium (Standard Apple/Tesla) / Moins "jouet" */
-  --error-color: #ff3b30;
+  /* Color Palette - System & Weather */
+  --color-sun: #fbbf24;      /* Amber 400 */
+  --color-rain: #3b82f6;     /* Blue 500 */
+  --color-cloud: #94a3b8;    /* Slate 400 */
+  --color-storm: #fbbf24;    /* Consistent with Sun for Lightning */
+  --color-snow: #cbd5e1;     /* Slate 300 */
+  --color-energy: #10b981;   /* Emerald 500 */
+  --color-error: #ef4444;    /* Red 500 */
+  --color-accent: #3b82f6;   /* Primary Blue */
+  
+  --gradient-glow-1: rgba(59, 130, 246, 0.15);
+  --gradient-glow-2: rgba(16, 185, 129, 0.1);
 }
 
 body.dark {
-  /* Variables sombres (Dark Mode) */
-  --bg-color: #000000; /* Vrai Noir (Parfait pour les écrans OLED des tablettes / Contraste infini) */
-  --text-main: #ffffff;
-  --text-muted: #98989d;
-  --card-bg: rgba(28, 28, 30, 0.65); /* Gris carbone foncé semi-transparent */
-  --card-border: rgba(255, 255, 255, 0.1);
+  /* Variables sombres (Dark Mode) - Ultra Premium Minimalist Base */
+  --bg-color: #080a0f; 
+  --text-main: #f8fafc;
+  --text-muted: #8492a6;
+  --card-bg: rgba(20, 25, 35, 0.4); 
+  --card-border: rgba(255, 255, 255, 0.04);
+  --card-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.7);
   
-  --accent-switch: #0a84ff; /* Le même bleu premium, mais légèrement adapté pour l'affichage sur fond noir */
+  /* Color Palette - Dark Optimized */
+  --color-sun: #fbbf24;
+  --color-rain: #60a5fa;     /* Lighter blue for dark mode visibility */
+  --color-cloud: #64748b;
+  --color-storm: #fbbf24;
+  --color-snow: #f8fafc;
+  --color-energy: #34d399;   /* Lighter emerald */
+  --color-error: #f87171;    /* Lighter red */
+  --color-accent: #60a5fa;
+  
+  /* Extremely subtle, monochromatic/cool glows */
+  --gradient-glow-1: rgba(255, 255, 255, 0.015);
+  --gradient-glow-2: rgba(59, 130, 246, 0.02);
+  --gradient-glow-3: rgba(6, 182, 212, 0.015);
 }
 
 body {
@@ -30,10 +53,30 @@ body {
   color: var(--text-main);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   min-height: 100vh;
-  transition: background-color 0.3s ease, color 0.3s ease;
-  user-select: none; /* Important for a touch dashboard to avoid text selection on long press */
+  transition: background-color 0.5s ease, color 0.5s ease;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
 }
 
 * {
   box-sizing: border-box;
+}
+
+/* Premium Mesh Background Animations */
+@keyframes mesh-movement-1 {
+  0%   { transform: translate(0, 0) scale(1); }
+  50%  { transform: translate(2vw, 5vh) scale(1.1); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+@keyframes mesh-movement-2 {
+  0%   { transform: translate(0, 0) scale(1); }
+  50%  { transform: translate(-3vw, -4vh) scale(1.05); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+@keyframes mesh-movement-3 {
+  0%   { transform: translate(0, 0) scale(1); }
+  50%  { transform: translate(4vw, -2vh) scale(1.15); }
+  100% { transform: translate(0, 0) scale(1); }
 }

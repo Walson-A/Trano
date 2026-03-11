@@ -1,0 +1,7 @@
+.forecast-item {
+  transition: background 0.2s ease;
+}
+
+.forecast-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
