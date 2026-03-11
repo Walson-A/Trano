@@ -3,8 +3,9 @@ import useAppStore from './core/store/useAppStore';
 import { useHA } from './context/HAContext';
 import { Typography } from './ui/Typography/Typography';
 import { Dock } from './ui/Dock/Dock';
-import { Home, Settings, Bell, Wifi, BatteryFull, WifiOff } from 'lucide-react';
+import { Home, Settings, Bell, BatteryFull, Sun, Moon } from 'lucide-react';
 import { WeatherWidget } from './features/Weather/WeatherWidget';
+import { SystemStatus } from './features/System/SystemStatus';
 
 // Pages
 import { HomeView } from './pages/Home/HomeView';
@@ -14,14 +15,17 @@ import { SettingsView } from './pages/Settings/SettingsView';
 
 function App() {
   const { theme, toggleTheme, currentPage } = useAppStore();
-  const { isConnected } = useHA();
+  const { connection, status } = useHA();
+  const isConnected = status === 'connected';
 
   // Real-time clock
   const [time, setTime] = useState(new Date());
+
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
 
   useEffect(() => {
     document.body.className = theme;
@@ -90,107 +94,101 @@ function App() {
         {/* Premium Floating Topbar */}
         <header style={{ 
           display: 'grid', 
-          gridTemplateColumns: '1fr auto 1fr', /* Perfect 3-column symmetry */
+          gridTemplateColumns: 'auto 1fr auto', /* Reshaped symmetry */
           alignItems: 'center', 
           marginBottom: '2.5rem',
           padding: '10px 0',
           position: 'relative',
         }}>
           
-          {/* Left Side: Weather */}
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            {/* Native Home Assistant Weather Widget */}
-            <WeatherWidget entityId="weather.forecast_maison" />
-          </div>
-
-          {/* Center: Hero Clock Widget */}
-          <div style={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            alignItems: 'center', 
-            justifyContent: 'center' 
-          }}>
+          {/* Left Side: Clock & Date - Enlarged for Tablet */}
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '16px' }}>
             <div style={{ 
-              fontSize: '4.5rem', /* Much larger for a hero effect */
+              fontSize: 'clamp(1.8rem, 6vw, 2.4rem)', 
               fontFamily: 'system-ui, -apple-system, sans-serif',
-              fontWeight: '200', /* Ultra light for premium feel */
-              letterSpacing: '2px', 
-              lineHeight: 1,
+              fontWeight: '700', 
+              letterSpacing: '-1px', 
               color: 'var(--text-main)',
+              lineHeight: 1
             }}>
               {timeString}
             </div>
+            
+            {/* Elegant Subtle Separator */}
+            <div style={{ width: '1px', height: '1.2rem', backgroundColor: 'var(--text-muted)', opacity: 0.2, alignSelf: 'center', margin: '0 4px' }} />
+
             <div style={{ 
-              fontSize: '1.2rem', /* Refined date size */
+              fontSize: 'clamp(1rem, 2.5vw, 1.2rem)', 
               fontFamily: 'system-ui, -apple-system, sans-serif',
-              fontWeight: '500', 
-              color: 'var(--text-muted)', /* Muted white/grey as requested */
-              marginTop: '12px',
-              letterSpacing: '3px',
-              textTransform: 'uppercase',
-              opacity: 0.8
+              fontWeight: '600', 
+              color: 'var(--text-main)', 
+              letterSpacing: '0.2px',
             }}>
               {dateString}
             </div>
           </div>
 
-          {/* Right Side: Minimalist Icons */}
+
+          {/* Center: Dynamic Context Area (Empty for now) */}
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center' 
+          }}>
+            {/* Future dynamic content (Now playing, door alerts, greetings...) */}
+          </div>
+
+          {/* Right Side: Weather, Status, Controls */}
           <div style={{ 
             display: 'flex', 
             alignItems: 'center', 
             justifyContent: 'flex-end',
             gap: '12px' 
           }}>
-            {/* General Connection Indicator */}
-            <div 
-              title={isConnected ? 'Connecté à Home Assistant' : 'Déconnecté du réseau'}
-              style={{
+            
+            {/* Weather Widget */}
+            <WeatherWidget entityId="weather.forecast_maison" />
+            
+            {/* Separator */}
+            <div style={{ width: '1px', height: '32px', backgroundColor: 'var(--text-muted)', opacity: 0.2, margin: '0 8px' }} />
+
+            {/* Connection Indicator: System Status Feature */}
+            <SystemStatus />
+
+            {/* Quick Actions: Naked Style, Enlarged for Tablet */}
+            <div style={{
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              padding: '0 8px',
-              color: isConnected ? 'var(--text-muted)' : 'var(--color-error)',
+              gap: '8px',
             }}>
-              {isConnected ? <Wifi size={24} strokeWidth={1.2} /> : <WifiOff size={24} strokeWidth={1.2} />}
+              {[
+                { id: 'theme', icon: theme === 'dark' ? <Sun size={24} strokeWidth={2} /> : <Moon size={24} strokeWidth={2} />, action: toggleTheme },
+                { id: 'alerts', icon: <div style={{ position: 'relative' }}>
+                  <Bell size={24} strokeWidth={2} />
+                  <div style={{ position: 'absolute', top: '2px', right: '2px', width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--color-accent)' }} />
+                </div> },
+                { id: 'settings', icon: <Settings size={24} strokeWidth={2} />, action: () => console.log('Ouvrir les paramètres') }
+              ].map(btn => (
+                <button 
+                  key={btn.id}
+                  onClick={btn.action}
+                  className="header-action-btn"
+                  style={{ 
+                    color: 'var(--text-main)',
+                    background: 'transparent',
+                    border: 'none',
+                    width: '44px', height: '44px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    borderRadius: '50%',
+                    cursor: 'pointer',
+                    transition: 'all 0.1s ease',
+                    WebkitTapHighlightColor: 'transparent',
+                  }}
+                >
+                  {btn.icon}
+                </button>
+              ))}
             </div>
-
-            {/* Divider */}
-            <div style={{ width: '1px', height: '24px', backgroundColor: 'var(--text-muted)', opacity: 0.3, margin: '0 4px' }} />
-
-            {/* Action Buttons in glass style */}
-            {[
-              { id: 'alerts', icon: <div style={{ position: 'relative' }}>
-                <Bell size={24} strokeWidth={1.2} />
-                <div style={{ position: 'absolute', top: '0', right: '2px', width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--color-accent)' }} />
-              </div> },
-              { id: 'settings', icon: <Settings size={24} strokeWidth={1.2} />, action: toggleTheme }
-            ].map(btn => (
-              <div 
-                key={btn.id}
-                onClick={btn.action}
-                style={{ 
-                  color: 'var(--text-main)', 
-                  cursor: 'pointer', 
-                  width: '48px', height: '48px',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  borderRadius: '14px',
-                  background: 'var(--card-bg)',
-                  border: '1px solid var(--card-border)',
-                  boxShadow: 'var(--card-shadow)',
-                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.background = 'var(--card-bg-hover)';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.background = 'var(--card-bg)';
-                }}
-              >
-                {btn.icon}
-              </div>
-            ))}
           </div>
         </header>
 

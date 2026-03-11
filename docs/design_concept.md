@@ -15,10 +15,11 @@ L'interface s'adaptera automatiquement en fonction de l'heure de la journée (Mo
 *   **Surface des "Cartes" :** Blanc semi-transparent (`rgba(255, 255, 255, 0.6)`).
 *   **Texte Principal :** Gris très foncé (`#1c1c1e`).
 
-**Couleurs d'Accent (Partagées ou légèrement ajustées) :**
+**Couleurs d'Accents (Minimalisme Monochromatique) :**
 *   *Lumières :* Orange/jaune chaud (`#ffcc00`).
-*   *Énergie/Batterie :* Vert pur (`#34c759`).
-*   *Interrupteurs/Réseau :* Bleu Premium Apple/Tesla (`#007aff` et `#0a84ff` en dark).
+*   *Énergie :* Vert émeraude (`#34c759`).
+*   *Météo :* Bleu (`#3b82f6`) conservé pour la pluie pour une reconnaissance visuelle instantanée.
+*   *Accents UI (Boutons, Indicateurs) :* Blanc Pur (`#f8fafc`) ou Ardoise Foncé (`#0f172a`).
 
 ## 2. Le style "Glassmorphism"
 L'effet "Tesla" ou "Apple Home" repose beaucoup sur la superposition et le flou.
@@ -35,6 +36,14 @@ Une belle application est une application fluide :
 *   Les boutons "s'enfoncent" légèrement (Scale -2%) quand on appuie dessus.
 *   La couleur d'accent s'allume avec une douce transition fondu (0.3 secondes) plutôt que brutalement.
 *   L'ouverture d'une vue détail (ex: le panneau pour régler la couleur de la lampe du salon) glisse doucement depuis le bas ou le côté.
+
+## 5. Interactions du Header & Status Système
+Pour garantir une lisibilité maximale sur tablette tout en restant minimaliste :
+*   **Mise à l'échelle (Scaling) :** Les éléments interactifs du header (Horloge, Date, Boutons d'action) sont agrandis pour être utilisables au toucher sans "miss-click".
+*   **Cockpit Système :** L'indicateur de connexion HA déclenche un popover glassmorphique (`blur(30px)`) affichant les diagnostics vitaux :
+    *   **Latence (Ping) :** Mise à jour en temps réel (5s) pour monitorer la qualité du Wifi.
+    *   **Contexte de Connexion :** Affichage de la version HA et du point d'accès utilisé (Local/Distant).
+*   **Feedback Tactile :** Chaque bouton interactif utilise une légère réduction de taille (`scale(0.9)`) au clic pour simuler un bouton physique.
 
 ---
 *Ce document sert de référence avant de commencer l'intégration CSS.*

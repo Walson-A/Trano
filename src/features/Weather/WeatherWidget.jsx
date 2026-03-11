@@ -123,30 +123,30 @@ export const WeatherWidget = ({ entityId = 'weather.forecast_maison' }) => {
           gap: '16px',
           padding: '10px 20px',
           borderRadius: '24px',
-          background: 'var(--card-bg)',
-          border: '1px solid var(--card-border)',
-          boxShadow: 'var(--card-shadow)',
+          background: 'transparent',
+          border: 'none',
+          boxShadow: 'none',
           cursor: 'pointer',
-          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          transition: 'all 0.1s ease',
+          WebkitTapHighlightColor: 'transparent',
         }}
-        onMouseOver={(e) => {
-          e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
-          e.currentTarget.style.background = 'var(--card-bg-hover)';
-          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+        onMouseDown={(e) => {
+          e.currentTarget.style.transform = 'scale(0.96)';
         }}
-        onMouseOut={(e) => {
-          e.currentTarget.style.transform = 'translateY(0) scale(1)';
-          e.currentTarget.style.background = 'var(--card-bg)';
-          e.currentTarget.style.borderColor = 'var(--card-border)';
+        onMouseUp={(e) => {
+          e.currentTarget.style.transform = 'scale(1)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = 'scale(1)';
         }}
       >
         <WeatherIcon state={state} size={40} />
         
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <span style={{ fontSize: '1.4rem', fontWeight: '600', color: 'var(--text-main)', lineHeight: 1.1 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0px' }}>
+          <span style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--text-main)', lineHeight: 1 }}>
             {temp}{unit}
           </span>
-          <span style={{ fontSize: '0.85rem', fontWeight: '400', color: 'var(--text-muted)', textTransform: 'capitalize', letterSpacing: '0.3px' }}>
+          <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-main)', textTransform: 'capitalize', letterSpacing: '0.3px' }}>
             {label}
           </span>
         </div>

@@ -11,14 +11,15 @@
   --color-sun: #fbbf24;      /* Amber 400 */
   --color-rain: #3b82f6;     /* Blue 500 */
   --color-cloud: #94a3b8;    /* Slate 400 */
-  --color-storm: #fbbf24;    /* Consistent with Sun for Lightning */
+  --color-storm: #fbbf24;    
   --color-snow: #cbd5e1;     /* Slate 300 */
   --color-energy: #10b981;   /* Emerald 500 */
   --color-error: #ef4444;    /* Red 500 */
-  --color-accent: #3b82f6;   /* Primary Blue */
+  --color-accent: #0f172a;   /* Deep Slate/Black for Light Mode */
   
-  --gradient-glow-1: rgba(59, 130, 246, 0.15);
-  --gradient-glow-2: rgba(16, 185, 129, 0.1);
+  --hover-bg: rgba(0, 0, 0, 0.12);
+  --gradient-glow-1: rgba(0, 0, 0, 0.05);
+  --gradient-glow-2: rgba(0, 0, 0, 0.02);
 }
 
 body.dark {
@@ -30,16 +31,17 @@ body.dark {
   --card-border: rgba(255, 255, 255, 0.04);
   --card-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.7);
   
-  /* Color Palette - Dark Optimized */
+  /* Color Palette - Dark Optimized Monochromatic */
   --color-sun: #fbbf24;
-  --color-rain: #60a5fa;     /* Lighter blue for dark mode visibility */
+  --color-rain: #60a5fa;     
   --color-cloud: #64748b;
   --color-storm: #fbbf24;
   --color-snow: #f8fafc;
-  --color-energy: #34d399;   /* Lighter emerald */
-  --color-error: #f87171;    /* Lighter red */
-  --color-accent: #60a5fa;
+  --color-energy: #34d399;   
+  --color-error: #f87171;    
+  --color-accent: #f8fafc;   /* Pure White for Dark Mode Accents */
   
+  --hover-bg: rgba(255, 255, 255, 0.08);
   /* Extremely subtle, monochromatic/cool glows */
   --gradient-glow-1: rgba(255, 255, 255, 0.015);
   --gradient-glow-2: rgba(59, 130, 246, 0.02);
