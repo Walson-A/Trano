@@ -1,6 +1,5 @@
 import React from 'react';
 import { useHA } from '../../context/HAContext';
-import { ENERGY_ENTITIES } from './config';
 import { Sun, Home, BatteryMedium, Zap } from 'lucide-react';
 import './PowerFlowCard.css';
 
@@ -92,13 +91,13 @@ const FlowNode = ({ cx, cy, r = 40, active, color, iconElement, label, value }) 
 );
 
 // ---- Main Component ----
-export const PowerFlowCard = () => {
+export const PowerFlowCard = ({ entityIds }) => {
   const { entities } = useHA();
 
-  const solarPowerEnt  = entities[ENERGY_ENTITIES.solarPowerNow];
-  const batteryPowerEnt = entities[ENERGY_ENTITIES.batteryPower];
-  const gridPowerEnt   = entities[ENERGY_ENTITIES.gridPower];
-  const homePowerEnt   = entities[ENERGY_ENTITIES.homePower];
+  const solarPowerEnt   = entities[entityIds.solarPowerNow];
+  const batteryPowerEnt = entities[entityIds.batteryPower];
+  const gridPowerEnt    = entities[entityIds.gridPower];
+  const homePowerEnt    = entities[entityIds.homePower];
 
   const solarPower   = solarPowerEnt  ? parseFloat(solarPowerEnt.state)  : null;
   const batteryPower = batteryPowerEnt ? parseFloat(batteryPowerEnt.state) : null;

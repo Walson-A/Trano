@@ -1,6 +1,5 @@
 import React from 'react';
 import { useHA } from '../../context/HAContext';
-import { ENERGY_ENTITIES } from './config';
 import { Sun, MoonStar } from 'lucide-react';
 import './SolarCard.css';
 
@@ -17,10 +16,10 @@ const formatEnergy = (val) => {
   return `${k.toFixed(1)} kWh`;
 };
 
-export const SolarCard = () => {
+export const SolarCard = ({ entityIds }) => {
   const { entities } = useHA();
-  const powerEnt = entities[ENERGY_ENTITIES.solarPowerNow];
-  const todayEnt = entities[ENERGY_ENTITIES.solarEnergyToday];
+  const powerEnt = entities[entityIds.solarPowerNow];
+  const todayEnt = entities[entityIds.solarEnergyToday];
 
   const power = powerEnt ? parseFloat(powerEnt.state) : null;
   const today = todayEnt ? parseFloat(todayEnt.state) : null;

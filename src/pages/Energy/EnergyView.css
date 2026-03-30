@@ -18,3 +18,31 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Discovery status banner */
+.energy-view__discovery-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  padding: 8px 16px;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.energy-view__discovery-badge.ok {
+  background: rgba(52, 211, 153, 0.1);
+  color: var(--color-energy);
+  border: 1px solid rgba(52, 211, 153, 0.15);
+}
+
+.energy-view__discovery-badge.partial {
+  background: rgba(251, 191, 36, 0.1);
+  color: var(--color-sun);
+  border: 1px solid rgba(251, 191, 36, 0.15);
+}
+
+.energy-view__discovery-badge.fallback {
+  background: rgba(239, 68, 68, 0.08);
+  color: var(--color-error);
+  border: 1px solid rgba(239, 68, 68, 0.12);
+}

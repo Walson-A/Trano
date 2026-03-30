@@ -1,6 +1,5 @@
 import React from 'react';
 import { useHA } from '../../context/HAContext';
-import { ENERGY_ENTITIES } from './config';
 import { Sun, Home, ArrowDownToLine, ArrowUpFromLine } from 'lucide-react';
 import './EnergyStatsRow.css';
 
@@ -20,13 +19,13 @@ const StatTile = ({ label, value, color, children }) => (
   </div>
 );
 
-export const EnergyStatsRow = () => {
+export const EnergyStatsRow = ({ entityIds }) => {
   const { entities } = useHA();
 
-  const solarToday  = entities[ENERGY_ENTITIES.solarEnergyToday];
-  const homeToday   = entities[ENERGY_ENTITIES.homeEnergyToday];
-  const exportToday = entities[ENERGY_ENTITIES.gridExportToday];
-  const importToday = entities[ENERGY_ENTITIES.gridImportToday];
+  const solarToday  = entities[entityIds.solarEnergyToday];
+  const homeToday   = entities[entityIds.homeEnergyToday];
+  const exportToday = entities[entityIds.gridExportToday];
+  const importToday = entities[entityIds.gridImportToday];
 
   return (
     <div className="energy-stats-row">

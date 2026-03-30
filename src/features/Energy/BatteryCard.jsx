@@ -1,6 +1,5 @@
 import React from 'react';
 import { useHA } from '../../context/HAContext';
-import { ENERGY_ENTITIES } from './config';
 import './BatteryCard.css';
 
 // ---- Helpers ----
@@ -58,10 +57,10 @@ const buildArcPath = (percent, cx, cy, r) => {
 
 // ---- Component ----
 
-export const BatteryCard = () => {
+export const BatteryCard = ({ entityIds }) => {
   const { entities } = useHA();
-  const pctEnt  = entities[ENERGY_ENTITIES.batteryPercent];
-  const powerEnt = entities[ENERGY_ENTITIES.batteryPower];
+  const pctEnt  = entities[entityIds.batteryPercent];
+  const powerEnt = entities[entityIds.batteryPower];
 
   const percent = pctEnt  ? parseFloat(pctEnt.state)  : null;
   const power   = powerEnt ? parseFloat(powerEnt.state) : null;
