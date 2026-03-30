@@ -1,0 +1,77 @@
+.flow-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 24px;
+  padding: 24px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: var(--card-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ---- Header ---- */
+.flow-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.flow-card__title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.3px;
+}
+
+.flow-card__subtitle {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: rgba(52, 211, 153, 0.1);
+  color: var(--color-energy);
+}
+
+/* ---- SVG Diagram ---- */
+.flow-card__diagram {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+}
+
+.flow-card__svg {
+  width: 100%;
+  max-width: 360px;
+  height: auto;
+  overflow: visible;
+}
+
+/* ---- Animated flow lines ---- */
+.flow-line {
+  stroke-dasharray: 8 6;
+}
+
+/* Forward: dash moves in path direction (e.g., solar → home = top → bottom) */
+@keyframes flow-fwd {
+  from { stroke-dashoffset: 14; } /* one dash+gap cycle = 8+6=14 */
+  to   { stroke-dashoffset: 0;  }
+}
+
+/* Reverse: dash moves opposite to path direction */
+@keyframes flow-rev {
+  from { stroke-dashoffset: 0;  }
+  to   { stroke-dashoffset: 14; }
+}
+
+.flow-line--fwd {
+  animation: flow-fwd 0.8s linear infinite;
+}
+
+.flow-line--rev {
+  animation: flow-rev 0.8s linear infinite;
+}

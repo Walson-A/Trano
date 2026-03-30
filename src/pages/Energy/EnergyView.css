@@ -1,0 +1,20 @@
+.energy-view {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding-bottom: 2rem;
+}
+
+/* Row 1: Solar (wider) + Battery */
+.energy-view__top-row {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 1.25rem;
+  align-items: stretch;
+}
+
+@media (max-width: 500px) {
+  .energy-view__top-row {
+    grid-template-columns: 1fr;
+  }
+}

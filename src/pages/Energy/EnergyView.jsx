@@ -1,13 +1,26 @@
 import React from 'react';
-import { Typography } from '../../ui/Typography/Typography';
+import { SolarCard } from '../../features/Energy/SolarCard';
+import { BatteryCard } from '../../features/Energy/BatteryCard';
+import { PowerFlowCard } from '../../features/Energy/PowerFlowCard';
+import { EnergyStatsRow } from '../../features/Energy/EnergyStatsRow';
+import './EnergyView.css';
 
 export const EnergyView = () => {
   return (
-    <div>
-      <Typography variant="title" style={{ color: 'var(--accent-energy)' }}>Énergie & Solaire</Typography>
-      <Typography variant="body" color="secondary" style={{ marginTop: '1rem' }}>
-        Tableau de bord de la production solaire, de la batterie et de la consommation Shelly.
-      </Typography>
+    <div className="energy-view">
+
+      {/* Row 1 : Solar + Battery */}
+      <div className="energy-view__top-row">
+        <SolarCard />
+        <BatteryCard />
+      </div>
+
+      {/* Row 2 : Power Flow diagram */}
+      <PowerFlowCard />
+
+      {/* Row 3 : Daily stats */}
+      <EnergyStatsRow />
+
     </div>
   );
 };
