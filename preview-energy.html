@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Trano – Aperçu Énergie</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+/* ── Theme Variables ── */
+:root {
+  --bg-color: #080a0f;
+  --text-main: #f8fafc;
+  --text-muted: #8492a6;
+  --card-bg: rgba(20, 25, 35, 0.55);
+  --card-border: rgba(255,255,255,0.07);
+  --card-shadow: 0 10px 40px -10px rgba(0,0,0,0.7);
+  --color-sun: #fbbf24;
+  --color-energy: #34d399;
+  --color-error: #f87171;
+  --color-cloud: #64748b;
+  --color-accent: #f8fafc;
+  --gradient-glow-1: rgba(255,255,255,0.015);
+  --gradient-glow-2: rgba(59,130,246,0.025);
+  --gradient-glow-3: rgba(52,211,153,0.02);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', -apple-system, sans-serif;
+  background: var(--bg-color);
+  color: var(--text-main);
+  min-height: 100vh;
+  padding: 28px 32px 60px;
+  -webkit-font-smoothing: antialiased;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Ambient mesh */
+.mesh { position:fixed; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index:0; }
+.mesh div { position:absolute; border-radius:50%; filter:blur(90px); }
+.m1 { top:-10%; left:-5%;  width:60vw; height:60vw; background:radial-gradient(circle,var(--gradient-glow-1) 0%,transparent 60%); animation:m1 28s ease-in-out infinite alternate; }
+.m2 { bottom:-15%; right:-5%; width:70vw; height:70vw; background:radial-gradient(circle,var(--gradient-glow-2) 0%,transparent 60%); animation:m2 34s ease-in-out infinite alternate-reverse; }
+.m3 { top:30%; left:35%; width:55vw; height:55vw; background:radial-gradient(circle,var(--gradient-glow-3) 0%,transparent 50%); animation:m3 40s ease-in-out infinite alternate; }
+@keyframes m1 { 0%{transform:translate(0,0) scale(1)}  100%{transform:translate(2vw,5vh) scale(1.1)} }
+@keyframes m2 { 0%{transform:translate(0,0) scale(1)}  100%{transform:translate(-3vw,-4vh) scale(1.05)} }
+@keyframes m3 { 0%{transform:translate(0,0) scale(1)}  100%{transform:translate(4vw,-2vh) scale(1.15)} }
+
+.page { position:relative; z-index:1; max-width:960px; margin:0 auto; }
+
+/* Page title */
+h1 { font-size:0.72rem; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--text-muted); margin-bottom:20px; }
+
+/* ── Discovery badge ── */
+.discovery-badge {
+  font-size:.75rem; font-weight:600; letter-spacing:.3px;
+  padding:8px 16px; border-radius:12px; text-align:center;
+  margin-bottom:1.25rem;
+  background:rgba(52,211,153,.1); color:var(--color-energy);
+  border:1px solid rgba(52,211,153,.2);
+}
+
+/* ── Grid layouts ── */
+.top-row { display:grid; grid-template-columns:1.5fr 1fr; gap:1.25rem; margin-bottom:1.25rem; }
+.stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; margin-top:1.25rem; }
+
+/* ── Card base ── */
+.card {
+  background:var(--card-bg);
+  border:1px solid var(--card-border);
+  border-radius:24px;
+  padding:24px;
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  box-shadow:var(--card-shadow);
+  position:relative; overflow:hidden;
+}
+
+/* ══════════════════════════════
+   SOLAR CARD
+══════════════════════════════ */
+.solar-card { display:flex; flex-direction:column; gap:6px; }
+.solar-card.producing { border-color:rgba(251,191,36,.2); box-shadow:var(--card-shadow),0 0 40px -8px rgba(251,191,36,.12); }
+
+.solar-glow {
+  position:absolute; top:-40px; right:-40px; width:130px; height:130px;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(251,191,36,.2) 0%,transparent 70%);
+  animation:glow-pulse 2.5s ease-in-out infinite;
+}
+@keyframes glow-pulse { 0%,100%{opacity:.7;transform:scale(1)} 50%{opacity:1;transform:scale(1.25)} }
+
+.solar-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+
+.solar-icon { display:flex; font-size:28px; line-height:1; }
+.solar-icon.active { filter:drop-shadow(0 0 12px rgba(251,191,36,.7)); animation:sun-pulse 2.5s ease-in-out infinite; }
+@keyframes sun-pulse { 0%,100%{filter:drop-shadow(0 0 8px rgba(251,191,36,.4))} 50%{filter:drop-shadow(0 0 22px rgba(251,191,36,.85))} }
+
+.badge {
+  font-size:.68rem; font-weight:700; letter-spacing:.8px; text-transform:uppercase;
+  padding:4px 12px; border-radius:20px;
+  background:rgba(255,255,255,.06); color:var(--text-muted);
+}
+.badge.producing { background:rgba(251,191,36,.15); color:var(--color-sun); }
+
+.solar-power { font-size:clamp(2.2rem,4vw,3.2rem); font-weight:800; letter-spacing:-1.5px; color:var(--color-sun); line-height:1; }
+.solar-sublabel { font-size:.78rem; color:var(--text-muted); font-weight:500; margin-top:2px; }
+
+.solar-footer { margin-top:auto; padding-top:16px; border-top:1px solid var(--card-border); }
+.stat-row { display:flex; justify-content:space-between; align-items:center; }
+.stat-label { font-size:.82rem; color:var(--text-muted); font-weight:500; }
+.stat-val { font-size:1rem; font-weight:700; color:var(--color-energy); }
+
+/* ══════════════════════════════
+   BATTERY CARD
+══════════════════════════════ */
+.battery-card { display:flex; flex-direction:column; gap:6px; }
+.battery-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
+.battery-title { font-size:.9rem; font-weight:600; color:var(--text-muted); }
+.badge.charging { background:rgba(52,211,153,.15); color:var(--color-energy); }
+
+.dial-wrap { position:relative; width:140px; height:140px; margin:8px auto; }
+.dial-wrap svg { width:100%; height:100%; }
+.dial-center {
+  position:absolute; inset:0;
+  display:flex; align-items:center; justify-content:center; gap:2px;
+  pointer-events:none;
+}
+.pct-num { font-size:2.1rem; font-weight:800; letter-spacing:-1px; color:var(--color-energy); }
+.pct-sym { font-size:1rem; font-weight:600; color:var(--text-muted); align-self:flex-end; margin-bottom:5px; }
+
+.batt-footer { margin-top:auto; padding-top:14px; border-top:1px solid var(--card-border); }
+
+/* ══════════════════════════════
+   POWER FLOW CARD
+══════════════════════════════ */
+.flow-card { display:flex; flex-direction:column; gap:12px; }
+.flow-header { display:flex; align-items:center; justify-content:space-between; }
+.flow-title { font-size:.9rem; font-weight:600; color:var(--text-muted); }
+.flow-subtitle { font-size:.68rem; font-weight:700; letter-spacing:.8px; text-transform:uppercase; padding:4px 12px; border-radius:20px; background:rgba(52,211,153,.1); color:var(--color-energy); }
+
+.flow-svg-wrap { display:flex; align-items:center; justify-content:center; }
+.flow-svg-wrap svg { width:100%; max-width:400px; height:auto; overflow:visible; }
+
+/* Flow line animation */
+@keyframes flow-fwd { from{stroke-dashoffset:14} to{stroke-dashoffset:0} }
+@keyframes flow-rev { from{stroke-dashoffset:0} to{stroke-dashoffset:14} }
+.fwd { animation:flow-fwd .85s linear infinite; stroke-dasharray:8 6; }
+.rev { animation:flow-rev .85s linear infinite; stroke-dasharray:8 6; }
+
+/* ══════════════════════════════
+   STAT TILES
+══════════════════════════════ */
+.stat-tile {
+  background:var(--card-bg); border:1px solid var(--card-border);
+  border-radius:20px; padding:18px 16px;
+  backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+  box-shadow:var(--card-shadow);
+  display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center;
+  transition:transform .15s;
+}
+.tile-icon {
+  display:flex; align-items:center; justify-content:center;
+  width:40px; height:40px; border-radius:12px;
+  background:rgba(255,255,255,.05); font-size:18px;
+}
+.tile-val { font-size:1.1rem; font-weight:800; letter-spacing:-.5px; }
+.tile-lbl { font-size:.72rem; font-weight:500; color:var(--text-muted); }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width:6px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:rgba(255,255,255,.1); border-radius:3px; }
+</style>
+</head>
+<body>
+
+<div class="mesh">
+  <div class="m1"></div>
+  <div class="m2"></div>
+  <div class="m3"></div>
+</div>
+
+<div class="page">
+
+  <h1>Trano — Onglet Énergie &amp; Solaire (aperçu)</h1>
+
+  <!-- Discovery badge -->
+  <div class="discovery-badge">✓ 9 entités détectées automatiquement via Home Assistant</div>
+
+  <!-- Row 1 -->
+  <div class="top-row">
+
+    <!-- Solar Card -->
+    <div class="card solar-card producing">
+      <div class="solar-glow"></div>
+      <div class="solar-header">
+        <div class="solar-icon active">☀️</div>
+        <span class="badge producing">En production</span>
+      </div>
+      <div class="solar-power">2.84 kW</div>
+      <div class="solar-sublabel">Puissance actuelle</div>
+      <div class="solar-footer">
+        <div class="stat-row">
+          <span class="stat-label">Production aujourd'hui</span>
+          <span class="stat-val">12.4 kWh</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Battery Card -->
+    <div class="card battery-card">
+      <div class="battery-header">
+        <span class="battery-title">Batterie</span>
+        <span class="badge charging">↑ En charge</span>
+      </div>
+
+      <div class="dial-wrap">
+        <svg viewBox="0 0 140 140">
+          <!-- Track (270° arc) -->
+          <path d="M 27.68 27.68 A 55 55 0 1 1 27.68 112.32"
+            fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="9" stroke-linecap="round"/>
+          <!-- Progress (78%) -->
+          <path d="M 27.68 27.68 A 55 55 0 1 1 107.68 112.32"
+            fill="none" stroke="#34d399" stroke-width="9" stroke-linecap="round"
+            style="filter:drop-shadow(0 0 7px #34d399)"/>
+        </svg>
+        <div class="dial-center">
+          <span class="pct-num">78</span>
+          <span class="pct-sym">%</span>
+        </div>
+      </div>
+
+      <div class="batt-footer">
+        <div class="stat-row">
+          <span class="stat-label">Puissance</span>
+          <span class="tile-val" style="color:var(--color-energy)">+ 920 W</span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /top-row -->
+
+  <!-- Power Flow Card -->
+  <div class="card flow-card">
+    <div class="flow-header">
+      <span class="flow-title">Flux d'énergie</span>
+      <span class="flow-subtitle">Temps réel</span>
+    </div>
+
+    <div class="flow-svg-wrap">
+      <svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg" aria-label="Diagramme de flux d'énergie">
+
+        <!-- ── Tracks (static dim lines) ── -->
+        <!-- Solar → Home -->
+        <line x1="200" y1="90" x2="200" y2="112" stroke="rgba(255,255,255,0.06)" stroke-width="2.5" stroke-linecap="round"/>
+        <!-- Battery ↔ Home -->
+        <line x1="100" y1="215" x2="162" y2="178" stroke="rgba(255,255,255,0.06)" stroke-width="2.5" stroke-linecap="round"/>
+        <!-- Home ↔ Grid -->
+        <line x1="238" y1="178" x2="300" y2="215" stroke="rgba(255,255,255,0.06)" stroke-width="2.5" stroke-linecap="round"/>
+
+        <!-- ── Animated flow lines ── -->
+        <!-- Solar → Home (producing) fwd -->
+        <line x1="200" y1="90" x2="200" y2="112"
+          stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round"
+          class="fwd" style="filter:drop-shadow(0 0 4px #fbbf24)"/>
+        <!-- Battery charging: Home → Battery rev -->
+        <line x1="100" y1="215" x2="162" y2="178"
+          stroke="#34d399" stroke-width="2.5" stroke-linecap="round"
+          class="rev" style="filter:drop-shadow(0 0 4px #34d399)"/>
+        <!-- Home → Grid exporting: fwd -->
+        <line x1="238" y1="178" x2="300" y2="215"
+          stroke="#34d399" stroke-width="2.5" stroke-linecap="round"
+          class="fwd" style="filter:drop-shadow(0 0 4px #34d399)"/>
+
+        <!-- ── Node: Solar ── -->
+        <circle cx="200" cy="50" r="40" fill="rgba(20,25,35,0.7)" stroke="#fbbf24" stroke-width="1.5"
+          style="filter:drop-shadow(0 0 10px rgba(251,191,36,0.25))"/>
+        <text x="200" y="44" text-anchor="middle" font-size="22" dominant-baseline="middle">☀️</text>
+        <text x="200" y="67" text-anchor="middle" font-size="11" font-weight="700" font-family="Inter,sans-serif" fill="#fbbf24">2.84 kW</text>
+        <text x="200" y="103" text-anchor="middle" font-size="10" font-weight="500" font-family="Inter,sans-serif" fill="#8492a6">Solaire</text>
+
+        <!-- ── Node: Home ── -->
+        <circle cx="200" cy="150" r="40" fill="rgba(20,25,35,0.7)" stroke="rgba(248,250,252,0.5)" stroke-width="1.5"/>
+        <text x="200" y="144" text-anchor="middle" font-size="22" dominant-baseline="middle">🏠</text>
+        <text x="200" y="167" text-anchor="middle" font-size="11" font-weight="700" font-family="Inter,sans-serif" fill="#f8fafc">1.64 kW</text>
+        <text x="200" y="202" text-anchor="middle" font-size="10" font-weight="500" font-family="Inter,sans-serif" fill="#8492a6">Maison</text>
+
+        <!-- ── Node: Battery ── -->
+        <circle cx="65" cy="255" r="38" fill="rgba(20,25,35,0.7)" stroke="#34d399" stroke-width="1.5"
+          style="filter:drop-shadow(0 0 10px rgba(52,211,153,0.2))"/>
+        <text x="65" y="249" text-anchor="middle" font-size="20" dominant-baseline="middle">🔋</text>
+        <text x="65" y="267" text-anchor="middle" font-size="11" font-weight="700" font-family="Inter,sans-serif" fill="#34d399">920 W</text>
+        <text x="65" y="305" text-anchor="middle" font-size="10" font-weight="500" font-family="Inter,sans-serif" fill="#8492a6">Batterie</text>
+
+        <!-- ── Node: Grid ── -->
+        <circle cx="335" cy="255" r="38" fill="rgba(20,25,35,0.7)" stroke="#34d399" stroke-width="1.5"
+          style="filter:drop-shadow(0 0 10px rgba(52,211,153,0.2))"/>
+        <text x="335" y="249" text-anchor="middle" font-size="20" dominant-baseline="middle">⚡</text>
+        <text x="335" y="267" text-anchor="middle" font-size="11" font-weight="700" font-family="Inter,sans-serif" fill="#34d399">280 W</text>
+        <text x="335" y="305" text-anchor="middle" font-size="10" font-weight="500" font-family="Inter,sans-serif" fill="#8492a6">Réseau</text>
+
+      </svg>
+    </div>
+  </div>
+
+  <!-- Stats Row -->
+  <div class="stats-row">
+    <div class="stat-tile">
+      <div class="tile-icon">☀️</div>
+      <div class="tile-val" style="color:var(--color-sun)">12.4 kWh</div>
+      <div class="tile-lbl">Production</div>
+    </div>
+    <div class="stat-tile">
+      <div class="tile-icon">🏠</div>
+      <div class="tile-val" style="color:var(--color-accent)">8.1 kWh</div>
+      <div class="tile-lbl">Consommation</div>
+    </div>
+    <div class="stat-tile">
+      <div class="tile-icon" style="color:var(--color-energy)">↑</div>
+      <div class="tile-val" style="color:var(--color-energy)">3.6 kWh</div>
+      <div class="tile-lbl">Export réseau</div>
+    </div>
+    <div class="stat-tile">
+      <div class="tile-icon" style="color:var(--color-error)">↓</div>
+      <div class="tile-val" style="color:var(--color-error)">0.0 kWh</div>
+      <div class="tile-lbl">Import réseau</div>
+    </div>
+  </div>
+
+</div><!-- /page -->
+</body>
+</html>
