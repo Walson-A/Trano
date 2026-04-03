@@ -21,7 +21,7 @@ export const Topbar: React.FC<TopbarProps> = ({ isDarkMode, toggleDarkMode }) =>
   const dateString = rawDate.charAt(0).toUpperCase() + rawDate.slice(1);
 
   return (
-    <header className="flex items-center justify-between px-6 py-4 lg:px-12 lg:py-8 bg-zinc-50/50 dark:bg-[#111111]/50 backdrop-blur-md sticky top-0 z-30 border-b border-zinc-200/50 dark:border-white/5">
+    <header className="flex items-center justify-between px-6 py-4 lg:px-12 lg:py-8 bg-zinc-50/50 dark:bg-[#0a0a0a]/50 backdrop-blur-md sticky top-0 z-30 border-b border-zinc-200/50 dark:border-white/5">
       {/* Left: Clock & Date */}
       <div className="flex items-baseline gap-4">
         <h1 className="text-3xl lg:text-4xl font-extrabold tracking-tighter text-zinc-900 dark:text-zinc-100 tabular-nums">
@@ -58,7 +58,7 @@ export const Topbar: React.FC<TopbarProps> = ({ isDarkMode, toggleDarkMode }) =>
             </button>
             <button className="p-2.5 rounded-2xl hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-all active:scale-90 relative">
               <Bell size={20} />
-              <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-indigo-500 rounded-full border-2 border-zinc-50 dark:border-[#111111]" />
+              <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-indigo-500 rounded-full border-2 border-zinc-50 dark:border-[#0a0a0a]" />
             </button>
             <button className="p-2.5 rounded-2xl hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-all active:scale-90">
               <Settings size={20} />

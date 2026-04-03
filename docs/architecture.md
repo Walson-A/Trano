@@ -5,51 +5,81 @@
 - **Framework :** React 18 + TypeScript
 - **Build :** Vite
 - **Styles :** Tailwind CSS v4 (via `@tailwindcss/vite`)
-- **State :** Zustand (`src/core/store/useAppStore.ts`)
+- **State :** Zustand (`useAppStore` pour l'UI, `useConfigStore` pour la persistance)
 - **Domotique :** Home Assistant via WebSocket (`home-assistant-js-websocket`)
+- **Persistance :** IndexedDB via Zustand persist (fallback localStorage)
+- **Animations :** Motion (framer-motion)
 
 ## Arborescence `src/`
 
-### 1. `src/core/` (Infrastructure)
-Logique globale indépendante de l'interface.
-- `store/useAppStore.ts` : State global UI (thème, navigation) via Zustand. Ne gère PAS les données HA.
+### 1. `src/config/` (Configuration)
+- `rooms.ts` : Source unique de vérité pour les pièces (nom, étage, icône) et le mapping HA areas → pièces Trano (`HA_AREA_TO_ROOM`).
 
-### 2. `src/context/` (Providers React)
-- `HAContext.tsx` : Provider WebSocket Home Assistant. Expose `useHA()` qui retourne `{ connection, entities, status, error }`.
+### 2. `src/core/store/` (State Management)
+- `useAppStore.ts` : State UI (thème, navigation). Ne gère PAS les données HA.
+- `useConfigStore.ts` : Overrides utilisateur persistés en IndexedDB (renommage d'appareils, assignation de pièces, masquage, positions floor plan).
 
-### 3. `src/lib/` (Utilitaires techniques)
+### 3. `src/context/` (Providers React)
+- `HAContext.tsx` : Provider WebSocket HA. Expose `useHA()` → `{ connection, entities, status, error }`.
+
+### 4. `src/lib/` (Utilitaires techniques)
 - `ha.ts` : Fonction `connectHA()` — crée la connexion WebSocket avec un token long-lived.
 
-### 4. `src/hooks/` (Hooks métier)
-- `useHAAdapter.ts` : Transforme les entités HA brutes en objets `Device` typés utilisables par les vues.
+### 5. `src/hooks/` (Hooks métier)
+- `useHAAdapter.ts` : Adaptateur HA → Trano. Fetch les registries HA (areas, entity registry, device registry), résout les pièces et noms, retourne des `Device[]` typés.
 
-### 5. `src/ui/` (Design System)
+### 6. `src/ui/` (Design System)
 Composants visuels "bêtes" (Dumb Components).
-**Règle absolue :** Un composant `ui/` ne doit **jamais** importer `HAContext` ni connaître Home Assistant.
+**Règle absolue :** Un composant `ui/` ne doit **jamais** importer `HAContext`.
 - `Modal/Modal.tsx` : Modale réutilisable avec backdrop blur.
 
-### 6. `src/components/` (Composants partagés)
-Composants réutilisables pouvant consommer du contexte.
-- `Topbar.tsx` : Barre supérieure (horloge, météo, system status, actions).
-- `Sidebar.tsx` : Navigation latérale avec onglets.
+### 7. `src/components/` (Composants partagés)
+- `Topbar.tsx` : Horloge, météo, system status, actions.
+- `Sidebar.tsx` : Navigation latérale.
 - `DeviceCard.tsx` : Carte d'appareil domotique.
 
-### 7. `src/features/` (Logique Métier)
-Couche "Smart" : l'interface rencontre la donnée HA.
-- `Weather/` : Widget météo + modale prévisions (hourly/daily).
-- `System/` : Indicateur de connexion HA avec diagnostics.
+### 8. `src/features/` (Logique Métier)
+- `Weather/` : Widget météo + modale prévisions.
+- `System/` : Indicateur de connexion HA.
 
-### 8. `src/views/` (Écrans)
-Assemblage des composants et features en vues complètes.
-- `Dashboard.tsx` : Accueil avec résumé météo, conso, sécurité + favoris.
-- `FloorPlan.tsx` : Vue plan de la maison.
-- `Rooms.tsx` : Vue par pièces.
-- `Energy.tsx` : Vue énergie/consommation.
+### 9. `src/views/` (Écrans)
+- `Dashboard.tsx` : Accueil (résumé, favoris).
+- `FloorPlan.tsx` : Plan de la maison.
+- `Rooms.tsx` : Vue par pièces (accordion).
+- `Energy.tsx` : Énergie/consommation.
 
-### 9. `src/types.ts` & `src/data.ts`
-- `types.ts` : Types partagés (`Device`, `User`, `DeviceType`, etc.).
-- `data.ts` : Données mock (utilisateurs). Les devices viennent de HA.
+### 10. `src/types.ts`
+Types partagés : `Device`, `DeviceState`, `DeviceType`, `DeviceOverride`, `RoomConfig`, `User`, etc.
+
+## Résolution des données
+
+### Pièce d'un appareil (par priorité)
+1. **Override Trano** (`useConfigStore.deviceOverrides[entityId].roomId`)
+2. **HA Area** (via `config/area_registry/list` + `config/entity_registry/list`)
+3. **null** (non assigné)
+
+### Nom d'un appareil (par priorité)
+1. **Override Trano** (`deviceOverrides[entityId].displayName`)
+2. **HA friendly_name** (`entity.attributes.friendly_name`)
+3. **entity_id** (fallback)
+
+### Types d'appareils supportés
+
+| Domain HA | Type Trano | Contrôles |
+|---|---|---|
+| `light` | `light` | on/off, brightness |
+| `switch` | `switch` | on/off |
+| `climate` | `climate` | temp cible, mode |
+| `lock` | `lock` | lock/unlock |
+| `media_player` | `media` | play/pause, volume |
+| `cover` | `cover` | open/close |
+| `fan` | `fan` | on/off |
+| `sensor` / `binary_sensor` | `sensor` | lecture seule |
+| `camera` | `camera` | stream |
 
 ## Configuration
 
-Les entity IDs et credentials HA sont dans `.env.local` (voir `.env.example`).
+Variables d'environnement dans `.env.local` (voir `.env.example`) :
+- `VITE_HA_URL` : URL de l'instance HA
+- `VITE_HA_TOKEN` : Long-lived access token
+- `VITE_HA_WEATHER_ENTITY` : Entity ID météo

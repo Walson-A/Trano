@@ -38,7 +38,7 @@
     @apply bg-zinc-50 text-zinc-900 antialiased selection:bg-zinc-200;
   }
   .dark body {
-    @apply bg-[#111111] text-zinc-100 selection:bg-zinc-800;
+    @apply bg-[#0a0a0a] text-zinc-100 selection:bg-zinc-800;
   }
 }
 

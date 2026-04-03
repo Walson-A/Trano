@@ -9,9 +9,9 @@ interface FloorPlanProps {
 }
 
 export function FloorPlan({ devices, onToggleDevice }: FloorPlanProps) {
-  const [activeFloor, setActiveFloor] = useState<'RDC' | 'Etage'>('RDC');
+  const [activeFloor, setActiveFloor] = useState<'RDC' | 'Étage'>('RDC');
 
-  const floorDevices = devices.filter(d => d.floor === activeFloor);
+  const floorDevices = devices.filter(d => d.floor === activeFloor && d.position);
 
   const getDeviceIcon = (type: string) => {
     switch (type) {
@@ -34,13 +34,13 @@ export function FloorPlan({ devices, onToggleDevice }: FloorPlanProps) {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-zinc-50 dark:bg-[#111111] transition-colors duration-300 overflow-hidden pb-20 md:pb-0">
+    <div className="flex-1 flex flex-col h-full bg-zinc-50 dark:bg-[#0a0a0a] transition-colors duration-300 overflow-hidden pb-20 md:pb-0">
       <div className="p-4 sm:p-6 lg:p-12 pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4 z-10 shrink-0">
         <h1 className="text-2xl sm:text-3xl font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">Plan de masse</h1>
         
         {/* Floor Selector */}
         <div className="flex bg-zinc-200/50 dark:bg-zinc-800/50 p-1 rounded-full self-start sm:self-auto">
-          {(['RDC', 'Etage'] as const).map(floor => (
+          {(['RDC', 'Étage'] as const).map(floor => (
             <button
               key={floor}
               onClick={() => setActiveFloor(floor)}
@@ -114,7 +114,7 @@ export function FloorPlan({ devices, onToggleDevice }: FloorPlanProps) {
                     ? "border-blue-500 dark:border-blue-400 text-blue-600 dark:text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.3)] dark:shadow-[0_0_15px_rgba(96,165,250,0.2)]" 
                     : "border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400"
                 )}
-                style={{ left: `${device.position.x}%`, top: `${device.position.y}%` }}
+                style={{ left: `${device.position?.x ?? 50}%`, top: `${device.position?.y ?? 50}%` }}
                 title={device.name}
               >
                 <Icon className="w-4 h-4 sm:w-5 sm:h-5" />

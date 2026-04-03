@@ -53,7 +53,7 @@ export function Dashboard({ currentUser, devices, onToggleDevice }: DashboardPro
   const insideTemp = entities['sensor.temperature_salon']?.state || '--';
 
   return (
-    <div className="flex-1 overflow-y-auto scrollbar-hide p-4 sm:p-6 lg:p-12 pb-28 md:pb-12 bg-zinc-50 dark:bg-[#111111] transition-colors duration-300">
+    <div className="flex-1 overflow-y-auto scrollbar-hide p-4 sm:p-6 lg:p-12 pb-28 md:pb-12 bg-zinc-50 dark:bg-[#0a0a0a] transition-colors duration-300">
       <header className="mb-8 md:mb-10">
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">
           Bonjour, {currentUser.name}

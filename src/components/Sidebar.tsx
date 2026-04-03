@@ -23,7 +23,7 @@ export function Sidebar({ activeTab, setActiveTab, isDarkMode, toggleDarkMode, c
   return (
     <>
       {/* Desktop/Tablet Sidebar */}
-      <aside className="hidden md:flex flex-col w-24 lg:w-64 h-screen bg-zinc-100 dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 transition-colors duration-300 overflow-y-auto scrollbar-hide">
+      <aside className="hidden md:flex flex-col w-24 lg:w-64 h-screen bg-zinc-100 dark:bg-[#0a0a0a] border-r border-zinc-200 dark:border-white/5 transition-colors duration-300 overflow-y-auto scrollbar-hide">
         <div className="flex flex-col items-center lg:items-start p-4 lg:p-6 flex-1 min-h-0">
           <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-2xl bg-zinc-900 dark:bg-zinc-100 flex items-center justify-center mb-8 shadow-md shrink-0">
             <Home className="w-5 h-5 lg:w-6 lg:h-6 text-zinc-100 dark:text-zinc-900" />
@@ -74,7 +74,7 @@ export function Sidebar({ activeTab, setActiveTab, isDarkMode, toggleDarkMode, c
       </aside>
 
       {/* Mobile Bottom Bar */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-20 bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-xl border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-around px-6 z-50">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-20 bg-zinc-100/80 dark:bg-[#0a0a0a]/80 backdrop-blur-xl border-t border-zinc-200 dark:border-white/5 flex items-center justify-around px-6 z-50">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
