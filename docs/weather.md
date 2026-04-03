@@ -5,13 +5,12 @@ The Weather Module, located in `src/features/Weather`, provides a quick weather 
 
 ## Components
 
-### `WeatherWidget.jsx`
+### `WeatherWidget.tsx`
 - Displays the current weather status (icon, temperature, condition) as a compact widget.
 - Clicking the widget opens the `WeatherModal`.
-- Includes a sophisticated `WeatherIcon` component that maps Home Assistant weather states to Lucide-react icons with custom styling (shadows, layered icons, colors).
 
-### `WeatherModal.jsx` / `WeatherModal.css`
-- A modal displaying comprehensive forecasting.
+### `WeatherModal.tsx`
+- A premium modal displaying comprehensive forecasting with `backdrop-blur-2xl`.
 - Fetches detailed `hourly` and `daily` forecasts simultaneously via the `get_forecasts` service call when the modal opens.
 - Features:
   - **Horizontal Timeline:** A draggable, hardware-accelerated timeline showing the hourly forecasts for the current day ("Aujourd'hui").

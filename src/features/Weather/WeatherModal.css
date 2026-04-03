@@ -1,7 +1,0 @@
-.forecast-item {
-  transition: background 0.2s ease;
-}
-
-.forecast-item:hover {
-  background: var(--hover-bg);
-}

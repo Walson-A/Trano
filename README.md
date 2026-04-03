@@ -1,36 +1,20 @@
-# Trano - Home Assistant Dashboard 🏡⚡
+<div align="center">
+<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+</div>
 
-Trano est un tableau de bord domotique moderne, pensé spécifiquement pour une utilisation sur tablette. Il se connecte en temps réel à une instance Home Assistant locale.
+# Run and deploy your AI Studio app
 
-## 🎯 Aperçu
-- **Design "Tesla-like"** : Premium, minimaliste, centré sur le Glassmorphism et pensé pour le tactile.
-- **Dark / Light Mode** : Réactif et contrasté pour un confort visuel optimal de jour comme de nuit.
-- **Performances** : Application React (Single Page Application) ultra-rapide connectée directement en WebSocket au serveur HA.
+This contains everything you need to run your app locally.
 
----
+View your app in AI Studio: https://ai.studio/apps/b139f86b-32e8-44df-845e-7079d4e007fe
 
-## 📚 Documentation pour les Développeurs
+## Run Locally
 
-Si vous êtes un développeur (ou une IA) contribuant à ce projet, **merci de lire les documents présents dans le dossier `docs/` avant d'ajouter ou de modifier du code.**
+**Prerequisites:**  Node.js
 
-*   [Documentation d'Architecture (Feature-Sliced Design)](docs/architecture.md) : Comment les fichiers et dossiers doivent être structurés.
-*   [Guidelines de Design](docs/design_concept.md) : Couleurs racines, typographie et ressentis UI/UX attendus pour l'application.
 
----
-
-## 🚀 Lancer le projet localement
-
-1. Cloner ou télécharger le dépôt.
-2. Créer un fichier `.env.local` à la racine basé sur les clés suivantes :
-```env
-VITE_HA_URL=ws://[IP_HOME_ASSISTANT]:8123/api/websocket
-VITE_HA_TOKEN=eyJhbGciOiJIUzI1NiI... (Générez un jeton de longue durée depuis HA)
-```
-3. Installer les dépendances :
-```bash
-npm install
-```
-4. Démarrer le serveur de développement :
-```bash
-npm run dev
-```
+1. Install dependencies:
+   `npm install`
+2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+3. Run the app:
+   `npm run dev`
