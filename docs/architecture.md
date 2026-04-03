@@ -1,39 +1,55 @@
-# Architecture & Guidelines (For Developers & AI Assistants)
+# Architecture & Guidelines
 
-## 🏗️ Feature-Sliced Design (FSD) Adapté
+## Stack Technique
 
-L'application **Trano** utilise une architecture modulaire basée sur le principe de séparation des préoccupations pour faciliter la maintenance et l'évolution avec Home Assistant.
+- **Framework :** React 18 + TypeScript
+- **Build :** Vite
+- **Styles :** Tailwind CSS v4 (via `@tailwindcss/vite`)
+- **State :** Zustand (`src/core/store/useAppStore.ts`)
+- **Domotique :** Home Assistant via WebSocket (`home-assistant-js-websocket`)
 
-Voici la règle stricte concernant l'arborescence dans `src/` :
+## Arborescence `src/`
 
-### 1. `src/core/` (Logique Globale & Infrastructure)
-Contient le cœur technique de l'application, indépendant de toute interface utilisateur spécifique.
-*   `ha/` : Gère le WebSocket (`ha.js`) et le Context API (`HAContext.jsx`) de Home Assistant.
-*   `store/` : Gère l'état global de l'interface via **Zustand** (ex: `useAppStore.js` pour le thème et la navigation). Ne gère PAS les données Home Assistant (qui sont gérées par le contexte).
-*   `theme/` : Le fichier CSS principal (`index.css`) définissant les variables racines (Dark/Light mode, couleurs).
+### 1. `src/core/` (Infrastructure)
+Logique globale indépendante de l'interface.
+- `store/useAppStore.ts` : State global UI (thème, navigation) via Zustand. Ne gère PAS les données HA.
 
-### 2. `src/ui/` (Design System Pur)
-Contient les composants visuels "bêtes" (Dumb Components).
-**Règle absolue :** Un composant dans `ui/` ne doit **JAMAIS** importer le `HAContext` ni connaître l'existence de Home Assistant.
-*   Ces composants recoivent uniquement des `props` (ex: `active`, `onClick`, `children`).
-*   Exemples : `Card`, `Button`, `Typography`.
-*   Le design s'appuie fortement sur le Glassmorphism (effets de flou CSS).
+### 2. `src/context/` (Providers React)
+- `HAContext.tsx` : Provider WebSocket Home Assistant. Expose `useHA()` qui retourne `{ connection, entities, status, error }`.
 
-### 3. `src/features/` (Logique Métier & Entités)
-C'est la couche intermédiaire ("Smart Components"). C'est ici que l'interface rencontre la donnée.
-*   On importe une vue d'un composant de `ui/`.
-*   On importe l'état de Home Assistant via `useHA()` (de `core/ha/`).
-*   On crée un composant lié à un domaine domotique précis.
-*   Exemples de dossiers attendus : `lights/` (pour une `LightCard`), `energy/` (pour le widget Shelly), `media/` (pour les players).
+### 3. `src/lib/` (Utilitaires techniques)
+- `ha.ts` : Fonction `connectHA()` — crée la connexion WebSocket avec un token long-lived.
 
-### 4. `src/pages/` (Écrans & Assemblage)
-L'assemblage final des différents `features` pour créer des vues complètes occupant tout l'écran.
-*   `Home/` : Le tableau de bord principal affichant des résumés.
-*   `Room/` : Une vue dynamique filtrant les entités selon une pièce spécifique.
+### 4. `src/hooks/` (Hooks métier)
+- `useHAAdapter.ts` : Transforme les entités HA brutes en objets `Device` typés utilisables par les vues.
 
----
+### 5. `src/ui/` (Design System)
+Composants visuels "bêtes" (Dumb Components).
+**Règle absolue :** Un composant `ui/` ne doit **jamais** importer `HAContext` ni connaître Home Assistant.
+- `Modal/Modal.tsx` : Modale réutilisable avec backdrop blur.
 
-## 🎨 Note aux IA : Design & CSS
-*   L'application **n'utilise pas** TailwindCSS. Tout le style est fait en Vanilla CSS étendu (variables CSS générées dans `core/theme/index.css`).
-*   Le design cible particulièrement les dalles tactiles et écrans OLED (tablettes murales) avec le mode sombre profond (`#000000`).
-*   Consulter `docs/design_concept.md` pour le comportement des composants et l'inspiration graphique.
+### 6. `src/components/` (Composants partagés)
+Composants réutilisables pouvant consommer du contexte.
+- `Topbar.tsx` : Barre supérieure (horloge, météo, system status, actions).
+- `Sidebar.tsx` : Navigation latérale avec onglets.
+- `DeviceCard.tsx` : Carte d'appareil domotique.
+
+### 7. `src/features/` (Logique Métier)
+Couche "Smart" : l'interface rencontre la donnée HA.
+- `Weather/` : Widget météo + modale prévisions (hourly/daily).
+- `System/` : Indicateur de connexion HA avec diagnostics.
+
+### 8. `src/views/` (Écrans)
+Assemblage des composants et features en vues complètes.
+- `Dashboard.tsx` : Accueil avec résumé météo, conso, sécurité + favoris.
+- `FloorPlan.tsx` : Vue plan de la maison.
+- `Rooms.tsx` : Vue par pièces.
+- `Energy.tsx` : Vue énergie/consommation.
+
+### 9. `src/types.ts` & `src/data.ts`
+- `types.ts` : Types partagés (`Device`, `User`, `DeviceType`, etc.).
+- `data.ts` : Données mock (utilisateurs). Les devices viennent de HA.
+
+## Configuration
+
+Les entity IDs et credentials HA sont dans `.env.local` (voir `.env.example`).

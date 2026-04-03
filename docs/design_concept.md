@@ -1,49 +1,48 @@
-# UI/UX & Design System - "Effet Tesla"
+# UI/UX & Design System
 
-Pour obtenir une interface "Premium", minimaliste et agréable (particulièrement de nuit depuis une tablette), nous devons définir des règles de base solides avant d'écrire le CSS.
+Interface premium, minimaliste, optimisée pour tablettes tactiles et écrans OLED.
 
-## 1. La Palette de Couleurs (Dark & Light Mode)
-L'interface s'adaptera automatiquement en fonction de l'heure de la journée (Mode Clair la journée, Mode Sombre le soir/nuit).
+## 1. Palette de Couleurs
 
-**Dark Mode (Nuit) :**
-*   **Fond principal :** Noir absolu (`#000000` - Parfait pour écran OLED/Tablette).
-*   **Surface des "Cartes" :** Gris carbone profond semi-transparent (`rgba(28, 28, 30, 0.65)`).
-*   **Texte Principal :** Blanc pur (`#ffffff`).
+L'interface supporte Dark et Light mode (toggle manuel).
 
-**Light Mode (Jour) :**
-*   **Fond principal :** Gris très doux style iOS (`#e5e5ea`) pour ne pas éblouir.
-*   **Surface des "Cartes" :** Blanc semi-transparent (`rgba(255, 255, 255, 0.6)`).
-*   **Texte Principal :** Gris très foncé (`#1c1c1e`).
+**Dark Mode :**
+- Fond principal : `#111111`
+- Surfaces : `zinc-800/50` avec bordures `zinc-800`
+- Texte : `zinc-100` / `zinc-400`
 
-**Couleurs d'Accents (Minimalisme Monochromatique) :**
-*   *Lumières :* Orange/jaune chaud (`#ffcc00`).
-*   *Énergie :* Vert émeraude (`#34c759`).
-*   *Météo :* Bleu (`#3b82f6`) conservé pour la pluie pour une reconnaissance visuelle instantanée.
-*   *Accents UI (Boutons, Indicateurs) :* Blanc Pur (`#f8fafc`) ou Ardoise Foncé (`#0f172a`).
+**Light Mode :**
+- Fond principal : `zinc-50`
+- Surfaces : `white` avec bordures `zinc-200`
+- Texte : `zinc-900` / `zinc-500`
 
-## 2. Le style "Glassmorphism"
-L'effet "Tesla" ou "Apple Home" repose beaucoup sur la superposition et le flou.
-*   Nos cartes n'auront pas de bords nets et bruts, mais des **bordures arrondies** (ex: `border-radius: 20px`).
-*   On utilisera la propriété CSS `backdrop-filter: blur(10px)` sur les tuiles pour donner cet effet de verre dépoli élégant au-dessus du fond.
+**Accents monochromatiques :**
+- Lumières : Amber (`amber-500`)
+- Énergie : Emerald (`emerald-500`)
+- Météo : Couleurs conditionnelles (sun `#fbbf24`, rain `#3b82f6`, cloud `#94a3b8`)
+- Sécurité : Red (`red-500`)
+- Température : Orange (`orange-500`)
 
-## 3. Typographie (Les Polices)
-Il faut une police de caractères ronde, moderne et "géométrique".
-*   Inspiration : **Inter**, **Outfit** ou **SF Pro** (Apple).
-*   On importera "Inter" depuis Google Fonts. C'est le standard pour les interfaces claires et lisibles de loin.
+## 2. Styling
 
-## 4. Animations et Transitions (Le ressenti Premium)
-Une belle application est une application fluide :
-*   Les boutons "s'enfoncent" légèrement (Scale -2%) quand on appuie dessus.
-*   La couleur d'accent s'allume avec une douce transition fondu (0.3 secondes) plutôt que brutalement.
-*   L'ouverture d'une vue détail (ex: le panneau pour régler la couleur de la lampe du salon) glisse doucement depuis le bas ou le côté.
+- **Framework :** Tailwind CSS v4 avec `@theme` pour les variables custom.
+- **Arrondis :** `rounded-2xl` / `rounded-3xl` sur les cartes et boutons.
+- **Backdrop blur :** Utilisé sur la topbar (`backdrop-blur-md`) et les modales.
+- **Transitions :** `transition-all` avec `active:scale-95` / `active:scale-90` pour le feedback tactile.
 
-## 5. Interactions du Header & Status Système
-Pour garantir une lisibilité maximale sur tablette tout en restant minimaliste :
-*   **Mise à l'échelle (Scaling) :** Les éléments interactifs du header (Horloge, Date, Boutons d'action) sont agrandis pour être utilisables au toucher sans "miss-click".
-*   **Cockpit Système :** L'indicateur de connexion HA déclenche un popover glassmorphique (`blur(30px)`) affichant les diagnostics vitaux :
-    *   **Latence (Ping) :** Mise à jour en temps réel (5s) pour monitorer la qualité du Wifi.
-    *   **Contexte de Connexion :** Affichage de la version HA et du point d'accès utilisé (Local/Distant).
-*   **Feedback Tactile :** Chaque bouton interactif utilise une légère réduction de taille (`scale(0.9)`) au clic pour simuler un bouton physique.
+## 3. Typographie
 
----
-*Ce document sert de référence avant de commencer l'intégration CSS.*
+- Police : **Inter** (importée via Google Fonts dans `index.css`).
+- Hiérarchie : `font-extrabold` pour les valeurs, `font-semibold` pour les labels, `font-medium` pour le secondaire.
+
+## 4. Layout
+
+- Sidebar fixe à gauche (navigation par onglets).
+- Topbar sticky avec horloge, météo live, status système, actions.
+- Zone principale scrollable avec padding responsive (`p-4 sm:p-6 lg:p-12`).
+
+## 5. Composants Clés
+
+- **StatusCard :** Icône colorée + label + valeur, hover scale.
+- **DeviceCard :** Carte d'appareil avec toggle, état visuel on/off.
+- **Modal :** Overlay sombre + backdrop blur, centré, fermeture par X ou clic extérieur.

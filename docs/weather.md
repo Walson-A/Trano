@@ -1,23 +1,35 @@
 # Weather Module
 
 ## Overview
-The Weather Module, located in `src/features/Weather`, provides a quick weather glance widget and a detailed weather forecast modal.
+Le module météo (`src/features/Weather/`) affiche les conditions actuelles et les prévisions via l'intégration météo de Home Assistant.
 
-## Components
+## Configuration
+
+L'entity ID est configurable via `.env.local` :
+```
+VITE_HA_WEATHER_ENTITY=weather.forecast_home
+```
+Par défaut : `weather.forecast_home`.
+
+## Composants
 
 ### `WeatherWidget.tsx`
-- Displays the current weather status (icon, temperature, condition) as a compact widget.
-- Clicking the widget opens the `WeatherModal`.
+- Widget compact dans la topbar : icône + température + condition en français.
+- Gestion des états dégradés :
+  - **Connexion en cours :** affiche "Connexion..."
+  - **HA déconnecté :** affiche "HA déconnecté"
+  - **Entité introuvable :** affiche "Entité introuvable"
+  - **Entité `unavailable`/`unknown` :** affiche "Non disponible"
+- Exporte `WeatherIcon` (icônes Lucide par condition) et `WEATHER_MAPPING` (labels FR).
+- Clic ouvre le `WeatherModal`.
 
 ### `WeatherModal.tsx`
-- A premium modal displaying comprehensive forecasting with `backdrop-blur-2xl`.
-- Fetches detailed `hourly` and `daily` forecasts simultaneously via the `get_forecasts` service call when the modal opens.
-- Features:
-  - **Horizontal Timeline:** A draggable, hardware-accelerated timeline showing the hourly forecasts for the current day ("Aujourd'hui").
-  - **Daily Accordion Items:** A vertical list of future days, which can be expanded to reveal their respective local hourly timelines. 
-- **Performance Optimizations:** Uses `useRef` for drag state to prevent React re-renders, and pure CSS `transform: translateZ(0)` combined with `will-change: transform` to ensure fluid 60fps scrolling on touchscreens and trackpads without paint lags.
+- Modale de prévisions détaillées.
+- Fetche les forecasts `hourly` et `daily` via `connection.sendMessagePromise` (service `weather.get_forecasts`).
+- Timeline horizontale scrollable pour les prévisions horaires.
+- Liste verticale pour les prochains jours.
 
-## Home Assistant Integration
-- Requires a weather entity (default: `weather.forecast_maison`).
-- Pulls current attributes (temperature, condition) directly from the context.
-- Uses `connection.sendMessagePromise` dynamically to fetch standard HA `hourly` and `daily` forecast data (since HA 2024.4 deprecated native attribute arrays).
+## Intégration HA
+- Fonctionne avec n'importe quelle intégration météo HA (Met.no, OpenWeatherMap, etc.).
+- Nécessite que l'entité expose `temperature`, `humidity`, `wind_speed`, `pressure` dans ses attributs.
+- Les forecasts utilisent l'API service call HA 2024.4+ (`get_forecasts` avec `return_response`).
