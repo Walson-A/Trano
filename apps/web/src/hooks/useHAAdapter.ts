@@ -159,6 +159,30 @@ export function useHAAdapter() {
     [allDevices, deviceOverrides]
   );
 
+  // Température/humidité par pièce, via les areas HA. Vide tant qu'aucun
+  // capteur d'ambiance n'existe — l'UI ne montre ces valeurs que si réelles.
+  const roomClimate = useMemo(() => {
+    const climate: Record<string, { temperature?: number; humidity?: number }> = {};
+    for (const entity of Object.values(entities) as HassEntity[]) {
+      const dc = entity.attributes.device_class;
+      if (dc !== 'temperature' && dc !== 'humidity') continue;
+      if (!entity.entity_id.startsWith('sensor.')) continue;
+      if (entity.state === 'unavailable' || entity.state === 'unknown') continue;
+      // Les températures d'équipements (Freebox, onduleurs…) ne sont pas
+      // des capteurs d'ambiance : on ne garde que les entités liées à une
+      // pièce Trano via leur area HA.
+      const areaName = areaMap.get(entity.entity_id);
+      const roomId = areaName ? HA_AREA_TO_ROOM[areaName] : undefined;
+      if (!roomId) continue;
+      const value = parseFloat(entity.state);
+      if (Number.isNaN(value)) continue;
+      const entry = (climate[roomId] ??= {});
+      if (dc === 'temperature' && entry.temperature === undefined) entry.temperature = value;
+      if (dc === 'humidity' && entry.humidity === undefined) entry.humidity = value;
+    }
+    return climate;
+  }, [entities, areaMap]);
+
   // Toggle device
   const toggleDevice = async (id: string) => {
     if (!connection) return;
@@ -200,5 +224,5 @@ export function useHAAdapter() {
     }
   };
 
-  return { devices, allDevices, toggleDevice, status };
+  return { devices, allDevices, roomClimate, toggleDevice, status };
 }

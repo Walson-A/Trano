@@ -9,6 +9,8 @@ try {
   if (options.ha_url) process.env.TRANO_HA_URL = options.ha_url;
   if (options.ha_token) process.env.TRANO_HA_TOKEN = options.ha_token;
   if (options.weather_entity) process.env.TRANO_WEATHER_ENTITY = options.weather_entity;
+  if (options.openrouter_key) process.env.TRANO_OPENROUTER_KEY = options.openrouter_key;
+  if (options.openrouter_model) process.env.TRANO_OPENROUTER_MODEL = options.openrouter_model;
 } catch (err) {
   console.warn('Options add-on illisibles, démarrage avec les valeurs par défaut :', err.message);
 }

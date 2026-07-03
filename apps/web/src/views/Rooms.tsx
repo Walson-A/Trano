@@ -3,14 +3,17 @@ import { Device, RoomConfig } from '../types';
 import { DeviceCard } from '../components/DeviceCard';
 import {
   Sofa, CookingPot, Bed, BedDouble, BedSingle, Baby, Car, Bath, Users,
-  ChevronRight, WifiOff, Thermometer,
+  ChevronRight, WifiOff, Thermometer, Droplets,
 } from 'lucide-react';
 import { cn } from '../utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ROOMS } from '../config/rooms';
 
+export type RoomClimate = Record<string, { temperature?: number; humidity?: number }>;
+
 interface RoomsProps {
   devices: Device[];
+  roomClimate: RoomClimate;
   onToggleDevice: (id: string) => void;
 }
 
@@ -38,10 +41,11 @@ function getDevicesForRoom(roomId: string, devices: Device[]): Device[] {
 const RoomAccordion: React.FC<{
   room: RoomConfig;
   devices: Device[];
+  climate?: { temperature?: number; humidity?: number };
   isSelected: boolean;
   onToggle: () => void;
   onToggleDevice: (id: string) => void;
-}> = ({ room, devices, isSelected, onToggle, onToggleDevice }) => {
+}> = ({ room, devices, climate, isSelected, onToggle, onToggleDevice }) => {
   const Icon = getIconComponent(room.icon);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -98,6 +102,23 @@ const RoomAccordion: React.FC<{
         </div>
 
         <div className="flex items-center gap-4">
+          {/* Stats d'ambiance — affichées uniquement si un capteur réel existe */}
+          {(climate?.temperature !== undefined || climate?.humidity !== undefined) && (
+            <div className="hidden sm:flex items-center gap-3 text-sm font-semibold text-zinc-500 dark:text-zinc-400">
+              {climate.temperature !== undefined && (
+                <span className="flex items-center gap-1">
+                  <Thermometer className="w-4 h-4" />
+                  {climate.temperature.toFixed(1)}°
+                </span>
+              )}
+              {climate.humidity !== undefined && (
+                <span className="flex items-center gap-1">
+                  <Droplets className="w-4 h-4" />
+                  {Math.round(climate.humidity)}%
+                </span>
+              )}
+            </div>
+          )}
           <ChevronRight className={cn(
             "w-5 h-5 transition-transform duration-500",
             isSelected ? "rotate-90 text-zinc-900 dark:text-zinc-50" : "text-zinc-400 dark:text-zinc-600"
@@ -149,7 +170,7 @@ const RoomAccordion: React.FC<{
   );
 };
 
-export function Rooms({ devices, onToggleDevice }: RoomsProps) {
+export function Rooms({ devices, roomClimate, onToggleDevice }: RoomsProps) {
   const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
   const [floorFilter, setFloorFilter] = useState<'all' | 'RDC' | 'Étage'>('all');
 
@@ -197,6 +218,7 @@ export function Rooms({ devices, onToggleDevice }: RoomsProps) {
               key={room.id}
               room={room}
               devices={getDevicesForRoom(room.id, devices)}
+              climate={roomClimate[room.id]}
               isSelected={selectedRoom === room.id}
               onToggle={() => setSelectedRoom(selectedRoom === room.id ? null : room.id)}
               onToggleDevice={onToggleDevice}

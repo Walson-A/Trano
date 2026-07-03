@@ -6,7 +6,16 @@ import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { profileRoutes } from './routes/profiles.ts';
 import { shoppingRoutes } from './routes/shopping.ts';
+import { assistantRoutes } from './routes/assistant.ts';
 import { registerClient } from './ws.ts';
+
+// En dev, les secrets (HA, OpenRouter) vivent dans apps/server/.env (gitignoré).
+// En prod, ils viennent des options de l'add-on.
+try {
+  process.loadEnvFile(fileURLToPath(new URL('../.env', import.meta.url)));
+} catch {
+  // pas de .env local : normal en production
+}
 
 const PORT = Number(process.env.TRANO_PORT ?? 3001);
 const HOST = process.env.TRANO_HOST ?? '0.0.0.0';
@@ -37,6 +46,7 @@ app.register(async (instance) => {
 
 profileRoutes(app);
 shoppingRoutes(app);
+assistantRoutes(app);
 
 // En prod (Docker/add-on), le serveur sert aussi le build du frontend.
 const webDist = fileURLToPath(new URL('../../web/dist', import.meta.url));

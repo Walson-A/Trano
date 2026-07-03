@@ -7,19 +7,20 @@ import { Rooms } from './views/Rooms';
 import { Energy } from './views/Energy';
 import { Shopping } from './views/Shopping';
 import { Settings } from './views/Settings';
+import { Assistant } from './views/Assistant';
 import { useHAAdapter } from './hooks/useHAAdapter';
 import { useProfileStore, useActiveProfile } from './core/store/useProfileStore';
 import { useShoppingStore } from './core/store/useShoppingStore';
 import { ProfileGate } from './features/Profiles/ProfileGate';
 import { connectTranoWs } from './lib/api';
 
-export type Tab = 'dashboard' | 'floorplan' | 'rooms' | 'courses' | 'energy' | 'settings';
+export type Tab = 'dashboard' | 'floorplan' | 'rooms' | 'courses' | 'energy' | 'assistant' | 'settings';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
   const [isDarkMode, setIsDarkMode] = useState(true);
 
-  const { devices, allDevices, toggleDevice } = useHAAdapter();
+  const { devices, allDevices, roomClimate, toggleDevice } = useHAAdapter();
   const fetchProfiles = useProfileStore((s) => s.fetchProfiles);
   const setActiveProfile = useProfileStore((s) => s.setActiveProfile);
   const activeProfile = useActiveProfile();
@@ -78,12 +79,14 @@ export default function App() {
           )}
 
           {activeTab === 'rooms' && (
-            <Rooms devices={devices} onToggleDevice={toggleDevice} />
+            <Rooms devices={devices} roomClimate={roomClimate} onToggleDevice={toggleDevice} />
           )}
 
           {activeTab === 'courses' && <Shopping />}
 
           {activeTab === 'energy' && <Energy />}
+
+          {activeTab === 'assistant' && <Assistant />}
 
           {activeTab === 'settings' && !activeProfile.isKid && (
             <Settings devices={allDevices} />

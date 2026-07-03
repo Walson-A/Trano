@@ -18,7 +18,11 @@ options:
   ha_url: "http://homeassistant.local:8123"
   ha_token: ""
   weather_entity: "weather.forecast_home"
+  openrouter_key: ""
+  openrouter_model: "deepseek/deepseek-chat-v3.1:free"
 schema:
   ha_url: url
   ha_token: password
   weather_entity: str
+  openrouter_key: password
+  openrouter_model: str

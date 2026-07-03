@@ -1,10 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import {
   Lightbulb, ToggleLeft, Thermometer, Lock, Tv, Blinds, Fan, Gauge, Camera,
-  Search, Eye, EyeOff, Pencil, Check, X, Server, Wifi,
+  Search, Eye, EyeOff, Pencil, Check, X, Server, Wifi, Router, Download,
+  Upload, Globe, Phone, HardDrive, RotateCcw, BellRing, PhoneMissed,
 } from 'lucide-react';
 import { Device, DeviceType } from '../types';
 import { ROOMS } from '../config/rooms';
+import { FREEBOX, PHONES } from '../config/network';
 import { useConfigStore } from '../core/store/useConfigStore';
 import { useHA } from '../context/HAContext';
 import { cn } from '../utils';
@@ -121,6 +123,143 @@ const DeviceRow: React.FC<{ device: Device }> = ({ device }) => {
   );
 };
 
+const FreeboxSection: React.FC = () => {
+  const { entities, connection } = useHA();
+  const [confirmReboot, setConfirmReboot] = useState(false);
+  const [ringing, setRinging] = useState<string | null>(null);
+
+  const wifi = entities[FREEBOX.wifiSwitch];
+  if (!wifi) return null; // Intégration Freebox absente : section masquée
+
+  const read = (id: string) => {
+    const e = entities[id];
+    return e && e.state !== 'unavailable' && e.state !== 'unknown' ? e.state : null;
+  };
+
+  const wifiOn = wifi.state === 'on';
+  const down = read(FREEBOX.downloadSpeed);
+  const up = read(FREEBOX.uploadSpeed);
+  const ip = read(FREEBOX.externalIp);
+  const calls = read(FREEBOX.missedCalls);
+  const disk = read(FREEBOX.diskFreePct);
+
+  const callService = (domain: string, service: string, data: Record<string, unknown>) =>
+    connection?.sendMessagePromise({ type: 'call_service', domain, service, ...data });
+
+  const toggleWifi = () =>
+    callService('switch', wifiOn ? 'turn_off' : 'turn_on', {
+      target: { entity_id: FREEBOX.wifiSwitch },
+    });
+
+  const reboot = () => {
+    if (!confirmReboot) {
+      setConfirmReboot(true);
+      setTimeout(() => setConfirmReboot(false), 4000);
+      return;
+    }
+    setConfirmReboot(false);
+    callService('button', 'press', { target: { entity_id: FREEBOX.rebootButton } });
+  };
+
+  const ringPhone = async (service: string) => {
+    setRinging(service);
+    try {
+      await callService('notify', service, {
+        service_data: {
+          title: '📳 Trano',
+          message: 'Quelqu\'un te cherche à la maison !',
+          data: { push: { sound: { name: 'default', critical: 1, volume: 1.0 } } },
+        },
+      });
+    } finally {
+      setTimeout(() => setRinging(null), 2000);
+    }
+  };
+
+  const stat = (icon: React.ReactNode, label: string, value: string | null) => (
+    <div className="flex items-center gap-3 bg-zinc-100/60 dark:bg-white/5 rounded-xl px-4 py-3">
+      <span className="text-zinc-400">{icon}</span>
+      <div className="min-w-0">
+        <p className="text-[10px] uppercase tracking-wider text-zinc-500 font-medium">{label}</p>
+        <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate">
+          {value ?? '--'}
+        </p>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="mb-8">
+      <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-1">Réseau — Freebox</h2>
+      <p className="text-sm text-zinc-500 mb-4">Pilotée via l'intégration Freebox de Home Assistant.</p>
+
+      <div className="bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-white/5 rounded-3xl p-5">
+        {/* WiFi + reboot */}
+        <div className="flex flex-wrap items-center gap-3 mb-4">
+          <button
+            onClick={toggleWifi}
+            className={cn(
+              'flex items-center gap-3 px-5 py-3 rounded-2xl font-semibold transition-all',
+              wifiOn
+                ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
+                : 'bg-zinc-100 dark:bg-white/5 text-zinc-500'
+            )}
+          >
+            <Wifi className="w-5 h-5" />
+            Wi-Fi {wifiOn ? 'activé' : 'coupé'}
+            <span className={cn('w-2 h-2 rounded-full', wifiOn ? 'bg-emerald-500 animate-pulse' : 'bg-zinc-400')} />
+          </button>
+
+          <button
+            onClick={reboot}
+            className={cn(
+              'flex items-center gap-2 px-5 py-3 rounded-2xl font-semibold transition-all',
+              confirmReboot
+                ? 'bg-red-500 text-white'
+                : 'bg-zinc-100 dark:bg-white/5 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-white/10'
+            )}
+          >
+            <RotateCcw className="w-4 h-4" />
+            {confirmReboot ? 'Confirmer le redémarrage ?' : 'Redémarrer la Freebox'}
+          </button>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-5">
+          {stat(<Download className="w-4 h-4" />, 'Débit ↓', down ? `${down} Mo/s` : null)}
+          {stat(<Upload className="w-4 h-4" />, 'Débit ↑', up ? `${up} Mo/s` : null)}
+          {stat(<Globe className="w-4 h-4" />, 'IP externe', ip)}
+          {stat(<PhoneMissed className="w-4 h-4" />, 'Appels manqués', calls)}
+          {stat(<HardDrive className="w-4 h-4" />, 'Disque libre', disk ? `${Math.round(parseFloat(disk))}%` : null)}
+        </div>
+
+        {/* Faire sonner un téléphone */}
+        <p className="text-xs uppercase tracking-wider text-zinc-500 font-medium mb-2 flex items-center gap-2">
+          <BellRing className="w-3.5 h-3.5" /> Faire sonner un téléphone
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {PHONES.map((phone) => (
+            <button
+              key={phone.service}
+              onClick={() => ringPhone(phone.service)}
+              disabled={ringing === phone.service}
+              className={cn(
+                'flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all',
+                ringing === phone.service
+                  ? 'bg-emerald-500 text-white'
+                  : 'bg-zinc-100 dark:bg-white/5 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-white/10'
+              )}
+            >
+              <Phone className="w-4 h-4" />
+              {ringing === phone.service ? 'Sonnerie envoyée !' : phone.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export function Settings({ devices }: SettingsProps) {
   const { status, error } = useHA();
   const [search, setSearch] = useState('');
@@ -188,6 +327,8 @@ export function Settings({ devices }: SettingsProps) {
           </div>
         </div>
       </div>
+
+      <FreeboxSection />
 
       {/* Gestion des appareils */}
       <div className="flex items-center justify-between mb-1">
