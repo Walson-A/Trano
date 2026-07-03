@@ -8,6 +8,9 @@ import { Energy } from './views/Energy';
 import { Shopping } from './views/Shopping';
 import { Settings } from './views/Settings';
 import { AssistantFab, AssistantPanel } from './features/Assistant/AssistantPanel';
+import { IntercomModal } from './features/Intercom/IntercomModal';
+import { IntercomOverlay } from './features/Intercom/IntercomOverlay';
+import type { WsIntercomMessage } from '@trano/shared';
 import { useHAAdapter } from './hooks/useHAAdapter';
 import { useProfileStore, useActiveProfile } from './core/store/useProfileStore';
 import { useShoppingStore } from './core/store/useShoppingStore';
@@ -21,6 +24,8 @@ export default function App() {
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [targetRoom, setTargetRoom] = useState<string | null>(null);
   const [assistantOpen, setAssistantOpen] = useState(false);
+  const [intercomOpen, setIntercomOpen] = useState(false);
+  const [incomingCall, setIncomingCall] = useState<WsIntercomMessage | null>(null);
 
   const { devices, allDevices, roomClimate, toggleDevice } = useHAAdapter();
   const fetchProfiles = useProfileStore((s) => s.fetchProfiles);
@@ -31,9 +36,17 @@ export default function App() {
   useEffect(() => {
     fetchProfiles();
     useShoppingStore.getState().fetchItems();
-    const disconnect = connectTranoWs((topic) => {
-      if (topic === 'profiles') fetchProfiles();
-      if (topic === 'shopping') useShoppingStore.getState().fetchItems();
+    const disconnect = connectTranoWs({
+      onChanged: (topic) => {
+        if (topic === 'profiles') fetchProfiles();
+        if (topic === 'shopping') useShoppingStore.getState().fetchItems();
+      },
+      onIntercom: (msg) => {
+        const activeId = useProfileStore.getState().activeProfileId;
+        // Message ciblé : seuls les écrans du destinataire sonnent
+        if (msg.toProfileId && msg.toProfileId !== activeId) return;
+        setIncomingCall(msg);
+      },
     });
     return disconnect;
   }, [fetchProfiles]);
@@ -65,7 +78,11 @@ export default function App() {
       />
 
       <main className="flex-1 flex flex-col h-full overflow-hidden relative">
-        <Topbar isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />
+        <Topbar
+          isDarkMode={isDarkMode}
+          toggleDarkMode={toggleDarkMode}
+          onOpenIntercom={() => setIntercomOpen(true)}
+        />
 
         <div className="flex-1 overflow-y-auto scrollbar-hide p-6 lg:p-12">
           {activeTab === 'dashboard' && (
@@ -108,6 +125,10 @@ export default function App() {
       {/* Assistant à portée de main sur toutes les pages */}
       <AssistantFab onClick={() => setAssistantOpen(true)} />
       <AssistantPanel isOpen={assistantOpen} onClose={() => setAssistantOpen(false)} />
+
+      {/* Interphone : envoi (modal) et réception (overlay plein écran) */}
+      <IntercomModal isOpen={intercomOpen} onClose={() => setIntercomOpen(false)} />
+      <IntercomOverlay message={incomingCall} onDismiss={() => setIncomingCall(null)} />
     </div>
   );
 }

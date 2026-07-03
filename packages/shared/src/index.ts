@@ -77,11 +77,23 @@ export type ShoppingItemUpdate = Partial<
   boughtBy?: string | null;
 };
 
-// ─── Messages WebSocket (invalidation simple) ───────────────
+// ─── Messages WebSocket ─────────────────────────────────────
 
 export type WsTopic = 'profiles' | 'shopping';
 
-export interface WsMessage {
+/** Invalidation : les clients refetchent le topic */
+export interface WsChangedMessage {
   type: 'changed';
   topic: WsTopic;
 }
+
+/** Interphone : diffusé à tous les écrans Trano ouverts */
+export interface WsIntercomMessage {
+  type: 'intercom';
+  from: { name: string; avatar: string; color: string };
+  /** null = tous les écrans, sinon seuls les écrans sur ce profil sonnent */
+  toProfileId: string | null;
+  message: string;
+}
+
+export type WsMessage = WsChangedMessage | WsIntercomMessage;

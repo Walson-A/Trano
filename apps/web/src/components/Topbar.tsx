@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { WeatherWidget } from '../features/Weather/WeatherWidget';
 import { SystemStatus } from '../features/System/SystemStatus';
-import { Bell, Settings, Sun, Moon } from 'lucide-react';
+import { Bell, Settings, Sun, Moon, Megaphone } from 'lucide-react';
 
 interface TopbarProps {
   isDarkMode: boolean;
   toggleDarkMode: () => void;
+  onOpenIntercom: () => void;
 }
 
-export const Topbar: React.FC<TopbarProps> = ({ isDarkMode, toggleDarkMode }) => {
+export const Topbar: React.FC<TopbarProps> = ({ isDarkMode, toggleDarkMode, onOpenIntercom }) => {
   const [time, setTime] = useState(new Date());
 
   useEffect(() => {
@@ -42,6 +43,15 @@ export const Topbar: React.FC<TopbarProps> = ({ isDarkMode, toggleDarkMode }) =>
 
       {/* Right: Weather & System */}
       <div className="flex items-center gap-2 lg:gap-4">
+        <button
+          onClick={onOpenIntercom}
+          title="Interphone"
+          aria-label="Ouvrir l'interphone"
+          className="p-2.5 rounded-2xl hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-all active:scale-90"
+        >
+          <Megaphone size={20} />
+        </button>
+
         <WeatherWidget />
         
         <div className="w-px h-8 bg-zinc-300 dark:bg-zinc-800 mx-1 hidden sm:block" />

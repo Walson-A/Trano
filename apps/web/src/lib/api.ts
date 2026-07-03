@@ -5,6 +5,7 @@ import type {
   ShoppingItem,
   ShoppingItemCreate,
   ShoppingItemUpdate,
+  WsIntercomMessage,
   WsMessage,
   WsTopic,
 } from '@trano/shared';
@@ -53,11 +54,15 @@ export const api = {
   },
 };
 
-/**
- * Connexion WebSocket au serveur Trano avec reconnexion automatique.
- * Le serveur n'envoie que des invalidations — le callback refetch le topic.
- */
-export function connectTranoWs(onTopicChanged: (topic: WsTopic) => void): () => void {
+export interface TranoWsHandlers {
+  /** Invalidation d'un topic : refetch */
+  onChanged: (topic: WsTopic) => void;
+  /** Message d'interphone reçu */
+  onIntercom?: (msg: WsIntercomMessage) => void;
+}
+
+/** Connexion WebSocket au serveur Trano avec reconnexion automatique. */
+export function connectTranoWs(handlers: TranoWsHandlers): () => void {
   let socket: WebSocket | null = null;
   let closed = false;
   let retryDelay = 1000;
@@ -73,7 +78,8 @@ export function connectTranoWs(onTopicChanged: (topic: WsTopic) => void): () => 
     socket.onmessage = (event) => {
       try {
         const msg: WsMessage = JSON.parse(event.data);
-        if (msg.type === 'changed') onTopicChanged(msg.topic);
+        if (msg.type === 'changed') handlers.onChanged(msg.topic);
+        if (msg.type === 'intercom') handlers.onIntercom?.(msg);
       } catch {
         // message inattendu, on ignore
       }

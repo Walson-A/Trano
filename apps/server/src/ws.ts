@@ -15,7 +15,10 @@ export function registerClient(socket: WebSocket): void {
 }
 
 export function broadcast(topic: WsTopic): void {
-  const msg: WsMessage = { type: 'changed', topic };
+  broadcastMessage({ type: 'changed', topic });
+}
+
+export function broadcastMessage(msg: WsMessage): void {
   const payload = JSON.stringify(msg);
   for (const socket of clients) {
     if (socket.readyState === socket.OPEN) socket.send(payload);
