@@ -3,7 +3,7 @@ import { Device, RoomConfig } from '../types';
 import { DeviceCard } from '../components/DeviceCard';
 import {
   Sofa, CookingPot, Bed, BedDouble, BedSingle, Baby, Car, Bath, Users,
-  ChevronRight, WifiOff, Thermometer, Droplets,
+  ChevronRight, WifiOff, Thermometer, Droplets, Star,
 } from 'lucide-react';
 import { cn } from '../utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -15,6 +15,10 @@ export type RoomClimate = Record<string, { temperature?: number; humidity?: numb
 interface RoomsProps {
   devices: Device[];
   roomClimate: RoomClimate;
+  /** Pièce à ouvrir automatiquement (venant du Dashboard) */
+  initialRoom?: string | null;
+  /** Appelé une fois initialRoom appliqué, pour que le parent le réinitialise */
+  onInitialRoomConsumed?: () => void;
   onToggleDevice: (id: string) => void;
 }
 
@@ -31,7 +35,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
   'users': Users,
 };
 
-function getIconComponent(iconName: string): React.ElementType {
+export function getIconComponent(iconName: string): React.ElementType {
   return ICON_MAP[iconName] ?? Sofa;
 }
 
@@ -45,10 +49,12 @@ const RoomAccordion: React.FC<{
   climate?: { temperature?: number; humidity?: number };
   isSelected: boolean;
   favorites: string[];
+  isFavoriteRoom: boolean;
   onToggle: () => void;
   onToggleDevice: (id: string) => void;
   onToggleFavorite: (id: string) => void;
-}> = ({ room, devices, climate, isSelected, favorites, onToggle, onToggleDevice, onToggleFavorite }) => {
+  onToggleFavoriteRoom: () => void;
+}> = ({ room, devices, climate, isSelected, favorites, isFavoriteRoom, onToggle, onToggleDevice, onToggleFavorite, onToggleFavoriteRoom }) => {
   const Icon = getIconComponent(room.icon);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -122,6 +128,21 @@ const RoomAccordion: React.FC<{
               )}
             </div>
           )}
+          <span
+            role="button"
+            tabIndex={0}
+            aria-label={isFavoriteRoom ? 'Retirer la pièce des favoris' : 'Ajouter la pièce aux favoris'}
+            onClick={(e) => { e.stopPropagation(); onToggleFavoriteRoom(); }}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); onToggleFavoriteRoom(); } }}
+            className={cn(
+              "p-1.5 rounded-full transition-all",
+              isFavoriteRoom
+                ? "text-amber-500"
+                : "text-zinc-300 dark:text-zinc-600 hover:text-amber-400 dark:hover:text-amber-400"
+            )}
+          >
+            <Star className={cn("w-5 h-5", isFavoriteRoom && "fill-current")} />
+          </span>
           <ChevronRight className={cn(
             "w-5 h-5 transition-transform duration-500",
             isSelected ? "rotate-90 text-zinc-900 dark:text-zinc-50" : "text-zinc-400 dark:text-zinc-600"
@@ -175,11 +196,24 @@ const RoomAccordion: React.FC<{
   );
 };
 
-export function Rooms({ devices, roomClimate, onToggleDevice }: RoomsProps) {
-  const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
+export function Rooms({ devices, roomClimate, initialRoom, onInitialRoomConsumed, onToggleDevice }: RoomsProps) {
+  const [selectedRoom, setSelectedRoom] = useState<string | null>(initialRoom ?? null);
   const [floorFilter, setFloorFilter] = useState<'all' | 'RDC' | 'Étage'>('all');
+
+  // Ouverture d'une pièce demandée depuis le Dashboard, puis on prévient
+  // le parent pour qu'il réinitialise (sinon l'onglet rouvrirait toujours
+  // cette pièce).
+  useEffect(() => {
+    if (initialRoom) {
+      setSelectedRoom(initialRoom);
+      onInitialRoomConsumed?.();
+    }
+  }, [initialRoom, onInitialRoomConsumed]);
   const toggleFavorite = useProfileStore((s) => s.toggleFavorite);
-  const favorites = useActiveProfile()?.favorites ?? [];
+  const toggleFavoriteRoom = useProfileStore((s) => s.toggleFavoriteRoom);
+  const activeProfile = useActiveProfile();
+  const favorites = activeProfile?.favorites ?? [];
+  const favoriteRooms = activeProfile?.favoriteRooms ?? [];
 
   const filteredRooms = floorFilter === 'all'
     ? ROOMS
@@ -228,9 +262,11 @@ export function Rooms({ devices, roomClimate, onToggleDevice }: RoomsProps) {
               climate={roomClimate[room.id]}
               isSelected={selectedRoom === room.id}
               favorites={favorites}
+              isFavoriteRoom={favoriteRooms.includes(room.id)}
               onToggle={() => setSelectedRoom(selectedRoom === room.id ? null : room.id)}
               onToggleDevice={onToggleDevice}
               onToggleFavorite={toggleFavorite}
+              onToggleFavoriteRoom={() => toggleFavoriteRoom(room.id)}
             />
           ))}
         </AnimatePresence>

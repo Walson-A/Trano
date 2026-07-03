@@ -24,7 +24,8 @@ actif sur l'appareil, l'écran **« Qui est-ce ? »** s'affiche (`ProfileGate`).
 | `color` | Couleur d'accent de la tuile et des badges |
 | `roomIds` | Pièce(s) attitrée(s) — souvent la chambre ; plusieurs personnes peuvent partager une pièce, une personne peut avoir plusieurs pièces |
 | `isKid` | Profil enfant : pas d'accès aux Réglages (extensible) |
-| `favorites` | entity_ids épinglés sur le dashboard |
+| `favorites` | entity_ids d'appareils épinglés (♥ sur les DeviceCard) |
+| `favoriteRooms` | ids de pièces épinglées (★ sur l'en-tête de pièce), affichées dans « Mes pièces » du dashboard et cliquables pour ouvrir la pièce |
 
 ## Synchronisation
 

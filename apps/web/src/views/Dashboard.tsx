@@ -2,17 +2,23 @@ import React, { useState } from 'react';
 import { Device } from '../types';
 import type { Profile } from '@trano/shared';
 import { DeviceCard } from '../components/DeviceCard';
-import { Thermometer, Zap, Lock, Heart } from 'lucide-react';
+import { Thermometer, Zap, Lock, Heart, Star, ChevronRight, Droplets } from 'lucide-react';
 import { useHA } from '../context/HAContext';
 import { getWeatherEntity } from '../lib/runtimeConfig';
 import { useProfileStore } from '../core/store/useProfileStore';
 import { WeatherIcon, WEATHER_MAPPING } from '../features/Weather/WeatherWidget';
 import { Modal } from '../ui/Modal/Modal';
+import { getRoomById } from '../config/rooms';
+import { getIconComponent } from './Rooms';
+import type { RoomClimate } from './Rooms';
+import { cn } from '../utils';
 
 interface DashboardProps {
   currentUser: Profile;
   devices: Device[];
+  roomClimate: RoomClimate;
   onToggleDevice: (id: string) => void;
+  onOpenRoom: (roomId: string) => void;
 }
 
 const StatusCard = ({ icon, label, value, color, onClick }: { 
@@ -36,12 +42,24 @@ const StatusCard = ({ icon, label, value, color, onClick }: {
   </button>
 );
 
-export function Dashboard({ currentUser, devices, onToggleDevice }: DashboardProps) {
+function countActive(devices: Device[]): number {
+  return devices.filter((d) => {
+    if (d.type === 'light') return d.state.isOn;
+    if (d.type === 'climate') return d.state.mode !== 'off';
+    if (d.type === 'media') return d.state.isPlaying;
+    return false;
+  }).length;
+}
+
+export function Dashboard({ currentUser, devices, roomClimate, onToggleDevice, onOpenRoom }: DashboardProps) {
   const { entities } = useHA();
   const toggleFavorite = useProfileStore((s) => s.toggleFavorite);
   const [isWeatherModalOpen, setIsWeatherModalOpen] = useState(false);
-  
+
   const favoriteDevices = devices.filter(d => currentUser.favorites.includes(d.id));
+  const favoriteRooms = currentUser.favoriteRooms
+    .map((id) => getRoomById(id))
+    .filter((r): r is NonNullable<typeof r> => Boolean(r));
 
   // Get weather data
   const weatherEntityId = getWeatherEntity();
@@ -95,6 +113,53 @@ export function Dashboard({ currentUser, devices, onToggleDevice }: DashboardPro
           color="bg-red-500/10 text-red-600 dark:text-red-500"
         />
       </div>
+
+      {favoriteRooms.length > 0 && (
+        <section className="mb-10">
+          <div className="flex items-center gap-2 mb-4 sm:mb-6">
+            <Star className="w-5 h-5 text-amber-500 fill-current" />
+            <h2 className="text-lg sm:text-xl font-semibold text-zinc-900 dark:text-zinc-100">Mes pièces</h2>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+            {favoriteRooms.map((room) => {
+              const roomDevices = devices.filter((d) => d.roomId === room.id);
+              const active = countActive(roomDevices);
+              const climate = roomClimate[room.id];
+              const Icon = getIconComponent(room.icon);
+              return (
+                <button
+                  key={room.id}
+                  onClick={() => onOpenRoom(room.id)}
+                  className="flex items-center gap-4 p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-white dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-800 text-left transition-all hover:scale-[1.02] active:scale-[0.98] group"
+                >
+                  <div className={cn(
+                    "w-11 h-11 rounded-2xl flex items-center justify-center shrink-0",
+                    active > 0
+                      ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                      : "bg-zinc-100 dark:bg-white/5 text-zinc-400"
+                  )}>
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-zinc-900 dark:text-zinc-100 truncate">{room.name}</h3>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 flex items-center gap-2 flex-wrap">
+                      <span>{roomDevices.length} appareil{roomDevices.length > 1 ? 's' : ''}{active > 0 && ` · ${active} actif${active > 1 ? 's' : ''}`}</span>
+                      {climate?.temperature !== undefined && (
+                        <span className="flex items-center gap-0.5"><Thermometer className="w-3 h-3" />{climate.temperature.toFixed(1)}°</span>
+                      )}
+                      {climate?.humidity !== undefined && (
+                        <span className="flex items-center gap-0.5"><Droplets className="w-3 h-3" />{Math.round(climate.humidity)}%</span>
+                      )}
+                    </p>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-zinc-400 group-hover:translate-x-0.5 transition-transform shrink-0" />
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       <section>
         <div className="flex items-center justify-between mb-4 sm:mb-6">

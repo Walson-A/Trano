@@ -23,6 +23,14 @@
     --color-energy: #10b981;
     --color-error: #ef4444;
   }
+
+  /* Les <option> des menus déroulants héritent sinon d'une couleur pâle
+     illisible sur fond sombre (popup rendu par l'OS). On force un contraste
+     correct en thème sombre. */
+  .dark select option {
+    background-color: #18181b;
+    color: #fafafa;
+  }
   
   .dark {
     --color-rain: #60a5fa;

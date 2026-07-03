@@ -21,14 +21,15 @@ db.exec(`
   PRAGMA foreign_keys = ON;
 
   CREATE TABLE IF NOT EXISTS profiles (
-    id          TEXT PRIMARY KEY,
-    name        TEXT NOT NULL,
-    avatar      TEXT NOT NULL DEFAULT '😀',
-    color       TEXT NOT NULL DEFAULT '#f59e0b',
-    room_ids    TEXT NOT NULL DEFAULT '[]',
-    is_kid      INTEGER NOT NULL DEFAULT 0,
-    favorites   TEXT NOT NULL DEFAULT '[]',
-    created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+    id             TEXT PRIMARY KEY,
+    name           TEXT NOT NULL,
+    avatar         TEXT NOT NULL DEFAULT '😀',
+    color          TEXT NOT NULL DEFAULT '#f59e0b',
+    room_ids       TEXT NOT NULL DEFAULT '[]',
+    is_kid         INTEGER NOT NULL DEFAULT 0,
+    favorites      TEXT NOT NULL DEFAULT '[]',
+    favorite_rooms TEXT NOT NULL DEFAULT '[]',
+    created_at     TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
   CREATE TABLE IF NOT EXISTS shopping_items (
@@ -45,6 +46,19 @@ db.exec(`
     bought_by        TEXT
   );
 `);
+
+/**
+ * Migrations légères : ajoute les colonnes manquantes aux bases déjà créées.
+ * SQLite n'a pas d'"ADD COLUMN IF NOT EXISTS" → on inspecte le schéma.
+ */
+function ensureColumn(table: string, column: string, definition: string): void {
+  const cols = db.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>;
+  if (!cols.some((c) => c.name === column)) {
+    db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+  }
+}
+
+ensureColumn('profiles', 'favorite_rooms', "TEXT NOT NULL DEFAULT '[]'");
 
 export function newId(): string {
   return crypto.randomUUID();

@@ -13,6 +13,8 @@ export interface Profile {
   isKid: boolean;
   /** entity_ids favoris affichés en premier sur le dashboard */
   favorites: string[];
+  /** ids de pièces (RoomConfig) épinglées sur le dashboard */
+  favoriteRooms: string[];
   createdAt: string;
 }
 
@@ -20,7 +22,7 @@ export type ProfileCreate = Pick<Profile, 'name'> &
   Partial<Pick<Profile, 'avatar' | 'color' | 'roomIds' | 'isKid'>>;
 
 export type ProfileUpdate = Partial<
-  Pick<Profile, 'name' | 'avatar' | 'color' | 'roomIds' | 'isKid' | 'favorites'>
+  Pick<Profile, 'name' | 'avatar' | 'color' | 'roomIds' | 'isKid' | 'favorites' | 'favoriteRooms'>
 >;
 
 // ─── Liste de courses ───────────────────────────────────────

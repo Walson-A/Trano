@@ -19,6 +19,7 @@ export type Tab = 'dashboard' | 'floorplan' | 'rooms' | 'courses' | 'energy' | '
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const [targetRoom, setTargetRoom] = useState<string | null>(null);
 
   const { devices, allDevices, roomClimate, toggleDevice } = useHAAdapter();
   const fetchProfiles = useProfileStore((s) => s.fetchProfiles);
@@ -70,7 +71,12 @@ export default function App() {
             <Dashboard
               currentUser={activeProfile}
               devices={devices}
+              roomClimate={roomClimate}
               onToggleDevice={toggleDevice}
+              onOpenRoom={(roomId) => {
+                setTargetRoom(roomId);
+                setActiveTab('rooms');
+              }}
             />
           )}
 
@@ -79,7 +85,13 @@ export default function App() {
           )}
 
           {activeTab === 'rooms' && (
-            <Rooms devices={devices} roomClimate={roomClimate} onToggleDevice={toggleDevice} />
+            <Rooms
+              devices={devices}
+              roomClimate={roomClimate}
+              initialRoom={targetRoom}
+              onInitialRoomConsumed={() => setTargetRoom(null)}
+              onToggleDevice={toggleDevice}
+            />
           )}
 
           {activeTab === 'courses' && <Shopping />}

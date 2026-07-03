@@ -17,6 +17,8 @@ interface ProfileState {
   setActiveProfile: (id: string | null) => void;
   /** Épingle/désépingle un appareil dans les favoris du profil actif */
   toggleFavorite: (entityId: string) => Promise<void>;
+  /** Épingle/désépingle une pièce dans les favoris du profil actif */
+  toggleFavoriteRoom: (roomId: string) => Promise<void>;
 }
 
 export const useProfileStore = create<ProfileState>()(
@@ -72,6 +74,16 @@ export const useProfileStore = create<ProfileState>()(
           ? profile.favorites.filter((f) => f !== entityId)
           : [...profile.favorites, entityId];
         await updateProfile(profile.id, { favorites });
+      },
+
+      toggleFavoriteRoom: async (roomId) => {
+        const { activeProfileId, profiles, updateProfile } = get();
+        const profile = profiles.find((p) => p.id === activeProfileId);
+        if (!profile) return;
+        const favoriteRooms = profile.favoriteRooms.includes(roomId)
+          ? profile.favoriteRooms.filter((r) => r !== roomId)
+          : [...profile.favoriteRooms, roomId];
+        await updateProfile(profile.id, { favoriteRooms });
       },
     }),
     {
