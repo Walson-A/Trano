@@ -88,28 +88,155 @@ export async function getHouseSnapshot(): Promise<Record<string, unknown>> {
   };
 }
 
-const CONTROLLABLE_DOMAINS = new Set(['light', 'switch', 'fan', 'media_player']);
+const CONTROLLABLE_DOMAINS = new Set(['light', 'switch', 'fan', 'media_player', 'cover']);
+const ENTITY_RE = /^[a-z_]+\.[a-z0-9_]+$/;
 
-export async function controlDevice(entityId: string, action: 'turn_on' | 'turn_off' | 'toggle'): Promise<string> {
+/** Rend un template Jinja côté HA (POST /api/template). Renvoie le texte. */
+export async function haTemplate(template: string): Promise<string> {
+  const url = HA_URL();
+  const token = HA_TOKEN();
+  if (!url || !token) throw new Error('Home Assistant non configuré côté serveur');
+  const res = await fetch(`${url}/api/template`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ template }),
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!res.ok) throw new Error(`HA template ${res.status}`);
+  return res.text();
+}
+
+export async function controlDevice(
+  entityId: string,
+  action: 'turn_on' | 'turn_off' | 'toggle'
+): Promise<string> {
+  if (!ENTITY_RE.test(entityId)) return `Refusé : entity_id invalide "${entityId}".`;
   const domain = entityId.split('.')[0];
   if (!CONTROLLABLE_DOMAINS.has(domain)) {
-    return `Refusé : le domaine "${domain}" n'est pas contrôlable par l'assistant (autorisés : lumières, prises, ventilateurs, lecteurs).`;
+    return `Refusé : le domaine "${domain}" n'est pas contrôlable par l'assistant (autorisés : lumières, prises, ventilateurs, lecteurs, volets ; les serrures et l'alarme sont exclues par sécurité).`;
   }
-  await haFetch(`/api/services/${domain}/${action}`, {
+  // Les volets utilisent open/close plutôt que turn_on/turn_off
+  const service =
+    domain === 'cover'
+      ? action === 'turn_on'
+        ? 'open_cover'
+        : action === 'turn_off'
+          ? 'close_cover'
+          : 'toggle'
+      : action;
+  await haFetch(`/api/services/${domain}/${service}`, {
     method: 'POST',
     body: JSON.stringify({ entity_id: entityId }),
   });
-  return `OK, service ${action} appelé sur ${entityId}.`;
+  return `OK, ${service} appelé sur ${entityId}.`;
 }
 
-/** Liste compacte des appareils contrôlables (pour que le LLM connaisse les entity_id) */
-export async function listControllableDevices(): Promise<Array<{ entity_id: string; nom: string; etat: string }>> {
+/** Appareils contrôlables avec leur pièce (area HA), via template tojson. */
+export async function listControllableDevices(): Promise<
+  Array<{ entity_id: string; nom: string; etat: string; piece: string | null }>
+> {
+  const tpl = `
+{% set out = namespace(items=[]) %}
+{% for s in states.light + states.switch + states.fan + states.media_player + states.cover %}
+{% if s.state != 'unavailable' %}
+{% set out.items = out.items + [{'entity_id': s.entity_id, 'nom': s.name, 'etat': s.state, 'piece': area_name(s.entity_id)}] %}
+{% endif %}
+{% endfor %}
+{{ out.items | tojson }}`.trim();
+  try {
+    return JSON.parse(await haTemplate(tpl));
+  } catch {
+    // Repli sans les pièces si le template échoue
+    const states = (await haFetch('/api/states')) as HAState[];
+    return states
+      .filter((s) => CONTROLLABLE_DOMAINS.has(s.entity_id.split('.')[0]) && s.state !== 'unavailable')
+      .map((s) => ({
+        entity_id: s.entity_id,
+        nom: (s.attributes.friendly_name as string) ?? s.entity_id,
+        etat: s.state,
+        piece: null,
+      }));
+  }
+}
+
+/** Détail complet d'un appareil : état, pièce, attributs utiles. */
+export async function getDeviceInfo(entityId: string): Promise<Record<string, unknown>> {
+  if (!ENTITY_RE.test(entityId)) return { erreur: `entity_id invalide "${entityId}"` };
+  const tpl = `
+{% set e = '${entityId}' %}
+{% if states[e] is not none %}
+{{ {'entity_id': e, 'nom': state_attr(e, 'friendly_name'), 'etat': states[e].state, 'piece': area_name(e), 'attributs': states[e].attributes} | tojson }}
+{% else %}
+null
+{% endif %}`.trim();
+  const out = JSON.parse(await haTemplate(tpl));
+  return out ?? { erreur: `Appareil "${entityId}" introuvable` };
+}
+
+/** Météo détaillée (entité weather + prévisions si présentes). */
+export async function getWeatherDetail(): Promise<Record<string, unknown>> {
   const states = (await haFetch('/api/states')) as HAState[];
-  return states
-    .filter((s) => CONTROLLABLE_DOMAINS.has(s.entity_id.split('.')[0]) && s.state !== 'unavailable')
-    .map((s) => ({
-      entity_id: s.entity_id,
-      nom: (s.attributes.friendly_name as string) ?? s.entity_id,
-      etat: s.state,
-    }));
+  const w = states.find((s) => s.entity_id.startsWith('weather.'));
+  if (!w) return { erreur: 'Aucune entité météo' };
+  const a = w.attributes;
+  return {
+    etat: w.state,
+    temperature: a.temperature,
+    ressenti: a.apparent_temperature ?? null,
+    humidite: a.humidity ?? null,
+    vent_kmh: a.wind_speed ?? null,
+    pression: a.pressure ?? null,
+  };
+}
+
+/** Bilan énergétique détaillé pour le LLM (production, batteries, réseau). */
+export async function getEnergyDetail(): Promise<Record<string, unknown>> {
+  const states = (await haFetch('/api/states')) as HAState[];
+  const byId = new Map(states.map((s) => [s.entity_id, s]));
+  const num = (id: string, factor = 1) => {
+    const v = parseFloat(byId.get(id)?.state ?? '');
+    return Number.isNaN(v) ? null : v * factor;
+  };
+
+  const solarSources = {
+    envoy_W: num('sensor.envoy_122237060306_production_d_electricite_actuelle', 1000),
+    zendure_W: num('sensor.hyper_2000_solar_input_power'),
+    jardin_W: (() => {
+      const v = num('sensor.shellyemg3_dcb4d9c5664c_energy_meter_0_puissance');
+      return v == null ? null : -v; // négatif = injection
+    })(),
+  };
+  const solaireTotal_W = Math.round(
+    (solarSources.envoy_W ?? 0) + (solarSources.zendure_W ?? 0) + Math.max(0, solarSources.jardin_W ?? 0)
+  );
+  const gridW = num('sensor.shellypro3em_ac15187b3e18_puissance');
+
+  return {
+    solaire_total_W: solaireTotal_W,
+    solaire_par_source_W: solarSources,
+    reseau_W: gridW,
+    reseau_sens: gridW == null ? null : gridW < 0 ? 'export vers EDF (surplus)' : 'import depuis EDF (à éviter)',
+    batteries: [
+      { nom: 'Hyper 2000', charge_pct: num('sensor.hyper_2000_electric_level'), puissance_W: num('sensor.hyper_2000_bat_in_out') },
+      { nom: 'AB2000X', charge_pct: num('sensor.ab2000x_17378_soc_level'), puissance_W: num('sensor.ab2000x_17378_power') },
+      { nom: 'Jardin', charge_pct: num('sensor.thony_battery_state_of_charge'), puissance_W: num('sensor.thony_battery_power') },
+    ],
+    production_kWh: {
+      aujourdhui: num('sensor.envoy_122237060306_production_d_energie_du_jour'),
+      sept_jours: num('sensor.envoy_122237060306_production_d_energie_des_sept_derniers_jours'),
+      total_MWh: num('sensor.envoy_122237060306_production_d_energie_totale'),
+    },
+  };
+}
+
+/** Notification vers un service notify HA (téléphones via app compagnon). */
+export async function notifyPhone(service: string, title: string, message: string): Promise<void> {
+  await haFetch(`/api/services/notify/${service}`, {
+    method: 'POST',
+    body: JSON.stringify({
+      title,
+      message,
+      data: { push: { sound: { name: 'default', critical: 1, volume: 1.0 } } },
+    }),
+  });
 }

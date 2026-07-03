@@ -3,7 +3,7 @@ import { Device } from '../types';
 import type { Profile } from '@trano/shared';
 import { DeviceCard } from '../components/DeviceCard';
 import {
-  Thermometer, Zap, Lock, Heart, Star, ChevronRight, Droplets, Sun, Battery,
+  Thermometer, Heart, Star, ChevronRight, Droplets, Sun, Battery,
   Plug, ShoppingCart, Megaphone, SlidersHorizontal, Check, ChevronUp,
   ChevronDown, X, Plus,
 } from 'lucide-react';
@@ -115,7 +115,6 @@ export function Dashboard({ currentUser, devices, roomClimate, onToggleDevice, o
   const solarW = ENERGY_LIVE.solar.reduce((sum, s) => sum + readPowerW(entities, s), 0);
   const socRaw = parseFloat(entities[ENERGY_LIVE.batterySoc[0].id]?.state ?? '');
   const soc = Number.isNaN(socRaw) ? null : Math.round(socRaw);
-  const insideTemp = entities['sensor.temperature_salon']?.state || '--';
 
   const todoCount = shoppingItems.filter((i) => i.status === 'todo').length;
   const todoPreview = shoppingItems.filter((i) => i.status === 'todo').slice(0, 3);
@@ -134,22 +133,27 @@ export function Dashboard({ currentUser, devices, roomClimate, onToggleDevice, o
               onClick={() => setIsWeatherModalOpen(true)}
             />
             <StatusCard
-              icon={<Thermometer className="size-5" />}
-              label="Intérieur"
-              value={`${insideTemp}°C`}
-              color="bg-orange-500/10 text-orange-600 dark:text-orange-500"
+              icon={<Sun className="size-5" />}
+              label="Solaire"
+              value={`${(solarW / 1000).toFixed(1)} kW`}
+              color="bg-yellow-500/10 text-yellow-600 dark:text-yellow-400"
+              onClick={() => onOpenTab('energy')}
             />
             <StatusCard
-              icon={<Zap className="size-5" />}
-              label="Conso"
-              value={`${Math.round(gridW)} W`}
-              color="bg-emerald-500/10 text-emerald-600 dark:text-emerald-500"
+              icon={<Battery className="size-5" />}
+              label="Batterie"
+              value={soc !== null ? `${soc}%` : '--'}
+              color="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+              onClick={() => onOpenTab('energy')}
             />
             <StatusCard
-              icon={<Lock className="size-5" />}
-              label="Sécurité"
-              value="Armée"
-              color="bg-red-500/10 text-red-600 dark:text-red-500"
+              icon={<Plug className="size-5" />}
+              label={gridW < -50 ? 'Export EDF' : gridW > 50 ? 'Import EDF' : 'Réseau'}
+              value={`${Math.abs(Math.round(gridW))} W`}
+              color={gridW > 50
+                ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'}
+              onClick={() => onOpenTab('energy')}
             />
           </div>
         );
