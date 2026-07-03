@@ -8,6 +8,7 @@ import {
 import { cn } from '../utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ROOMS } from '../config/rooms';
+import { useProfileStore, useActiveProfile } from '../core/store/useProfileStore';
 
 export type RoomClimate = Record<string, { temperature?: number; humidity?: number }>;
 
@@ -43,9 +44,11 @@ const RoomAccordion: React.FC<{
   devices: Device[];
   climate?: { temperature?: number; humidity?: number };
   isSelected: boolean;
+  favorites: string[];
   onToggle: () => void;
   onToggleDevice: (id: string) => void;
-}> = ({ room, devices, climate, isSelected, onToggle, onToggleDevice }) => {
+  onToggleFavorite: (id: string) => void;
+}> = ({ room, devices, climate, isSelected, favorites, onToggle, onToggleDevice, onToggleFavorite }) => {
   const Icon = getIconComponent(room.icon);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -147,6 +150,8 @@ const RoomAccordion: React.FC<{
                       <DeviceCard
                         device={device}
                         onToggle={onToggleDevice}
+                        isFavorite={favorites.includes(device.id)}
+                        onToggleFavorite={onToggleFavorite}
                       />
                     </motion.div>
                   ))}
@@ -173,6 +178,8 @@ const RoomAccordion: React.FC<{
 export function Rooms({ devices, roomClimate, onToggleDevice }: RoomsProps) {
   const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
   const [floorFilter, setFloorFilter] = useState<'all' | 'RDC' | 'Étage'>('all');
+  const toggleFavorite = useProfileStore((s) => s.toggleFavorite);
+  const favorites = useActiveProfile()?.favorites ?? [];
 
   const filteredRooms = floorFilter === 'all'
     ? ROOMS
@@ -220,8 +227,10 @@ export function Rooms({ devices, roomClimate, onToggleDevice }: RoomsProps) {
               devices={getDevicesForRoom(room.id, devices)}
               climate={roomClimate[room.id]}
               isSelected={selectedRoom === room.id}
+              favorites={favorites}
               onToggle={() => setSelectedRoom(selectedRoom === room.id ? null : room.id)}
               onToggleDevice={onToggleDevice}
+              onToggleFavorite={toggleFavorite}
             />
           ))}
         </AnimatePresence>

@@ -15,6 +15,8 @@ interface ProfileState {
   updateProfile: (id: string, data: ProfileUpdate) => Promise<void>;
   deleteProfile: (id: string) => Promise<void>;
   setActiveProfile: (id: string | null) => void;
+  /** Épingle/désépingle un appareil dans les favoris du profil actif */
+  toggleFavorite: (entityId: string) => Promise<void>;
 }
 
 export const useProfileStore = create<ProfileState>()(
@@ -61,6 +63,16 @@ export const useProfileStore = create<ProfileState>()(
       },
 
       setActiveProfile: (id) => set({ activeProfileId: id }),
+
+      toggleFavorite: async (entityId) => {
+        const { activeProfileId, profiles, updateProfile } = get();
+        const profile = profiles.find((p) => p.id === activeProfileId);
+        if (!profile) return;
+        const favorites = profile.favorites.includes(entityId)
+          ? profile.favorites.filter((f) => f !== entityId)
+          : [...profile.favorites, entityId];
+        await updateProfile(profile.id, { favorites });
+      },
     }),
     {
       name: 'trano-active-profile',

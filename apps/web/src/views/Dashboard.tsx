@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { Device } from '../types';
 import type { Profile } from '@trano/shared';
 import { DeviceCard } from '../components/DeviceCard';
-import { Sun, Thermometer, Zap, Lock } from 'lucide-react';
+import { Thermometer, Zap, Lock, Heart } from 'lucide-react';
 import { useHA } from '../context/HAContext';
 import { getWeatherEntity } from '../lib/runtimeConfig';
+import { useProfileStore } from '../core/store/useProfileStore';
 import { WeatherIcon, WEATHER_MAPPING } from '../features/Weather/WeatherWidget';
 import { Modal } from '../ui/Modal/Modal';
 
@@ -37,6 +38,7 @@ const StatusCard = ({ icon, label, value, color, onClick }: {
 
 export function Dashboard({ currentUser, devices, onToggleDevice }: DashboardProps) {
   const { entities } = useHA();
+  const toggleFavorite = useProfileStore((s) => s.toggleFavorite);
   const [isWeatherModalOpen, setIsWeatherModalOpen] = useState(false);
   
   const favoriteDevices = devices.filter(d => currentUser.favorites.includes(d.id));
@@ -99,15 +101,27 @@ export function Dashboard({ currentUser, devices, onToggleDevice }: DashboardPro
           <h2 className="text-lg sm:text-xl font-semibold text-zinc-900 dark:text-zinc-100">Favoris</h2>
         </div>
         
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
-          {favoriteDevices.map(device => (
-            <DeviceCard 
-              key={device.id} 
-              device={device} 
-              onToggle={onToggleDevice} 
-            />
-          ))}
-        </div>
+        {favoriteDevices.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
+            {favoriteDevices.map(device => (
+              <DeviceCard
+                key={device.id}
+                device={device}
+                onToggle={onToggleDevice}
+                isFavorite
+                onToggleFavorite={toggleFavorite}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-2 py-10 text-center border border-dashed border-zinc-200 dark:border-zinc-800 rounded-3xl">
+            <Heart className="w-8 h-8 text-zinc-300 dark:text-zinc-700" />
+            <p className="text-sm text-zinc-500">
+              Aucun favori pour l'instant — touchez le ♥ d'un appareil dans l'onglet Pièces
+              pour l'épingler ici.
+            </p>
+          </div>
+        )}
       </section>
 
       {/* Weather Modal Portal */}
