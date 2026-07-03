@@ -7,8 +7,11 @@ import { getHouseSnapshot, controlDevice, listControllableDevices, haConfigured 
  */
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
-const apiKey = () => process.env.TRANO_OPENROUTER_KEY ?? null;
-const model = () => process.env.TRANO_OPENROUTER_MODEL ?? 'deepseek/deepseek-chat-v3.1:free';
+// trim() : un .env édité sous Windows peut laisser un \r en fin de valeur,
+// ce qui corrompt l'en-tête Authorization (401 garanti).
+const apiKey = () => process.env.TRANO_OPENROUTER_KEY?.trim() || null;
+// Testé le 2026-07-03 : gratuit ET support fiable des tools.
+const model = () => process.env.TRANO_OPENROUTER_MODEL?.trim() || 'nvidia/nemotron-3-super-120b-a12b:free';
 
 const SYSTEM_PROMPT = `Tu es Trano, l'assistant de la maison familiale (malgache : "trano" = maison).
 Tu réponds en français, chaleureusement et brièvement — tes réponses s'affichent sur une tablette murale, pas de pavés.
@@ -120,7 +123,15 @@ export function assistantRoutes(app: FastifyInstance): void {
         if (!res.ok) {
           const detail = await res.text().catch(() => '');
           req.log.error({ status: res.status, detail }, 'OpenRouter error');
-          return reply.code(502).send({ error: `OpenRouter a répondu ${res.status}. Modèle "${model()}" indisponible ?` });
+          const hint =
+            res.status === 401
+              ? 'Clé OpenRouter refusée — vérifiez openrouter_key (espaces, copie incomplète).'
+              : res.status === 404 || res.status === 400
+                ? `Le modèle "${model()}" est introuvable — il faut un identifiant complet (ex: deepseek/deepseek-chat-v3.1:free).`
+                : res.status === 429
+                  ? 'Limite de débit atteinte sur ce modèle gratuit — réessayez dans un instant.'
+                  : `OpenRouter a répondu ${res.status}.`;
+          return reply.code(502).send({ error: hint });
         }
 
         const data = (await res.json()) as {

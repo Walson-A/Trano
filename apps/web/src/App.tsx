@@ -7,19 +7,20 @@ import { Rooms } from './views/Rooms';
 import { Energy } from './views/Energy';
 import { Shopping } from './views/Shopping';
 import { Settings } from './views/Settings';
-import { Assistant } from './views/Assistant';
+import { AssistantFab, AssistantPanel } from './features/Assistant/AssistantPanel';
 import { useHAAdapter } from './hooks/useHAAdapter';
 import { useProfileStore, useActiveProfile } from './core/store/useProfileStore';
 import { useShoppingStore } from './core/store/useShoppingStore';
 import { ProfileGate } from './features/Profiles/ProfileGate';
 import { connectTranoWs } from './lib/api';
 
-export type Tab = 'dashboard' | 'floorplan' | 'rooms' | 'courses' | 'energy' | 'assistant' | 'settings';
+export type Tab = 'dashboard' | 'floorplan' | 'rooms' | 'courses' | 'energy' | 'settings';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [targetRoom, setTargetRoom] = useState<string | null>(null);
+  const [assistantOpen, setAssistantOpen] = useState(false);
 
   const { devices, allDevices, roomClimate, toggleDevice } = useHAAdapter();
   const fetchProfiles = useProfileStore((s) => s.fetchProfiles);
@@ -98,13 +99,15 @@ export default function App() {
 
           {activeTab === 'energy' && <Energy />}
 
-          {activeTab === 'assistant' && <Assistant />}
-
           {activeTab === 'settings' && !activeProfile.isKid && (
             <Settings devices={allDevices} />
           )}
         </div>
       </main>
+
+      {/* Assistant à portée de main sur toutes les pages */}
+      <AssistantFab onClick={() => setAssistantOpen(true)} />
+      <AssistantPanel isOpen={assistantOpen} onClose={() => setAssistantOpen(false)} />
     </div>
   );
 }

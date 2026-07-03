@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, Send, KeyRound } from 'lucide-react';
+import { create } from 'zustand';
 import { useActiveProfile } from '../core/store/useProfileStore';
 import { cn } from '../utils';
 
@@ -9,10 +10,31 @@ interface ChatMessage {
   content: string;
 }
 
+/** Fil de discussion conservé même quand le panneau se ferme */
+const useAssistantChat = create<{
+  messages: ChatMessage[];
+  setMessages: (m: ChatMessage[] | ((prev: ChatMessage[]) => ChatMessage[])) => void;
+}>((set) => ({
+  messages: [],
+  setMessages: (m) =>
+    set((state) => ({ messages: typeof m === 'function' ? m(state.messages) : m })),
+}));
+
 interface AssistantStatus {
   configured: boolean;
   haReady: boolean;
   model: string;
+}
+
+/** Rendu minimal du markdown des réponses : **gras** uniquement */
+function renderInline(text: string): React.ReactNode[] {
+  return text.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
+    part.startsWith('**') && part.endsWith('**') ? (
+      <strong key={i}>{part.slice(2, -2)}</strong>
+    ) : (
+      part
+    )
+  );
 }
 
 const SUGGESTIONS = [
@@ -25,7 +47,7 @@ const SUGGESTIONS = [
 export function Assistant() {
   const profile = useActiveProfile();
   const [status, setStatus] = useState<AssistantStatus | null>(null);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const { messages, setMessages } = useAssistantChat();
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -136,7 +158,7 @@ export function Assistant() {
             )}
             style={msg.role === 'user' ? { backgroundColor: profile?.color ?? '#f59e0b' } : undefined}
           >
-            {msg.content}
+            {renderInline(msg.content)}
           </motion.div>
         ))}
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Map, Settings, Moon, Sun, LayoutGrid, Zap, ShoppingCart, Sparkles } from 'lucide-react';
+import { Home, Map, Settings, Moon, Sun, LayoutGrid, Zap, ShoppingCart } from 'lucide-react';
 import type { Profile } from '@trano/shared';
 import type { Tab } from '../App';
 import { cn } from '../utils';
@@ -21,7 +21,6 @@ export function Sidebar({ activeTab, setActiveTab, isDarkMode, toggleDarkMode, p
     { id: 'rooms', icon: LayoutGrid, label: 'Pièces' },
     { id: 'courses', icon: ShoppingCart, label: 'Courses' },
     { id: 'energy', icon: Zap, label: 'Énergie' },
-    { id: 'assistant', icon: Sparkles, label: 'Assistant' },
     { id: 'settings', icon: Settings, label: 'Réglages' },
   ] as const;
 

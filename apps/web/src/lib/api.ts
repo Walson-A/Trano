@@ -15,7 +15,9 @@ import type {
  */
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(path, {
-    headers: { 'Content-Type': 'application/json' },
+    // Content-Type uniquement s'il y a un corps : Fastify répond 400 sur
+    // un DELETE annoncé JSON mais vide (FST_ERR_CTP_EMPTY_JSON_BODY).
+    headers: options?.body ? { 'Content-Type': 'application/json' } : undefined,
     ...options,
   });
   if (!res.ok) {
