@@ -55,6 +55,7 @@ Delta : guide complet dans [deploy/README.md](deploy/README.md).
 
 - [Architecture](docs/architecture.md)
 - [API du serveur](docs/server_api.md)
+- [Module Énergie](docs/energy.md)
 - [Profils](docs/profiles.md)
 - [Liste de courses](docs/shopping.md)
 - [Design System](docs/design_concept.md)

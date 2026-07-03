@@ -52,6 +52,11 @@ export const HAProvider: React.FC<HAProviderProps> = ({ children }) => {
         setConnection(conn);
         setStatus('connected');
 
+        // Accès debug à la connexion HA depuis la console (dev uniquement)
+        if (import.meta.env.DEV) {
+          (window as unknown as Record<string, unknown>).__haConn = conn;
+        }
+
         unsubEntities = subscribeEntities(conn, (ent) => {
           setEntities(ent);
         });
