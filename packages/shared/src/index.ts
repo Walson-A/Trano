@@ -15,6 +15,12 @@ export interface Profile {
   favorites: string[];
   /** ids de pièces (RoomConfig) épinglées sur le dashboard */
   favoriteRooms: string[];
+  /**
+   * Blocs du dashboard, dans l'ordre. Vide = disposition par défaut.
+   * Ids connus : status, favorite-rooms, favorite-devices, energy,
+   * shopping, intercom.
+   */
+  dashboardLayout: string[];
   createdAt: string;
 }
 
@@ -22,7 +28,10 @@ export type ProfileCreate = Pick<Profile, 'name'> &
   Partial<Pick<Profile, 'avatar' | 'color' | 'roomIds' | 'isKid'>>;
 
 export type ProfileUpdate = Partial<
-  Pick<Profile, 'name' | 'avatar' | 'color' | 'roomIds' | 'isKid' | 'favorites' | 'favoriteRooms'>
+  Pick<
+    Profile,
+    'name' | 'avatar' | 'color' | 'roomIds' | 'isKid' | 'favorites' | 'favoriteRooms' | 'dashboardLayout'
+  >
 >;
 
 // ─── Liste de courses ───────────────────────────────────────

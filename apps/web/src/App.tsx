@@ -98,6 +98,8 @@ export default function App() {
                 setTargetRoom(roomId);
                 setActiveTab('rooms');
               }}
+              onOpenTab={setActiveTab}
+              onOpenIntercom={() => setIntercomOpen(true)}
             />
           )}
 

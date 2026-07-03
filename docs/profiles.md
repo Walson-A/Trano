@@ -26,6 +26,7 @@ actif sur l'appareil, l'écran **« Qui est-ce ? »** s'affiche (`ProfileGate`).
 | `isKid` | Profil enfant : pas d'accès aux Réglages (extensible) |
 | `favorites` | entity_ids d'appareils épinglés (♥ sur les DeviceCard) |
 | `favoriteRooms` | ids de pièces épinglées (★ sur l'en-tête de pièce), affichées dans « Mes pièces » du dashboard et cliquables pour ouvrir la pièce |
+| `dashboardLayout` | blocs du dashboard dans l'ordre choisi (bouton « Personnaliser » : statuts, pièces, favoris, énergie, courses, interphone) — vide = disposition par défaut |
 
 ## Synchronisation
 

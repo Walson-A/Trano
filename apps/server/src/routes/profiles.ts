@@ -12,6 +12,7 @@ interface ProfileRow {
   is_kid: number;
   favorites: string;
   favorite_rooms: string;
+  dashboard_layout: string;
   created_at: string;
 }
 
@@ -25,6 +26,7 @@ function toProfile(row: ProfileRow): Profile {
     isKid: row.is_kid === 1,
     favorites: JSON.parse(row.favorites),
     favoriteRooms: JSON.parse(row.favorite_rooms ?? '[]'),
+    dashboardLayout: JSON.parse(row.dashboard_layout ?? '[]'),
     createdAt: row.created_at,
   };
 }
@@ -65,10 +67,11 @@ export function profileRoutes(app: FastifyInstance): void {
       isKid: b.isKid ?? current.isKid,
       favorites: b.favorites ?? current.favorites,
       favoriteRooms: b.favoriteRooms ?? current.favoriteRooms,
+      dashboardLayout: b.dashboardLayout ?? current.dashboardLayout,
     };
 
     db.prepare(
-      'UPDATE profiles SET name = ?, avatar = ?, color = ?, room_ids = ?, is_kid = ?, favorites = ?, favorite_rooms = ? WHERE id = ?'
+      'UPDATE profiles SET name = ?, avatar = ?, color = ?, room_ids = ?, is_kid = ?, favorites = ?, favorite_rooms = ?, dashboard_layout = ? WHERE id = ?'
     ).run(
       next.name,
       next.avatar,
@@ -77,6 +80,7 @@ export function profileRoutes(app: FastifyInstance): void {
       next.isKid ? 1 : 0,
       JSON.stringify(next.favorites),
       JSON.stringify(next.favoriteRooms),
+      JSON.stringify(next.dashboardLayout),
       req.params.id
     );
 

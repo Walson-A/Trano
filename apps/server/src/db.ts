@@ -59,6 +59,7 @@ function ensureColumn(table: string, column: string, definition: string): void {
 }
 
 ensureColumn('profiles', 'favorite_rooms', "TEXT NOT NULL DEFAULT '[]'");
+ensureColumn('profiles', 'dashboard_layout', "TEXT NOT NULL DEFAULT '[]'");
 
 // ─── Pièces (personnalisables depuis l'app) ─────────────────
 
