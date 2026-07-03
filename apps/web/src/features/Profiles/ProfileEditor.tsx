@@ -3,7 +3,7 @@ import type { Profile } from '@trano/shared';
 import { Trash2 } from 'lucide-react';
 import { Modal } from '../../ui/Modal/Modal';
 import { useProfileStore } from '../../core/store/useProfileStore';
-import { ROOMS, getRoomsByFloor } from '../../config/rooms';
+import { useRoomsStore } from '../../core/store/useRoomsStore';
 import { cn } from '../../utils';
 
 const AVATARS = [
@@ -26,6 +26,7 @@ interface ProfileEditorProps {
 
 export function ProfileEditor({ isOpen, onClose, profile }: ProfileEditorProps) {
   const { createProfile, updateProfile, deleteProfile } = useProfileStore();
+  const rooms = useRoomsStore((s) => s.rooms);
 
   const [name, setName] = useState(profile?.name ?? '');
   const [avatar, setAvatar] = useState(profile?.avatar ?? AVATARS[0]);
@@ -146,7 +147,7 @@ export function ProfileEditor({ isOpen, onClose, profile }: ProfileEditorProps) 
             <div key={floor} className="mb-3">
               <p className="text-xs text-zinc-500 mb-2">{floor}</p>
               <div className="flex flex-wrap gap-2">
-                {getRoomsByFloor(floor).map((room) => (
+                {rooms.filter((r) => r.floor === floor).map((room) => (
                   <button
                     key={room.id}
                     onClick={() => toggleRoom(room.id)}

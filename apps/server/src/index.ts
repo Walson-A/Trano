@@ -8,6 +8,7 @@ import { profileRoutes } from './routes/profiles.ts';
 import { shoppingRoutes } from './routes/shopping.ts';
 import { assistantRoutes } from './routes/assistant.ts';
 import { intercomRoutes } from './routes/intercom.ts';
+import { roomRoutes } from './routes/rooms.ts';
 import { registerClient } from './ws.ts';
 
 // En dev, les secrets (HA, OpenRouter) vivent dans apps/server/.env (gitignoré).
@@ -49,6 +50,7 @@ profileRoutes(app);
 shoppingRoutes(app);
 assistantRoutes(app);
 intercomRoutes(app);
+roomRoutes(app);
 
 // En prod (Docker/add-on), le serveur sert aussi le build du frontend.
 const webDist = fileURLToPath(new URL('../../web/dist', import.meta.url));

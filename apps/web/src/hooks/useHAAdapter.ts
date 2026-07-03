@@ -3,7 +3,8 @@ import { useHA } from '../context/HAContext';
 import { Device, DeviceState, DeviceType, HA_DOMAIN_TO_TYPE, SUPPORTED_DOMAINS } from '../types';
 import { HassEntity } from 'home-assistant-js-websocket';
 import { useConfigStore } from '../core/store/useConfigStore';
-import { HA_AREA_TO_ROOM, getRoomById } from '../config/rooms';
+import { useRoomsStore } from '../core/store/useRoomsStore';
+import { HA_AREA_TO_ROOM } from '../config/rooms';
 
 // ─── HA Registry Types ──────────────────────────────────────
 
@@ -71,6 +72,7 @@ function resolveRoomId(
 export function useHAAdapter() {
   const { entities, connection, status } = useHA();
   const deviceOverrides = useConfigStore((s) => s.deviceOverrides);
+  const rooms = useRoomsStore((s) => s.rooms);
 
   // HA registries (areas, entity registry, device registry)
   const [areas, setAreas] = useState<HAArea[]>([]);
@@ -139,7 +141,7 @@ export function useHAAdapter() {
         const override = deviceOverrides[entity.entity_id];
         const type = getDeviceType(entity.entity_id);
         const roomId = resolveRoomId(entity.entity_id, areaMap, override?.roomId);
-        const room = roomId ? getRoomById(roomId) : null;
+        const room = roomId ? rooms.find((r) => r.id === roomId) : null;
 
         return {
           id: entity.entity_id,
@@ -151,7 +153,7 @@ export function useHAAdapter() {
           state: buildDeviceState(entity, type),
         };
       });
-  }, [entities, deviceOverrides, areaMap]);
+  }, [entities, deviceOverrides, areaMap, rooms]);
 
   // Liste visible dans les vues (les masqués sont exclus)
   const devices = useMemo(

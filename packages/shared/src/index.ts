@@ -77,9 +77,25 @@ export type ShoppingItemUpdate = Partial<
   boughtBy?: string | null;
 };
 
+// ─── Pièces de la maison ────────────────────────────────────
+
+export type Floor = 'RDC' | 'Étage';
+
+export interface Room {
+  id: string;
+  name: string;
+  floor: Floor;
+  /** Nom d'icône Lucide (kebab-case), résolu côté web */
+  icon: string;
+  sortOrder: number;
+}
+
+export type RoomCreate = Pick<Room, 'name'> & Partial<Pick<Room, 'floor' | 'icon'>>;
+export type RoomUpdate = Partial<Pick<Room, 'name' | 'floor' | 'icon' | 'sortOrder'>>;
+
 // ─── Messages WebSocket ─────────────────────────────────────
 
-export type WsTopic = 'profiles' | 'shopping';
+export type WsTopic = 'profiles' | 'shopping' | 'rooms';
 
 /** Invalidation : les clients refetchent le topic */
 export interface WsChangedMessage {

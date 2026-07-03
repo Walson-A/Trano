@@ -8,8 +8,8 @@ import { getWeatherEntity } from '../lib/runtimeConfig';
 import { useProfileStore } from '../core/store/useProfileStore';
 import { WeatherIcon, WEATHER_MAPPING } from '../features/Weather/WeatherWidget';
 import { Modal } from '../ui/Modal/Modal';
-import { getRoomById } from '../config/rooms';
-import { getIconComponent } from './Rooms';
+import { getRoomIcon } from '../config/rooms';
+import { useRoomsStore } from '../core/store/useRoomsStore';
 import type { RoomClimate } from './Rooms';
 import { cn } from '../utils';
 
@@ -56,9 +56,10 @@ export function Dashboard({ currentUser, devices, roomClimate, onToggleDevice, o
   const toggleFavorite = useProfileStore((s) => s.toggleFavorite);
   const [isWeatherModalOpen, setIsWeatherModalOpen] = useState(false);
 
+  const rooms = useRoomsStore((s) => s.rooms);
   const favoriteDevices = devices.filter(d => currentUser.favorites.includes(d.id));
   const favoriteRooms = currentUser.favoriteRooms
-    .map((id) => getRoomById(id))
+    .map((id) => rooms.find((r) => r.id === id))
     .filter((r): r is NonNullable<typeof r> => Boolean(r));
 
   // Get weather data
@@ -126,7 +127,7 @@ export function Dashboard({ currentUser, devices, roomClimate, onToggleDevice, o
               const roomDevices = devices.filter((d) => d.roomId === room.id);
               const active = countActive(roomDevices);
               const climate = roomClimate[room.id];
-              const Icon = getIconComponent(room.icon);
+              const Icon = getRoomIcon(room.icon);
               return (
                 <button
                   key={room.id}

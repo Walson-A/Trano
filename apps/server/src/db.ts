@@ -60,6 +60,37 @@ function ensureColumn(table: string, column: string, definition: string): void {
 
 ensureColumn('profiles', 'favorite_rooms', "TEXT NOT NULL DEFAULT '[]'");
 
+// ─── Pièces (personnalisables depuis l'app) ─────────────────
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS rooms (
+    id          TEXT PRIMARY KEY,
+    name        TEXT NOT NULL,
+    floor       TEXT NOT NULL DEFAULT 'RDC',
+    icon        TEXT NOT NULL DEFAULT 'sofa',
+    sort_order  INTEGER NOT NULL DEFAULT 0
+  );
+`);
+
+// Amorçage : les 10 pièces historiques de la maison (une seule fois)
+const roomCount = (db.prepare('SELECT COUNT(*) AS n FROM rooms').get() as { n: number }).n;
+if (roomCount === 0) {
+  const seed = db.prepare('INSERT INTO rooms (id, name, floor, icon, sort_order) VALUES (?, ?, ?, ?, ?)');
+  const DEFAULT_ROOMS: Array<[string, string, string, string]> = [
+    ['salon', 'Salon', 'RDC', 'sofa'],
+    ['cuisine', 'Cuisine', 'RDC', 'cooking-pot'],
+    ['garage', 'Garage', 'RDC', 'car'],
+    ['sdb-bas', 'Salle de bain (bas)', 'RDC', 'bath'],
+    ['chambre-parents', 'Chambre Parents', 'Étage', 'bed-double'],
+    ['chambre-mahalia', 'Chambre Mahalia', 'Étage', 'baby'],
+    ['chambre-kevin', 'Chambre Kevin', 'Étage', 'bed-single'],
+    ['chambre-argan', 'Chambre Argan', 'Étage', 'baby'],
+    ['chambres-enfants', 'Chambres des enfants', 'Étage', 'users'],
+    ['sdb-etage', 'Salle de bain (étage)', 'Étage', 'bath'],
+  ];
+  DEFAULT_ROOMS.forEach(([id, name, floor, icon], i) => seed.run(id, name, floor, icon, i));
+}
+
 export function newId(): string {
   return crypto.randomUUID();
 }

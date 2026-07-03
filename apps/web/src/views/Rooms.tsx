@@ -1,14 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Device, RoomConfig } from '../types';
+import { Device } from '../types';
+import type { Room } from '@trano/shared';
 import { DeviceCard } from '../components/DeviceCard';
-import {
-  Sofa, CookingPot, Bed, BedDouble, BedSingle, Baby, Car, Bath, Users,
-  ChevronRight, WifiOff, Thermometer, Droplets, Star,
-} from 'lucide-react';
+import { ChevronRight, WifiOff, Thermometer, Droplets, Star } from 'lucide-react';
 import { cn } from '../utils';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ROOMS } from '../config/rooms';
+import { getRoomIcon } from '../config/rooms';
 import { useProfileStore, useActiveProfile } from '../core/store/useProfileStore';
+import { useRoomsStore } from '../core/store/useRoomsStore';
 
 export type RoomClimate = Record<string, { temperature?: number; humidity?: number }>;
 
@@ -22,29 +21,12 @@ interface RoomsProps {
   onToggleDevice: (id: string) => void;
 }
 
-/** Map icon string names from config to Lucide components */
-const ICON_MAP: Record<string, React.ElementType> = {
-  'sofa': Sofa,
-  'cooking-pot': CookingPot,
-  'bed': Bed,
-  'bed-double': BedDouble,
-  'bed-single': BedSingle,
-  'baby': Baby,
-  'car': Car,
-  'bath': Bath,
-  'users': Users,
-};
-
-export function getIconComponent(iconName: string): React.ElementType {
-  return ICON_MAP[iconName] ?? Sofa;
-}
-
 function getDevicesForRoom(roomId: string, devices: Device[]): Device[] {
   return devices.filter(d => d.roomId === roomId);
 }
 
 const RoomAccordion: React.FC<{
-  room: RoomConfig;
+  room: Room;
   devices: Device[];
   climate?: { temperature?: number; humidity?: number };
   isSelected: boolean;
@@ -55,7 +37,7 @@ const RoomAccordion: React.FC<{
   onToggleFavorite: (id: string) => void;
   onToggleFavoriteRoom: () => void;
 }> = ({ room, devices, climate, isSelected, favorites, isFavoriteRoom, onToggle, onToggleDevice, onToggleFavorite, onToggleFavoriteRoom }) => {
-  const Icon = getIconComponent(room.icon);
+  const Icon = getRoomIcon(room.icon);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const activeCount = devices.filter(d => {
@@ -212,12 +194,13 @@ export function Rooms({ devices, roomClimate, initialRoom, onInitialRoomConsumed
   const toggleFavorite = useProfileStore((s) => s.toggleFavorite);
   const toggleFavoriteRoom = useProfileStore((s) => s.toggleFavoriteRoom);
   const activeProfile = useActiveProfile();
+  const rooms = useRoomsStore((s) => s.rooms);
   const favorites = activeProfile?.favorites ?? [];
   const favoriteRooms = activeProfile?.favoriteRooms ?? [];
 
   const filteredRooms = floorFilter === 'all'
-    ? ROOMS
-    : ROOMS.filter(r => r.floor === floorFilter);
+    ? rooms
+    : rooms.filter(r => r.floor === floorFilter);
 
   return (
     <div className="flex-1 overflow-y-auto scrollbar-hide p-4 sm:p-6 lg:p-12 pb-28 md:pb-12 bg-zinc-50 dark:bg-[#0a0a0a] transition-colors duration-300">
@@ -230,7 +213,7 @@ export function Rooms({ devices, roomClimate, initialRoom, onInitialRoomConsumed
           Ma Maison
         </h1>
         <p className="text-zinc-500 dark:text-zinc-400 mt-2 text-sm sm:text-base font-medium">
-          {ROOMS.length} zones configurées · {devices.length} appareils opérationnels
+          {rooms.length} zones configurées · {devices.length} appareils opérationnels
         </p>
       </header>
 

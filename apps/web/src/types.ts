@@ -62,16 +62,8 @@ export interface Device {
   state: DeviceState;
 }
 
-// ─── Room ───────────────────────────────────────────────────
-
-export type Floor = 'RDC' | 'Étage';
-
-export interface RoomConfig {
-  id: string;
-  name: string;
-  floor: Floor;
-  icon: string;              // Lucide icon name
-}
+// Les pièces (type Room) vivent dans @trano/shared et leur données dans
+// la base du serveur (voir useRoomsStore).
 
 // ─── Device Override (user customizations, persisted) ───────
 

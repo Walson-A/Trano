@@ -1,25 +1,45 @@
-import { RoomConfig } from '../types';
+import type React from 'react';
+import {
+  Sofa, CookingPot, Bed, BedDouble, BedSingle, Baby, Car, Bath, Users,
+  DoorOpen, Utensils, Tv, Trees, Dumbbell, WashingMachine, Warehouse,
+  Flower2, Briefcase, Gamepad2, Music,
+} from 'lucide-react';
 
 /**
- * Source unique de vérité pour les pièces de la maison.
- * L'icône est stockée comme string (nom Lucide) pour être sérialisable.
- * Le mapping vers le composant Lucide se fait dans les vues.
+ * Les pièces elles-mêmes vivent dans la base du serveur (personnalisables
+ * depuis Réglages → Pièces, voir useRoomsStore). Ici ne restent que :
+ * - le catalogue d'icônes proposées,
+ * - le mapping des areas HA vers nos ids de pièces.
  */
-export const ROOMS: RoomConfig[] = [
-  // RDC
-  { id: 'salon',            name: 'Salon',                 floor: 'RDC',   icon: 'sofa' },
-  { id: 'cuisine',          name: 'Cuisine',               floor: 'RDC',   icon: 'cooking-pot' },
-  { id: 'garage',           name: 'Garage',                floor: 'RDC',   icon: 'car' },
-  { id: 'sdb-bas',          name: 'Salle de bain (bas)',   floor: 'RDC',   icon: 'bath' },
 
-  // Étage
-  { id: 'chambre-parents',  name: 'Chambre Parents',       floor: 'Étage', icon: 'bed-double' },
-  { id: 'chambre-mahalia',  name: 'Chambre Mahalia',       floor: 'Étage', icon: 'baby' },
-  { id: 'chambre-kevin',    name: 'Chambre Kevin',         floor: 'Étage', icon: 'bed-single' },
-  { id: 'chambre-argan',    name: 'Chambre Argan',         floor: 'Étage', icon: 'baby' },
-  { id: 'chambres-enfants', name: 'Chambres des enfants',  floor: 'Étage', icon: 'users' },
-  { id: 'sdb-etage',        name: 'Salle de bain (étage)', floor: 'Étage', icon: 'bath' },
-];
+export const ROOM_ICONS: Record<string, React.ElementType> = {
+  'sofa': Sofa,
+  'cooking-pot': CookingPot,
+  'bed': Bed,
+  'bed-double': BedDouble,
+  'bed-single': BedSingle,
+  'baby': Baby,
+  'car': Car,
+  'bath': Bath,
+  'users': Users,
+  'door-open': DoorOpen,
+  'utensils': Utensils,
+  'tv': Tv,
+  'trees': Trees,
+  'dumbbell': Dumbbell,
+  'washing-machine': WashingMachine,
+  'warehouse': Warehouse,
+  'flower': Flower2,
+  'briefcase': Briefcase,
+  'gamepad': Gamepad2,
+  'music': Music,
+};
+
+export const ROOM_ICON_NAMES = Object.keys(ROOM_ICONS);
+
+export function getRoomIcon(iconName: string): React.ElementType {
+  return ROOM_ICONS[iconName] ?? Sofa;
+}
 
 /**
  * Maps HA area names/IDs (lowercase) to our room IDs.
@@ -42,11 +62,3 @@ export const HA_AREA_TO_ROOM: Record<string, string> = {
   'salle de bain etage': 'sdb-etage',
   'sdb etage':          'sdb-etage',
 };
-
-export function getRoomById(id: string): RoomConfig | undefined {
-  return ROOMS.find(r => r.id === id);
-}
-
-export function getRoomsByFloor(floor: RoomConfig['floor']): RoomConfig[] {
-  return ROOMS.filter(r => r.floor === floor);
-}

@@ -1,13 +1,15 @@
 import React, { useMemo, useState } from 'react';
 import {
   Lightbulb, ToggleLeft, Thermometer, Lock, Tv, Blinds, Fan, Gauge, Camera,
-  Search, Eye, EyeOff, Pencil, Check, X, Server, Wifi, Router, Download,
-  Upload, Globe, Phone, HardDrive, RotateCcw, BellRing, PhoneMissed,
+  Search, Eye, EyeOff, Pencil, Check, X, Server, Wifi, Download,
+  Upload, Globe, Phone, HardDrive, RotateCcw, BellRing, PhoneMissed, Trash2,
 } from 'lucide-react';
 import { Device, DeviceType } from '../types';
-import { ROOMS } from '../config/rooms';
+import type { Room } from '@trano/shared';
+import { getRoomIcon, ROOM_ICON_NAMES } from '../config/rooms';
 import { FREEBOX, PHONES } from '../config/network';
 import { useConfigStore } from '../core/store/useConfigStore';
+import { useRoomsStore } from '../core/store/useRoomsStore';
 import { useHA } from '../context/HAContext';
 import { cn } from '../utils';
 
@@ -28,6 +30,7 @@ interface SettingsProps {
 }
 
 const DeviceRow: React.FC<{ device: Device }> = ({ device }) => {
+  const rooms = useRoomsStore((s) => s.rooms);
   const { deviceOverrides, setDeviceName, setDeviceRoom, setDeviceHidden, removeDeviceOverride } =
     useConfigStore();
   const override = deviceOverrides[device.id];
@@ -97,7 +100,7 @@ const DeviceRow: React.FC<{ device: Device }> = ({ device }) => {
         )}
       >
         <option value="" disabled>Non assigné</option>
-        {ROOMS.map((r) => (
+        {rooms.map((r) => (
           <option key={r.id} value={r.id}>{r.name}</option>
         ))}
       </select>
@@ -260,6 +263,202 @@ const FreeboxSection: React.FC = () => {
   );
 };
 
+const RoomRow: React.FC<{ room: Room }> = ({ room }) => {
+  const { updateRoom, deleteRoom } = useRoomsStore();
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(room.name);
+  const [iconPickerOpen, setIconPickerOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const Icon = getRoomIcon(room.icon);
+
+  const saveName = () => {
+    if (draft.trim() && draft.trim() !== room.name) updateRoom(room.id, { name: draft.trim() });
+    setEditing(false);
+  };
+
+  return (
+    <div className="bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-white/5 rounded-2xl">
+      <div className="flex items-center gap-3 px-4 py-3">
+        {/* Icône : ouvre le sélecteur */}
+        <button
+          onClick={() => setIconPickerOpen(!iconPickerOpen)}
+          title="Changer l'icône"
+          className={cn(
+            'w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors',
+            iconPickerOpen
+              ? 'bg-zinc-900 dark:bg-zinc-100 text-zinc-100 dark:text-zinc-900'
+              : 'bg-zinc-100 dark:bg-white/5 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100'
+          )}
+        >
+          <Icon className="w-5 h-5" />
+        </button>
+
+        <div className="flex-1 min-w-0">
+          {editing ? (
+            <div className="flex items-center gap-2">
+              <input
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') saveName();
+                  if (e.key === 'Escape') setEditing(false);
+                }}
+                autoFocus
+                className="flex-1 min-w-0 bg-zinc-100 dark:bg-white/10 rounded-lg px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-100 outline-none"
+              />
+              <button onClick={saveName} className="p-1.5 text-emerald-500 hover:bg-emerald-500/10 rounded-lg" aria-label="Valider">
+                <Check className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => { setDraft(room.name); setEditing(true); }}
+              className="group flex items-center gap-2 min-w-0 text-left"
+            >
+              <span className="font-medium text-zinc-900 dark:text-zinc-100 truncate">{room.name}</span>
+              <Pencil className="w-3.5 h-3.5 text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+            </button>
+          )}
+        </div>
+
+        {/* Étage */}
+        <div className="flex bg-zinc-100 dark:bg-white/5 rounded-lg p-0.5 shrink-0">
+          {(['RDC', 'Étage'] as const).map((f) => (
+            <button
+              key={f}
+              onClick={() => room.floor !== f && updateRoom(room.id, { floor: f })}
+              className={cn(
+                'px-2.5 py-1 rounded-md text-xs font-medium transition-all',
+                room.floor === f
+                  ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow-sm'
+                  : 'text-zinc-500'
+              )}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
+
+        <button
+          onClick={() => {
+            if (confirmDelete) {
+              deleteRoom(room.id);
+            } else {
+              setConfirmDelete(true);
+              setTimeout(() => setConfirmDelete(false), 4000);
+            }
+          }}
+          className={cn(
+            'p-2 rounded-xl transition-colors shrink-0 text-sm font-medium',
+            confirmDelete
+              ? 'bg-red-500 text-white px-3'
+              : 'text-zinc-300 dark:text-zinc-700 hover:text-red-500 dark:hover:text-red-400'
+          )}
+          aria-label="Supprimer la pièce"
+        >
+          {confirmDelete ? 'Sûr ?' : <Trash2 className="w-4 h-4" />}
+        </button>
+      </div>
+
+      {/* Sélecteur d'icône */}
+      {iconPickerOpen && (
+        <div className="flex flex-wrap gap-1.5 px-4 pb-3 border-t border-zinc-100 dark:border-white/5 pt-3">
+          {ROOM_ICON_NAMES.map((name) => {
+            const OptIcon = getRoomIcon(name);
+            return (
+              <button
+                key={name}
+                onClick={() => { updateRoom(room.id, { icon: name }); setIconPickerOpen(false); }}
+                className={cn(
+                  'w-9 h-9 rounded-lg flex items-center justify-center transition-all',
+                  room.icon === name
+                    ? 'bg-zinc-900 dark:bg-zinc-100 text-zinc-100 dark:text-zinc-900'
+                    : 'bg-zinc-100 dark:bg-white/5 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100'
+                )}
+              >
+                <OptIcon className="w-4 h-4" />
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const RoomsManager: React.FC = () => {
+  const { rooms, createRoom } = useRoomsStore();
+  const [newName, setNewName] = useState('');
+  const [newFloor, setNewFloor] = useState<'RDC' | 'Étage'>('RDC');
+  const [creating, setCreating] = useState(false);
+
+  const add = async () => {
+    if (!newName.trim() || creating) return;
+    setCreating(true);
+    try {
+      await createRoom({ name: newName.trim(), floor: newFloor });
+      setNewName('');
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  return (
+    <div className="mb-8">
+      <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-1">Pièces</h2>
+      <p className="text-sm text-zinc-500 mb-4">
+        Renommez, changez l'icône ou l'étage — synchronisé sur tous les écrans.
+      </p>
+
+      <div className="flex flex-col gap-2 mb-3">
+        {(['RDC', 'Étage'] as const).map((floor) => (
+          <React.Fragment key={floor}>
+            <p className="text-xs uppercase tracking-wider text-zinc-500 font-medium mt-2 first:mt-0">{floor}</p>
+            {rooms.filter((r) => r.floor === floor).map((room) => (
+              <RoomRow key={room.id} room={room} />
+            ))}
+          </React.Fragment>
+        ))}
+      </div>
+
+      {/* Ajouter une pièce */}
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={newName}
+          onChange={(e) => setNewName(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && add()}
+          placeholder="Nouvelle pièce…"
+          className="flex-1 min-w-0 bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-white/5 rounded-xl px-4 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-600 outline-none focus:border-zinc-400 dark:focus:border-white/20 transition-colors"
+        />
+        <div className="flex bg-zinc-100 dark:bg-white/5 rounded-xl p-0.5 shrink-0">
+          {(['RDC', 'Étage'] as const).map((f) => (
+            <button
+              key={f}
+              onClick={() => setNewFloor(f)}
+              className={cn(
+                'px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
+                newFloor === f
+                  ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow-sm'
+                  : 'text-zinc-500'
+              )}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
+        <button
+          onClick={add}
+          disabled={!newName.trim() || creating}
+          className="px-4 py-2.5 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-zinc-100 dark:text-zinc-900 text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-30 shrink-0"
+        >
+          Ajouter
+        </button>
+      </div>
+    </div>
+  );
+};
+
 export function Settings({ devices }: SettingsProps) {
   const { status, error } = useHA();
   const [search, setSearch] = useState('');
@@ -329,6 +528,8 @@ export function Settings({ devices }: SettingsProps) {
       </div>
 
       <FreeboxSection />
+
+      <RoomsManager />
 
       {/* Gestion des appareils */}
       <div className="flex items-center justify-between mb-1">

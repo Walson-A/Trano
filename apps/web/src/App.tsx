@@ -14,6 +14,7 @@ import type { WsIntercomMessage } from '@trano/shared';
 import { useHAAdapter } from './hooks/useHAAdapter';
 import { useProfileStore, useActiveProfile } from './core/store/useProfileStore';
 import { useShoppingStore } from './core/store/useShoppingStore';
+import { useRoomsStore } from './core/store/useRoomsStore';
 import { ProfileGate } from './features/Profiles/ProfileGate';
 import { connectTranoWs } from './lib/api';
 
@@ -36,10 +37,12 @@ export default function App() {
   useEffect(() => {
     fetchProfiles();
     useShoppingStore.getState().fetchItems();
+    useRoomsStore.getState().fetchRooms();
     const disconnect = connectTranoWs({
       onChanged: (topic) => {
         if (topic === 'profiles') fetchProfiles();
         if (topic === 'shopping') useShoppingStore.getState().fetchItems();
+        if (topic === 'rooms') useRoomsStore.getState().fetchRooms();
       },
       onIntercom: (msg) => {
         const activeId = useProfileStore.getState().activeProfileId;

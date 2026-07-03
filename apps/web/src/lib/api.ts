@@ -2,6 +2,9 @@ import type {
   Profile,
   ProfileCreate,
   ProfileUpdate,
+  Room,
+  RoomCreate,
+  RoomUpdate,
   ShoppingItem,
   ShoppingItemCreate,
   ShoppingItemUpdate,
@@ -43,6 +46,14 @@ export const api = {
     update: (id: string, data: ProfileUpdate) =>
       request<Profile>(`/api/profiles/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
     remove: (id: string) => request<void>(`/api/profiles/${id}`, { method: 'DELETE' }),
+  },
+  rooms: {
+    list: () => request<Room[]>('/api/rooms'),
+    create: (data: RoomCreate) =>
+      request<Room>('/api/rooms', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: RoomUpdate) =>
+      request<Room>(`/api/rooms/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    remove: (id: string) => request<void>(`/api/rooms/${id}`, { method: 'DELETE' }),
   },
   shopping: {
     list: () => request<ShoppingItem[]>('/api/shopping'),
