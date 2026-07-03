@@ -58,7 +58,9 @@ export const WeatherIcon: React.FC<{ state: string; size?: number }> = ({ state,
 
 export const WeatherWidget: React.FC<{ entityId?: string }> = ({ entityId }) => {
   const { entities, status } = useHA();
-  const weatherEntity = entities[entityId ?? getWeatherEntity()];
+  // Résolution unique : sans prop (topbar), on prend l'entité météo configurée.
+  const resolvedId = entityId ?? getWeatherEntity();
+  const weatherEntity = entities[resolvedId];
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const isUnavailable = !weatherEntity || weatherEntity.state === 'unavailable' || weatherEntity.state === 'unknown';
@@ -96,10 +98,10 @@ export const WeatherWidget: React.FC<{ entityId?: string }> = ({ entityId }) => 
           <span className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 capitalize">{label}</span>
         </div>
       </div>
-      <WeatherModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        entityId={entityId} 
+      <WeatherModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        entityId={resolvedId}
       />
     </>
   );

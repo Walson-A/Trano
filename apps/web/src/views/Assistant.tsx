@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Send, KeyRound, RotateCcw } from 'lucide-react';
+import { Sparkles, Send, KeyRound, RotateCcw, X } from 'lucide-react';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useActiveProfile } from '../core/store/useProfileStore';
@@ -149,7 +149,7 @@ const SUGGESTIONS = [
   'Éteins la chambre de Kevin',
 ];
 
-export function Assistant() {
+export function Assistant({ onClose }: { onClose?: () => void }) {
   const profile = useActiveProfile();
   const [status, setStatus] = useState<AssistantStatus | null>(null);
   const { messages, setMessages, clear } = useAssistantChat();
@@ -235,16 +235,27 @@ export function Assistant() {
             <p className="text-xs text-amber-500 mt-1">⚠️ Home Assistant injoignable — les questions maison échoueront</p>
           )}
         </div>
-        {messages.length > 0 && (
-          <button
-            onClick={() => { clear(); setError(null); }}
-            title="Nouvelle conversation"
-            className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/50 dark:hover:bg-white/5 transition-colors shrink-0"
-          >
-            <RotateCcw className="w-4 h-4" />
-            <span className="hidden sm:inline">Nouvelle</span>
-          </button>
-        )}
+        <div className="flex items-center gap-1 shrink-0">
+          {messages.length > 0 && (
+            <button
+              onClick={() => { clear(); setError(null); }}
+              title="Nouvelle conversation"
+              className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/50 dark:hover:bg-white/5 transition-colors"
+            >
+              <RotateCcw className="w-4 h-4" />
+              <span className="hidden sm:inline">Nouvelle</span>
+            </button>
+          )}
+          {onClose && (
+            <button
+              onClick={onClose}
+              aria-label="Fermer l'assistant"
+              className="p-2.5 rounded-xl text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/50 dark:hover:bg-white/10 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
+        </div>
       </header>
 
       {/* Fil de discussion */}
@@ -274,7 +285,7 @@ export function Assistant() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             className={cn(
-              'max-w-[85%] px-4 py-3 rounded-2xl',
+              'max-w-[85%] min-w-0 px-4 py-3 rounded-2xl [overflow-wrap:anywhere]',
               msg.role === 'user'
                 ? 'self-end text-zinc-900 font-medium'
                 : 'self-start bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-white/5 text-zinc-900 dark:text-zinc-100'

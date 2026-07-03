@@ -1,7 +1,7 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, X } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { Assistant } from '../../views/Assistant';
 
 /**
@@ -47,15 +47,8 @@ export function AssistantPanel({ isOpen, onClose }: { isOpen: boolean; onClose: 
             transition={{ type: 'spring', stiffness: 380, damping: 36 }}
             className="absolute right-0 top-0 bottom-0 w-full sm:w-[480px] bg-zinc-50 dark:bg-[#0d0d0d] border-l border-zinc-200 dark:border-white/10 shadow-2xl flex flex-col"
           >
-            <button
-              onClick={onClose}
-              aria-label="Fermer l'assistant"
-              className="absolute top-4 right-4 z-10 p-2.5 rounded-xl text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/50 dark:hover:bg-white/10 transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
             <div className="flex-1 overflow-hidden p-5 sm:p-6">
-              <Assistant />
+              <Assistant onClose={onClose} />
             </div>
           </motion.div>
         </div>

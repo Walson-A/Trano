@@ -74,8 +74,6 @@ export default function App() {
       <Sidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        isDarkMode={isDarkMode}
-        toggleDarkMode={toggleDarkMode}
         profile={activeProfile}
         onProfileClick={() => setActiveProfile(null)}
       />

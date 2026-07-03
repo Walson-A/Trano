@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Map, Settings, Moon, Sun, LayoutGrid, Zap, ShoppingCart } from 'lucide-react';
+import { Home, Map, Settings, LayoutGrid, Zap, ShoppingCart } from 'lucide-react';
 import type { Profile } from '@trano/shared';
 import type { Tab } from '../App';
 import { cn } from '../utils';
@@ -7,14 +7,12 @@ import { cn } from '../utils';
 interface SidebarProps {
   activeTab: Tab;
   setActiveTab: (tab: Tab) => void;
-  isDarkMode: boolean;
-  toggleDarkMode: () => void;
   profile: Profile;
   /** Retour à l'écran de sélection de profil */
   onProfileClick: () => void;
 }
 
-export function Sidebar({ activeTab, setActiveTab, isDarkMode, toggleDarkMode, profile, onProfileClick }: SidebarProps) {
+export function Sidebar({ activeTab, setActiveTab, profile, onProfileClick }: SidebarProps) {
   // Destinations principales (au centre). Réglages est une utilité (en bas).
   const navItems = [
     { id: 'dashboard', icon: Home, label: 'Accueil' },
@@ -66,14 +64,6 @@ export function Sidebar({ activeTab, setActiveTab, isDarkMode, toggleDarkMode, p
         </div>
 
         <div className="p-4 lg:p-6 flex flex-col gap-2 shrink-0">
-          <button
-            onClick={toggleDarkMode}
-            className="flex items-center justify-center lg:justify-start gap-4 p-3 rounded-xl text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50 transition-all"
-          >
-            {isDarkMode ? <Sun className="w-5 h-5 lg:w-6 lg:h-6" /> : <Moon className="w-5 h-5 lg:w-6 lg:h-6" />}
-            <span className="hidden lg:block font-medium">{isDarkMode ? 'Mode Clair' : 'Mode Sombre'}</span>
-          </button>
-
           {showSettings && navButton({ id: 'settings', icon: Settings, label: 'Réglages' }, activeTab === 'settings')}
 
           <button
