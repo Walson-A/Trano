@@ -4,31 +4,32 @@
 
 # Trano
 
-Dashboard domotique connecté à Home Assistant. Interface premium, minimaliste, optimisée tablettes et écrans OLED.
+L'interface virtuelle de la famille : domotique (Home Assistant), profils
+façon Netflix, liste de courses partagée — et bientôt énergie solaire,
+Freebox et assistant IA. Interface premium, minimaliste, optimisée
+tablettes et écrans OLED. Hébergée à la maison, sur la Freebox.
 
-## Stack
+## Structure
 
-- React 18 + TypeScript
-- Tailwind CSS v4
-- Vite
-- Zustand (state UI)
-- Home Assistant WebSocket API
+Monorepo npm workspaces :
+
+| Paquet | Rôle |
+|---|---|
+| `apps/web` | Frontend React (Vite, Tailwind v4, Zustand, Motion) |
+| `apps/server` | Serveur Trano : Fastify + SQLite — profils, courses, config, WebSocket temps réel |
+| `packages/shared` | Types TypeScript partagés |
 
 ## Installation
 
-**Prérequis :** Node.js 18+
+**Prérequis :** Node.js 22.5+ (le serveur utilise `node:sqlite`)
 
 ```bash
 npm install
 ```
 
-## Configuration
+## Configuration (dev)
 
-Copier `.env.example` vers `.env.local` et remplir :
-
-```bash
-cp .env.example .env.local
-```
+Copier `apps/web/.env.example` vers `apps/web/.env.local` et remplir :
 
 | Variable | Description |
 |---|---|
@@ -36,15 +37,26 @@ cp .env.example .env.local
 | `VITE_HA_TOKEN` | Long-lived access token HA |
 | `VITE_HA_WEATHER_ENTITY` | Entity ID météo (ex: `weather.forecast_home`) |
 
+En production, ces valeurs viennent des options de l'add-on (voir
+[Déploiement](deploy/README.md)).
+
 ## Lancement
 
 ```bash
-npm run dev
+npm run dev     # web sur :3000 + serveur sur :3001
 ```
+
+## Déploiement sur la Freebox
+
+Trano tourne comme add-on Home Assistant dans la VM HAOS de la Freebox
+Delta : guide complet dans [deploy/README.md](deploy/README.md).
 
 ## Documentation
 
 - [Architecture](docs/architecture.md)
+- [API du serveur](docs/server_api.md)
+- [Profils](docs/profiles.md)
+- [Liste de courses](docs/shopping.md)
 - [Design System](docs/design_concept.md)
 - [Module Météo](docs/weather.md)
 - [System Status](docs/system_status.md)
