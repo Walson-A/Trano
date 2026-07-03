@@ -125,17 +125,14 @@ export function useHAAdapter() {
     return map;
   }, [areas, entityRegistry, deviceRegistry]);
 
-  // Build device list
-  const devices = useMemo(() => {
+  // Liste complète (y compris masqués) — utilisée par les Réglages
+  const allDevices = useMemo(() => {
     return (Object.values(entities) as HassEntity[])
       .filter(entity => {
         const domain = entity.entity_id.split('.')[0];
         if (!SUPPORTED_DOMAINS.includes(domain as any)) return false;
         // Filter out unavailable entities
         if (entity.state === 'unavailable') return false;
-        // Filter out hidden devices
-        const override = deviceOverrides[entity.entity_id];
-        if (override?.hidden) return false;
         return true;
       })
       .map((entity): Device => {
@@ -155,6 +152,12 @@ export function useHAAdapter() {
         };
       });
   }, [entities, deviceOverrides, areaMap]);
+
+  // Liste visible dans les vues (les masqués sont exclus)
+  const devices = useMemo(
+    () => allDevices.filter((d) => !deviceOverrides[d.id]?.hidden),
+    [allDevices, deviceOverrides]
+  );
 
   // Toggle device
   const toggleDevice = async (id: string) => {
@@ -197,5 +200,5 @@ export function useHAAdapter() {
     }
   };
 
-  return { devices, toggleDevice, status };
+  return { devices, allDevices, toggleDevice, status };
 }

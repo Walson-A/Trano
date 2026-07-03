@@ -85,7 +85,8 @@ Composants visuels "bêtes" (Dumb Components).
 - `FloorPlan.tsx` : Plan de la maison.
 - `Rooms.tsx` : Vue par pièces (accordion).
 - `Shopping.tsx` : Liste de courses partagée.
-- `Energy.tsx` : Énergie/consommation.
+- `Energy.tsx` : Énergie — temps réel + historique, 100 % données HA réelles (voir `docs/energy.md`).
+- `Settings.tsx` : Réglages — état des systèmes, gestion des appareils (renommer, assigner une pièce, masquer). Inaccessible aux profils enfants.
 
 ### 10. `types.ts`
 Types locaux au frontend : `Device`, `DeviceState`, `DeviceType`, `DeviceOverride`, `RoomConfig`.

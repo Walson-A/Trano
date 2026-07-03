@@ -6,6 +6,7 @@ import { FloorPlan } from './views/FloorPlan';
 import { Rooms } from './views/Rooms';
 import { Energy } from './views/Energy';
 import { Shopping } from './views/Shopping';
+import { Settings } from './views/Settings';
 import { useHAAdapter } from './hooks/useHAAdapter';
 import { useProfileStore, useActiveProfile } from './core/store/useProfileStore';
 import { useShoppingStore } from './core/store/useShoppingStore';
@@ -18,7 +19,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
   const [isDarkMode, setIsDarkMode] = useState(true);
 
-  const { devices, toggleDevice } = useHAAdapter();
+  const { devices, allDevices, toggleDevice } = useHAAdapter();
   const fetchProfiles = useProfileStore((s) => s.fetchProfiles);
   const setActiveProfile = useProfileStore((s) => s.setActiveProfile);
   const activeProfile = useActiveProfile();
@@ -84,14 +85,8 @@ export default function App() {
 
           {activeTab === 'energy' && <Energy />}
 
-          {activeTab === 'settings' && (
-            <div className="flex-1 p-6 lg:p-12 flex flex-col items-center justify-center text-center">
-              <h2 className="text-2xl font-semibold mb-4">Réglages</h2>
-              <p className="text-zinc-500 dark:text-zinc-400 max-w-md">
-                La configuration de Home Assistant, de la Freebox et des
-                intégrations arrivera ici prochainement.
-              </p>
-            </div>
+          {activeTab === 'settings' && !activeProfile.isKid && (
+            <Settings devices={allDevices} />
           )}
         </div>
       </main>
