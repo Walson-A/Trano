@@ -16,22 +16,23 @@ interface FlowItem {
   icon: React.ReactNode;
   label: string;
   watts: number;
+  detail?: string; // ex. le % de la batterie
   color: string;
 }
 
 const kw = (w: number) => `${(Math.abs(w) / 1000).toFixed(1)} kW`;
 
-/** Flèche animée entre deux zones (points qui glissent dans le sens du flux). */
-function Arrow({ color }: { color: string }) {
+/** Flèche portant la valeur du flux qui la traverse (chevrons animés). */
+function Arrow({ color, watts }: { color: string; watts: number }) {
   return (
-    <div className="flex items-center shrink-0">
-      {[0, 1, 2].map((i) => (
-        <ChevronRight
-          key={i}
-          className="w-4 h-4 -ml-1.5 animate-pulse"
-          style={{ color, animationDelay: `${i * 0.2}s`, opacity: 0.4 + i * 0.25 }}
-        />
-      ))}
+    <div className="flex flex-col items-center justify-center shrink-0 gap-1">
+      <span className="text-xs font-bold" style={{ color }}>{kw(watts)}</span>
+      <div className="flex items-center">
+        {[0, 1, 2].map((i) => (
+          <ChevronRight key={i} className="w-4 h-4 -ml-1.5 animate-pulse"
+            style={{ color, animationDelay: `${i * 0.2}s`, opacity: 0.4 + i * 0.25 }} />
+        ))}
+      </div>
     </div>
   );
 }
@@ -43,8 +44,8 @@ const Chip: React.FC<{ item: FlowItem }> = ({ item }) => {
         {item.icon}
       </div>
       <div className="min-w-0">
-        <p className="text-[11px] text-zinc-500 leading-tight">{item.label}</p>
-        <p className="text-sm font-bold leading-tight" style={{ color: item.color }}>{kw(item.watts)}</p>
+        <p className="text-sm font-semibold leading-tight text-zinc-800 dark:text-zinc-100">{item.label}</p>
+        {item.detail && <p className="text-[11px] text-zinc-500 leading-tight">{item.detail}</p>}
       </div>
     </div>
   );
@@ -62,16 +63,21 @@ export function EnergyFlow({ solarW, gridW, batteryW, homeW, soc, connected }: E
       ? { icon: <Leaf className="w-5 h-5" />, text: `100% autonome — ${Math.round(Math.abs(gridW))} W renvoyés au réseau`, cls: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/50' }
       : { icon: <Leaf className="w-5 h-5" />, text: 'La maison tourne sur le solaire et la batterie', cls: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/50' };
 
+  const socTxt = soc !== null ? `${soc}%` : undefined;
+
   // Ce qui ALIMENTE la maison (gauche)
   const sources: FlowItem[] = [];
   if (solarW > 50) sources.push({ key: 'sol', icon: <Sun className="w-5 h-5" />, label: 'Solaire', watts: solarW, color: '#eab308' });
-  if (discharging) sources.push({ key: 'batd', icon: <Battery className="w-5 h-5" />, label: 'Batterie', watts: batteryW, color: '#22c55e' });
+  if (discharging) sources.push({ key: 'batd', icon: <Battery className="w-5 h-5" />, label: 'Batterie', watts: batteryW, detail: socTxt, color: '#22c55e' });
   if (importing) sources.push({ key: 'edf', icon: <Plug className="w-5 h-5" />, label: 'Réseau EDF', watts: gridW, color: '#f59e0b' });
 
   // Où va le SURPLUS (droite)
   const sinks: FlowItem[] = [];
   if (exporting) sinks.push({ key: 'exp', icon: <Plug className="w-5 h-5" />, label: 'Export réseau', watts: gridW, color: '#10b981' });
-  if (charging) sinks.push({ key: 'batc', icon: <Battery className="w-5 h-5" />, label: 'Charge batterie', watts: batteryW, color: '#22c55e' });
+  if (charging) sinks.push({ key: 'batc', icon: <Battery className="w-5 h-5" />, label: 'Charge batterie', watts: batteryW, detail: socTxt, color: '#22c55e' });
+
+  const sourcesW = sources.reduce((s, x) => s + Math.abs(x.watts), 0);
+  const sinksW = sinks.reduce((s, x) => s + Math.abs(x.watts), 0);
 
   return (
     <div className="lg:col-span-2 bg-white dark:bg-zinc-800/50 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 flex flex-col">
@@ -89,7 +95,7 @@ export function EnergyFlow({ solarW, gridW, batteryW, homeW, soc, connected }: E
             <div className="flex flex-col justify-center gap-2">
               {sources.map((s) => <Chip key={s.key} item={s} />)}
             </div>
-            <Arrow color="#eab308" />
+            <Arrow color="#eab308" watts={sourcesW} />
           </>
         )}
 
@@ -104,7 +110,7 @@ export function EnergyFlow({ solarW, gridW, batteryW, homeW, soc, connected }: E
 
         {sinks.length > 0 && (
           <>
-            <Arrow color="#10b981" />
+            <Arrow color="#10b981" watts={sinksW} />
             <div className="flex flex-col justify-center gap-2">
               {sinks.map((s) => <Chip key={s.key} item={s} />)}
             </div>
@@ -112,15 +118,13 @@ export function EnergyFlow({ solarW, gridW, batteryW, homeW, soc, connected }: E
         )}
       </div>
 
-      {/* Batterie toujours visible (état + charge) */}
-      <div className="flex items-center justify-center gap-2 mt-5 text-sm text-zinc-500">
-        <Battery className="w-4 h-4" />
-        <span>
-          Batterie {soc !== null ? `${soc}%` : '--'}
-          {' · '}
-          {charging ? 'en charge' : discharging ? 'alimente la maison' : 'au repos'}
-        </span>
-      </div>
+      {/* Batterie au repos : rappel discret (sinon elle est déjà en chip) */}
+      {!charging && !discharging && (
+        <div className="flex items-center justify-center gap-2 mt-5 text-sm text-zinc-500">
+          <Battery className="w-4 h-4" />
+          <span>Batterie {soc !== null ? `${soc}%` : '--'} · au repos</span>
+        </div>
+      )}
 
       {!connected && <p className="text-sm text-zinc-500 mt-3 text-center">Home Assistant déconnecté — valeurs indisponibles.</p>}
     </div>
