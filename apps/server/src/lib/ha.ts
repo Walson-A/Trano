@@ -229,6 +229,69 @@ export async function getEnergyDetail(): Promise<Record<string, unknown>> {
   };
 }
 
+// Couleurs FR → noms CSS acceptés par HA (color_name)
+const COLOR_MAP: Record<string, string> = {
+  rouge: 'red', bleu: 'blue', vert: 'green', jaune: 'yellow', orange: 'orange',
+  violet: 'purple', rose: 'pink', blanc: 'white', turquoise: 'turquoise',
+  cyan: 'cyan', magenta: 'magenta', or: 'gold', doré: 'gold', chaud: 'orange', froid: 'white',
+};
+
+/** Règle une lumière : luminosité (%) et/ou couleur (nom FR ou anglais). */
+export async function setLight(entityId: string, brightnessPct?: number, color?: string): Promise<string> {
+  if (!ENTITY_RE.test(entityId) || !entityId.startsWith('light.')) {
+    return `Refusé : "${entityId}" n'est pas une lumière.`;
+  }
+  const body: Record<string, unknown> = { entity_id: entityId };
+  if (typeof brightnessPct === 'number') body.brightness_pct = Math.max(0, Math.min(100, Math.round(brightnessPct)));
+  if (color) body.color_name = COLOR_MAP[color.toLowerCase()] ?? color.toLowerCase();
+  await haFetch('/api/services/light/turn_on', { method: 'POST', body: JSON.stringify(body) });
+  const bits = [
+    typeof brightnessPct === 'number' ? `luminosité ${body.brightness_pct}%` : null,
+    color ? `couleur ${color}` : null,
+  ].filter(Boolean);
+  return `OK, ${entityId} réglée (${bits.join(', ') || 'allumée'}).`;
+}
+
+/** Liste les scènes HA. */
+export async function listScenes(): Promise<Array<{ entity_id: string; nom: string }>> {
+  const states = (await haFetch('/api/states')) as HAState[];
+  return states
+    .filter((s) => s.entity_id.startsWith('scene.'))
+    .map((s) => ({ entity_id: s.entity_id, nom: (s.attributes.friendly_name as string) ?? s.entity_id }));
+}
+
+/** Active une scène. */
+export async function activateScene(entityId: string): Promise<string> {
+  if (!ENTITY_RE.test(entityId) || !entityId.startsWith('scene.')) return `Refusé : "${entityId}" n'est pas une scène.`;
+  await haFetch('/api/services/scene/turn_on', { method: 'POST', body: JSON.stringify({ entity_id: entityId }) });
+  return `Scène ${entityId} activée.`;
+}
+
+/** Pilote la Freebox : wifi on/off, redémarrage. */
+export async function controlFreebox(action: 'wifi_on' | 'wifi_off' | 'reboot'): Promise<string> {
+  if (action === 'reboot') {
+    await haFetch('/api/services/button/press', { method: 'POST', body: JSON.stringify({ entity_id: 'button.reboot_freebox' }) });
+    return 'Redémarrage de la Freebox lancé.';
+  }
+  const service = action === 'wifi_on' ? 'turn_on' : 'turn_off';
+  await haFetch(`/api/services/switch/${service}`, { method: 'POST', body: JSON.stringify({ entity_id: 'switch.freebox_wifi' }) });
+  return `Wi-Fi Freebox ${action === 'wifi_on' ? 'activé' : 'coupé'}.`;
+}
+
+/** Lecture ponctuelle : puissance réseau (W, +import/-export) et SOC batterie (%). */
+export async function readGridAndBattery(): Promise<{ gridW: number | null; soc: number | null }> {
+  const states = (await haFetch('/api/states')) as HAState[];
+  const byId = new Map(states.map((s) => [s.entity_id, s]));
+  const num = (id: string) => {
+    const v = parseFloat(byId.get(id)?.state ?? '');
+    return Number.isNaN(v) ? null : v;
+  };
+  return {
+    gridW: num('sensor.shellypro3em_ac15187b3e18_puissance'),
+    soc: num('sensor.hyper_2000_electric_level'),
+  };
+}
+
 /** Notification vers un service notify HA (téléphones via app compagnon). */
 export async function notifyPhone(service: string, title: string, message: string): Promise<void> {
   await haFetch(`/api/services/notify/${service}`, {

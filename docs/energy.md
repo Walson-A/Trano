@@ -57,9 +57,23 @@ conso = production + import EDF - export + décharge batterie - charge batterie
    l'entrée PV du Zendure comme charge batterie) — ses chiffres sont faux,
    ne pas s'y comparer.
 
+## Surveillance proactive EDF
+
+`apps/server/src/lib/energyWatcher.ts` interroge HA toutes les 5 min et
+**alerte quand l'import EDF est évitable** : import réseau > seuil ET batterie
+au-dessus du minimum (donc la batterie aurait pu couvrir → quelque chose
+d'anormal ou un gros appareil). La nuit batterie vide, l'import est jugé
+inévitable → **pas d'alerte** (anti-spam). Une seule alerte par épisode, avec
+un délai de garde ; diffusée aux écrans Trano en interphone (⚡ Trano) et,
+optionnellement, aux téléphones.
+
+Réglable par variables d'environnement (voir `apps/server/.env.example`) :
+`TRANO_EDF_ALERT`, `TRANO_EDF_THRESHOLD_W`, `TRANO_EDF_MIN_SOC`,
+`TRANO_EDF_COOLDOWN_MIN`, `TRANO_EDF_ALERT_PHONES`.
+
 ## Suites prévues
 
-- Notification (téléphones) quand la maison importe depuis EDF
 - « Que puis-je lancer maintenant ? » : puissance disponible avant de puiser
   batterie/EDF, calculée depuis le surplus courant
+- Prévision solaire (nécessite l'intégration Forecast.Solar dans HA)
 - Prévision nocturne : batterie suffisante pour la nuit selon les habitudes

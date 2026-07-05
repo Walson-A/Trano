@@ -36,6 +36,14 @@ L'assistant ne peut faire QUE ce que ses outils permettent
   (les ajouts sont attribués au profil actif).
 - `interphone` — envoie une annonce aux écrans Trano et/ou aux téléphones,
   signée du profil actif.
+- `regler_lumiere` — luminosité (0-100 %) et/ou couleur (noms FR mappés vers
+  les couleurs CSS de HA) d'une lumière.
+- `lister_scenes` / `activer_scene` — scènes HA.
+- `controler_freebox` — wifi on/off, redémarrage.
+
+Non implémenté faute de données réelles : **prévision solaire** (aucune
+intégration Forecast.Solar dans HA — à installer côté Home Assistant pour
+l'activer).
 
 Le profil actif est transmis dans la requête (`body.profile`) pour signer
 les ajouts et l'interphone. Boucle d'outils plafonnée à 6 tours ; historique

@@ -9,6 +9,7 @@ import { shoppingRoutes } from './routes/shopping.ts';
 import { assistantRoutes } from './routes/assistant.ts';
 import { intercomRoutes } from './routes/intercom.ts';
 import { roomRoutes } from './routes/rooms.ts';
+import { startEnergyWatcher } from './lib/energyWatcher.ts';
 import { registerClient } from './ws.ts';
 
 // En dev, les secrets (HA, OpenRouter) vivent dans apps/server/.env (gitignoré).
@@ -64,6 +65,10 @@ if (existsSync(webDist)) {
     return reply.sendFile('index.html');
   });
 }
+
+// Surveillance proactive de l'autonomie énergétique (hook enregistré avant listen)
+const stopWatcher = startEnergyWatcher((msg) => app.log.info(msg));
+app.addHook('onClose', () => stopWatcher());
 
 try {
   await app.listen({ port: PORT, host: HOST });

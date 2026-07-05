@@ -3,6 +3,7 @@ import { SHOPPING_CATEGORIES, SHOPPING_CATEGORY_LABELS } from '@trano/shared';
 import {
   getHouseSnapshot, controlDevice, listControllableDevices, getDeviceInfo,
   getWeatherDetail, getEnergyDetail, notifyPhone, haConfigured,
+  setLight, listScenes, activateScene, controlFreebox,
 } from '../lib/ha.ts';
 import { db, newId } from '../db.ts';
 import { broadcast, broadcastMessage } from '../ws.ts';
@@ -74,6 +75,23 @@ const TOOLS = [
       message: { type: 'string' },
       destinataire: { type: 'string', enum: ['ecrans', 'telephones', 'tous'], description: 'par défaut tous' },
     }, required: ['message'],
+  },
+  {
+    name: 'regler_lumiere', description: "Règle une lumière : luminosité (0-100 %) et/ou couleur (rouge, bleu, blanc chaud…). Trouve l'entity_id via lister_appareils.",
+    params: {
+      entity_id: { type: 'string' },
+      luminosite: { type: 'number', description: '0 à 100' },
+      couleur: { type: 'string', description: 'nom de couleur, ex "rouge", "bleu", "blanc"' },
+    }, required: ['entity_id'],
+  },
+  { name: 'lister_scenes', description: 'Liste les scènes disponibles.', params: {} },
+  {
+    name: 'activer_scene', description: 'Active une scène (via son entity_id, obtenu par lister_scenes).',
+    params: { entity_id: { type: 'string' } }, required: ['entity_id'],
+  },
+  {
+    name: 'controler_freebox', description: 'Pilote la Freebox : activer/couper le wifi, ou redémarrer la box.',
+    params: { action: { type: 'string', enum: ['wifi_on', 'wifi_off', 'reboot'] } }, required: ['action'],
   },
 ].map((t) => ({
   type: 'function' as const,
@@ -147,6 +165,19 @@ async function runTool(name: string, args: Record<string, unknown>, ctx: ToolCtx
         }
         return `Message d'interphone envoyé (${cible}) : "${message}".`;
       }
+
+      case 'regler_lumiere':
+        return await setLight(
+          String(args.entity_id),
+          typeof args.luminosite === 'number' ? args.luminosite : undefined,
+          args.couleur ? String(args.couleur) : undefined
+        );
+      case 'lister_scenes':
+        return JSON.stringify(await listScenes());
+      case 'activer_scene':
+        return await activateScene(String(args.entity_id));
+      case 'controler_freebox':
+        return await controlFreebox(args.action as 'wifi_on' | 'wifi_off' | 'reboot');
 
       default:
         return `Outil inconnu : ${name}`;
