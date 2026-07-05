@@ -5,28 +5,85 @@ import { useHA } from '../../context/HAContext';
 import { useDeviceControls } from '../../core/store/useDeviceControls';
 import { cn } from '../../utils';
 
-// Couleurs pures proposées (envoyées en rgb — marche pour hs/rgb/xy)
-const COLOR_PRESETS: Array<{ name: string; rgb: [number, number, number]; hex: string }> = [
-  { name: 'Rouge', rgb: [239, 68, 68], hex: '#ef4444' },
-  { name: 'Orange', rgb: [249, 115, 22], hex: '#f97316' },
-  { name: 'Jaune', rgb: [234, 179, 8], hex: '#eab308' },
-  { name: 'Vert', rgb: [34, 197, 94], hex: '#22c55e' },
-  { name: 'Cyan', rgb: [6, 182, 212], hex: '#06b6d4' },
-  { name: 'Bleu', rgb: [59, 130, 246], hex: '#3b82f6' },
-  { name: 'Violet', rgb: [168, 85, 247], hex: '#a855f7' },
-  { name: 'Rose', rgb: [236, 72, 153], hex: '#ec4899' },
+// Raccourcis couleur (une ligne, sous la roue) — pratique pour tout le monde
+const QUICK_COLORS: Array<{ name: string; hs: [number, number]; hex: string }> = [
+  { name: 'Rouge', hs: [0, 100], hex: '#ef4444' },
+  { name: 'Orange', hs: [30, 100], hex: '#f97316' },
+  { name: 'Jaune', hs: [50, 100], hex: '#eab308' },
+  { name: 'Vert', hs: [140, 100], hex: '#22c55e' },
+  { name: 'Cyan', hs: [190, 100], hex: '#06b6d4' },
+  { name: 'Bleu', hs: [217, 100], hex: '#3b82f6' },
+  { name: 'Violet', hs: [270, 100], hex: '#a855f7' },
+  { name: 'Rose', hs: [330, 90], hex: '#ec4899' },
 ];
 
 const DIMMABLE_MODES = ['brightness', 'color_temp', 'hs', 'rgb', 'rgbw', 'rgbww', 'xy', 'white'];
 const COLOR_MODES = ['hs', 'rgb', 'rgbw', 'rgbww', 'xy'];
 
-/** Petit slider avec commit HA débouncé (robuste au doigt comme à la souris). */
+/** Commit HA débouncé (robuste au doigt comme à la souris). */
 function useDebouncedCommit() {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   return (fn: () => void) => {
     if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(fn, 300);
+    timer.current = setTimeout(fn, 200);
   };
+}
+
+/**
+ * Roue chromatique HSV : angle = teinte (0-360), distance au centre = saturation.
+ * Renvoie [hue, saturation] à chaque déplacement (débouncé par le parent).
+ */
+function ColorWheel({ hue, saturation, onPick }: { hue: number; saturation: number; onPick: (hs: [number, number]) => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  const handle = (clientX: number, clientY: number) => {
+    const el = ref.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const dx = clientX - cx;
+    const dy = clientY - cy;
+    const r = rect.width / 2;
+    const h = (Math.atan2(dy, dx) * 180) / Math.PI; // 0 = est, sens horaire
+    const hueDeg = (h + 360) % 360;
+    const sat = Math.min(100, Math.round((Math.hypot(dx, dy) / r) * 100));
+    onPick([Math.round(hueDeg), sat]);
+  };
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    handle(e.clientX, e.clientY);
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (e.buttons === 1 || e.pressure > 0) handle(e.clientX, e.clientY);
+  };
+
+  // Position du marqueur (est = teinte 0, sens horaire, y vers le bas)
+  const rad = (hue * Math.PI) / 180;
+  const dist = (saturation / 100) * 50; // % du rayon
+  const markerX = 50 + dist * Math.cos(rad);
+  const markerY = 50 + dist * Math.sin(rad);
+
+  return (
+    <div
+      ref={ref}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      className="relative mx-auto rounded-full cursor-pointer touch-none select-none"
+      style={{
+        width: 220,
+        height: 220,
+        background:
+          'radial-gradient(circle at center, #fff 0%, transparent 70%), conic-gradient(from 90deg, hsl(0,100%,50%), hsl(60,100%,50%), hsl(120,100%,50%), hsl(180,100%,50%), hsl(240,100%,50%), hsl(300,100%,50%), hsl(360,100%,50%))',
+      }}
+    >
+      <div
+        className="absolute w-6 h-6 rounded-full border-[3px] border-white shadow-lg -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+        style={{ left: `${markerX}%`, top: `${markerY}%`, backgroundColor: `hsl(${hue}, ${saturation}%, 50%)` }}
+      />
+    </div>
+  );
 }
 
 export function DeviceControlSheet() {
@@ -36,7 +93,11 @@ export function DeviceControlSheet() {
 
   const [dragBrightness, setDragBrightness] = useState<number | null>(null);
   const [dragKelvin, setDragKelvin] = useState<number | null>(null);
-  const commit = useDebouncedCommit();
+  const [dragHs, setDragHs] = useState<[number, number] | null>(null);
+  // Un timer indépendant par contrôle (sinon ils s'annulent entre eux)
+  const commitBright = useDebouncedCommit();
+  const commitKelv = useDebouncedCommit();
+  const commitHue = useDebouncedCommit();
 
   if (!entity || !openId) return <Modal isOpen={false} onClose={close} title=""><div /></Modal>;
 
@@ -57,8 +118,8 @@ export function DeviceControlSheet() {
   const brightnessPct =
     dragBrightness ?? (typeof attrs.brightness === 'number' ? Math.round((attrs.brightness / 255) * 100) : isOn ? 100 : 0);
   const kelvin = dragKelvin ?? (typeof attrs.color_temp_kelvin === 'number' ? attrs.color_temp_kelvin : Math.round((minK + maxK) / 2));
-  const currentRgb = (attrs.rgb_color as [number, number, number]) ?? null;
   const inColorMode = attrs.color_mode !== 'color_temp';
+  const currentHs = dragHs ?? (attrs.hs_color as [number, number]) ?? [0, 0];
   const currentEffect = (attrs.effect as string) ?? null;
 
   // ── Actions ───────────────────────────────────────────────
@@ -75,15 +136,19 @@ export function DeviceControlSheet() {
 
   const onBrightness = (pct: number) => {
     setDragBrightness(pct);
-    commit(() => { callLight({ brightness_pct: pct }); setDragBrightness(null); });
+    commitBright(() => { callLight({ brightness_pct: pct }); setDragBrightness(null); });
   };
   const onKelvin = (k: number) => {
     setDragKelvin(k);
-    commit(() => { callLight({ color_temp_kelvin: k }); setDragKelvin(null); });
+    commitKelv(() => { callLight({ color_temp_kelvin: k }); setDragKelvin(null); });
   };
-
-  const isSameColor = (rgb: [number, number, number]) =>
-    inColorMode && currentRgb && Math.abs(currentRgb[0] - rgb[0]) < 25 && Math.abs(currentRgb[1] - rgb[1]) < 25 && Math.abs(currentRgb[2] - rgb[2]) < 25;
+  // Glissement continu sur la roue → débouncé
+  const onHsDrag = (hs: [number, number]) => {
+    setDragHs(hs);
+    commitHue(() => { callLight({ hs_color: hs }); setDragHs(null); });
+  };
+  // Tap discret (raccourci couleur) → immédiat
+  const onHsPick = (hs: [number, number]) => callLight({ hs_color: hs });
 
   const Section = ({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) => (
     <div>
@@ -139,15 +204,15 @@ export function DeviceControlSheet() {
           </Section>
         )}
 
-        {/* Couleurs */}
+        {/* Couleur — roue chromatique + raccourcis */}
         {colorable && (
           <Section icon={<Palette className="w-4 h-4" />} label="Couleur">
-            <div className="grid grid-cols-8 gap-2.5">
-              {COLOR_PRESETS.map((c) => (
+            <ColorWheel hue={currentHs[0]} saturation={currentHs[1]} onPick={onHsDrag} />
+            <div className="grid grid-cols-8 gap-2.5 mt-5">
+              {QUICK_COLORS.map((c) => (
                 <button
-                  key={c.name} onClick={() => callLight({ rgb_color: c.rgb })} title={c.name}
-                  className={cn('aspect-square rounded-xl transition-all hover:scale-110',
-                    isSameColor(c.rgb) ? 'ring-2 ring-white ring-offset-2 ring-offset-zinc-900 scale-110' : '')}
+                  key={c.name} onClick={() => onHsPick(c.hs)} title={c.name}
+                  className="aspect-square rounded-xl transition-all hover:scale-110"
                   style={{ backgroundColor: c.hex }}
                 />
               ))}

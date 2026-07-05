@@ -5,6 +5,7 @@ import { cn } from '../utils';
 import { useHA } from '../context/HAContext';
 import { ENERGY_LIVE, readPowerW } from '../config/energy';
 import { useEnergyStats, EnergyRange } from '../hooks/useEnergyStats';
+import { SolarPanels } from '../features/Energy/SolarPanels';
 
 const RANGE_LABELS: Record<EnergyRange, string> = {
   day: 'Jour',
@@ -260,7 +261,10 @@ export function Energy() {
         </div>
       </div>
 
-      {/* 4. Graphique & 5. Mesures par appareil */}
+      {/* 4. Détail par panneau solaire */}
+      <SolarPanels />
+
+      {/* 5. Graphique & 6. Mesures par appareil */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-white dark:bg-zinc-800/50 p-4 sm:p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
