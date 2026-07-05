@@ -11,6 +11,35 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Trano" />
     <title>Trano</title>
+    <script>
+      // Filet kiosque : sur le vieil iPad il n'y a pas de console — toute
+      // erreur JS fatale s'affiche en bandeau au lieu d'une page blanche.
+      // Écrit en ES5 volontairement (doit tourner même où le bundle casse).
+      (function () {
+        function show(msg) {
+          try {
+            var el = document.getElementById('trano-fatal');
+            if (!el) {
+              el = document.createElement('div');
+              el.id = 'trano-fatal';
+              el.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b91c1c;color:#fff;font:12px/1.5 -apple-system,Helvetica,sans-serif;padding:10px 14px;word-break:break-word;max-height:45%;overflow:auto';
+              el.onclick = function () { if (el.parentNode) el.parentNode.removeChild(el); };
+              (document.body || document.documentElement).appendChild(el);
+            }
+            var p = document.createElement('div');
+            p.textContent = '⚠ ' + msg;
+            el.appendChild(p);
+          } catch (e) { /* jamais bloquant */ }
+        }
+        window.addEventListener('error', function (e) {
+          show((e.message || 'Erreur script') + (e.filename ? ' — ' + e.filename.split('/').pop() + ':' + e.lineno : ''));
+        });
+        window.addEventListener('unhandledrejection', function (e) {
+          var r = e && e.reason;
+          show('Promesse rejetée : ' + (r && r.message ? r.message : String(r)));
+        });
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
