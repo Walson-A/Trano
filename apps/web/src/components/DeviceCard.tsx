@@ -93,12 +93,6 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({ device, onToggle, isFavo
         </div>
 
         <div className="flex items-center gap-1.5">
-          {device.type === 'light' && active && (
-            <span
-              style={rgb ? { color: lightRgb!, backgroundColor: rgba(0.14) } : undefined}
-              className={cn("text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full", !rgb && "text-amber-600 dark:text-amber-400 bg-amber-500/10")}
-            >{device.state.brightness}%</span>
-          )}
           {hasRichControls && (
             <SlidersHorizontal className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-600" aria-hidden />
           )}
@@ -124,12 +118,15 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({ device, onToggle, isFavo
 
       <div className="mt-auto">
         <h3 className="font-bold text-xs sm:text-sm truncate tracking-tight">{device.name}</h3>
-        <p className={cn(
-          "text-[10px] sm:text-xs mt-0.5 sm:mt-1 truncate transition-colors duration-500",
-          active
-            ? device.type === 'light' ? "text-amber-600/80 dark:text-amber-400/80 font-semibold" : "text-blue-600/80 dark:text-blue-400/80 font-semibold"
-            : "text-zinc-500/60 dark:text-zinc-400/40"
-        )}>
+        <p
+          style={rgb ? { color: lightRgb! } : undefined}
+          className={cn(
+            "text-[10px] sm:text-xs mt-0.5 sm:mt-1 truncate transition-colors duration-500 font-semibold",
+            !rgb && (active
+              ? device.type === 'light' ? "text-amber-600/80 dark:text-amber-400/80" : "text-blue-600/80 dark:text-blue-400/80"
+              : "text-zinc-500/60 dark:text-zinc-400/40 font-normal")
+          )}
+        >
           {getStatus()}
         </p>
       </div>
