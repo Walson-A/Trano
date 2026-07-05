@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Lightbulb, Palette, Sun, Sparkles, Check, Loader2, AlertTriangle } from 'lucide-react';
 import { Modal } from '../../ui/Modal/Modal';
 import { useHA } from '../../context/HAContext';
@@ -52,6 +52,28 @@ function ColorWheel({ hue, saturation, onPick }: { hue: number; saturation: numb
     const sat = Math.min(100, Math.round((Math.hypot(dx, dy) / (rect.width / 2)) * 100));
     onPick([Math.round(hueDeg), sat]);
   };
+
+  // iOS 12 (iPad mural) n'a pas les Pointer Events : on retombe sur les
+  // événements touch natifs (non-passifs, pour bloquer le scroll pendant
+  // qu'on choisit une couleur). handleRef évite les fermetures périmées.
+  const handleRef = useRef(handle);
+  handleRef.current = handle;
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || 'PointerEvent' in window) return;
+    const onTouch = (e: TouchEvent) => {
+      const t = e.touches[0];
+      if (!t) return;
+      e.preventDefault();
+      handleRef.current(t.clientX, t.clientY);
+    };
+    el.addEventListener('touchstart', onTouch, { passive: false });
+    el.addEventListener('touchmove', onTouch, { passive: false });
+    return () => {
+      el.removeEventListener('touchstart', onTouch);
+      el.removeEventListener('touchmove', onTouch);
+    };
+  }, []);
   const rad = (hue * Math.PI) / 180;
   const dist = (saturation / 100) * 50;
   return (

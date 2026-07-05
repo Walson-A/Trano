@@ -17,6 +17,20 @@ async function ensureLegacySupport() {
     (window as unknown as { ResizeObserver: unknown }).ResizeObserver = RO;
   }
 
+  // Safari < 14 : MediaQueryList n'a que addListener/removeListener —
+  // motion (prefers-reduced-motion) appelle addEventListener('change').
+  const mql = window.matchMedia?.('(min-width: 1px)');
+  if (mql && !('addEventListener' in mql)) {
+    type LegacyMQL = { addListener(cb: unknown): void; removeListener(cb: unknown): void };
+    const proto = Object.getPrototypeOf(mql) as LegacyMQL & Record<string, unknown>;
+    proto.addEventListener = function (this: LegacyMQL, type: string, cb: unknown) {
+      if (type === 'change') this.addListener(cb);
+    };
+    proto.removeEventListener = function (this: LegacyMQL, type: string, cb: unknown) {
+      if (type === 'change') this.removeListener(cb);
+    };
+  }
+
   const probe = document.createElement('div');
   probe.style.cssText = 'display:flex;gap:1px;position:absolute;visibility:hidden';
   probe.appendChild(document.createElement('i'));
