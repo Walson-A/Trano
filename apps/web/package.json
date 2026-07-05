@@ -18,14 +18,20 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "recharts": "^3.8.0",
+    "resize-observer-polyfill": "^1.5.1",
     "tailwind-merge": "^3.5.0",
     "zustand": "^5.0.11"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.1.14",
+    "@csstools/postcss-cascade-layers": "^5.0.1",
+    "@csstools/postcss-oklab-function": "^4.0.10",
+    "@tailwindcss/postcss": "^4.1.14",
     "@types/node": "^22.14.0",
+    "@vitejs/plugin-legacy": "^6.1.1",
     "@vitejs/plugin-react": "^5.0.4",
+    "autoprefixer": "^10.4.21",
     "tailwindcss": "^4.1.14",
+    "terser": "^5.39.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
   }

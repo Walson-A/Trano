@@ -1,5 +1,5 @@
 name: Trano
-version: "1.0.0"
+version: "1.1.0"
 slug: trano
 description: L'interface virtuelle de la famille — profils, courses, domotique
 url: https://github.com/Walson-A/Trano
@@ -9,6 +9,7 @@ arch:
 init: false
 startup: services
 boot: auto
+watchdog: http://[HOST]:[PORT:3001]/api/health
 ports:
   3001/tcp: 3001
 ports_description:
