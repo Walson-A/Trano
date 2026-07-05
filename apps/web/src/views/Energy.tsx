@@ -6,6 +6,7 @@ import { useHA } from '../context/HAContext';
 import { ENERGY_LIVE, readPowerW } from '../config/energy';
 import { useEnergyStats, EnergyRange } from '../hooks/useEnergyStats';
 import { SolarPanels } from '../features/Energy/SolarPanels';
+import { EnergyFlow } from '../features/Energy/EnergyFlow';
 
 const RANGE_LABELS: Record<EnergyRange, string> = {
   day: 'Jour',
@@ -25,10 +26,6 @@ export function Energy() {
   const batteryW = ENERGY_LIVE.battery.reduce((sum, s) => sum + readPowerW(entities, s), 0); // + décharge
 
   const homeW = Math.max(0, solarW + gridW + batteryW);
-  const solarPower = solarW / 1000;
-  const gridPower = gridW / 1000;
-  const batPower = batteryW / 1000;
-  const homePower = homeW / 1000;
 
   const isBatteryCharging = batteryW < -50;
   const isGridExporting = gridW < -50;
@@ -87,81 +84,14 @@ export function Energy() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         {/* 1. Flux d'énergie */}
-        <div className="lg:col-span-2 bg-white dark:bg-zinc-800/50 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 flex flex-col items-center justify-center min-h-[350px]">
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 self-start mb-4">Flux en direct</h2>
-
-          <div className="relative w-full max-w-sm aspect-square my-auto">
-            <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100">
-              <line x1="50" y1="20" x2="50" y2="50" stroke="#EAB308" strokeWidth="2" strokeDasharray="4 4" className={cn("animate-flow", solarW <= 10 && "opacity-20")} />
-              <line x1="50" y1="50" x2="80" y2="50" stroke="#3B82F6" strokeWidth="2" strokeDasharray="4 4" className="animate-flow" />
-              <line
-                x1="50" y1="50" x2="50" y2="80"
-                stroke="#22C55E" strokeWidth="2" strokeDasharray="4 4"
-                className={cn("animate-flow", isBatteryCharging && "animate-flow-reverse", Math.abs(batteryW) < 50 && "opacity-20")}
-              />
-              <line
-                x1="20" y1="50" x2="50" y2="50"
-                stroke="#6B7280" strokeWidth="2" strokeDasharray="4 4"
-                className={cn("animate-flow", isGridExporting && "animate-flow-reverse", Math.abs(gridW) < 50 && "opacity-20")}
-              />
-            </svg>
-
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-zinc-300 dark:bg-zinc-600 z-0"></div>
-
-            {/* Solaire (haut) */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 flex flex-col items-center bg-white dark:bg-zinc-800 p-2 rounded-2xl shadow-sm border border-zinc-100 dark:border-zinc-700">
-              <div className={cn(
-                "w-12 h-12 rounded-full flex items-center justify-center z-10 border-2 shadow-[0_0_15px_rgba(234,179,8,0.3)]",
-                solarW > 10 ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-500 border-yellow-500" : "bg-zinc-100 dark:bg-zinc-800 text-zinc-400 border-zinc-300 dark:border-zinc-700"
-              )}>
-                <Sun className="w-6 h-6" />
-              </div>
-              <span className="text-sm font-bold mt-2 text-yellow-600 dark:text-yellow-400">{solarPower.toFixed(1)} kW</span>
-              <span className="text-[10px] text-zinc-500 uppercase tracking-wider">Solaire</span>
-            </div>
-
-            {/* Batterie (bas) */}
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 flex flex-col items-center bg-white dark:bg-zinc-800 p-2 rounded-2xl shadow-sm border border-zinc-100 dark:border-zinc-700">
-              <span className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Batterie</span>
-              <span className="text-sm font-bold mb-2 text-emerald-600 dark:text-emerald-400">{Math.abs(batPower).toFixed(1)} kW</span>
-              <div className={cn(
-                "w-12 h-12 rounded-full flex items-center justify-center z-10 border-2 shadow-[0_0_15px_rgba(34,197,94,0.3)]",
-                Math.abs(batteryW) > 50 ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-500 border-emerald-500" : "bg-zinc-100 dark:bg-zinc-800 text-zinc-400 border-zinc-300 dark:border-zinc-700"
-              )}>
-                <Battery className="w-6 h-6" />
-              </div>
-            </div>
-
-            {/* Réseau (gauche) */}
-            <div className={cn(
-              "absolute top-1/2 left-0 -translate-y-1/2 flex flex-col items-center bg-white dark:bg-zinc-800 p-2 rounded-2xl shadow-sm border border-zinc-100 dark:border-zinc-700",
-              Math.abs(gridW) < 50 && "opacity-60"
-            )}>
-              <div className={cn(
-                "w-12 h-12 rounded-full flex items-center justify-center z-10 border-2",
-                isGridImporting ? "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.3)]"
-                  : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 border-zinc-300 dark:border-zinc-700"
-              )}>
-                <Plug className="w-6 h-6" />
-              </div>
-              <span className="text-sm font-bold mt-2 text-zinc-600 dark:text-zinc-400">{Math.abs(gridPower).toFixed(1)} kW</span>
-              <span className="text-[10px] text-zinc-500 uppercase tracking-wider">{isGridExporting ? 'Export' : 'EDF'}</span>
-            </div>
-
-            {/* Maison (droite) */}
-            <div className="absolute top-1/2 right-0 -translate-y-1/2 flex flex-col items-center bg-white dark:bg-zinc-800 p-2 rounded-2xl shadow-sm border border-zinc-100 dark:border-zinc-700">
-              <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-500 flex items-center justify-center z-10 border-2 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)]">
-                <Home className="w-6 h-6" />
-              </div>
-              <span className="text-sm font-bold mt-2 text-blue-600 dark:text-blue-400">{homePower.toFixed(1)} kW</span>
-              <span className="text-[10px] text-zinc-500 uppercase tracking-wider">Maison</span>
-            </div>
-          </div>
-
-          {status !== 'connected' && (
-            <p className="text-sm text-zinc-500 mt-4">Home Assistant déconnecté — valeurs indisponibles.</p>
-          )}
-        </div>
+        <EnergyFlow
+          solarW={solarW}
+          gridW={gridW}
+          batteryW={batteryW}
+          homeW={homeW}
+          soc={soc}
+          connected={status === 'connected'}
+        />
 
         {/* 2. Batteries */}
         <div className="bg-white dark:bg-zinc-800/50 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 flex flex-col justify-between">
