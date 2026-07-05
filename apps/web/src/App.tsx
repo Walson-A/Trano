@@ -10,6 +10,7 @@ import { Settings } from './views/Settings';
 import { AssistantFab, AssistantPanel } from './features/Assistant/AssistantPanel';
 import { IntercomModal } from './features/Intercom/IntercomModal';
 import { IntercomOverlay } from './features/Intercom/IntercomOverlay';
+import { DeviceControlSheet } from './features/Devices/DeviceControlSheet';
 import type { WsIntercomMessage } from '@trano/shared';
 import { useHAAdapter } from './hooks/useHAAdapter';
 import { useProfileStore, useActiveProfile } from './core/store/useProfileStore';
@@ -132,6 +133,9 @@ export default function App() {
       {/* Interphone : envoi (modal) et réception (overlay plein écran) */}
       <IntercomModal isOpen={intercomOpen} onClose={() => setIntercomOpen(false)} />
       <IntercomOverlay message={incomingCall} onDismiss={() => setIncomingCall(null)} />
+
+      {/* Fiche de contrôle détaillée (luminosité, couleur des lumières) */}
+      <DeviceControlSheet />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import React from 'react';
-import { Lightbulb, Thermometer, Lock, Tv, Power, Heart } from 'lucide-react';
+import { Lightbulb, Thermometer, Lock, Tv, Power, Heart, SlidersHorizontal } from 'lucide-react';
 import { Device } from '../types';
+import { useDeviceControls } from '../core/store/useDeviceControls';
 import { cn } from '../utils';
 
 interface DeviceCardProps {
@@ -12,6 +13,12 @@ interface DeviceCardProps {
 }
 
 export const DeviceCard: React.FC<DeviceCardProps> = ({ device, onToggle, isFavorite, onToggleFavorite }) => {
+  const openControls = useDeviceControls((s) => s.open);
+  // Les lumières ouvrent la fiche de contrôle (luminosité, couleur) ; les
+  // autres appareils basculent directement.
+  const hasRichControls = device.type === 'light';
+  const activate = () => (hasRichControls ? openControls(device.id) : onToggle(device.id));
+
   const getIcon = () => {
     switch (device.type) {
       case 'light': return Lightbulb;
@@ -50,8 +57,8 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({ device, onToggle, isFavo
     <div
       role="button"
       tabIndex={0}
-      onClick={() => onToggle(device.id)}
-      onKeyDown={(e) => e.key === 'Enter' && onToggle(device.id)}
+      onClick={activate}
+      onKeyDown={(e) => e.key === 'Enter' && activate()}
       className={cn(
         "flex flex-col justify-between p-4 sm:p-5 rounded-2xl sm:rounded-3xl transition-all duration-500 text-left h-32 sm:h-36 w-full shadow-sm active:scale-95 border cursor-pointer select-none",
         "bg-white/80 dark:bg-white/5 backdrop-blur-md text-zinc-900 dark:text-zinc-100",
@@ -77,6 +84,9 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({ device, onToggle, isFavo
         <div className="flex items-center gap-1.5">
           {device.type === 'light' && active && (
             <span className="text-[10px] sm:text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full">{device.state.brightness}%</span>
+          )}
+          {hasRichControls && (
+            <SlidersHorizontal className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-600" aria-hidden />
           )}
           {onToggleFavorite && (
             <span
