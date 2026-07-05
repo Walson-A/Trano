@@ -45,6 +45,7 @@ function buildDeviceState(entity: HassEntity, type: DeviceType): DeviceState {
     volume: attrs.volume_level != null ? Math.round(attrs.volume_level * 100) : undefined,
     position: attrs.current_position as number | undefined,
     title: (attrs.media_title as string) || undefined,
+    rgbColor: Array.isArray(attrs.rgb_color) ? (attrs.rgb_color as [number, number, number]) : undefined,
   };
 }
 

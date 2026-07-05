@@ -50,6 +50,7 @@ export interface DeviceState {
   volume?: number;           // 0-100
   position?: number;         // cover position 0-100
   title?: string;            // media title
+  rgbColor?: [number, number, number]; // couleur actuelle d'une lumière
 }
 
 export interface Device {

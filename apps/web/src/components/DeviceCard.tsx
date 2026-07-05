@@ -53,37 +53,51 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({ device, onToggle, isFavo
 
   const active = isActive();
 
+  // Couleur réelle de la lampe (si allumée et colorée) — sinon ambre par défaut
+  const rgb = device.type === 'light' && active && device.state.rgbColor ? device.state.rgbColor : null;
+  const lightRgb = rgb ? `rgb(${rgb.join(',')})` : null;
+  const rgba = (a: number) => `rgba(${rgb!.join(',')}, ${a})`;
+  const iconStyle = rgb ? { backgroundColor: rgba(0.16), color: lightRgb! } : undefined;
+  const borderStyle = rgb ? { borderColor: rgba(0.5), boxShadow: `0 0 18px ${rgba(0.18)}` } : undefined;
+
   return (
     <div
       role="button"
       tabIndex={0}
       onClick={activate}
       onKeyDown={(e) => e.key === 'Enter' && activate()}
+      style={borderStyle}
       className={cn(
         "flex flex-col justify-between p-4 sm:p-5 rounded-2xl sm:rounded-3xl transition-all duration-500 text-left h-32 sm:h-36 w-full shadow-sm active:scale-95 border cursor-pointer select-none",
         "bg-white/80 dark:bg-white/5 backdrop-blur-md text-zinc-900 dark:text-zinc-100",
-        active
+        !borderStyle && (active
           ? device.type === 'light'
             ? "border-amber-500/50 dark:border-amber-400/30 shadow-[0_0_15px_rgba(245,158,11,0.1)] dark:shadow-[0_0_20px_rgba(245,158,11,0.05)]"
             : "border-blue-500/50 dark:border-blue-400/30 shadow-[0_0_15px_rgba(59,130,246,0.1)] dark:shadow-[0_0_20px_rgba(59,130,246,0.05)]"
-          : "border-zinc-200 dark:border-white/5 hover:border-zinc-300 dark:hover:border-white/10"
+          : "border-zinc-200 dark:border-white/5 hover:border-zinc-300 dark:hover:border-white/10")
       )}
     >
       <div className="flex justify-between items-start w-full">
-        <div className={cn(
-          "w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition-colors duration-500",
-          active
-            ? device.type === 'light'
-              ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-              : "bg-blue-500/10 text-blue-600 dark:text-blue-400"
-            : "bg-zinc-100 dark:bg-white/5 text-zinc-400 dark:text-zinc-500"
-        )}>
+        <div
+          style={iconStyle}
+          className={cn(
+            "w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition-colors duration-500",
+            !iconStyle && (active
+              ? device.type === 'light'
+                ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                : "bg-blue-500/10 text-blue-600 dark:text-blue-400"
+              : "bg-zinc-100 dark:bg-white/5 text-zinc-400 dark:text-zinc-500")
+          )}
+        >
           <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
         </div>
 
         <div className="flex items-center gap-1.5">
           {device.type === 'light' && active && (
-            <span className="text-[10px] sm:text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full">{device.state.brightness}%</span>
+            <span
+              style={rgb ? { color: lightRgb!, backgroundColor: rgba(0.14) } : undefined}
+              className={cn("text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full", !rgb && "text-amber-600 dark:text-amber-400 bg-amber-500/10")}
+            >{device.state.brightness}%</span>
           )}
           {hasRichControls && (
             <SlidersHorizontal className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-600" aria-hidden />
