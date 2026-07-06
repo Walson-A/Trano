@@ -14,9 +14,9 @@ interface DeviceCardProps {
 
 export const DeviceCard: React.FC<DeviceCardProps> = ({ device, onToggle, isFavorite, onToggleFavorite }) => {
   const openControls = useDeviceControls((s) => s.open);
-  // Les lumières ouvrent la fiche de contrôle (luminosité, couleur) ; les
-  // autres appareils basculent directement.
-  const hasRichControls = device.type === 'light';
+  // Lumières, médias, volets et clim ouvrent leur fiche de contrôle ;
+  // les autres appareils (prises…) basculent directement.
+  const hasRichControls = ['light', 'media', 'cover', 'climate'].includes(device.type);
   const activate = () => (hasRichControls ? openControls(device.id) : onToggle(device.id));
 
   const getIcon = () => {
@@ -37,6 +37,10 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({ device, onToggle, isFavo
       case 'climate': return `${device.state.temperature ?? '--'}°C (Cible: ${device.state.targetTemp ?? '--'}°C)`;
       case 'lock': return device.state.isLocked ? 'Verrouillé' : 'Déverrouillé';
       case 'media': return device.state.isPlaying ? device.state.title : 'En pause';
+      case 'cover':
+        return device.state.position != null
+          ? device.state.position === 0 ? 'Fermé' : `Ouvert · ${device.state.position}%`
+          : device.state.mode === 'open' ? 'Ouvert' : device.state.mode === 'closed' ? 'Fermé' : '';
       default: return '';
     }
   };
@@ -47,6 +51,7 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({ device, onToggle, isFavo
       case 'climate': return device.state.mode !== 'off';
       case 'lock': return !device.state.isLocked; // Unlocked is "active/warning" state
       case 'media': return device.state.isPlaying;
+      case 'cover': return device.state.mode === 'open' || device.state.mode === 'opening' || (device.state.position ?? 0) > 0;
       default: return false;
     }
   };
