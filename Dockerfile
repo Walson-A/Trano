@@ -12,6 +12,11 @@ FROM node:24-alpine
 WORKDIR /app
 ENV NODE_ENV=production
 ENV TRANO_DB_PATH=/data/trano.db
+# La VM Home Assistant de la Freebox Delta plafonne à ~1 Go, dont HA
+# consomme déjà l'essentiel. On borne le tas de Node pour que Trano ne
+# puisse jamais grignoter la mémoire au point d'étouffer HA : mieux vaut
+# que Trano échoue seul plutôt qu'il emporte la domotique avec lui.
+ENV NODE_OPTIONS=--max-old-space-size=128
 
 COPY package.json package-lock.json ./
 COPY apps/web/package.json apps/web/

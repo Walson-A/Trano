@@ -17,8 +17,12 @@ arch:
   - amd64
 init: false
 startup: services
-boot: auto
-watchdog: http://[HOST]:[PORT:3001]/api/health
+boot: manual
+# Pas de `watchdog:` volontairement. Sur une VM à 1 Go, un add-on qui
+# échoue au démarrage serait relancé en boucle par le chien de garde, et
+# chaque tentative grignote la mémoire jusqu'à rendre Home Assistant
+# lui-même injoignable — c'est exactement ce qui s'est produit. À ne
+# réintroduire qu'une fois l'add-on prouvé stable sur ce matériel.
 ports:
   3001/tcp: 3001
 ports_description:

@@ -17,9 +17,10 @@ try {
 
 process.env.TRANO_DB_PATH ??= '/data/trano.db';
 
-const child = spawn(
-  'node',
-  ['node_modules/tsx/dist/cli.mjs', 'apps/server/src/index.ts'],
-  { stdio: 'inherit', env: process.env }
-);
+// Node 24 lit le TypeScript directement : pas d'intermédiaire, donc pas de
+// processus esbuild résident. Voir apps/server/package.json.
+const child = spawn('node', ['apps/server/src/index.ts'], {
+  stdio: 'inherit',
+  env: process.env,
+});
 child.on('exit', (code) => process.exit(code ?? 1));
