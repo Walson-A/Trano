@@ -11,35 +11,29 @@ est incluse dans les sauvegardes automatiques de HA.
 - Un **token d'accès longue durée** HA : Profil utilisateur → Sécurité →
   Créer un token. Gardez-le, il sert à l'étape 4.
 
-## Installation
+## Installation (recommandée) : dépôt GitHub
 
-### 1. Préparer le dossier de l'add-on
+Home Assistant peut lire l'add-on **directement depuis GitHub** — plus
+besoin de partage réseau ni de copier de dossier, ni au premier
+déploiement, ni pour les suivants.
 
-Sur votre PC, à la racine du projet :
+### 1. Ajouter le dépôt dans HA
 
-```bash
-bash deploy/build-addon.sh
+**Paramètres → Modules complémentaires → Boutique d'add-ons** → menu ⋮ en
+haut à droite → **Dépôts** → collez :
+
+```
+https://github.com/Walson-A/Trano
 ```
 
-Ce script **compile le frontend sur le PC** (bundle moderne + bundle
-compatible vieux Safari pour l'iPad mural) puis assemble le dossier
-`deploy/ha-addon/trano/`. La Freebox n'aura qu'à installer les dépendances
-serveur : pas de build lourd sur la VM.
+→ **Ajouter**. Une section **Trano** apparaît dans la boutique (elle lit la
+branche `release`, qui contient l'add-on déjà prêt à l'emploi).
 
-### 2. Copier l'add-on dans la VM HAOS
+### 2. Installer l'add-on
 
-Le plus simple : installez l'add-on officiel **Samba share** dans HA
-(Paramètres → Modules complémentaires → Boutique), démarrez-le, puis depuis
-l'explorateur Windows ouvrez `\\homeassistant.local\addons` et copiez-y le
-dossier `deploy/ha-addon/trano` entier.
+Cliquez sur **Trano** dans la boutique → **Installer**.
 
-### 3. Installer l'add-on
-
-Dans HA : **Paramètres → Modules complémentaires → Boutique d'add-ons**,
-menu ⋮ en haut à droite → **Rechercher les mises à jour**, puis rafraîchissez :
-une section **Add-ons locaux** apparaît avec **Trano**. Cliquez → **Installer**.
-
-### 4. Configurer
+### 3. Configurer
 
 Dans l'onglet **Configuration** de l'add-on :
 
@@ -55,7 +49,7 @@ Puis **Démarrer** (« Lancer au démarrage » et « Chien de garde » sont
 recommandés — le chien de garde surveille `/api/health` et relance
 l'add-on tout seul en cas de pépin).
 
-### 5. Utiliser
+### 4. Utiliser
 
 Sur n'importe quel appareil de la maison :
 **http://homeassistant.local:3001** (ou `http://IP-de-la-VM:3001`).
@@ -65,10 +59,31 @@ lancement plein écran façon application.
 
 ## Mise à jour
 
-Rejouez les étapes 1 et 2 (écrasez le dossier), incrémentez `version` dans
-`config.yaml`, puis dans l'add-on : **Reconstruire**. Les données
-(profils, courses) sont conservées : elles vivent dans `/data/trano.db`,
-hors du conteneur.
+Sur le PC, à la racine du projet :
+
+```bash
+bash deploy/publish-addon.sh
+```
+
+Ce script compile le frontend, incrémente automatiquement le numéro de
+version et publie le résultat sur la branche `release` de GitHub. Dans HA,
+un bouton **Mettre à jour** apparaît alors sur l'add-on Trano (Paramètres →
+Modules complémentaires → Trano) — un clic suffit. Les données (profils,
+courses) sont conservées entre les mises à jour : elles vivent dans
+`/data/trano.db`, hors du conteneur.
+
+## Installation alternative (sans GitHub) : copie manuelle
+
+Si le dépôt doit rester privé, ou sans accès internet depuis la Freebox :
+
+1. `bash deploy/build-addon.sh` compile et assemble `deploy/ha-addon/trano/`.
+2. Installez l'add-on officiel **Samba share** dans HA, démarrez-le, puis
+   depuis l'explorateur Windows copiez le dossier `deploy/ha-addon/trano`
+   entier dans `\\homeassistant.local\addons`.
+3. Boutique d'add-ons → ⋮ → **Rechercher les mises à jour** → une section
+   **Add-ons locaux** apparaît avec **Trano** → **Installer**.
+4. Pour chaque mise à jour : répétez les étapes 1 et 2 (le dossier est
+   écrasé), puis dans l'add-on : **Reconstruire**.
 
 ## Écran mural : vieil iPad (iOS 12)
 
