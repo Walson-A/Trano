@@ -7,7 +7,7 @@
 # sur `main`, puis recommittée ici : c'est ce changement de numéro qui
 # déclenche la mise à jour côté Home Assistant.
 name: Trano
-version: "1.2.2"
+version: "1.2.3"
 slug: trano
 description: L'interface virtuelle de la famille — profils, courses, domotique
 url: https://github.com/Walson-A/Trano
