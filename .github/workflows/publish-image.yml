@@ -8,9 +8,15 @@ name: Publier l'image de l'add-on
 on:
   push:
     branches: [main]
+  workflow_dispatch: # relance manuelle depuis l'onglet Actions
 
-# Le commit de version est marqué [skip ci] : GitHub Actions ignore
-# nativement ces commits, ce qui évite que la CI se relance sans fin.
+# Le commit de version porte le marqueur d'exclusion reconnu par GitHub
+# Actions (voir l'étape finale) : sans lui, ce commit relancerait la CI,
+# qui recommiterait, à l'infini.
+#
+# ⚠️ Ce marqueur est cherché dans TOUT le message de commit, corps inclus.
+# Ne jamais l'écrire littéralement dans un message de commit ordinaire :
+# la livraison serait ignorée en silence, sans la moindre trace d'erreur.
 
 permissions:
   contents: write # recommit de la version
