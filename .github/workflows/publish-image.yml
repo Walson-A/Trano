@@ -1,0 +1,82 @@
+name: Publier l'image de l'add-on
+
+# À chaque livraison sur main : compile le frontend, fabrique l'image
+# Docker (amd64 + arm64 pour la Freebox) et la publie sur GHCR, puis
+# incrémente la version dans addon/trano/config.yaml et la recommite.
+# C'est ce changement de numéro que Home Assistant surveille pour
+# proposer — ou installer tout seul — la mise à jour.
+on:
+  push:
+    branches: [main]
+
+# Le commit de version est marqué [skip ci] : GitHub Actions ignore
+# nativement ces commits, ce qui évite que la CI se relance sans fin.
+
+permissions:
+  contents: write # recommit de la version
+  packages: write # publication sur GHCR
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Compiler le frontend (natif x86 — rapide)
+        run: npm run build
+
+      - name: Calculer la nouvelle version
+        id: version
+        run: |
+          CONFIG=addon/trano/config.yaml
+          CURRENT=$(sed -n 's/^version: "\(.*\)"/\1/p' "$CONFIG")
+          MAJ=${CURRENT%%.*}; REST=${CURRENT#*.}; MIN=${REST%%.*}; PATCH=${REST#*.}
+          NEW="$MAJ.$MIN.$((PATCH + 1))"
+          echo "new=$NEW" >> "$GITHUB_OUTPUT"
+          echo "Version publiée : $CURRENT → $NEW"
+
+      # QEMU permet de fabriquer l'image arm64 (la Freebox) depuis un
+      # runner x86. Aucune compilation native dans l'image, donc l'émulation
+      # ne coûte que le temps d'installation des dépendances.
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Fabriquer et publier l'image (amd64 + arm64)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/walson-a/trano:${{ steps.version.outputs.new }}
+            ghcr.io/walson-a/trano:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Après la publication seulement : si l'image n'est pas partie, la
+      # version n'avance pas et Home Assistant ne tentera pas d'installer
+      # un tag inexistant.
+      - name: Publier la nouvelle version pour Home Assistant
+        run: |
+          sed -i 's/^version: ".*"/version: "${{ steps.version.outputs.new }}"/' addon/trano/config.yaml
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add addon/trano/config.yaml
+          git commit -m "release: Trano v${{ steps.version.outputs.new }} [skip ci]"
+          git pull --rebase origin main
+          git push origin HEAD:main

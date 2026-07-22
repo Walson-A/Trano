@@ -4,18 +4,28 @@ Trano tourne comme **add-on Home Assistant** dans la VM HAOS de la Freebox.
 Une seule VM, démarrage automatique, et la base de données (profils, courses)
 est incluse dans les sauvegardes automatiques de HA.
 
+L'image Docker est fabriquée par GitHub Actions et publiée sur GHCR : la
+Freebox ne compile rien, elle télécharge. Installation et mises à jour se
+comptent en secondes.
+
 ## Prérequis
 
 - La VM Home Assistant OS (HAOS) sur la Freebox Delta — vérifiez que
   **Paramètres → Modules complémentaires** existe dans l'interface HA.
 - Un **token d'accès longue durée** HA : Profil utilisateur → Sécurité →
-  Créer un token. Gardez-le, il sert à l'étape 4.
+  Créer un token. Gardez-le, il sert à l'étape 3.
 
-## Installation (recommandée) : dépôt GitHub
+## Une seule fois : rendre l'image publique
 
-Home Assistant peut lire l'add-on **directement depuis GitHub** — plus
-besoin de partage réseau ni de copier de dossier, ni au premier
-déploiement, ni pour les suivants.
+Au tout premier passage de la CI, le paquet GHCR est créé **privé** ;
+Home Assistant, qui se connecte sans identifiants, ne pourrait pas le
+télécharger (erreur d'authentification à l'installation).
+
+Sur GitHub : page du dépôt → colonne de droite, section **Packages** →
+**trano** → **Package settings** → *Danger Zone* → **Change visibility** →
+**Public**. À faire une seule fois, jamais à refaire ensuite.
+
+## Installation
 
 ### 1. Ajouter le dépôt dans HA
 
@@ -23,21 +33,21 @@ déploiement, ni pour les suivants.
 haut à droite → **Dépôts** → collez :
 
 ```
-https://github.com/Walson-A/Trano#release
+https://github.com/Walson-A/Trano
 ```
 
 → **Ajouter**. Une section **Trano** apparaît dans la boutique.
 
-⚠️ Le suffixe `#release` est **indispensable** : sans lui le Supervisor lit
-la branche par défaut (`main`), qui contient le code source du monorepo et
-aucun add-on installable. La branche `release` est générée automatiquement
-et a la structure attendue par le Supervisor : `repository.yaml` à la
-racine, et l'add-on dans le sous-dossier `trano/` (un add-on posé à la
-racine n'est pas détecté).
+Le Supervisor lit `repository.yaml` à la racine, puis découvre l'add-on
+via le motif `**/config.*` — d'où `addon/trano/config.yaml`. Un add-on
+posé à la racine du dépôt ne serait **pas** détecté : il lui faut son
+propre sous-dossier.
 
 ### 2. Installer l'add-on
 
-Cliquez sur **Trano** dans la boutique → **Installer**.
+Cliquez sur **Trano** dans la boutique → **Installer**. Comme
+`config.yaml` porte un champ `image`, le Supervisor télécharge l'image
+déjà fabriquée (tag = le champ `version`) au lieu de la construire.
 
 ### 3. Configurer
 
@@ -65,39 +75,24 @@ lancement plein écran façon application.
 
 ## Mise à jour
 
-**Entièrement automatique.** Le flux de travail est : on développe sur la
-branche `dev`, et dès qu'un changement est fusionné sur `main`, GitHub
-Actions (`.github/workflows/publish-addon.yml`) construit l'add-on et le
-publie tout seul sur la branche `release`. Home Assistant consulte
-régulièrement cette branche ; s'il détecte une nouvelle version :
+**Entièrement automatique.** On développe sur `dev` ; dès qu'un changement
+est fusionné sur `main`, `.github/workflows/publish-image.yml` compile le
+frontend, fabrique l'image (amd64 + arm64), la publie sur GHCR, puis
+incrémente `version` dans `addon/trano/config.yaml` et recommite ce seul
+fichier (message marqué `[skip ci]`, sans quoi la CI se relancerait sans
+fin). C'est ce changement de numéro que Home Assistant surveille :
 
 - **Mise à jour automatique activée** (recommandé, une fois pour toutes) :
   Paramètres → Modules complémentaires → **Trano** → interrupteur
-  **« Mise à jour automatique »** → HA installe tout seul, sans rien
-  cliquer. C'est le mode « je pousse sur main, ça se met à jour sur le
-  mur » complet.
-- Sinon, un bouton **Mettre à jour** apparaît sur la page de l'add-on —
-  un clic suffit.
+  **« Mise à jour automatique »** → HA installe tout seul.
+- Sinon, un bouton **Mettre à jour** apparaît sur la page de l'add-on.
+
+L'ordre des étapes compte : la version n'est incrémentée qu'**après** la
+publication réussie de l'image, pour que HA ne tente jamais de télécharger
+un tag inexistant.
 
 Les données (profils, courses) sont conservées entre les mises à jour :
 elles vivent dans `/data/trano.db`, hors du conteneur.
-
-Besoin de publier sans passer par GitHub (test local, pas de connexion) ?
-`bash deploy/publish-addon.sh` à la racine du projet fait exactement la
-même chose depuis le PC.
-
-## Installation alternative (sans GitHub) : copie manuelle
-
-Si le dépôt doit rester privé, ou sans accès internet depuis la Freebox :
-
-1. `bash deploy/build-addon.sh` compile et assemble `deploy/ha-addon/trano/`.
-2. Installez l'add-on officiel **Samba share** dans HA, démarrez-le, puis
-   depuis l'explorateur Windows copiez le dossier `deploy/ha-addon/trano`
-   entier dans `\\homeassistant.local\addons`.
-3. Boutique d'add-ons → ⋮ → **Rechercher les mises à jour** → une section
-   **Add-ons locaux** apparaît avec **Trano** → **Installer**.
-4. Pour chaque mise à jour : répétez les étapes 1 et 2 (le dossier est
-   écrasé), puis dans l'add-on : **Reconstruire**.
 
 ## Écran mural : vieil iPad (iOS 12)
 
@@ -120,16 +115,18 @@ Le build inclut un bundle « legacy » qui fonctionne sur Safari 12
 Limites connues sur iOS 12 : quelques espacements plus serrés et des
 effets de flou absents — l'interface reste entièrement fonctionnelle.
 
-## Alternative : Docker sur une autre machine
+## Faire tourner l'image ailleurs (hors Home Assistant)
 
-Le `Dockerfile` à la racine du repo construit la même image pour tout hôte
-Docker (amd64/arm64) :
+L'image publiée est une image Docker ordinaire :
 
 ```bash
-docker build -t trano .
 docker run -d --name trano -p 3001:3001 \
   -v trano-data:/data \
   -e TRANO_HA_URL=http://homeassistant.local:8123 \
   -e TRANO_HA_TOKEN=votre_token \
-  trano
+  ghcr.io/walson-a/trano:latest
 ```
+
+Pour la reconstruire localement, compilez d'abord le frontend
+(`npm run build` — le `Dockerfile` attend `apps/web/dist` déjà présent),
+puis `docker build -t trano .`.

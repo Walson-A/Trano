@@ -1,0 +1,38 @@
+# Métadonnées de l'add-on Home Assistant — c'est TOUT ce dont HA a besoin.
+# L'application elle-même n'est pas ici : elle vit dans l'image Docker
+# publiée sur GHCR par .github/workflows/publish-image.yml, que le
+# Supervisor télécharge (tag = le champ `version` ci-dessous).
+#
+# La version est incrémentée automatiquement par la CI à chaque livraison
+# sur `main`, puis recommittée ici : c'est ce changement de numéro qui
+# déclenche la mise à jour côté Home Assistant.
+name: Trano
+version: "1.2.0"
+slug: trano
+description: L'interface virtuelle de la famille — profils, courses, domotique
+url: https://github.com/Walson-A/Trano
+image: ghcr.io/walson-a/trano
+arch:
+  - aarch64
+  - amd64
+init: false
+startup: services
+boot: auto
+watchdog: http://[HOST]:[PORT:3001]/api/health
+ports:
+  3001/tcp: 3001
+ports_description:
+  3001/tcp: Interface web Trano
+map: []
+options:
+  ha_url: "http://homeassistant.local:8123"
+  ha_token: ""
+  weather_entity: "weather.forecast_home"
+  openrouter_key: ""
+  openrouter_model: "nvidia/nemotron-3-super-120b-a12b:free"
+schema:
+  ha_url: url
+  ha_token: password
+  weather_entity: str
+  openrouter_key: password
+  openrouter_model: str

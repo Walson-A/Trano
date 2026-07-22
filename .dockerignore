@@ -1,0 +1,13 @@
+# Le contexte de build est la racine du dépôt : on n'y envoie que le
+# nécessaire (apps/web/dist est compilé par la CI juste avant).
+node_modules
+**/node_modules
+.git
+.github
+docs
+deploy/README.md
+apps/web/src
+apps/web/public
+apps/server/data
+**/.env*
+!**/.env.example

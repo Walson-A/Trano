@@ -1,4 +1,4 @@
-// Point d'entrée de l'add-on HAOS : lit les options utilisateur
+// Point d'entrée du conteneur add-on : lit les options utilisateur
 // (/data/options.json, fourni par le Supervisor) et les injecte en
 // variables d'environnement avant de lancer le serveur Trano.
 import { readFileSync } from 'node:fs';
