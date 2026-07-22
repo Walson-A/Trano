@@ -15,15 +15,17 @@ comptent en secondes.
 - Un **token d'accès longue durée** HA : Profil utilisateur → Sécurité →
   Créer un token. Gardez-le, il sert à l'étape 3.
 
-## Une seule fois : rendre l'image publique
+## Visibilité de l'image (rien à faire, mais bon à savoir)
 
-Au tout premier passage de la CI, le paquet GHCR est créé **privé** ;
-Home Assistant, qui se connecte sans identifiants, ne pourrait pas le
-télécharger (erreur d'authentification à l'installation).
+Home Assistant télécharge l'image **sans identifiants** : elle doit donc
+être lisible publiquement. Le dépôt étant public, GHCR l'a publiée
+publiquement — vérifié par un accès anonyme réussi sur
+`ghcr.io/v2/walson-a/trano/manifests/<version>`.
 
-Sur GitHub : page du dépôt → colonne de droite, section **Packages** →
-**trano** → **Package settings** → *Danger Zone* → **Change visibility** →
-**Public**. À faire une seule fois, jamais à refaire ensuite.
+Si un jour l'installation échoue sur une erreur d'authentification, c'est
+que le paquet est repassé en privé : page du dépôt → colonne de droite,
+section **Packages** → **trano** → **Package settings** → *Danger Zone* →
+**Change visibility** → **Public**.
 
 ## Installation
 
