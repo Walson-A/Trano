@@ -23,11 +23,17 @@ déploiement, ni pour les suivants.
 haut à droite → **Dépôts** → collez :
 
 ```
-https://github.com/Walson-A/Trano
+https://github.com/Walson-A/Trano#release
 ```
 
-→ **Ajouter**. Une section **Trano** apparaît dans la boutique (elle lit la
-branche `release`, qui contient l'add-on déjà prêt à l'emploi).
+→ **Ajouter**. Une section **Trano** apparaît dans la boutique.
+
+⚠️ Le suffixe `#release` est **indispensable** : sans lui le Supervisor lit
+la branche par défaut (`main`), qui contient le code source du monorepo et
+aucun add-on installable. La branche `release` est générée automatiquement
+et a la structure attendue par le Supervisor : `repository.yaml` à la
+racine, et l'add-on dans le sous-dossier `trano/` (un add-on posé à la
+racine n'est pas détecté).
 
 ### 2. Installer l'add-on
 

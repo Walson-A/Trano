@@ -27,9 +27,13 @@ else
   git -C "$WT" switch --orphan release
 fi
 
-# Repart d'une page blanche puis recopie le contenu frais de l'add-on
+# Repart d'une page blanche, puis recopie l'add-on DANS UN SOUS-DOSSIER :
+# le Supervisor cherche les add-ons via le motif `**/config.*`, et exige
+# repository.yaml seul à la racine. Un add-on pose à la racine n'est pas
+# detecte (il n'apparaitrait jamais dans la boutique).
 find "$WT" -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
-cp -r "$SRC"/. "$WT"/
+mkdir -p "$WT/trano"
+cp -r "$SRC"/. "$WT/trano"/
 
 cat > "$WT/repository.yaml" <<EOF
 name: Trano
@@ -39,10 +43,10 @@ EOF
 
 # Auto-incrémente le patch de version : Home Assistant ne propose la mise
 # à jour que si le numéro change, donc plus besoin d'y penser à la main.
-CURRENT=$(sed -n 's/^version: "\(.*\)"/\1/p' "$WT/config.yaml")
+CURRENT=$(sed -n 's/^version: "\(.*\)"/\1/p' "$WT/trano/config.yaml")
 MAJ=${CURRENT%%.*}; REST=${CURRENT#*.}; MIN=${REST%%.*}; PATCH=${REST#*.}
 NEW="$MAJ.$MIN.$((PATCH + 1))"
-sed -i "s/version: \"$CURRENT\"/version: \"$NEW\"/" "$WT/config.yaml"
+sed -i "s/version: \"$CURRENT\"/version: \"$NEW\"/" "$WT/trano/config.yaml"
 sed -i "s/version: \"$CURRENT\"/version: \"$NEW\"/" "$SRC/config.yaml"
 
 git -C "$WT" add -A
