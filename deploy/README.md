@@ -59,18 +59,26 @@ lancement plein écran façon application.
 
 ## Mise à jour
 
-Sur le PC, à la racine du projet :
+**Entièrement automatique.** Le flux de travail est : on développe sur la
+branche `dev`, et dès qu'un changement est fusionné sur `main`, GitHub
+Actions (`.github/workflows/publish-addon.yml`) construit l'add-on et le
+publie tout seul sur la branche `release`. Home Assistant consulte
+régulièrement cette branche ; s'il détecte une nouvelle version :
 
-```bash
-bash deploy/publish-addon.sh
-```
+- **Mise à jour automatique activée** (recommandé, une fois pour toutes) :
+  Paramètres → Modules complémentaires → **Trano** → interrupteur
+  **« Mise à jour automatique »** → HA installe tout seul, sans rien
+  cliquer. C'est le mode « je pousse sur main, ça se met à jour sur le
+  mur » complet.
+- Sinon, un bouton **Mettre à jour** apparaît sur la page de l'add-on —
+  un clic suffit.
 
-Ce script compile le frontend, incrémente automatiquement le numéro de
-version et publie le résultat sur la branche `release` de GitHub. Dans HA,
-un bouton **Mettre à jour** apparaît alors sur l'add-on Trano (Paramètres →
-Modules complémentaires → Trano) — un clic suffit. Les données (profils,
-courses) sont conservées entre les mises à jour : elles vivent dans
-`/data/trano.db`, hors du conteneur.
+Les données (profils, courses) sont conservées entre les mises à jour :
+elles vivent dans `/data/trano.db`, hors du conteneur.
+
+Besoin de publier sans passer par GitHub (test local, pas de connexion) ?
+`bash deploy/publish-addon.sh` à la racine du projet fait exactement la
+même chose depuis le PC.
 
 ## Installation alternative (sans GitHub) : copie manuelle
 
