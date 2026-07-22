@@ -15,5 +15,12 @@
   },
   "devDependencies": {
     "concurrently": "^9.1.2"
+  },
+  "//": "Le package-lock genere sous Windows n'inscrit que les binaires natifs Windows (bug npm/cli#4828). On declare ici ceux des autres plateformes : Linux x64 pour la CI GitHub, Linux arm64 pour la Freebox (esbuild fait tourner le serveur via tsx). Declares en optionnels, npm les ignore sans erreur sur les plateformes non concernees.",
+  "optionalDependencies": {
+    "@esbuild/linux-arm64": "0.27.4",
+    "@esbuild/linux-x64": "0.27.4",
+    "@rollup/rollup-linux-arm64-gnu": "4.59.0",
+    "@rollup/rollup-linux-x64-gnu": "4.59.0"
   }
 }
