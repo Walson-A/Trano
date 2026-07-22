@@ -27,10 +27,20 @@ else
   git -C "$WT" switch --orphan release
 fi
 
+# Version de référence = celle DÉJÀ PUBLIÉE sur `release`, pas celle du
+# code source : la CI ne réécrit jamais les sources, donc s'y fier
+# republierait éternellement le même numéro — et Home Assistant, qui ne
+# détecte une nouveauté qu'au changement de numéro, ne proposerait jamais
+# aucune mise à jour. On retombe sur les sources au tout premier passage.
+PREV="$WT/trano/config.yaml"
+[ -f "$PREV" ] || PREV="$WT/config.yaml"   # ancienne mise en page, add-on à la racine
+[ -f "$PREV" ] || PREV="$SRC/config.yaml"  # première publication
+CURRENT=$(sed -n 's/^version: "\(.*\)"/\1/p' "$PREV")
+
 # Repart d'une page blanche, puis recopie l'add-on DANS UN SOUS-DOSSIER :
 # le Supervisor cherche les add-ons via le motif `**/config.*`, et exige
-# repository.yaml seul à la racine. Un add-on pose à la racine n'est pas
-# detecte (il n'apparaitrait jamais dans la boutique).
+# repository.yaml seul à la racine. Un add-on posé à la racine n'est pas
+# détecté (il n'apparaîtrait jamais dans la boutique).
 find "$WT" -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
 mkdir -p "$WT/trano"
 cp -r "$SRC"/. "$WT/trano"/
@@ -41,13 +51,10 @@ url: https://github.com/Walson-A/Trano
 maintainer: Walson-A
 EOF
 
-# Auto-incrémente le patch de version : Home Assistant ne propose la mise
-# à jour que si le numéro change, donc plus besoin d'y penser à la main.
-CURRENT=$(sed -n 's/^version: "\(.*\)"/\1/p' "$WT/trano/config.yaml")
+# Incrémente le patch, puis écrit le résultat dans l'add-on publié.
 MAJ=${CURRENT%%.*}; REST=${CURRENT#*.}; MIN=${REST%%.*}; PATCH=${REST#*.}
 NEW="$MAJ.$MIN.$((PATCH + 1))"
-sed -i "s/version: \"$CURRENT\"/version: \"$NEW\"/" "$WT/trano/config.yaml"
-sed -i "s/version: \"$CURRENT\"/version: \"$NEW\"/" "$SRC/config.yaml"
+sed -i "s/^version: \".*\"/version: \"$NEW\"/" "$WT/trano/config.yaml"
 
 git -C "$WT" add -A
 git -C "$WT" commit -q -m "release: Trano v$NEW"

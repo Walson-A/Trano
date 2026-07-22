@@ -1,4 +1,7 @@
 name: Trano
+# Numéro d'amorce uniquement (première publication). Ensuite, la version
+# fait foi sur la branche `release` : deploy/publish-addon.sh l'y lit et
+# l'incrémente. Modifier cette ligne n'a aucun effet sur les publications.
 version: "1.1.1"
 slug: trano
 description: L'interface virtuelle de la famille — profils, courses, domotique
