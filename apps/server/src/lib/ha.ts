@@ -1,6 +1,6 @@
 /**
  * Client REST Home Assistant côté serveur (pour les tools de l'assistant).
- * En production (add-on), HA est joignable via les options de l'add-on.
+ * En production, HA est joignable via les variables TRANO_HA_* du conteneur.
  */
 
 const HA_URL = () => process.env.TRANO_HA_URL?.replace(/\/$/, '') ?? null;

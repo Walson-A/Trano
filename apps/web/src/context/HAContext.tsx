@@ -40,7 +40,7 @@ export const HAProvider: React.FC<HAProviderProps> = ({ children }) => {
 
       if (!url || !token) {
         setError(
-          'Connexion Home Assistant non configurée : renseignez le .env.local en dev, ou les options de l\'add-on en production.'
+          'Connexion Home Assistant non configurée : renseignez le .env.local en dev, ou le .env du conteneur en production.'
         );
         setStatus('error');
         return;
