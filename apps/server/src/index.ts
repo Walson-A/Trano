@@ -9,11 +9,13 @@ import { shoppingRoutes } from './routes/shopping.ts';
 import { assistantRoutes } from './routes/assistant.ts';
 import { intercomRoutes } from './routes/intercom.ts';
 import { roomRoutes } from './routes/rooms.ts';
+import { mcpRoutes } from './routes/mcp.ts';
+import { houseRoutes } from './routes/house.ts';
 import { startEnergyWatcher } from './lib/energyWatcher.ts';
 import { registerClient } from './ws.ts';
 
 // En dev, les secrets (HA, OpenRouter) vivent dans apps/server/.env (gitignoré).
-// En prod, ils viennent des options de l'add-on.
+// En prod, ils viennent du .env du conteneur (env_file du docker-compose).
 try {
   process.loadEnvFile(fileURLToPath(new URL('../.env', import.meta.url)));
 } catch {
@@ -31,8 +33,8 @@ await app.register(fastifyWebsocket);
 app.get('/api/health', () => ({ status: 'ok', uptime: process.uptime() }));
 
 /**
- * Config HA pour le frontend. En production (add-on HAOS), ces valeurs
- * viennent des options de l'add-on injectées en variables d'environnement.
+ * Config HA pour le frontend. En production, ces valeurs viennent du .env
+ * du conteneur, injecté en variables d'environnement.
  * L'app est servie uniquement sur le réseau local de la maison.
  */
 app.get('/api/config', () => ({
@@ -52,8 +54,10 @@ shoppingRoutes(app);
 assistantRoutes(app);
 intercomRoutes(app);
 roomRoutes(app);
+mcpRoutes(app);
+houseRoutes(app);
 
-// En prod (Docker/add-on), le serveur sert aussi le build du frontend.
+// En prod (conteneur Docker), le serveur sert aussi le build du frontend.
 const webDist = fileURLToPath(new URL('../../web/dist', import.meta.url));
 if (existsSync(webDist)) {
   await app.register(fastifyStatic, { root: webDist });

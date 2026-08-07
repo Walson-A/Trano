@@ -8,7 +8,7 @@ Types de référence dans `packages/shared/src/index.ts`.
 | Méthode | Route | Description |
 |---|---|---|
 | GET | `/api/health` | `{ status: 'ok', uptime }` |
-| GET | `/api/config` | Config HA pour le frontend : `{ haUrl, haToken, weatherEntity }`. Remplie par les variables `TRANO_HA_*` (options de l'add-on en prod). |
+| GET | `/api/config` | Config HA pour le frontend : `{ haUrl, haToken, weatherEntity }`. Remplie par les variables `TRANO_HA_*` (le `.env` du conteneur en prod). |
 
 > `/api/config` expose le token HA à tout appareil du réseau local — c'est
 > assumé : l'app est réservée au LAN de la maison, comme l'était le token
@@ -60,10 +60,42 @@ messages d'invalidation :
 Le client refetche le topic concerné (`connectTranoWs()` dans
 `apps/web/src/lib/api.ts`, reconnexion automatique avec backoff).
 
+## Maison `/api/house`
+
+L'état de la maison en un objet, pour un **client d'application** (premier
+consommateur : le widget Maison de LifeOS).
+
+| Méthode | Route | Corps / query | Description |
+|---|---|---|---|
+| GET | `/api/house` | `?profile=<id>` (optionnel) | `{ energie, meteo, favoris[], allumes[], total_appareils, profil_connu }`. `favoris` = les entités favorites du profil, dans **leur ordre**, résolues avec leur état et leur pièce ; un favori absent de HA est simplement omis. |
+| POST | `/api/house/device` | `{ entity_id, action }` | `turn_on` / `turn_off` / `toggle`. `403` si le domaine est refusé (serrures, alarme), `502` si HA est injoignable. |
+
+`profil_connu: false` distingue « aucun profil demandé » de « profil sans
+favori » — sans quoi un client ne peut pas savoir s'il doit proposer un choix.
+
+Les garde-fous sont ceux de `lib/ha.ts` (`controlDevice`) : entity_id validé,
+domaines autorisés, serrures et alarme exclues. Cette route ne les réécrit pas.
+
+> **Pourquoi cette route en plus de `/api/mcp`** : un outil MCP renvoie du JSON
+> sérialisé dans une chaîne, dans une trame SSE — la bonne forme pour un LLM, la
+> mauvaise pour un widget qui veut un objet typé toutes les dix secondes. Deux
+> protocoles, une seule couche métier dessous.
+
+## Serveur MCP `/api/mcp`
+
+Les outils domotiques servis à **Oby** en JSON-RPC MCP (streamable-HTTP,
+stateless), protégés par `Authorization: Bearer <TRANO_MCP_TOKEN>` — sans cette
+variable la route répond `503`. `GET`/`DELETE` répondent `405` : le serveur ne
+tient aucune session.
+
+Dix outils exposés (lecture + pilotage des appareils) ; les courses,
+l'interphone et la Freebox restent hors de portée d'Oby. Détail complet,
+raisons et branchement côté engine : **[`docs/mcp_oby.md`](mcp_oby.md)**.
+
 ## Base de données
 
 SQLite via `node:sqlite` (module intégré à Node ≥ 22.5, aucune dépendance
 native). Fichier unique `TRANO_DB_PATH`, mode WAL. Deux tables : `profiles`
 et `shopping_items` (schéma dans `apps/server/src/db.ts`). Sauvegarde =
-copie du fichier ; dans l'add-on HAOS, `/data` est inclus dans les
-sauvegardes automatiques de Home Assistant.
+copie du fichier ; en production c'est le volume Docker `trano-data`, monté
+sur `/data`, qui la porte.
