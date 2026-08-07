@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 /**
  * Base SQLite via node:sqlite (intégré à Node 22.5+) : aucune dépendance
  * native à compiler — crucial pour l'image Docker ARM64 de la Freebox.
- * TRANO_DB_PATH pointe vers /data/trano.db dans l'add-on HAOS (persisté
+ * TRANO_DB_PATH pointe vers /data/trano.db dans le conteneur (persisté
  * et inclus dans les sauvegardes HA).
  */
 const DB_PATH =

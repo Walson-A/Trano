@@ -9,7 +9,7 @@ frontend).
 | Contexte | Où |
 |---|---|
 | Développement | `apps/server/.env` → `TRANO_OPENROUTER_KEY` (+ `TRANO_HA_URL`/`TRANO_HA_TOKEN` pour les outils) |
-| Production | Options de l'add-on : `openrouter_key`, `openrouter_model` |
+| Production | `~/trano/.env` du conteneur : `TRANO_OPENROUTER_KEY`, `TRANO_OPENROUTER_MODEL` |
 
 Modèle par défaut : `deepseek/deepseek-chat-v3.1:free` (gratuit, supporte les
 tools). Changeable via `TRANO_OPENROUTER_MODEL` / option `openrouter_model`.
@@ -18,7 +18,9 @@ Tant que la clé manque, l'onglet affiche un écran d'explication.
 ## Outils du modèle
 
 L'assistant ne peut faire QUE ce que ses outils permettent
-(`apps/server/src/routes/assistant.ts` + `apps/server/src/lib/ha.ts`) :
+(`apps/server/src/lib/tools.ts` + `apps/server/src/lib/ha.ts`) — la même table
+sert **Oby** par le serveur MCP, qui n'en voit qu'une partie (cf.
+[`docs/mcp_oby.md`](mcp_oby.md)) :
 
 - `etat_maison` — vue d'ensemble : météo, énergie, lumières allumées,
   lecture en cours, présence GPS, wifi, appels manqués.

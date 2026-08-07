@@ -1,9 +1,9 @@
 # Trano
 
 L'interface virtuelle de la famille : domotique (Home Assistant), profils
-façon Netflix, liste de courses partagée — et bientôt énergie solaire,
-Freebox et assistant IA. Interface premium, minimaliste, optimisée
-tablettes et écrans OLED. Hébergée à la maison, sur la Freebox.
+façon Netflix, liste de courses partagée, énergie solaire, Freebox et
+assistant IA. Interface premium, minimaliste, optimisée tablettes et écrans
+OLED. Hébergée à la maison, sur le serveur familial.
 
 ## Structure
 
@@ -33,7 +33,7 @@ Copier `apps/web/.env.example` vers `apps/web/.env.local` et remplir :
 | `VITE_HA_TOKEN` | Long-lived access token HA |
 | `VITE_HA_WEATHER_ENTITY` | Entity ID météo (ex: `weather.forecast_home`) |
 
-En production, ces valeurs viennent des options de l'add-on (voir
+En production, ces valeurs viennent du `.env` du conteneur (voir
 [Déploiement](deploy/README.md)).
 
 ## Lancement
@@ -42,10 +42,11 @@ En production, ces valeurs viennent des options de l'add-on (voir
 npm run dev     # web sur :3000 + serveur sur :3001
 ```
 
-## Déploiement sur la Freebox
+## Déploiement
 
-Trano tourne comme add-on Home Assistant dans la VM HAOS de la Freebox
-Delta : guide complet dans [deploy/README.md](deploy/README.md).
+Trano tourne comme conteneur Docker sur le serveur de la maison, à côté de
+l'engine Oby : guide complet dans [deploy/README.md](deploy/README.md).
+La piste add-on Home Assistant sur la Freebox est abandonnée (VM 1 Go).
 
 ## Documentation
 
@@ -53,6 +54,7 @@ Delta : guide complet dans [deploy/README.md](deploy/README.md).
 - [API du serveur](docs/server_api.md)
 - [Module Énergie](docs/energy.md)
 - [Assistant IA](docs/assistant.md)
+- [Serveur MCP pour Oby](docs/mcp_oby.md)
 - [Profils](docs/profiles.md)
 - [Liste de courses](docs/shopping.md)
 - [Design System](docs/design_concept.md)

@@ -217,7 +217,7 @@ export function Assistant({ onClose }: { onClose?: () => void }) {
           <br />
           En développement : <code className="text-sm bg-zinc-100 dark:bg-white/10 px-2 py-0.5 rounded">TRANO_OPENROUTER_KEY</code> dans <code className="text-sm bg-zinc-100 dark:bg-white/10 px-2 py-0.5 rounded">apps/server/.env</code>.
           <br />
-          En production : option <strong>openrouter_key</strong> de l'add-on.
+          En production : variable <strong>TRANO_OPENROUTER_KEY</strong> du conteneur.
         </p>
       </div>
     );

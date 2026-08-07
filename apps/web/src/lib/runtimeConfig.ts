@@ -1,7 +1,7 @@
 /**
  * Configuration HA résolue au runtime.
  * En dev : variables VITE_ du .env.local.
- * En prod (add-on Freebox/HAOS) : fournie par le serveur Trano via /api/config,
+ * En prod (conteneur sur le serveur de la maison) : fournie par le serveur Trano via /api/config,
  * ce qui évite de figer l'URL et le token dans le build.
  */
 export interface RuntimeConfig {

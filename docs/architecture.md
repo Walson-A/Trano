@@ -23,17 +23,24 @@ packages/shared   Types TypeScript partagés entre web et server
 
 - **Frontend :** React 18 + TypeScript, Vite, Tailwind CSS v4, Zustand, Motion
 - **Backend :** Fastify 5 + `node:sqlite` (SQLite intégré à Node, zéro
-  dépendance native — crucial pour l'image Docker ARM64 de la Freebox)
+  dépendance native — l'image Docker reste multi-arch sans compilation)
 - **Domotique :** Home Assistant via WebSocket (`home-assistant-js-websocket`)
-- **Déploiement :** add-on HAOS sur la VM Freebox Delta (voir `deploy/README.md`)
+- **Déploiement :** conteneur Docker sur le serveur de la maison
+  (voir `deploy/README.md`)
 
 ## `apps/server/`
 
 - `src/index.ts` : bootstrap Fastify, routes, fichiers statiques (prod), fallback SPA.
 - `src/db.ts` : ouverture SQLite + schéma (`profiles`, `shopping_items`).
   Chemin de la base : `TRANO_DB_PATH` (défaut `apps/server/data/trano.db`,
-  `/data/trano.db` dans l'add-on).
+  `/data/trano.db` dans le conteneur).
 - `src/routes/profiles.ts` / `src/routes/shopping.ts` : API REST (voir `docs/server_api.md`).
+- `src/lib/tools.ts` : **la table unique des outils de la maison** — définitions
+  et exécution. Deux surfaces la consomment : l'assistant des écrans
+  (`routes/assistant.ts`) et Oby (`routes/mcp.ts`). Le drapeau `oby` d'un outil
+  est la liste blanche : c'est le seul endroit où se décide ce qu'Oby a le droit
+  de faire.
+- `src/routes/mcp.ts` : serveur MCP pour Oby (voir `docs/mcp_oby.md`).
 - `src/ws.ts` : broadcast d'invalidation vers tous les clients connectés.
 
 ## `packages/shared/`
@@ -107,7 +114,7 @@ Les types partagés (profils, courses) vivent dans `@trano/shared`.
 
 ### Config HA (par priorité)
 1. **Dev :** `VITE_HA_URL` / `VITE_HA_TOKEN` (`.env.local` dans `apps/web/`)
-2. **Prod :** `GET /api/config` du serveur (rempli par les options de l'add-on)
+2. **Prod :** `GET /api/config` du serveur (rempli par le `.env` du conteneur)
 
 ### Types d'appareils supportés
 
@@ -144,3 +151,5 @@ Variables d'environnement :
 | `TRANO_HA_URL` / `TRANO_HA_TOKEN` / `TRANO_WEATHER_ENTITY` | env serveur (prod) | Exposées au frontend via `/api/config` |
 | `TRANO_PORT` / `TRANO_HOST` | env serveur | Écoute (défaut `3001` / `0.0.0.0`) |
 | `TRANO_DB_PATH` | env serveur | Chemin SQLite (défaut `apps/server/data/trano.db`) |
+| `TRANO_OPENROUTER_KEY` / `TRANO_OPENROUTER_MODEL` | env serveur | Assistant IA des écrans (`docs/assistant.md`) |
+| `TRANO_MCP_TOKEN` | env serveur | Jeton du serveur MCP servi à Oby. Absent = route fermée (`docs/mcp_oby.md`) |
