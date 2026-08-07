@@ -1,10 +1,24 @@
-name: Publier l'image de l'add-on
+name: Publier l'image et deployer
 
 # À chaque livraison sur main : compile le frontend, fabrique l'image
-# Docker (amd64 + arm64 pour la Freebox) et la publie sur GHCR, puis
-# incrémente la version dans addon/trano/config.yaml et la recommite.
-# C'est ce changement de numéro que Home Assistant surveille pour
-# proposer — ou installer tout seul — la mise à jour.
+# Docker, la publie sur GHCR, incrémente la version dans
+# addon/trano/config.yaml, la recommite, puis **déploie sur le serveur
+# de la maison**.
+#
+# Le numéro de version ne sert plus qu'à **taguer l'image** : la piste
+# add-on Home Assistant est abandonnée (cf. deploy/README.md), plus
+# personne ne surveille ce numéro pour installer une mise à jour.
+#
+# Secrets requis pour l'étape de déploiement (repo → Settings → Secrets
+# and variables → Actions) — les mêmes que le workflow deploy-engine du
+# dépôt Oby, qui déploie sur la même machine :
+#   TS_OAUTH_CLIENT_ID / TS_OAUTH_SECRET — client OAuth Tailscale (scope
+#     auth_keys, tag:ci). Sans tailnet, l'IP du serveur est injoignable
+#     depuis un runner GitHub.
+#   OBY_DEPLOY_SSH_KEY — clé privée ed25519 dédiée (sa .pub est déjà dans
+#     les authorized_keys de trano).
+# Tant qu'ils manquent, l'étape se saute proprement en disant quoi taper
+# à la main : une CI qui échoue à chaque livraison serait pire que rien.
 on:
   push:
     branches: [main]
@@ -86,3 +100,51 @@ jobs:
           git commit -m "release: Trano v${{ steps.version.outputs.new }} [skip ci]"
           git pull --rebase origin main
           git push origin HEAD:main
+
+  # Le serveur tourne sur l'image `:latest`, mais rien ne la tire tout seul :
+  # ni watchtower, ni timer, ni cron (vérifié le 2026-08-08). Sans ce job, une
+  # livraison publie une image que personne n'installe — et on croit avoir
+  # déployé.
+  deploy:
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Vérifier que les secrets sont là
+        id: secrets
+        env:
+          TS_ID: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          SSH_KEY: ${{ secrets.OBY_DEPLOY_SSH_KEY }}
+        run: |
+          if [ -z "$TS_ID" ] || [ -z "$SSH_KEY" ]; then
+            echo "::warning::Secrets de déploiement absents — image publiée, serveur NON mis à jour."
+            echo "Pour déployer à la main : cd ~/trano && docker compose pull && docker compose up -d"
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Rejoindre le tailnet
+        if: steps.secrets.outputs.present == 'true'
+        uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+
+      - name: Préparer la clé SSH
+        if: steps.secrets.outputs.present == 'true'
+        env:
+          # La clé passe par l'environnement plutôt que d'être interpolée dans
+          # le script : elle n'apparaît alors jamais dans la ligne de commande.
+          SSH_KEY: ${{ secrets.OBY_DEPLOY_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -T 15 100.80.77.107 >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Tirer la nouvelle image et redémarrer
+        if: steps.secrets.outputs.present == 'true'
+        run: |
+          ssh -o ConnectTimeout=15 trano@100.80.77.107 'cd ~/trano && docker compose pull && docker compose up -d && sleep 5 && curl -sf -m 5 http://127.0.0.1:3001/api/health'
