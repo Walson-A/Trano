@@ -48,17 +48,29 @@ Catégories : `alimentaire`, `maison`, `hygiene`, `vetements`, `loisirs`, `autre
 Les transitions `todo ⇄ bought` sont **entièrement gérées côté serveur** —
 le client n'envoie que l'intention.
 
+## Surcharges d'appareils
+
+Surcharges personnalisées d'appareils (renommage, assignation de pièce, masquage, position floor plan), synchronisées sur tous les écrans.
+
+| Méthode | Route | Corps | Description |
+|---|---|---|---|
+| GET | `/api/device-overrides` | — | Toutes les surcharges (`Record<entityId, DeviceOverride>`) |
+| PUT | `/api/device-overrides/:entityId` | `{ displayName?, roomId?, hidden?, position? }` | Créer ou mettre à jour (UPSERT) |
+| DELETE | `/api/device-overrides/:entityId` | — | Supprimer la surcharge (retour aux valeurs HA) |
+
+`DeviceOverride` : `{ displayName?, roomId?, hidden?, position?: { x, y } }`.
+
 ## WebSocket `/api/ws`
 
 Sync temps réel entre les écrans de la maison. Le serveur n'envoie que des
 messages d'invalidation :
 
 ```json
-{ "type": "changed", "topic": "profiles" | "shopping" }
+{ "type": "changed", "topic": "profiles" | "shopping" | "rooms" | "device-overrides" }
 ```
 
 Le client refetche le topic concerné (`connectTranoWs()` dans
-`apps/web/src/lib/api.ts`, reconnexion automatique avec backoff).
+`apps/web/src/lib/api.ts`, reconnexion automatique avec backoff et refetch global au rétablissement du réseau via `onReconnect`).
 
 ## Maison `/api/house`
 
@@ -95,7 +107,7 @@ raisons et branchement côté engine : **[`docs/mcp_oby.md`](mcp_oby.md)**.
 ## Base de données
 
 SQLite via `node:sqlite` (module intégré à Node ≥ 22.5, aucune dépendance
-native). Fichier unique `TRANO_DB_PATH`, mode WAL. Deux tables : `profiles`
-et `shopping_items` (schéma dans `apps/server/src/db.ts`). Sauvegarde =
+native). Fichier unique `TRANO_DB_PATH`, mode WAL. Quatre tables : `profiles`,
+`shopping_items`, `rooms` et `device_overrides` (schéma dans `apps/server/src/db.ts`). Sauvegarde =
 copie du fichier ; en production c'est le volume Docker `trano-data`, monté
 sur `/data`, qui la porte.

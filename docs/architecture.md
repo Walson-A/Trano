@@ -56,7 +56,7 @@ Types consommés par les deux apps : `Profile`, `ShoppingItem`,
 
 ### 2. `core/store/`
 - `useAppStore.ts` : State UI (thème, navigation). Ne gère PAS les données HA.
-- `useConfigStore.ts` : Overrides utilisateur persistés en IndexedDB (renommage d'appareils, assignation de pièces, masquage, positions floor plan).
+- `useConfigStore.ts` : Overrides utilisateur synchronisés sur tous les écrans via le serveur Trano (renommage d'appareils, assignation de pièces, masquage, positions floor plan).
 - `useProfileStore.ts` : Profils (chargés depuis le serveur) + profil actif de CET appareil (persisté localStorage). Hook `useActiveProfile()`. Porte aussi favoris, pièces favorites et disposition du dashboard.
 - `useShoppingStore.ts` : Liste de courses, avec mise à jour optimiste pour le cocher/décocher.
 - `useRoomsStore.ts` : Pièces de la maison (CRUD serveur, personnalisables dans Réglages → Pièces).

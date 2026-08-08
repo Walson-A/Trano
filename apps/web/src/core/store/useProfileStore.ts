@@ -19,6 +19,8 @@ interface ProfileState {
   toggleFavorite: (entityId: string) => Promise<void>;
   /** Épingle/désépingle une pièce dans les favoris du profil actif */
   toggleFavoriteRoom: (roomId: string) => Promise<void>;
+  /** Patch optimiste d'un profil : applique, écrit, et revient en arrière si le serveur refuse. */
+  applyProfilePatch: (id: string, patch: ProfileUpdate) => Promise<void>;
 }
 
 export const useProfileStore = create<ProfileState>()(
@@ -66,24 +68,57 @@ export const useProfileStore = create<ProfileState>()(
 
       setActiveProfile: (id) => set({ activeProfileId: id }),
 
+      /**
+       * Bascule optimiste, puis écriture serveur.
+       *
+       * Avant : l'écriture partait sans filet. Si le serveur ne répondait pas —
+       * conteneur qui redémarre, wifi de la tablette qui cligne — la promesse
+       * était rejetée dans le vide et le cœur ne bougeait tout simplement pas.
+       * Vu de l'utilisateur, le favori « ne tenait pas ». Désormais la carte
+       * réagit tout de suite, et un échec **revient en arrière** avec un
+       * message : un favori perdu se voit, au lieu de se deviner.
+       */
       toggleFavorite: async (entityId) => {
-        const { activeProfileId, profiles, updateProfile } = get();
+        const { activeProfileId, profiles } = get();
         const profile = profiles.find((p) => p.id === activeProfileId);
-        if (!profile) return;
+        if (!profile) {
+          set({ error: 'Aucun profil actif : impossible d’épingler un favori.' });
+          return;
+        }
         const favorites = profile.favorites.includes(entityId)
           ? profile.favorites.filter((f) => f !== entityId)
           : [...profile.favorites, entityId];
-        await updateProfile(profile.id, { favorites });
+        await get().applyProfilePatch(profile.id, { favorites });
       },
 
       toggleFavoriteRoom: async (roomId) => {
-        const { activeProfileId, profiles, updateProfile } = get();
+        const { activeProfileId, profiles } = get();
         const profile = profiles.find((p) => p.id === activeProfileId);
-        if (!profile) return;
+        if (!profile) {
+          set({ error: 'Aucun profil actif : impossible d’épingler une pièce.' });
+          return;
+        }
         const favoriteRooms = profile.favoriteRooms.includes(roomId)
           ? profile.favoriteRooms.filter((r) => r !== roomId)
           : [...profile.favoriteRooms, roomId];
-        await updateProfile(profile.id, { favoriteRooms });
+        await get().applyProfilePatch(profile.id, { favoriteRooms });
+      },
+
+      applyProfilePatch: async (id, patch) => {
+        const before = get().profiles;
+        set({
+          error: null,
+          profiles: before.map((p) => (p.id === id ? { ...p, ...patch } : p)),
+        });
+        try {
+          const updated = await api.profiles.update(id, patch);
+          set((state) => ({ profiles: state.profiles.map((p) => (p.id === id ? updated : p)) }));
+        } catch (err) {
+          set({
+            profiles: before, // on ne garde pas à l'écran ce que le serveur n'a pas pris
+            error: err instanceof Error ? err.message : 'Serveur injoignable — modification annulée',
+          });
+        }
       },
     }),
     {

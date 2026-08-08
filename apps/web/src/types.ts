@@ -32,10 +32,9 @@ export const SUPPORTED_DOMAINS = [
 
 // ─── Position (for floor plan) ──────────────────────────────
 
-export interface Position {
-  x: number; // Percentage (0-100)
-  y: number; // Percentage (0-100)
-}
+// Partagé entre frontend et serveur via @trano/shared
+export type { Position, DeviceOverride } from '@trano/shared';
+import type { Position } from '@trano/shared';
 
 // ─── Device ─────────────────────────────────────────────────
 
@@ -65,15 +64,6 @@ export interface Device {
 
 // Les pièces (type Room) vivent dans @trano/shared et leur données dans
 // la base du serveur (voir useRoomsStore).
-
-// ─── Device Override (user customizations, persisted) ───────
-
-export interface DeviceOverride {
-  displayName?: string;      // custom name (overrides HA friendly_name)
-  roomId?: string;           // manual room assignment (overrides HA area)
-  hidden?: boolean;          // hide from all views
-  position?: Position;       // floor plan position
-}
 
 // Les profils utilisateurs vivent dans @trano/shared (type Profile),
 // partagés entre le serveur et le frontend.

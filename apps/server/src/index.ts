@@ -11,6 +11,7 @@ import { intercomRoutes } from './routes/intercom.ts';
 import { roomRoutes } from './routes/rooms.ts';
 import { mcpRoutes } from './routes/mcp.ts';
 import { houseRoutes } from './routes/house.ts';
+import { overrideRoutes } from './routes/overrides.ts';
 import { startEnergyWatcher } from './lib/energyWatcher.ts';
 import { registerClient } from './ws.ts';
 
@@ -56,6 +57,7 @@ intercomRoutes(app);
 roomRoutes(app);
 mcpRoutes(app);
 houseRoutes(app);
+overrideRoutes(app);
 
 // En prod (conteneur Docker), le serveur sert aussi le build du frontend.
 const webDist = fileURLToPath(new URL('../../web/dist', import.meta.url));

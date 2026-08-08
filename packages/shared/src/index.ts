@@ -102,9 +102,25 @@ export interface Room {
 export type RoomCreate = Pick<Room, 'name'> & Partial<Pick<Room, 'floor' | 'icon'>>;
 export type RoomUpdate = Partial<Pick<Room, 'name' | 'floor' | 'icon' | 'sortOrder'>>;
 
+// ─── Surcharges d'appareils (partagées entre écrans) ────────
+
+export interface Position {
+  x: number; // Percentage (0-100)
+  y: number; // Percentage (0-100)
+}
+
+export interface DeviceOverride {
+  displayName?: string;      // custom name (overrides HA friendly_name)
+  roomId?: string;           // manual room assignment (overrides HA area)
+  hidden?: boolean;          // hide from all views
+  position?: Position;       // floor plan position
+}
+
+export type DeviceOverrideUpdate = Partial<DeviceOverride>;
+
 // ─── Messages WebSocket ─────────────────────────────────────
 
-export type WsTopic = 'profiles' | 'shopping' | 'rooms';
+export type WsTopic = 'profiles' | 'shopping' | 'rooms' | 'device-overrides';
 
 /** Invalidation : les clients refetchent le topic */
 export interface WsChangedMessage {

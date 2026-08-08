@@ -92,6 +92,19 @@ if (roomCount === 0) {
   DEFAULT_ROOMS.forEach(([id, name, floor, icon], i) => seed.run(id, name, floor, icon, i));
 }
 
+// ─── Surcharges d'appareils (partagées entre tous les écrans) ─
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS device_overrides (
+    entity_id    TEXT PRIMARY KEY,
+    display_name TEXT,
+    room_id      TEXT,
+    hidden       INTEGER NOT NULL DEFAULT 0,
+    position_x   REAL,
+    position_y   REAL
+  );
+`);
+
 export function newId(): string {
   return crypto.randomUUID();
 }

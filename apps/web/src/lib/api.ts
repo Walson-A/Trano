@@ -1,4 +1,6 @@
 import type {
+  DeviceOverride,
+  DeviceOverrideUpdate,
   Profile,
   ProfileCreate,
   ProfileUpdate,
@@ -63,6 +65,16 @@ export const api = {
       request<ShoppingItem>(`/api/shopping/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
     remove: (id: string) => request<void>(`/api/shopping/${id}`, { method: 'DELETE' }),
   },
+  overrides: {
+    list: () => request<Record<string, DeviceOverride>>('/api/device-overrides'),
+    set: (entityId: string, data: DeviceOverrideUpdate) =>
+      request<DeviceOverride>(`/api/device-overrides/${encodeURIComponent(entityId)}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+    remove: (entityId: string) =>
+      request<void>(`/api/device-overrides/${encodeURIComponent(entityId)}`, { method: 'DELETE' }),
+  },
 };
 
 export interface TranoWsHandlers {
@@ -70,6 +82,8 @@ export interface TranoWsHandlers {
   onChanged: (topic: WsTopic) => void;
   /** Message d'interphone reçu */
   onIntercom?: (msg: WsIntercomMessage) => void;
+  /** Reconnexion WS après coupure : refetch complet */
+  onReconnect?: () => void;
 }
 
 /** Connexion WebSocket au serveur Trano avec reconnexion automatique. */
@@ -77,6 +91,7 @@ export function connectTranoWs(handlers: TranoWsHandlers): () => void {
   let socket: WebSocket | null = null;
   let closed = false;
   let retryDelay = 1000;
+  let hasConnectedOnce = false;
 
   function connect() {
     if (closed) return;
@@ -84,7 +99,12 @@ export function connectTranoWs(handlers: TranoWsHandlers): () => void {
     socket = new WebSocket(`${proto}://${window.location.host}/api/ws`);
 
     socket.onopen = () => {
+      const wasReconnect = hasConnectedOnce;
+      hasConnectedOnce = true;
       retryDelay = 1000;
+      // Après une coupure réseau, les événements d'invalidation ont été
+      // perdus : on refetch tout pour rattraper le retard.
+      if (wasReconnect) handlers.onReconnect?.();
     };
     socket.onmessage = (event) => {
       try {

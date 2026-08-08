@@ -18,6 +18,7 @@ import { useShoppingStore } from './core/store/useShoppingStore';
 import { useRoomsStore } from './core/store/useRoomsStore';
 import { ProfileGate } from './features/Profiles/ProfileGate';
 import { connectTranoWs } from './lib/api';
+import { useConfigStore } from './core/store/useConfigStore';
 
 export type Tab = 'dashboard' | 'floorplan' | 'rooms' | 'courses' | 'energy' | 'settings';
 
@@ -39,11 +40,21 @@ export default function App() {
     fetchProfiles();
     useShoppingStore.getState().fetchItems();
     useRoomsStore.getState().fetchRooms();
+    useConfigStore.getState().fetchOverrides();
+
+    const refetchAll = () => {
+      fetchProfiles();
+      useShoppingStore.getState().fetchItems();
+      useRoomsStore.getState().fetchRooms();
+      useConfigStore.getState().fetchOverrides();
+    };
+
     const disconnect = connectTranoWs({
       onChanged: (topic) => {
         if (topic === 'profiles') fetchProfiles();
         if (topic === 'shopping') useShoppingStore.getState().fetchItems();
         if (topic === 'rooms') useRoomsStore.getState().fetchRooms();
+        if (topic === 'device-overrides') useConfigStore.getState().fetchOverrides();
       },
       onIntercom: (msg) => {
         const activeId = useProfileStore.getState().activeProfileId;
@@ -51,6 +62,7 @@ export default function App() {
         if (msg.toProfileId && msg.toProfileId !== activeId) return;
         setIncomingCall(msg);
       },
+      onReconnect: refetchAll,
     });
     return disconnect;
   }, [fetchProfiles]);

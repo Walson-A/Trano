@@ -52,37 +52,30 @@ export function profileRoutes(app: FastifyInstance): void {
   });
 
   app.patch<{ Params: { id: string }; Body: ProfileUpdate }>('/api/profiles/:id', (req, reply) => {
-    const row = db.prepare('SELECT * FROM profiles WHERE id = ?').get(req.params.id) as unknown as
-      | ProfileRow
-      | undefined;
-    if (!row) return reply.code(404).send({ error: 'Profil introuvable' });
+    const exists = db.prepare('SELECT 1 FROM profiles WHERE id = ?').get(req.params.id);
+    if (!exists) return reply.code(404).send({ error: 'Profil introuvable' });
 
-    const current = toProfile(row);
     const b = req.body ?? {};
-    const next = {
-      name: b.name?.trim() || current.name,
-      avatar: b.avatar ?? current.avatar,
-      color: b.color ?? current.color,
-      roomIds: b.roomIds ?? current.roomIds,
-      isKid: b.isKid ?? current.isKid,
-      favorites: b.favorites ?? current.favorites,
-      favoriteRooms: b.favoriteRooms ?? current.favoriteRooms,
-      dashboardLayout: b.dashboardLayout ?? current.dashboardLayout,
-    };
 
-    db.prepare(
-      'UPDATE profiles SET name = ?, avatar = ?, color = ?, room_ids = ?, is_kid = ?, favorites = ?, favorite_rooms = ?, dashboard_layout = ? WHERE id = ?'
-    ).run(
-      next.name,
-      next.avatar,
-      next.color,
-      JSON.stringify(next.roomIds),
-      next.isKid ? 1 : 0,
-      JSON.stringify(next.favorites),
-      JSON.stringify(next.favoriteRooms),
-      JSON.stringify(next.dashboardLayout),
-      req.params.id
-    );
+    // Construction dynamique : on ne touche que les colonnes envoyées,
+    // ce qui évite qu'un PATCH concurrent (ex: favoris sur un écran +
+    // changement de nom sur un autre) n'écrase l'autre modification.
+    const sets: string[] = [];
+    const values: (string | number | null)[] = [];
+
+    if (b.name !== undefined) { sets.push('name = ?'); values.push(b.name.trim()); }
+    if (b.avatar !== undefined) { sets.push('avatar = ?'); values.push(b.avatar); }
+    if (b.color !== undefined) { sets.push('color = ?'); values.push(b.color); }
+    if (b.roomIds !== undefined) { sets.push('room_ids = ?'); values.push(JSON.stringify(b.roomIds)); }
+    if (b.isKid !== undefined) { sets.push('is_kid = ?'); values.push(b.isKid ? 1 : 0); }
+    if (b.favorites !== undefined) { sets.push('favorites = ?'); values.push(JSON.stringify(b.favorites)); }
+    if (b.favoriteRooms !== undefined) { sets.push('favorite_rooms = ?'); values.push(JSON.stringify(b.favoriteRooms)); }
+    if (b.dashboardLayout !== undefined) { sets.push('dashboard_layout = ?'); values.push(JSON.stringify(b.dashboardLayout)); }
+
+    if (sets.length > 0) {
+      values.push(req.params.id);
+      db.prepare(`UPDATE profiles SET ${sets.join(', ')} WHERE id = ?`).run(...values);
+    }
 
     broadcast('profiles');
     const updated = db.prepare('SELECT * FROM profiles WHERE id = ?').get(req.params.id) as unknown as ProfileRow;

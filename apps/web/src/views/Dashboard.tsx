@@ -5,7 +5,7 @@ import { DeviceCard } from '../components/DeviceCard';
 import {
   Thermometer, Heart, Star, ChevronRight, Droplets, Sun, Battery,
   Plug, ShoppingCart, Megaphone, SlidersHorizontal, Check, ChevronUp,
-  ChevronDown, X, Plus,
+  ChevronDown, X, Plus, Power,
 } from 'lucide-react';
 import { useHA } from '../context/HAContext';
 import { getWeatherEntity } from '../lib/runtimeConfig';
@@ -82,6 +82,13 @@ export function Dashboard({ currentUser, devices, roomClimate, onToggleDevice, o
 
   const rooms = useRoomsStore((s) => s.rooms);
   const favoriteDevices = devices.filter(d => currentUser.favorites.includes(d.id));
+  // Un favori dont l'entité n'est pas dans la liste — indisponible côté Home
+  // Assistant, ou masquée dans les Réglages — disparaissait de l'écran sans un
+  // mot. Vu d'ici, le favori semblait perdu alors qu'il est bien en base. On le
+  // montre tel qu'il est, avec son cœur pour le retirer si besoin.
+  const unavailableFavorites = currentUser.favorites.filter(
+    (id) => !devices.some((d) => d.id === id)
+  );
   const favoriteRooms = currentUser.favoriteRooms
     .map((id) => rooms.find((r) => r.id === id))
     .filter((r): r is NonNullable<typeof r> => Boolean(r));
@@ -216,7 +223,7 @@ export function Dashboard({ currentUser, devices, roomClimate, onToggleDevice, o
         return (
           <section>
             <h2 className="text-lg sm:text-xl font-semibold text-zinc-900 dark:text-zinc-100 mb-4">Favoris</h2>
-            {favoriteDevices.length > 0 ? (
+            {favoriteDevices.length > 0 || unavailableFavorites.length > 0 ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
                 {favoriteDevices.map(device => (
                   <DeviceCard
@@ -226,6 +233,25 @@ export function Dashboard({ currentUser, devices, roomClimate, onToggleDevice, o
                     isFavorite
                     onToggleFavorite={toggleFavorite}
                   />
+                ))}
+                {unavailableFavorites.map((entityId) => (
+                  <div
+                    key={entityId}
+                    className="relative flex flex-col justify-between p-4 rounded-3xl border border-dashed border-zinc-200 dark:border-zinc-800 text-left"
+                  >
+                    <button
+                      onClick={() => toggleFavorite(entityId)}
+                      aria-label="Retirer des favoris"
+                      className="absolute top-3 right-3 text-zinc-300 dark:text-zinc-700"
+                    >
+                      <Heart className="w-4 h-4 fill-current" />
+                    </button>
+                    <Power className="w-6 h-6 text-zinc-300 dark:text-zinc-700" />
+                    <div className="min-w-0 mt-6">
+                      <p className="text-sm font-medium text-zinc-500 truncate">{entityId}</p>
+                      <p className="text-xs text-zinc-400">Indisponible ou masqué</p>
+                    </div>
+                  </div>
                 ))}
               </div>
             ) : (

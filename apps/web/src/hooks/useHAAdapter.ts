@@ -80,9 +80,18 @@ export function useHAAdapter() {
   const [entityRegistry, setEntityRegistry] = useState<HAEntityRegistryEntry[]>([]);
   const [deviceRegistry, setDeviceRegistry] = useState<HADeviceRegistryEntry[]>([]);
 
-  // Fetch registries when connection is established
+  // Registres HA : lus à la connexion, **et tenus à jour ensuite**.
+  //
+  // Les états d'entités arrivent en direct (`subscribeEntities`), mais les
+  // registres — pièces, rattachement entité→pièce, appareils — ne bougent que
+  // sur événement. Sans les abonnements ci-dessous, ils restaient figés au
+  // chargement de la page : un appareil ajouté dans HA apparaissait « non
+  // assigné » pour toujours, et une pièce changée n'était jamais suivie. Sur
+  // une tablette murale en accès guidé, « le chargement de la page » remonte à
+  // des semaines.
   useEffect(() => {
     if (!connection) return;
+    let cancelled = false;
 
     const fetchRegistries = async () => {
       try {
@@ -91,6 +100,7 @@ export function useHAAdapter() {
           connection.sendMessagePromise<HAEntityRegistryEntry[]>({ type: 'config/entity_registry/list' }),
           connection.sendMessagePromise<HADeviceRegistryEntry[]>({ type: 'config/device_registry/list' }),
         ]);
+        if (cancelled) return;
         setAreas(areasRes);
         setEntityRegistry(entityRegRes);
         setDeviceRegistry(deviceRegRes);
@@ -100,6 +110,24 @@ export function useHAAdapter() {
     };
 
     fetchRegistries();
+
+    const subs = [
+      connection.subscribeEvents(fetchRegistries, 'area_registry_updated'),
+      connection.subscribeEvents(fetchRegistries, 'entity_registry_updated'),
+      connection.subscribeEvents(fetchRegistries, 'device_registry_updated'),
+    ];
+
+    // Après une coupure, la bibliothèque se reconnecte seule mais **garde le
+    // même objet `Connection`** : cet effet ne se rejouerait donc jamais. D'où
+    // le refetch explicite sur 'ready', sinon un redémarrage de HA laisse les
+    // registres périmés jusqu'au prochain rechargement complet.
+    connection.addEventListener('ready', fetchRegistries);
+
+    return () => {
+      cancelled = true;
+      connection.removeEventListener('ready', fetchRegistries);
+      subs.forEach((p) => p.then((unsub) => unsub()).catch(() => {}));
+    };
   }, [connection]);
 
   // Build entity → area name map

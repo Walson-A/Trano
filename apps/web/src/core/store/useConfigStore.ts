@@ -1,76 +1,16 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import { DeviceOverride } from '../../types';
-
-/**
- * IndexedDB-backed storage adapter for Zustand persist.
- * Falls back to localStorage if IndexedDB is unavailable.
- */
-function createIDBStorage() {
-  const DB_NAME = 'trano-config';
-  const STORE_NAME = 'keyval';
-
-  function openDB(): Promise<IDBDatabase> {
-    return new Promise((resolve, reject) => {
-      const req = indexedDB.open(DB_NAME, 1);
-      req.onupgradeneeded = () => {
-        req.result.createObjectStore(STORE_NAME);
-      };
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
-    });
-  }
-
-  return createJSONStorage<ConfigState>(() => ({
-    async getItem(key: string): Promise<string | null> {
-      try {
-        const db = await openDB();
-        return new Promise((resolve, reject) => {
-          const tx = db.transaction(STORE_NAME, 'readonly');
-          const req = tx.objectStore(STORE_NAME).get(key);
-          req.onsuccess = () => resolve(req.result ?? null);
-          req.onerror = () => reject(req.error);
-        });
-      } catch {
-        return localStorage.getItem(key);
-      }
-    },
-    async setItem(key: string, value: string): Promise<void> {
-      try {
-        const db = await openDB();
-        return new Promise((resolve, reject) => {
-          const tx = db.transaction(STORE_NAME, 'readwrite');
-          tx.objectStore(STORE_NAME).put(value, key);
-          tx.oncomplete = () => resolve();
-          tx.onerror = () => reject(tx.error);
-        });
-      } catch {
-        localStorage.setItem(key, value);
-      }
-    },
-    async removeItem(key: string): Promise<void> {
-      try {
-        const db = await openDB();
-        return new Promise((resolve, reject) => {
-          const tx = db.transaction(STORE_NAME, 'readwrite');
-          tx.objectStore(STORE_NAME).delete(key);
-          tx.oncomplete = () => resolve();
-          tx.onerror = () => reject(tx.error);
-        });
-      } catch {
-        localStorage.removeItem(key);
-      }
-    },
-  }));
-}
+import type { DeviceOverride } from '@trano/shared';
+import { api } from '../../lib/api';
 
 // ─── Store Types ────────────────────────────────────────────
 
 interface ConfigState {
   // Device overrides keyed by entity_id
   deviceOverrides: Record<string, DeviceOverride>;
+  loaded: boolean;
 
   // Actions
+  fetchOverrides: () => Promise<void>;
   setDeviceOverride: (entityId: string, override: Partial<DeviceOverride>) => void;
   removeDeviceOverride: (entityId: string) => void;
   setDeviceName: (entityId: string, name: string) => void;
@@ -82,62 +22,68 @@ interface ConfigState {
 
 // ─── Store ──────────────────────────────────────────────────
 
-export const useConfigStore = create<ConfigState>()(
-  persist(
-    (set) => ({
-      deviceOverrides: {},
+/**
+ * Surcharges d'appareils, synchronisées sur tous les écrans.
+ *
+ * Avant ce correctif, les overrides vivaient dans l'IndexedDB locale de
+ * chaque navigateur : renommer un appareil sur la tablette du salon ne
+ * se reflétait pas sur le téléphone. Désormais la source de vérité est
+ * le serveur Trano (table device_overrides dans SQLite) et les clients
+ * se tiennent à jour via le WebSocket d'invalidation.
+ */
+export const useConfigStore = create<ConfigState>()((set, get) => ({
+  deviceOverrides: {},
+  loaded: false,
 
-      setDeviceOverride: (entityId, override) =>
-        set((state) => ({
-          deviceOverrides: {
-            ...state.deviceOverrides,
-            [entityId]: { ...state.deviceOverrides[entityId], ...override },
-          },
-        })),
-
-      removeDeviceOverride: (entityId) =>
-        set((state) => {
-          const { [entityId]: _, ...rest } = state.deviceOverrides;
-          return { deviceOverrides: rest };
-        }),
-
-      setDeviceName: (entityId, name) =>
-        set((state) => ({
-          deviceOverrides: {
-            ...state.deviceOverrides,
-            [entityId]: { ...state.deviceOverrides[entityId], displayName: name },
-          },
-        })),
-
-      setDeviceRoom: (entityId, roomId) =>
-        set((state) => ({
-          deviceOverrides: {
-            ...state.deviceOverrides,
-            [entityId]: { ...state.deviceOverrides[entityId], roomId },
-          },
-        })),
-
-      setDeviceHidden: (entityId, hidden) =>
-        set((state) => ({
-          deviceOverrides: {
-            ...state.deviceOverrides,
-            [entityId]: { ...state.deviceOverrides[entityId], hidden },
-          },
-        })),
-
-      setDevicePosition: (entityId, position) =>
-        set((state) => ({
-          deviceOverrides: {
-            ...state.deviceOverrides,
-            [entityId]: { ...state.deviceOverrides[entityId], position },
-          },
-        })),
-
-      resetAllOverrides: () => set({ deviceOverrides: {} }),
-    }),
-    {
-      name: 'trano-config',
-      storage: createIDBStorage(),
+  fetchOverrides: async () => {
+    try {
+      const overrides = await api.overrides.list();
+      set({ deviceOverrides: overrides, loaded: true });
+    } catch {
+      // Serveur injoignable au démarrage : on retente via le WS
+      set({ loaded: true });
     }
-  )
-);
+  },
+
+  setDeviceOverride: (entityId, override) => {
+    // Mise à jour optimiste
+    set((state) => ({
+      deviceOverrides: {
+        ...state.deviceOverrides,
+        [entityId]: { ...state.deviceOverrides[entityId], ...override },
+      },
+    }));
+    api.overrides.set(entityId, override).catch(() => {
+      // Rollback en cas d'échec : refetch depuis le serveur
+      get().fetchOverrides();
+    });
+  },
+
+  removeDeviceOverride: (entityId) => {
+    set((state) => {
+      const { [entityId]: _, ...rest } = state.deviceOverrides;
+      return { deviceOverrides: rest };
+    });
+    api.overrides.remove(entityId).catch(() => {
+      get().fetchOverrides();
+    });
+  },
+
+  setDeviceName: (entityId, name) => {
+    get().setDeviceOverride(entityId, { displayName: name });
+  },
+
+  setDeviceRoom: (entityId, roomId) => {
+    get().setDeviceOverride(entityId, { roomId });
+  },
+
+  setDeviceHidden: (entityId, hidden) => {
+    get().setDeviceOverride(entityId, { hidden });
+  },
+
+  setDevicePosition: (entityId, position) => {
+    get().setDeviceOverride(entityId, { position });
+  },
+
+  resetAllOverrides: () => set({ deviceOverrides: {} }),
+}));
