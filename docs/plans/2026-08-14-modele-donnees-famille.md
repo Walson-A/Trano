@@ -30,8 +30,13 @@ dernier.**
 Ce n'est pas « les deux » par indécision, c'est une répartition par nature
 d'écran.
 
-- **Web** pour l'iPad mural, les PC, la TV : ces écrans sont *toujours ouverts*,
-  donc le WebSocket + l'overlay interphone y font mieux qu'une notification.
+- **Web** pour l'iPad mural et les PC : ces écrans ont une page *réellement
+  ouverte*, donc le WebSocket + l'overlay interphone y font mieux qu'une
+  notification. Sur PC fermé, le Web Push prend le relais — il **sonne** sur
+  desktop, contrairement à iOS.
+- **La TV, les Freebox et l'Apple TV ne sont dans aucun de ces deux cas** :
+  personne n'y laisse une page ouverte. Elles passent par HA, qui les connaît
+  déjà comme `media_player` (canal 4 de `notifications_and_mobile.md`).
 - **Natif Expo** pour les cinq téléphones : c'est la seule voie qui donne le son,
   la présence en arrière-plan et les alertes critiques.
 - **Distribution** : TestFlight en **testeurs internes** (aucune Beta App Review,
@@ -185,18 +190,19 @@ Trois cas, dont un impossible :
 
 | Situation | Interphone plein écran |
 |---|---|
-| Page ouverte (kiosque, TV, PC) | ✅ **déjà le cas** |
+| Page ouverte (kiosque, PC) | ✅ **déjà le cas** |
 | Onglet ouvert en arrière-plan | ⚠️ s'affiche, mais invisible tant qu'on ne revient pas |
-| Navigateur fermé | ❌ **impossible** — `clients.openWindow()` n'est autorisé qu'au clic sur une notification |
+| PC, PWA installée fermée | ⚠️ notification **sonore**, puis clic → l'interphone s'ouvre. Pas de plein écran spontané |
+| iPhone, app fermée | ❌ en web (notification muette) → c'est le rôle de l'app native |
+| **TV, Freebox, Apple TV** | ➡️ **canal 4** : HA les connaît en `media_player`, il les réveille |
 
 C'est pour le troisième cas, et lui seul, que l'app native existe.
 
 ## Ce qu'on ne construit pas
 
-- **Le Web Push (canal 2 de `notifications_and_mobile.md`)** — muet sur iOS, et
-  sur les écrans toujours allumés l'overlay fait mieux. Maintenir des clés VAPID
-  et un service worker pour un canal strictement inférieur aux deux autres, c'est
-  de la dette pour rien.
+- **Le Web Push sur iOS** — la notification y est toujours muette. Sur **PC** en
+  revanche il est conservé : la PWA installée reçoit et **sonne** même fermée, et
+  un clic ouvre l'interphone. Voir `notifications_and_mobile.md` §2, canal 2.
 - **Le journal d'usage** — son seul client était de déduire les favoris ; les
   favoris manuels sont conservés et la disposition du dashboard est reportée,
   donc l'argument tombe. C'est aussi la seule table qui grossirait sans limite,
@@ -242,8 +248,7 @@ C'est pour le troisième cas, et lui seul, que l'app native existe.
       Le `try/catch` attrape une exception qui n'arrive jamais — quand l'autoplay est
       bloqué, `new AudioContext()` ne lève rien, il rend un contexte `suspended` et le
       son ne part pas. Débloquer le contexte à la première interaction et le réutiliser.
-      **C'est exactement le cas du kiosque et de la TV**, les deux écrans pour lesquels
-      l'interphone a été conçu.
+      **C'est exactement le cas du kiosque**, l'écran que personne ne touche.
 - [ ] `navigator.vibrate` : sans effet sur iOS, à ne pas compter comme repli.
 - [ ] **`device_overrides` n'existe pas en production** : la table est créée par `dev`,
       le serveur tourne sur `main`. À garder en tête au déploiement.

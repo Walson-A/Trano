@@ -10,7 +10,7 @@ Ce document décrit l'architecture visée pour les notifications, les alertes cr
 >   un clic ouvre l'interphone en plein écran. C'est exactement le cas « PC fermé ».
 > - **Un quatrième canal apparaît : les écrans qui ne sont jamais ouverts (TV, Freebox,
 >   Apple TV).** Ils ne peuvent recevoir ni WebSocket ni push — mais **HA les connaît déjà
->   comme `media_player`** et sait leur pousser un media. Voir §5.
+>   comme `media_player`** et sait leur pousser un media. Voir §4.
 > - **Le canal 3 est confirmé en natif Expo**, distribué en **TestFlight testeurs internes**
 >   (aucune Beta App Review) et en APK `preview` pour Android. Pas de publication App Store.
 > - **Les alertes critiques ne sont pas sur le chemin critique.** Sons personnalisés et
@@ -29,30 +29,37 @@ Ce document décrit l'architecture visée pour les notifications, les alertes cr
 
 ---
 
-## 2. Architecture des Notifications (3 Canaux)
+## 2. Architecture des Notifications (4 Canaux)
 
 ```
-                       ┌─────────────────────────────────┐
-                       │       Serveur Trano            │
-                       │    (@trano/server / Node)      │
-                       └──────────────┬──────────────────┘
-                                      │
-        ┌─────────────────────────────┼─────────────────────────────┐
-        ▼                             ▼                             ▼
-┌──────────────┐              ┌──────────────┐              ┌──────────────┐
-│  WebSocket   │              │   Web Push   │              │     Expo     │
-│  Temps Réel  │              │ (VAPID/PWA)  │              │(APNs / FCM)  │
-└──────┬───────┘              └──────┬───────┘              └──────┬───────┘
-       │                             │                             │
-       ▼                             ▼                             ▼
-Écrans ouverts               Navigateurs fermés            App Mobile Native
-(TV, PC, Tablette)           (PC, Chrome Android)          (TestFlight / APK)
-- Bannière modale            - Notification OS             - Alerte Critique iOS
-- Alarme Web Audio                                         - Bypass DND Android
+                    ┌─────────────────────────────────┐
+                    │        Serveur Trano            │
+                    │     (@trano/server / Node)      │
+                    └────────────────┬────────────────┘
+                                     │
+     ┌───────────────┬───────────────┼───────────────┬───────────────┐
+     ▼               ▼               ▼               ▼
+┌───────────┐  ┌───────────┐  ┌───────────┐  ┌────────────────┐
+│ WebSocket │  │ Web Push  │  │   Expo    │  │  HA media_player│
+│temps réel │  │(VAPID/PWA)│  │(APNs/FCM) │  │   (play_media)  │
+└─────┬─────┘  └─────┬─────┘  └─────┬─────┘  └────────┬────────┘
+      │              │              │                 │
+      ▼              ▼              ▼                 ▼
+ Page ouverte    PC, PWA        Téléphones      Écrans jamais
+ kiosque, PC     fermée          iOS/Android     ouverts : TV,
+                                                 Freebox, Apple TV
+ - overlay       - notif OK      - son perso     - HA réveille
+   plein écran     + son           + Time Sens.    l'appareil
+ - Web Audio     - clic → app    - alerte crit.  - TTS ou media
 ```
+
+> **La TV n'est pas dans le canal 1.** L'architecture d'origine l'y rangeait ;
+> c'était faux, personne ne laisse une page Trano ouverte sur la télé. Elle est
+> passée au canal 4.
 
 ### Canal 1 : Diffusion WebSocket (Écrans actifs & Kiosques) — **déjà en place**
-- **Cible :** Tout écran où Trano est ouvert (Tablette murale salon, TV, PC ouvert).
+- **Cible :** Tout écran où une page Trano est **réellement ouverte** — tablette murale
+  en kiosque, PC avec l'onglet ouvert. **Pas la TV** (voir §4).
 - **Fonctionnement :** `@trano/server` envoie un événement d'urgence via WebSocket.
   L'interphone l'utilise déjà : `POST /api/intercom` → `broadcastMessage()` →
   `IntercomOverlay.tsx`. **Home Assistant n'intervient pas** dans l'affichage.
@@ -61,8 +68,8 @@ Ce document décrit l'architecture visée pour les notifications, les alertes cr
   depuis le chargement. Le `try/catch` de `playChime()` attrape une exception qui n'arrive
   jamais — quand l'autoplay est bloqué, `new AudioContext()` ne lève rien, il rend un
   contexte `suspended` et le son ne part pas. Il faut débloquer le contexte à la première
-  interaction et le réutiliser. **C'est précisément le cas du kiosque et de la TV**, les
-  deux écrans pour lesquels ce canal existe.
+  interaction et le réutiliser. **C'est précisément le cas du kiosque**, l'écran pour
+  lequel ce canal existe et que personne ne touche.
 
 ### Canal 2 : Web Push API — **restreint au desktop** (révisé le 2026-08-14)
 - **Cible :** **PC uniquement**, PWA installée, application fermée.
@@ -101,7 +108,7 @@ Dans le monorepo `Trano` :
 
 ---
 
-## 5. Canal 4 : les écrans jamais ouverts (TV, Freebox, Apple TV)
+## 4. Canal 4 : les écrans jamais ouverts (TV, Freebox, Apple TV)
 
 Ajouté le 2026-08-14. Il manquait à l'architecture d'origine, qui rangeait la TV
 parmi les « écrans actifs » du canal 1 — **ce qu'elle n'est pas** : personne ne
