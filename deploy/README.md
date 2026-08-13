@@ -38,18 +38,33 @@ services:
     restart: unless-stopped
     ports:
       - "3001:3001"
+    # Le conteneur tourne sous `trano` (uid 1000), PAS root. Docker lance en root
+    # par défaut ; ici on s'aligne sur l'utilisateur de l'engine Oby, pour que
+    # tout ce que Trano écrit lui appartienne — c'est ce qui rend le dépôt de la
+    # sauvegarde chez Oby possible sans bricolage de permissions.
+    user: "1000:1000"
     environment:
-      # Sans ça le conteneur tourne en UTC, et la passe de sauvegarde
-      # quotidienne (01:30 par défaut) s'exécute en réalité à 03:30 heure de
-      # Paris. Même raison que le `TZ` de l'unité systemd de l'engine Oby.
+      # Sans ça le conteneur tourne en UTC, et la passe de sauvegarde de 01:30
+      # s'exécute en réalité à 03:30 heure de Paris. Même raison que le `TZ` de
+      # l'unité systemd de l'engine Oby.
       TZ: Europe/Paris
+      # Dépôt de la sauvegarde du jour chez Oby, qui l'emporte chiffrée sur Drive.
+      TRANO_OBY_BACKUP_DIR: /oby-backups
     env_file: .env
     volumes:
       - trano-data:/data
+      # Le dossier des sauvegardes quotidiennes d'Oby. Rien d'autre de sa maison
+      # n'est monté : ni les bases vivantes, ni `config/` (qui porte ses secrets).
+      - /var/lib/oby/backups/daily:/oby-backups
 
 volumes:
   trano-data:
 ```
+
+> ⚠️ **Le volume s'appelle `trano_trano-data`, pas `trano-data`.** Compose préfixe
+> par le nom du projet. Une commande visant `trano-data` ne touche donc pas la vraie
+> base : Docker crée silencieusement un volume vide de ce nom et opère dessus.
+> Erreur commise le 2026-08-14, qui a laissé Trano en lecture seule trois minutes.
 
 ## Sauvegardes de la base
 
@@ -60,7 +75,7 @@ rotation 7 quotidiens / 4 hebdomadaires.
 
 - Les copies vivent dans `/data/backups/` — **le même volume que la base**. Elles
   protègent d'une fausse manœuvre ou d'une migration ratée, **pas** de la perte du
-  volume.
+  volume. D'où le dépôt chez Oby ci-dessous.
 - Chaque fichier est **une base complète et autonome**. Restaurer :
   `docker compose stop`, remplacer `/data/trano.db` par le fichier voulu, supprimer
   les `/data/trano.db-wal` et `-shm` de l'ancienne base, `docker compose up -d`.
@@ -68,6 +83,23 @@ rotation 7 quotidiens / 4 hebdomadaires.
   `POST /api/backup/run`.
 - Réglages : `TRANO_BACKUP_TIME` (défaut `01:30`, **heure locale** — d'où le `TZ`
   ci-dessus) et `TRANO_BACKUP_DIR` (défaut `/data/backups`).
+
+### Le hors-site, offert par Oby
+
+L'engine Oby tourne sur la même machine et pousse chaque nuit un coffre chiffré
+(tar → age → Google Drive), avec canari anti-échec silencieux et drill de
+restauration mensuel. Sa sélection ramasse **tout `*.db`** trouvé dans son dossier
+du jour — pas une liste figée. Trano y dépose donc sa copie (`TRANO_OBY_BACKUP_DIR`)
+juste après l'avoir vérifiée, à 01:30, soit avant la passe d'Oby de 02:00.
+
+Résultat : sauvegarde chiffrée hors site, sans OAuth, sans passphrase, sans une
+ligne de code côté Oby.
+
+> ⚠️ **C'est un couplage implicite, pas un contrat.** Le jour où quelqu'un durcit
+> `backup_cloud/mod.rs::database_entries` en liste explicite — ce qui serait une
+> amélioration raisonnable côté Oby — **le hors-site de Trano s'arrêterait sans un
+> mot**. Le garde-fou : le champ `offsite` de `GET /api/backup/status` doit dire
+> « déposé ». C'est aussi documenté dans `Atlas/engine/docs/backup_cloud.md`.
 
 > Une base dont le `quick_check` échoue **n'est jamais sauvegardée** : sa dernière
 > copie saine est conservée. Vérifié en corrompant volontairement une copie de

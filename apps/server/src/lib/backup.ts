@@ -51,6 +51,18 @@ const REPORT_PATH = join(BACKUP_ROOT, 'last-run.json');
  */
 const SCHEDULE = process.env.TRANO_BACKUP_TIME ?? '01:30';
 
+/**
+ * Dossier de dépôt chez Oby, monté depuis `<OBY_DATA_DIR>/backups/daily`.
+ * Absent = fonction désactivée (cas du poste de dev).
+ *
+ * L'engine Oby pousse chaque nuit un coffre chiffré (tar → age → Google Drive),
+ * avec canari anti-échec silencieux et drill mensuel. Sa sélection ne travaille
+ * **pas** sur une liste figée : elle ramasse tout `*.db` du dossier du jour. Y
+ * déposer notre copie suffit donc à obtenir le hors-site chiffré, sans une ligne
+ * de code côté Oby.
+ */
+const OBY_DROP_DIR = process.env.TRANO_OBY_BACKUP_DIR ?? null;
+
 export interface BackupReport {
   /** Jour de la tentative (`YYYY-MM-DD`, heure locale) — sert aussi de garde anti-rejeu. */
   date: string;
@@ -61,6 +73,8 @@ export interface BackupReport {
   pages?: number;
   bytes?: number;
   rows?: Record<string, number>;
+  /** Dépôt chez Oby pour l'envoi hors-site chiffré — jamais bloquant. */
+  offsite?: string;
 }
 
 function today(): string {
@@ -80,6 +94,32 @@ function tableCounts(handle: DatabaseSync): Record<string, number> {
     counts[name] = (handle.prepare(`SELECT COUNT(*) AS n FROM "${name}"`).get() as { n: number }).n;
   }
   return counts;
+}
+
+/**
+ * Dépose la copie du jour dans le dossier de backups d'Oby, d'où son coffre
+ * chiffré l'emportera vers Drive.
+ *
+ * **Jamais bloquant** : le hors-site est un bonus, la sauvegarde locale est
+ * l'essentiel. Un échec ici est signalé dans le rapport, pas propagé.
+ *
+ * Ne demande aucune manipulation de permissions : depuis le 2026-08-14 le
+ * conteneur tourne sous l'uid 1000, le même utilisateur que l'engine Oby.
+ * S'il repassait un jour en root, il créerait ici des dossiers qu'Oby ne
+ * pourrait plus écrire — et casserait *ses* sauvegardes, bien plus précieuses
+ * que les nôtres.
+ */
+function dropOffToOby(source: string, date: string): string {
+  if (!OBY_DROP_DIR) return 'non configuré';
+  if (!existsSync(OBY_DROP_DIR)) return `dossier absent (${OBY_DROP_DIR})`;
+  try {
+    const dayDir = join(OBY_DROP_DIR, date);
+    mkdirSync(dayDir, { recursive: true });
+    cpSync(source, join(dayDir, `trano-${date}.db`));
+    return 'déposé';
+  } catch (e) {
+    return `échec : ${String(e)}`;
+  }
 }
 
 /** Ne garde que les `keep` dossiers les plus récents (nommés par date, donc triables). */
@@ -207,6 +247,7 @@ export async function runBackup(): Promise<BackupReport> {
     pages,
     bytes: statSync(dest).size,
     rows: expected,
+    offsite: dropOffToOby(dest, date),
   };
   saveReport(report);
   return report;
@@ -241,18 +282,18 @@ export function startBackupScheduler(log: (msg: string) => void): void {
 }
 
 /*
- * ─── Hors-site, un jour ────────────────────────────────────────────────────────
+ * ─── Le couplage avec Oby, à connaître ─────────────────────────────────────────
  *
- * L'engine Oby tourne sur la même machine et pousse chaque nuit un coffre chiffré
- * (tar → age → Google Drive) avec canari anti-échec silencieux et drill mensuel.
- * Sa sélection (`backup_cloud/mod.rs::database_entries`) ne travaille **pas** sur
- * une liste figée : elle ramasse **tout `*.db`** présent dans son dossier du jour.
+ * Le hors-site repose sur un fait du code d'Oby, pas sur un contrat : sa fonction
+ * `backup_cloud/mod.rs::database_entries` ramasse **tout `*.db`** trouvé dans le
+ * dossier du jour, au lieu de parcourir une liste de bases connues.
  *
- * Déposer `trano-<date>.db` dans `<OBY_DATA_DIR>/backups/daily/<date>/` suffirait
- * donc à obtenir le hors-site chiffré, sans une ligne de code côté Oby.
+ * ⚠️ Le jour où quelqu'un la durcit en liste explicite — ce qui serait une
+ * amélioration raisonnable côté Oby — **la copie hors-site de Trano s'arrêterait
+ * sans un mot**. C'est documenté des deux côtés : ici, et dans
+ * `Atlas/engine/docs/backup_cloud.md`.
  *
- * ⚠️ Ce serait un **couplage implicite** : le jour où quelqu'un durcit
- * `database_entries` en liste explicite — ce qui serait raisonnable — la copie
- * hors-site de Trano s'arrêterait **en silence**. À n'entreprendre qu'en le
- * documentant des deux côtés.
+ * Le garde-fou : `GET /api/backup/status` expose le champ `offsite`. Il dit
+ * « déposé » quand le fichier est parti. S'il dit autre chose, le hors-site ne
+ * marche plus, même si la sauvegarde locale, elle, va bien.
  */
