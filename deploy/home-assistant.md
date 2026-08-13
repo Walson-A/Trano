@@ -125,6 +125,37 @@ aussi l'engine.
 http://192.168.1.65:8123 → créer le compte propriétaire, le lieu, le fuseau
 (Europe/Paris) et les unités. Puis désactiver l'intégration Bluetooth (ci-dessus).
 
+### 1bis. Poser l'URL locale — sinon l'app iOS reste bloquée
+
+Réglages → Système → Réseau → **Réseau local** : basculer « Automatique » sur
+off et saisir `http://192.168.1.65:8123`, puis Enregistrer. Laisser le champ du
+haut (URL externe) **vide** tant qu'aucun accès distant n'existe.
+
+Ça n'a rien de cosmétique. Sur « Automatique », HA dérive l'adresse à chaque
+requête et stocke `internal_url = null` — et l'app iOS reste alors **bloquée sur
+un rond de chargement** après avoir découvert le serveur. Le plus trompeur, c'est
+que côté serveur *tout réussit* : la découverte zeroconf remonte la bonne IP, le
+login aboutit (six jetons émis pendant les essais), l'appareil s'enregistre, et
+chaque route répond sous la milliseconde. Rien dans les logs HA ne signale quoi
+que ce soit.
+
+L'explication tient au bug ouvert [home-assistant/iOS#4419](https://github.com/home-assistant/iOS/issues/4419) :
+depuis les versions 2026.3.x, l'app n'arrive plus à lire le SSID du Wi-Fi
+(`Current SSID: nil`), donc elle ne sait pas qu'elle est à la maison, donc elle
+ne s'autorise pas à déduire l'adresse locale. Avec l'URL externe vide **et**
+l'interne dérivée, il ne lui reste aucune adresse utilisable : elle attend.
+Une URL locale explicite lui en donne une.
+
+> Voir aussi [home-assistant/iOS#5346](https://github.com/home-assistant/iOS/issues/5346),
+> ouvert lui aussi, qui frappe **spécifiquement après une réinstallation de HA** :
+> l'app garde d'anciens identifiants dans le trousseau iOS et ne relance pas
+> l'authentification quand le serveur rejette le jeton périmé. Si le symptôme
+> persiste, supprimer l'ancien serveur dans les réglages de l'app avant d'en
+> ajouter un — réinstaller l'app ne suffit pas, c'est signalé comme inefficace.
+
+Le juge de paix dans les deux cas : app HA → Réglages → **Companion App** →
+Debugging → les logs, pris juste après une tentative bloquée.
+
 ### 2. Réserver l'adresse IP sur la Freebox
 
 **À ne pas sauter.** Les tablettes murales parlent à HA **en direct** en
