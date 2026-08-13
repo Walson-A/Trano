@@ -3,11 +3,13 @@ import {
   Lightbulb, ToggleLeft, Thermometer, Lock, Tv, Blinds, Fan, Gauge, Camera,
   Search, Eye, EyeOff, Pencil, Check, X, Server, Wifi, Download,
   Upload, Globe, Phone, HardDrive, RotateCcw, BellRing, PhoneMissed, Trash2,
+  DatabaseBackup, CloudUpload, CloudOff, AlertTriangle, Loader2,
 } from 'lucide-react';
 import { Device, DeviceType } from '../types';
 import type { Room } from '@trano/shared';
 import { getRoomIcon, ROOM_ICON_NAMES } from '../config/rooms';
 import { FREEBOX, PHONES } from '../config/network';
+import { api, type BackupStatus } from '../lib/api';
 import { useConfigStore } from '../core/store/useConfigStore';
 import { useRoomsStore } from '../core/store/useRoomsStore';
 import { useHA } from '../context/HAContext';
@@ -459,6 +461,137 @@ const RoomsManager: React.FC = () => {
   );
 };
 
+
+/**
+ * État des sauvegardes de la base.
+ *
+ * Une sauvegarde qui échoue en silence est pire que pas de sauvegarde : on se
+ * croit couvert. Cet encart existe pour que l'échec ait un endroit où se voir.
+ *
+ * Trois signaux distincts, parce qu'ils tombent en panne séparément :
+ * - la **sauvegarde locale** (`ok`), qui protège d'une migration ratée ;
+ * - son **âge**, car un ordonnanceur bloqué laisse un dernier rapport « ok »
+ *   qui vieillit sans que rien ne proteste ;
+ * - le **dépôt hors-site** (`offsite`), qui repose sur un comportement du code
+ *   d'Oby et pourrait cesser sans un mot (cf. deploy/README.md).
+ */
+function BackupSection() {
+  const [status, setStatus] = useState<BackupStatus | null>(null);
+  const [running, setRunning] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const refresh = React.useCallback(() => {
+    api.backup
+      .status()
+      .then(setStatus)
+      .catch(() => setError('État des sauvegardes indisponible'));
+  }, []);
+
+  React.useEffect(refresh, [refresh]);
+
+  const lancer = async () => {
+    setRunning(true);
+    setError(null);
+    try {
+      setStatus(await api.backup.run());
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Échec');
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  const perimee = (status?.ageHours ?? 0) > 48;
+  const sain = status?.ok === true && !perimee;
+  const horsSite = status?.offsite === 'déposé';
+
+  const resume = () => {
+    if (error) return error;
+    if (!status) return 'Vérification…';
+    if (status.neverRun) return "Jamais exécutée — aucune copie n'existe";
+    if (!status.ok) return status.detail ?? 'Échec';
+    const taille = status.bytes ? `${Math.round(status.bytes / 1024)} Ko` : '';
+    const age =
+      status.ageHours === 0 ? "aujourd'hui" : `il y a ${status.ageHours} h`;
+    return `${status.date} (${age})${taille ? ` · ${taille}` : ''}`;
+  };
+
+  return (
+    <section className="mb-8">
+      <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-1">Sauvegardes</h2>
+      <p className="text-sm text-zinc-500 mb-3">
+        Profils, pièces et réglages de la maison. Une copie par jour, vérifiée en la relisant.
+      </p>
+
+      <div className="bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-white/5 rounded-2xl p-5">
+        <div className="flex items-center gap-4">
+          <div
+            className={cn(
+              'w-10 h-10 rounded-full flex items-center justify-center shrink-0',
+              sain
+                ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-500'
+                : status && !status.ok && !status.neverRun
+                  ? 'bg-red-100 dark:bg-red-900/30 text-red-500'
+                  : 'bg-amber-100 dark:bg-amber-900/30 text-amber-500',
+            )}
+          >
+            {status && !status.ok && !status.neverRun ? (
+              <AlertTriangle className="w-5 h-5" />
+            ) : (
+              <DatabaseBackup className="w-5 h-5" />
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold text-zinc-900 dark:text-zinc-100">Base de Trano</p>
+            <p className="text-xs text-zinc-500 break-words">{resume()}</p>
+          </div>
+          <button
+            onClick={lancer}
+            disabled={running}
+            className="shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold bg-zinc-100 dark:bg-white/5 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-white/10 disabled:opacity-50 transition-colors"
+          >
+            {running ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
+            {running ? 'En cours…' : 'Sauvegarder'}
+          </button>
+        </div>
+
+        {status?.rows && (
+          <p className="mt-3 pt-3 border-t border-zinc-100 dark:border-white/5 text-xs text-zinc-500">
+            {(Object.entries(status.rows) as Array<[string, number]>)
+              .filter(([, n]) => n > 0)
+              .map(([table, n]) => `${n} ${table}`)
+              .join(' · ') || 'base vide'}
+          </p>
+        )}
+
+        {status && !status.neverRun && (
+          <div className="mt-3 flex items-center gap-2 text-xs">
+            {horsSite ? (
+              <>
+                <CloudUpload className="w-4 h-4 text-emerald-500 shrink-0" />
+                <span className="text-zinc-500">Copie chiffrée envoyée hors de la maison</span>
+              </>
+            ) : (
+              <>
+                <CloudOff className="w-4 h-4 text-amber-500 shrink-0" />
+                <span className="text-amber-600 dark:text-amber-400">
+                  Hors-site inactif — {status.offsite ?? 'inconnu'}
+                </span>
+              </>
+            )}
+          </div>
+        )}
+
+        {perimee && status?.ok && (
+          <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+            Plus de 48 h sans sauvegarde : l'ordonnanceur est peut-être arrêté.
+          </p>
+        )}
+      </div>
+    </section>
+  );
+}
+
 export function Settings({ devices }: SettingsProps) {
   const { status, error } = useHA();
   const [search, setSearch] = useState('');
@@ -528,6 +661,8 @@ export function Settings({ devices }: SettingsProps) {
       </div>
 
       <FreeboxSection />
+
+      <BackupSection />
 
       <RoomsManager />
 

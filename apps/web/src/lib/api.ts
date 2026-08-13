@@ -40,6 +40,20 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return res.json();
 }
 
+/** Rapport de la dernière sauvegarde (voir apps/server/src/lib/backup.ts). */
+export interface BackupStatus {
+  neverRun: boolean;
+  date?: string;
+  at?: string;
+  ok?: boolean;
+  detail?: string;
+  bytes?: number;
+  rows?: Record<string, number>;
+  /** « déposé » quand la copie est partie chez Oby pour le coffre chiffré. */
+  offsite?: string;
+  ageHours?: number;
+}
+
 export const api = {
   profiles: {
     list: () => request<Profile[]>('/api/profiles'),
@@ -64,6 +78,10 @@ export const api = {
     update: (id: string, data: ShoppingItemUpdate) =>
       request<ShoppingItem>(`/api/shopping/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
     remove: (id: string) => request<void>(`/api/shopping/${id}`, { method: 'DELETE' }),
+  },
+  backup: {
+    status: () => request<BackupStatus>('/api/backup/status'),
+    run: () => request<BackupStatus>('/api/backup/run', { method: 'POST' }),
   },
   overrides: {
     list: () => request<Record<string, DeviceOverride>>('/api/device-overrides'),
