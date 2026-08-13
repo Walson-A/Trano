@@ -14,6 +14,12 @@ serveur ne compile rien, il télécharge.
 > d'image), et `repository.yaml` est le fichier que lisait la boutique HA. Le
 > jour où on remplace le compteur, les deux peuvent partir.
 
+> **Depuis le 2026-08-13, Home Assistant a suivi.** La VM de la Freebox ne
+> répondait plus (port ouvert, aucune réponse HTTP) ; HA tourne désormais en
+> conteneur sur le serveur, à côté de Trano, sur **http://192.168.1.65:8123**.
+> Pourquoi un conteneur et pas une VM HA OS, et ce qu'il reste à faire :
+> [`home-assistant.md`](home-assistant.md).
+
 ## Le serveur de la maison
 
 ```
@@ -44,7 +50,7 @@ volumes:
 
 | Variable | Valeur |
 |---|---|
-| `TRANO_HA_URL` | l'instance Home Assistant (ex. `http://192.168.1.158:8123`) |
+| `TRANO_HA_URL` | l'instance Home Assistant — `http://192.168.1.65:8123` depuis le 2026-08-13 (voir [`home-assistant.md`](home-assistant.md)) |
 | `TRANO_HA_TOKEN` | token longue durée HA (Profil → Sécurité → Créer un token) |
 | `TRANO_WEATHER_ENTITY` | `weather.forecast_home` |
 | `TRANO_OPENROUTER_KEY` | clé OpenRouter, pour l'assistant des écrans |
@@ -100,7 +106,7 @@ L'image publiée est une image Docker ordinaire :
 ```bash
 docker run -d --name trano -p 3001:3001 \
   -v trano-data:/data \
-  -e TRANO_HA_URL=http://192.168.1.158:8123 \
+  -e TRANO_HA_URL=http://192.168.1.65:8123 \
   -e TRANO_HA_TOKEN=votre_token \
   ghcr.io/walson-a/trano:latest
 ```
