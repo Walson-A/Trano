@@ -156,6 +156,15 @@ Une URL locale explicite lui en donne une.
 Le juge de paix dans les deux cas : app HA → Réglages → **Companion App** →
 Debugging → les logs, pris juste après une tentative bloquée.
 
+> **Ce qui a réellement débloqué, en vrai (2026-08-13)** : un **redémarrage de
+> Home Assistant**, puis un redémarrage de l'app. L'URL locale avait été posée
+> juste avant, mais ce n'est vraisemblablement pas elle qui a débloqué — le
+> redémarrage réinitialise toutes les WebSockets et réémet l'annonce zeroconf,
+> ce qui colle mieux au caractère sporadique du #4419. Poser l'URL en dur reste
+> recommandé (ça supprime un mode de panne), mais **le premier réflexe quand
+> l'app coince, c'est `docker compose restart homeassistant`**, pas de changer
+> la configuration.
+
 ### 2. Réserver l'adresse IP sur la Freebox
 
 **À ne pas sauter.** Les tablettes murales parlent à HA **en direct** en
