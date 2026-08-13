@@ -24,7 +24,19 @@ Types de référence dans `packages/shared/src/index.ts`.
 | DELETE | `/api/profiles/:id` | — | Supprimer (204) |
 
 `Profile` : `{ id, name, avatar (emoji), color (hex), roomIds (string[]),
-isKid, favorites (entity_ids), createdAt }`.
+isKid, favorites (entity_ids), favoriteRooms (roomIds), dashboardLayout,
+createdAt }`.
+
+> Le `PATCH` ne touche **que les colonnes envoyées** : deux écrans qui modifient
+> le même profil en même temps (des favoris ici, un renommage là) ne s'écrasent
+> plus l'un l'autre.
+>
+> ⚠️ **Reprise des surcharges locales.** Avant la table `device_overrides`, les
+> renommages et positions vivaient dans l'IndexedDB de chaque navigateur. Une
+> reprise unique par écran les remonte au premier chargement
+> (`apps/web/src/lib/legacyOverrides.ts`) : elle n'écrit que les entités que le
+> serveur ne connaît pas encore, donc plusieurs écrans peuvent démarrer dans
+> n'importe quel ordre sans se marcher dessus.
 
 ## Liste de courses
 

@@ -14,8 +14,10 @@ packages/shared   Types TypeScript partagés entre web et server
 - Le **navigateur** parle directement à Home Assistant en WebSocket pour le
   temps réel domotique (états, commandes).
 - Le **serveur Trano** est la source de vérité pour tout ce qui est partagé
-  entre les membres de la famille : profils, liste de courses. Il sert aussi
-  le build du frontend en production et fournira les ponts Freebox et IA.
+  entre les membres de la famille : profils, liste de courses, pièces et
+  **surcharges d'appareils** (renommages, pièce, masquage, plan). Il sert aussi
+  le build du frontend en production, l'assistant IA, et les outils de la
+  maison — à l'écran comme à Oby.
 - La **sync temps réel** entre écrans passe par le WebSocket du serveur
   (`/api/ws`) : messages d'invalidation → les clients refetchent.
 
@@ -31,10 +33,14 @@ packages/shared   Types TypeScript partagés entre web et server
 ## `apps/server/`
 
 - `src/index.ts` : bootstrap Fastify, routes, fichiers statiques (prod), fallback SPA.
-- `src/db.ts` : ouverture SQLite + schéma (`profiles`, `shopping_items`).
+- `src/db.ts` : ouverture SQLite + schéma — quatre tables : `profiles`,
+  `shopping_items`, `rooms`, `device_overrides`.
   Chemin de la base : `TRANO_DB_PATH` (défaut `apps/server/data/trano.db`,
   `/data/trano.db` dans le conteneur).
-- `src/routes/profiles.ts` / `src/routes/shopping.ts` : API REST (voir `docs/server_api.md`).
+- `src/routes/profiles.ts` · `shopping.ts` · `rooms.ts` · `overrides.ts` ·
+  `intercom.ts` : API REST (voir `docs/server_api.md`).
+- `src/routes/house.ts` : l'état de la maison en un objet, pour les clients
+  d'application (widget Maison de LifeOS).
 - `src/lib/tools.ts` : **la table unique des outils de la maison** — définitions
   et exécution. Deux surfaces la consomment : l'assistant des écrans
   (`routes/assistant.ts`) et Oby (`routes/mcp.ts`). Le drapeau `oby` d'un outil
@@ -71,7 +77,11 @@ Types consommés par les deux apps : `Profile`, `ShoppingItem`,
   `/api/config` en production. **Ne jamais figer URL/token HA au build.**
 
 ### 5. `hooks/`
-- `useHAAdapter.ts` : Adaptateur HA → Trano. Fetch les registries HA (areas, entity registry, device registry), résout les pièces et noms, retourne des `Device[]` typés.
+- `useHAAdapter.ts` : Adaptateur HA → Trano. Lit les registres HA (areas, entity
+  registry, device registry), **s'abonne à leurs événements de mise à jour** et
+  refetche à chaque reconnexion — sans quoi la liste des pièces resterait celle
+  du chargement de la page, ce qui sur une tablette murale veut dire des
+  semaines. Résout pièces et noms, retourne des `Device[]` typés.
 
 ### 6. `ui/` (Design System)
 Composants visuels "bêtes" (Dumb Components).
@@ -97,8 +107,10 @@ Composants visuels "bêtes" (Dumb Components).
 - `Settings.tsx` : Réglages — état des systèmes, gestion des appareils (renommer, assigner une pièce, masquer). Inaccessible aux profils enfants.
 
 ### 10. `types.ts`
-Types locaux au frontend : `Device`, `DeviceState`, `DeviceType`, `DeviceOverride`, `RoomConfig`.
-Les types partagés (profils, courses) vivent dans `@trano/shared`.
+Types locaux au frontend : `Device`, `DeviceState`, `DeviceType`, `RoomConfig`.
+Les types partagés (profils, courses, **surcharges d'appareils**) vivent dans
+`@trano/shared` — `DeviceOverride` y a déménagé le jour où le serveur en est
+devenu propriétaire, et `types.ts` ne fait plus que le ré-exporter.
 
 ## Résolution des données
 

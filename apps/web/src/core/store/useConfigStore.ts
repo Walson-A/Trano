@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { DeviceOverride } from '@trano/shared';
 import { api } from '../../lib/api';
+import { importLegacyOverrides } from '../../lib/legacyOverrides';
 
 // ─── Store Types ────────────────────────────────────────────
 
@@ -17,7 +18,6 @@ interface ConfigState {
   setDeviceRoom: (entityId: string, roomId: string) => void;
   setDeviceHidden: (entityId: string, hidden: boolean) => void;
   setDevicePosition: (entityId: string, position: { x: number; y: number }) => void;
-  resetAllOverrides: () => void;
 }
 
 // ─── Store ──────────────────────────────────────────────────
@@ -39,6 +39,15 @@ export const useConfigStore = create<ConfigState>()((set, get) => ({
     try {
       const overrides = await api.overrides.list();
       set({ deviceOverrides: overrides, loaded: true });
+
+      // Reprise unique de ce qui dormait dans l'IndexedDB de CET écran, avant
+      // la bascule vers le serveur (cf. lib/legacyOverrides.ts). Non
+      // destructive : elle ne comble que les entités absentes du serveur.
+      const imported = await importLegacyOverrides(overrides);
+      if (imported > 0) {
+        const merged = await api.overrides.list();
+        set({ deviceOverrides: merged });
+      }
     } catch {
       // Serveur injoignable au démarrage : on retente via le WS
       set({ loaded: true });
@@ -85,5 +94,4 @@ export const useConfigStore = create<ConfigState>()((set, get) => ({
     get().setDeviceOverride(entityId, { position });
   },
 
-  resetAllOverrides: () => set({ deviceOverrides: {} }),
 }));
