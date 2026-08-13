@@ -94,6 +94,11 @@ pile réseau de l'hôte, donc il voit aussi `127.0.0.1:7777` (oby-engine) et
 `:3001` (Trano). L'engine exige sa master key, ce n'est donc pas une porte
 ouverte.
 
+> **Vérifié avant même l'onboarding** : HA avait déjà repéré sur le LAN
+> `shelly`, `freebox`, `cast`, `androidtv_remote`, `apple_tv`, `dlna_dmr`,
+> `dlna_dms`, `upnp` et `flux_led`, et configuré tout seul la météo Met.no, une
+> ampoule Flux LED et un lecteur `media_player.salon`. La découverte marche.
+
 **Bind mount `./config`, pas un volume nommé.** Contrairement à Trano (qui
 utilise `trano-data`), la config HA reste lisible et sauvegardable directement
 depuis l'hôte, dans `~/homeassistant/config/`. C'est ce qui rend une sauvegarde
@@ -140,7 +145,7 @@ entités que Trano consomme (`apps/web/src/config/energy.ts`) :
 | **Enphase Envoy** | `sensor.envoy_122237060306_*`. Firmware D7+ → demande les identifiants du compte Enlighten. |
 | **Shelly** | Pro 3EM (`ac15187b3e18`), EM Gen3 (`dcb4d9c5664c`), Plug S G3 (`d885ac1ebaa8`). Découverte automatique — c'est ce que `network_mode: host` achète. |
 | **Freebox** | Demande d'**autoriser la nouvelle application sur l'écran de la Freebox** (flèche droite). Le jeton de l'ancienne instance ne vaut plus rien. |
-| **Météo (Met.no)** | Doit produire `weather.forecast_home` — c'est ce qu'attend `TRANO_WEATHER_ENTITY`. À vérifier, et à renommer si HA choisit autre chose. |
+| **Météo (Met.no)** | ✅ Déjà configurée automatiquement — mais l'entité s'appelle **`weather.forecast_maison`**, pas `weather.forecast_home` : HA localise le nom en français. Il faut donc corriger `TRANO_WEATHER_ENTITY` (étape 6), sinon la météo des écrans reste vide sans message d'erreur. **À reconfirmer après l'onboarding**, qui fixe le nom du lieu. |
 | **Zendure** | Hyper 2000 + AB2000X, via **HACS**. Voir la section MQTT ci-dessous. |
 | **« Thony »** (jardin) | `sensor.thony_pv_power`, `thony_battery_power`, `thony_battery_state_of_charge`, `thony_total_energy`. Origine non identifiée depuis le code — à retrouver au remontage. |
 
@@ -190,6 +195,7 @@ jeton**. Puis dans `~/trano/.env` sur le serveur :
 ```
 TRANO_HA_URL=http://192.168.1.65:8123
 TRANO_HA_TOKEN=<le nouveau jeton>
+TRANO_WEATHER_ENTITY=weather.forecast_maison
 ```
 
 ```bash
@@ -225,16 +231,42 @@ supprimer la VM Home Assistant, et libérer le bail de `192.168.1.158`.
 
 ## Mettre à jour
 
-Pas de bouton « mettre à jour » — c'est la contrepartie du conteneur. Home
-Assistant publie une version majeure par mois, avec des changements cassants
-annoncés dans les notes de version : prendre une sauvegarde avant.
+Il n'y a pas de bouton « mettre à jour », et ce n'est pas une histoire d'image
+manquante : **un conteneur ne peut pas se remplacer lui-même**. Le processus
+devrait se tuer et recréer son propre conteneur, ce qui suppose l'accès au
+socket Docker de l'hôte. HA OS fait tourner Home Assistant dans un conteneur lui
+aussi — ce qu'il a en plus, c'est le **Supervisor**, un composant privilégié dont
+le métier est justement de tirer la nouvelle image et de refaire le conteneur.
+Le bouton de HA OS, c'est un appel au Supervisor.
+
+Ici ce rôle nous revient, et on ne veut surtout pas le déléguer à Home Assistant
+lui-même : lui donner le socket Docker, ce serait lui donner root sur une machine
+qui porte aussi l'engine Oby, Trano et Hermès.
+
+D'où **`~/homeassistant/maj.sh`** :
 
 ```bash
-cd ~/homeassistant && docker compose pull && docker compose up -d
+~/homeassistant/maj.sh
 ```
 
-Revenir en arrière : remplacer `:stable` par la version voulue
-(ex. `:2026.8.1`) dans `docker-compose.yml`, puis `docker compose up -d`.
+Ce qu'il fait, dans l'ordre : relève la version installée → archive la config
+dans `sauvegardes-avant-maj/` (sans la base d'historique ni les logs, donc
+quelques centaines de Ko ; ce qui compte est dans `.storage`) → ne garde que les
+5 dernières → tire l'image → **compare les identifiants d'image et ne redémarre
+que si elle a réellement changé** → attend jusqu'à 3 min que le 8123 réponde. Si
+HA ne revient pas, il affiche la marche à suivre exacte pour revenir en arrière
+(épingler l'ancienne version dans `docker-compose.yml`, et restaurer l'archive
+si la config est en cause).
+
+**Pas d'automatisation type Watchtower sur Home Assistant.** C'est très bien
+pour des conteneurs sans enjeu, mais HA publie une version majeure par mois avec
+des changements cassants : un `pull` automatique à 4 h du matin, c'est se
+réveiller avec la maison en panne et rien pour dire pourquoi. La bonne posture
+est : être prévenu, puis choisir le moment.
+
+Pour être prévenu, l'intégration **Version** (Réglages → Appareils et services →
+Ajouter → Version, source *container*) expose un capteur avec la dernière version
+publiée ; une automatisation dessus envoie la notification.
 
 ## Références
 
