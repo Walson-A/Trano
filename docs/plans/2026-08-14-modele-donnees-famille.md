@@ -213,6 +213,29 @@ C'est pour le troisième cas, et lui seul, que l'app native existe.
 
 ## Le chantier, dans l'ordre
 
+### 0. Une sauvegarde de `trano.db` qui marche — **avant tout le reste**
+
+La première tâche du chantier **supprime trois colonnes** dans la base où vivent
+les 5 profils et les 11 pièces de la famille. Or, relevé le 2026-08-14 :
+
+- **Rien ne sauvegarde `trano.db`.** Ni cron, ni timer systemd, ni dossier de
+  sauvegarde sur le serveur.
+- Le commentaire en tête de `db.ts` affirme pourtant que la base est *« persistée
+  et incluse dans les sauvegardes HA »*. **C'était vrai du temps de l'add-on HAOS
+  sur la Freebox** ; depuis le passage en conteneur Docker sur tranoserver, c'est
+  faux. Le commentaire promet une protection qui n'existe plus — **à corriger en
+  même temps**, sinon il rendormira le prochain qui le lira.
+- **Piège SQLite** : `trano.db` fait **4 Ko** et `trano.db-wal` **214 Ko**. Tout
+  est dans le WAL, non checkpointé. Un `cp trano.db` copierait donc **une base
+  quasi vide, sans erreur**. Il faut `VACUUM INTO` (que `node:sqlite` sait
+  exécuter) ou un checkpoint préalable.
+
+- [ ] Script de sauvegarde par `VACUUM INTO`, pas par copie de fichier
+- [ ] Vérifier la sauvegarde en la **rouvrant** et en comptant les lignes — une
+      sauvegarde jamais restaurée n'est pas une sauvegarde
+- [ ] Timer systemd quotidien + rétention
+- [ ] Corriger le commentaire mensonger de `db.ts`
+
 ### 1. Socle données (serveur)
 
 - [ ] `profiles` : ajouter `kind`, supprimer `is_kid`, `favorite_rooms`, `room_ids`
@@ -241,6 +264,13 @@ C'est pour le troisième cas, et lui seul, que l'app native existe.
 - [ ] **Demander l'entitlement Critical Alerts** — à lancer tôt, la revue Apple
       prend des semaines et un refus au premier essai est courant
 - [ ] EAS : TestFlight testeurs internes (iOS), profil `preview` (Android)
+
+### 3bis. Canaux d'alerte (voir `notifications_and_mobile.md`)
+
+- [ ] **Web Push desktop** : clés VAPID + service worker, PC uniquement
+- [ ] **Canal 4** : `media_player.play_media` via HA pour TV / Freebox / Apple TV
+- [ ] **Installer une voix TTS française** — l'instance n'a que
+      `tts.google_translate_en_com`, qui lira les messages avec une voix anglaise
 
 ### 4. Correctifs sur l'existant
 
