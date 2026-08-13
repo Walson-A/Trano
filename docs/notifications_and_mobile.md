@@ -5,11 +5,12 @@ Ce document décrit l'architecture visée pour les notifications, les alertes cr
 > **Révisé le 2026-08-14** — décisions prises avec Walson, détail et raisons dans
 > [`docs/plans/2026-08-14-modele-donnees-famille.md`](plans/2026-08-14-modele-donnees-famille.md) :
 >
-> - **Le canal 2 (Web Push / VAPID) est abandonné.** Sur iOS une notification PWA est
->   **toujours muette** — il n'existe même pas d'entrée « Son » dans les réglages pour les
->   web apps. Et sur les écrans toujours allumés, le canal 1 fait *mieux* qu'une
->   notification. Maintenir des clés VAPID et un service worker pour un canal strictement
->   inférieur aux deux autres, c'est de la dette pour rien.
+> - **Le canal 2 (Web Push / VAPID) est restreint au desktop.** Sur iOS une notification PWA
+>   est **toujours muette** ; sur PC en revanche elle **sonne**, même application fermée, et
+>   un clic ouvre l'interphone en plein écran. C'est exactement le cas « PC fermé ».
+> - **Un quatrième canal apparaît : les écrans qui ne sont jamais ouverts (TV, Freebox,
+>   Apple TV).** Ils ne peuvent recevoir ni WebSocket ni push — mais **HA les connaît déjà
+>   comme `media_player`** et sait leur pousser un media. Voir §5.
 > - **Le canal 3 est confirmé en natif Expo**, distribué en **TestFlight testeurs internes**
 >   (aucune Beta App Review) et en APK `preview` pour Android. Pas de publication App Store.
 > - **Les alertes critiques ne sont pas sur le chemin critique.** Sons personnalisés et
@@ -63,13 +64,18 @@ Ce document décrit l'architecture visée pour les notifications, les alertes cr
   interaction et le réutiliser. **C'est précisément le cas du kiosque et de la TV**, les
   deux écrans pour lesquels ce canal existe.
 
-### ~~Canal 2 : Web Push API (Navigateurs & PWA)~~ — **abandonné le 2026-08-14**
-- **Cible visée :** PC et smartphones Android avec navigateur fermé.
-- **Pourquoi on ne le construit pas :** muet sur iOS par conception ; sur Android et PC il
-  double le canal 3 sans rien apporter ; et sur les écrans toujours allumés le canal 1 est
-  supérieur (overlay plein écran + son, plutôt qu'une bannière).
-- **Ce qui le ferait revenir :** un cas réel de « PC fermé, appel manqué » qui gêne
-  quelqu'un. Pas avant.
+### Canal 2 : Web Push API — **restreint au desktop** (révisé le 2026-08-14)
+- **Cible :** **PC uniquement**, PWA installée, application fermée.
+- **Pourquoi ça vaut le coup sur PC :** le service de push du navigateur tourne en tâche de
+  fond même app fermée, et **la notification sonne** sur desktop. Parcours réel :
+  notification sonore → clic → l'interphone s'ouvre en plein écran.
+- **Pourquoi pas sur iOS :** la notification arrive mais reste **toujours muette** — il
+  n'existe même pas d'entrée « Son » dans les réglages iOS pour les web apps. Les
+  téléphones passent donc par le canal 3, pas par celui-ci.
+- **Limite qui vaut partout :** on ne peut **pas** peindre un plein écran sans clic.
+  `clients.openWindow()` et `client.focus()` ne sont autorisés que depuis le gestionnaire
+  de `notificationclick`. Le plein écran spontané n'existe que sur une page déjà ouverte
+  (canal 1).
 
 ### Canal 3 : Application Native Expo (Alertes Critiques Mobile)
 - **Cible :** Smartphones iOS (famille/membres du foyer) et Android.
@@ -92,3 +98,42 @@ Dans le monorepo `Trano` :
 - `apps/mobile` : Application React Native / Expo.
 - `packages/shared` : Partage des types TS et utilitaires.
 - Réutilisation du client WebSocket Home Assistant et des stores Zustand métier.
+
+---
+
+## 5. Canal 4 : les écrans jamais ouverts (TV, Freebox, Apple TV)
+
+Ajouté le 2026-08-14. Il manquait à l'architecture d'origine, qui rangeait la TV
+parmi les « écrans actifs » du canal 1 — **ce qu'elle n'est pas** : personne ne
+laisse une page Trano ouverte sur la télé. Ces appareils ne peuvent recevoir ni
+WebSocket ni Web Push.
+
+**Mais Home Assistant les connaît déjà**, relevé sur l'instance le 2026-08-14 :
+
+| Entité | Nom |
+|---|---|
+| `media_player.salon_2` | SALON (Cast — accepte `play_media`) |
+| `media_player.walson_laptop` | Walson-Laptop (PC en renderer) |
+| `media_player.salon_tele_salon` | Télé Salon |
+| `media_player.thony_player_freebox_salon` | Freebox Salon |
+| `media_player.chambre_freebox_argan` | Freebox Argan |
+
+**Le principe : Trano ne gère pas ces écrans, il demande à HA de les utiliser.**
+Un appel `media_player.play_media` réveille l'appareil et y pousse le contenu.
+
+Pourquoi cette voie plutôt qu'un APK Android TV :
+
+- Elle couvre **la TV, les deux Freebox et l'Apple TV** d'un coup ; un APK ne
+  couvrirait que la TV Android.
+- **Rien à installer, rien à enregistrer** : ces écrans ne sont pas des
+  `user_devices`, ce sont des appareils de la maison que HA possède déjà. La
+  séparation reste propre.
+- Un APK Android TV garde du sens pour **naviguer dans l'app depuis le canapé** —
+  c'est un autre besoin, pas celui de l'interphone.
+
+**Sur une TV, faire parler la pièce vaut probablement mieux qu'afficher du
+texte** que personne ne lit à quatre mètres.
+
+> ⚠️ **Le TTS installé est en anglais** : `tts.google_translate_en_com`. Il lira
+> « Le repas est prêt » avec une voix américaine. Une voix française est à
+> installer avant de bâtir quoi que ce soit sur ce canal.
