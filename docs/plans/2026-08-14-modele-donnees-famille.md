@@ -238,11 +238,12 @@ les 5 profils et les 11 pièces de la famille. Or, relevé le 2026-08-14 :
 - [x] Ordonnanceur quotidien **dans le serveur Node**, avec rattrapage au démarrage
 - [x] Rotation 7 quotidiens / 4 hebdomadaires
 - [x] Routes `GET /api/backup/status` et `POST /api/backup/run`
-- [ ] **Poser `TZ=Europe/Paris` sur le conteneur** — sans ça il tourne en UTC et
-      la passe de 01:30 s'exécute à 03:30 heure de Paris
-- [ ] Corriger le commentaire mensonger de `db.ts` (« incluse dans les sauvegardes HA »)
+- [x] **`TZ=Europe/Paris` posé** — sans ça le conteneur tourne en UTC et la passe
+      de 01:30 s'exécute à 03:30 heure de Paris
+- [x] Commentaire mensonger de `db.ts` corrigé (« incluse dans les sauvegardes HA »)
 - [ ] Afficher l'état dans l'écran Réglages
-- [ ] *Plus tard* : déposer la copie du jour chez Oby pour le hors-site chiffré
+- [x] **Dépôt chez Oby** pour le hors-site chiffré — le conteneur tourne sous l'uid
+      1000, donc aucun bricolage de permissions. Couplage documenté des deux côtés
 
 ### 1. Socle données (serveur)
 
