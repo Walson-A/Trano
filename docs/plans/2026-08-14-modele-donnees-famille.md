@@ -1,0 +1,271 @@
+# Modèle de données « famille » — décisions et chantier
+
+> **2026-08-14.** Rien de ce qui suit n'est implémenté : ce document fixe les
+> décisions prises avec Walson avant d'écrire la moindre ligne. Les docs qui
+> décrivent l'existant (`profiles.md`, `architecture.md`) ne changeront qu'une
+> fois le code écrit — sinon elles mentiraient.
+
+## Pourquoi ce chantier
+
+L'inventaire de la base a montré une app **configurée mais pas habitée** :
+
+- **5 profils**, un seul rempli (Argan). Les 4 autres n'ont ni favori, ni pièce.
+- **`dashboard_layout` vide pour les cinq.** Jamais utilisé par personne.
+- **`shopping_items` : 0 ligne.** La liste de courses n'a jamais servi.
+- **11 pièces**, soignées : la seule table vraiment vivante. C'est Walson qui
+  l'a remplie, une fois, en juillet.
+
+La cause n'est pas le design des écrans. **Personne n'a l'app**, parce que ce
+n'est pas une app : il n'y a rien à installer sur un téléphone, et l'iPad mural
+n'a jamais été posé. Refondre l'UI sans régler ça produirait les mêmes tables
+vides, en plus joli.
+
+D'où l'ordre retenu : **les données d'abord, l'app ensuite, le visuel en
+dernier.**
+
+## Ce qui a été décidé
+
+### Distribution — natif Expo pour les poches, web pour les écrans fixes
+
+Ce n'est pas « les deux » par indécision, c'est une répartition par nature
+d'écran.
+
+- **Web** pour l'iPad mural, les PC, la TV : ces écrans sont *toujours ouverts*,
+  donc le WebSocket + l'overlay interphone y font mieux qu'une notification.
+- **Natif Expo** pour les cinq téléphones : c'est la seule voie qui donne le son,
+  la présence en arrière-plan et les alertes critiques.
+- **Distribution** : TestFlight en **testeurs internes** (aucune Beta App Review,
+  jusqu'à 100 personnes) pour iOS, APK `eas build --profile preview` pour
+  Android. **Pas de publication App Store** — les builds expirent au bout de
+  90 jours, ce qui est accepté.
+
+Trois limites d'iOS ont tranché contre la PWA :
+
+| | PWA iOS | Natif |
+|---|---|---|
+| Son sur notification | ❌ **toujours muette** | ✅ son personnalisé |
+| Alerte critique (perce le silencieux) | ❌ impossible par conception | ✅ avec entitlement |
+| Localisation en arrière-plan | ❌ | ✅ |
+
+> Les web apps installées sur l'écran d'accueil **fonctionnent** dans l'UE :
+> Apple avait annoncé leur retrait avec iOS 17.4 puis **est revenue sur sa
+> décision** en mars 2024. Ce n'est donc pas une interdiction qui écarte la PWA,
+> ce sont les trois limites ci-dessus.
+
+### Alertes critiques — ça ne bloque rien
+
+L'entitlement Apple est une barrière de **provisioning**, pas d'App Review :
+rester sur TestFlight ne l'évite pas, et sans lui la signature échoue en release.
+**Mais il n'est pas sur le chemin critique** :
+
+- **Sons personnalisés** : aucune approbation nécessaire, n'importe quelle app
+  native embarque sa sonnerie.
+- **Time Sensitive** : l'entitlement s'ajoute dans Xcode, **sans validation
+  Apple**. Perce les modes Concentration.
+- **Critical Alerts** n'apporte qu'une chose en plus : sonner quand le téléphone
+  est **physiquement en silencieux ou en Ne Pas Déranger**.
+
+Donc : on construit avec sons + Time Sensitive, **et on demande l'entitlement en
+parallèle**, justifié sur les vrais scénarios de sécurité (fuite d'eau,
+intrusion, fumée — pas « app maison »). Refus d'Apple = rien de construit n'est
+perdu.
+
+## Le modèle cible
+
+### `profiles`
+
+| | |
+|---|---|
+| **Gardé** | `id`, `name`, `avatar`, `color`, `favorites`, `created_at` |
+| **Ajouté** | `kind` — `'person'` \| `'house'` |
+| **Supprimé** | `is_kid`, `favorite_rooms`, `room_ids` |
+| **Inchangé pour l'instant** | `dashboard_layout` (non prioritaire) |
+
+**`is_kid` disparaît** : à `0` pour les cinq, et tout le monde est majeur. C'était
+le seul concept de permission du modèle, il ne s'appliquait à personne. Il ne
+sera **pas** remplacé par un `role` générique : un invité n'est pas « un profil
+avec un drapeau », ce sera un autre concept le jour où il existera.
+
+**`favorite_rooms` disparaît** : par défaut on affiche la pièce de la personne
+avec tous ses appareils. Plus rien à configurer.
+
+**Un profil « Maison »** (`kind='house'`) porte tous les écrans partagés. Ce
+n'est pas une astuce pour éviter un `NULL` : `profiles.md` décrit déjà « la
+tablette du salon peut rester sur un profil Maison ». Le discriminant `kind` est
+indispensable — sans lui, « qui est là » afficherait *Maison* comme présente, le
+sélecteur la proposerait comme une personne, et elle aurait des préférences de
+notification. Sa suppression doit être **interdite côté API**.
+
+### `profile_rooms` — nouvelle table de liaison
+
+`profile_id` → `profiles.id` et `room_id` → `rooms.id`, **vraies FK**,
+`ON DELETE CASCADE`, clé primaire sur le couple.
+
+Une personne a plusieurs pièces **et** une pièce a plusieurs personnes : c'est du
+plusieurs-à-plusieurs, donc une table de liaison, pas une colonne.
+
+**Corrige un bug réel** : aujourd'hui `room_ids` est un tableau JSON dans une
+colonne texte ; supprimer une pièce laisse un id mort que rien ne nettoie.
+`PRAGMA foreign_keys = ON` est **déjà posé** (`db.ts:21`) — les contraintes
+seront réellement appliquées.
+
+### `rooms` — inchangée
+
+Elle existe déjà, 11 pièces (`id`, `name`, `floor`, `icon`, `sort_order`). Rien à
+créer.
+
+### `user_devices` — nouvelle table
+
+> **Le nom est délibéré.** « Appareil » désigne déjà les **entités HA** (lampes,
+> prises, volets) dans tout le code : le type `Device`, `DeviceCard`,
+> `device_overrides`. Ce sont deux choses sans rapport — les entités HA ne sont
+> même pas stockées, elles viennent de HA en direct. Confondre les deux noms
+> rendrait le code illisible en trois semaines.
+
+- **Identité** : `id` (généré par le client, stable), `name`, `profile_id`
+  **NOT NULL** (la Maison pour les écrans partagés)
+- **`type`** : `phone | tablet | pc | tv | kiosk` — **le champ le plus
+  structurant** : il décide qui rapporte la présence, par quel canal on alerte,
+  et quelle icône s'affiche
+- **Statique** : `platform`, `model`, `os_version`
+- **Valeur courante**, écrasée à chaque heartbeat : `battery_pct`,
+  `battery_charging`, `is_home`, `last_seen_at`
+- **`push_token`**, nullable, **rempli uniquement par l'app native**
+
+**Pas de blob JSON.** Ce qui ne bouge jamais mérite une colonne : ça s'affiche et
+ça se requête. Pas d'historique non plus — si les courbes de batterie deviennent
+un besoin, ce sera une table dédiée.
+
+### Les règles qui tiennent le modèle
+
+- **`online` et la présence d'une personne se calculent, ne se stockent pas** —
+  `now - last_seen < 90 s`, comme le fait déjà l'engine d'Oby (`presence-hub.md`).
+- **Une personne est présente si au moins un de ses appareils l'est.** Stocker la
+  présence sur le profil *et* sur l'appareil, c'est deux sources de vérité pour
+  une seule question : elles divergeront, et c'est toujours celle affichée qui
+  aura tort.
+- **Seuls les `type='phone'` rapportent la présence.** Un kiosque « présent » ne
+  veut rien dire.
+- **La zone, pas la coordonnée.** Un géofence sur l'adresse de la maison suffit à
+  « qui est là ». Une trace de coordonnées, c'est l'historique des déplacements
+  de cinq adultes dans une base sauvegardée — à protéger, à purger, pour rien.
+
+### L'écran de première connexion
+
+Le moment exact où les gens acceptent de répondre à deux questions ; après, plus
+jamais. Il **préremplit** ce que la plateforme donne, l'utilisateur **ajuste et
+valide** : nom de l'appareil, propriétaire (ou « Maison »).
+
+Ce qu'on peut préremplir dépend entièrement du navigateur :
+
+| | Modèle exact | OS + version | Batterie |
+|---|---|---|---|
+| Chrome Android | ✅ | ✅ | ✅ |
+| Chrome / Edge PC | ❌ (vide sur desktop) | ✅ | ✅ si portable |
+| **iPhone / iPad, tous navigateurs** | ❌ | partiel | ❌ |
+| App native Expo | ✅ | ✅ | ✅ |
+
+Les **Client Hints** (`getHighEntropyValues`, qui donnent `model`) sont
+**Chromium uniquement**. La **Battery Status API** n'a jamais été implémentée par
+WebKit (jugée trop identifiante) — et comme Apple impose WebKit à tous les
+navigateurs iOS, **aucun navigateur sur iPhone n'y a accès**. D'où l'écran de
+validation : il se dégrade proprement là où on ne sait rien.
+
+## L'interphone — déjà construit, et sans HA
+
+À conserver tel quel, c'est le bon design :
+
+- `POST /api/intercom` → `broadcastMessage()` sur le **WebSocket propre à
+  Trano** → `IntercomOverlay.tsx` affiche la surcouche plein écran.
+- **HA n'intervient pas** dans l'affichage. Il ne sert qu'à faire sonner les
+  téléphones, et c'est le client émetteur qui l'appelle.
+- Le ding-dong est **synthétisé en WebAudio**, aucun fichier son.
+
+Trois cas, dont un impossible :
+
+| Situation | Interphone plein écran |
+|---|---|
+| Page ouverte (kiosque, TV, PC) | ✅ **déjà le cas** |
+| Onglet ouvert en arrière-plan | ⚠️ s'affiche, mais invisible tant qu'on ne revient pas |
+| Navigateur fermé | ❌ **impossible** — `clients.openWindow()` n'est autorisé qu'au clic sur une notification |
+
+C'est pour le troisième cas, et lui seul, que l'app native existe.
+
+## Ce qu'on ne construit pas
+
+- **Le Web Push (canal 2 de `notifications_and_mobile.md`)** — muet sur iOS, et
+  sur les écrans toujours allumés l'overlay fait mieux. Maintenir des clés VAPID
+  et un service worker pour un canal strictement inférieur aux deux autres, c'est
+  de la dette pour rien.
+- **Le journal d'usage** — son seul client était de déduire les favoris ; les
+  favoris manuels sont conservés et la disposition du dashboard est reportée,
+  donc l'argument tombe. C'est aussi la seule table qui grossirait sans limite,
+  et un journal de ce que cinq adultes font chez eux. Il s'ajoutera plus tard
+  sans rien casser (table en ajout seul, aucune dépendance). **Déclencheur** : le
+  jour où l'app doit remonter ce que les gens utilisent sans le leur demander.
+- **Un `role` générique** à la place d'`is_kid`.
+
+## Le chantier, dans l'ordre
+
+### 1. Socle données (serveur)
+
+- [ ] `profiles` : ajouter `kind`, supprimer `is_kid`, `favorite_rooms`, `room_ids`
+- [ ] **Préserver les 3 favoris d'Argan** — seule donnée personnalisée de toute la base
+- [ ] Créer `profile_rooms` et y recopier les `room_ids` existants (2 lignes : Argan, Papa)
+- [ ] Insérer le profil **Maison**, et interdire sa suppression côté API
+- [ ] Créer `user_devices`
+- [ ] Retirer du code le test `isKid` (garde-fou des Réglages) et l'usage de `favoriteRooms`
+- [ ] API : `user_devices` register / heartbeat / list, calquée sur `devices/*` de l'engine Oby
+
+### 2. Présence
+
+- [ ] Géofence sur l'adresse de la maison, **une seule zone**
+- [ ] Reprendre les gardes d'AtlasMobile (`location-tracking.md`) : **iOS refire un
+      « Enter » à chaque ré-enregistrement quand on est déjà dans la zone** → signature
+      du jeu de régions + déduplication par lieu courant. Sans ça : « Papa est arrivé »
+      à chaque ouverture de l'app.
+- [ ] Présence de la personne **calculée**, jamais stockée
+
+### 3. App native (`apps/mobile`, Expo)
+
+- [ ] Squelette Expo dans le monorepo, types partagés via `@trano/shared`
+- [ ] Écran de première connexion (préremplir → ajuster → valider)
+- [ ] Push : jeton Expo → `user_devices.push_token`
+- [ ] Sons personnalisés + **Time Sensitive** (aucune approbation nécessaire)
+- [ ] **Demander l'entitlement Critical Alerts** — à lancer tôt, la revue Apple
+      prend des semaines et un refus au premier essai est courant
+- [ ] EAS : TestFlight testeurs internes (iOS), profil `preview` (Android)
+
+### 4. Correctifs sur l'existant
+
+- [ ] **`IntercomOverlay.playChime()` : le son ne sort pas sur un écran non touché.**
+      Le `try/catch` attrape une exception qui n'arrive jamais — quand l'autoplay est
+      bloqué, `new AudioContext()` ne lève rien, il rend un contexte `suspended` et le
+      son ne part pas. Débloquer le contexte à la première interaction et le réutiliser.
+      **C'est exactement le cas du kiosque et de la TV**, les deux écrans pour lesquels
+      l'interphone a été conçu.
+- [ ] `navigator.vibrate` : sans effet sur iOS, à ne pas compter comme repli.
+- [ ] **`device_overrides` n'existe pas en production** : la table est créée par `dev`,
+      le serveur tourne sur `main`. À garder en tête au déploiement.
+
+## Ce qui reste ouvert
+
+- **Les préférences de notification** — qui veut quoi, quand. Par personne, pas par
+  appareil (« Papa veut les alertes solaires » vaut sur tous ses écrans). Table à part,
+  prochain sujet.
+- **La liste de courses** — jamais utilisée. À repenser plutôt qu'à reprendre.
+- **L'énergie** — Papa y est en permanence, c'est le sujet le plus important de l'app,
+  et il n'a pas encore été travaillé. Dépend de la réinstallation de l'Envoy et de la
+  Zendure côté HA (`deploy/home-assistant.md`).
+- **Le kiosque** : jamais posé, pas une seule fois. Le correctif audio ci-dessus est
+  donc une précaution *avant* mise en service, pas une panne en cours.
+
+## Références
+
+| Sujet | Document |
+|---|---|
+| Profils tels qu'ils existent aujourd'hui | [`docs/profiles.md`](../profiles.md) |
+| Canaux d'alerte | [`docs/notifications_and_mobile.md`](../notifications_and_mobile.md) |
+| Home Assistant sur le serveur | [`deploy/home-assistant.md`](../../deploy/home-assistant.md) |
+| Présence et heartbeat, déjà implémentés | `AtlasMobile/docs/presence-hub.md` (dépôt Atlas) |
+| Localisation, géofencing et ses pièges | `AtlasMobile/docs/location-tracking.md` (dépôt Atlas) |

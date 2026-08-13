@@ -2,6 +2,20 @@
 
 Ce document décrit l'architecture visée pour les notifications, les alertes critiques et l'extension mobile de **Trano**.
 
+> **Révisé le 2026-08-14** — décisions prises avec Walson, détail et raisons dans
+> [`docs/plans/2026-08-14-modele-donnees-famille.md`](plans/2026-08-14-modele-donnees-famille.md) :
+>
+> - **Le canal 2 (Web Push / VAPID) est abandonné.** Sur iOS une notification PWA est
+>   **toujours muette** — il n'existe même pas d'entrée « Son » dans les réglages pour les
+>   web apps. Et sur les écrans toujours allumés, le canal 1 fait *mieux* qu'une
+>   notification. Maintenir des clés VAPID et un service worker pour un canal strictement
+>   inférieur aux deux autres, c'est de la dette pour rien.
+> - **Le canal 3 est confirmé en natif Expo**, distribué en **TestFlight testeurs internes**
+>   (aucune Beta App Review) et en APK `preview` pour Android. Pas de publication App Store.
+> - **Les alertes critiques ne sont pas sur le chemin critique.** Sons personnalisés et
+>   **Time Sensitive** ne demandent *aucune* approbation Apple ; l'entitlement n'ajoute que
+>   « sonner malgré le silencieux ». On construit sans, on le demande en parallèle.
+
 ---
 
 ## 1. Objectifs & Constats
@@ -36,15 +50,26 @@ Ce document décrit l'architecture visée pour les notifications, les alertes cr
 - Alarme Web Audio                                         - Bypass DND Android
 ```
 
-### Canal 1 : Diffusion WebSocket (Écrans actifs & Kiosques)
+### Canal 1 : Diffusion WebSocket (Écrans actifs & Kiosques) — **déjà en place**
 - **Cible :** Tout écran où Trano est ouvert (Tablette murale salon, TV, PC ouvert).
 - **Fonctionnement :** `@trano/server` envoie un événement d'urgence via WebSocket.
-- **Rendu :** Affichage d'une modal/banner d'alerte + déclenchement de l'API `Web Audio` du navigateur pour jouer une sonnerie d'alarme à 100% de volume.
+  L'interphone l'utilise déjà : `POST /api/intercom` → `broadcastMessage()` →
+  `IntercomOverlay.tsx`. **Home Assistant n'intervient pas** dans l'affichage.
+- **Rendu :** surcouche plein écran + ding-dong **synthétisé en WebAudio** (aucun fichier son).
+- ⚠️ **Défaut connu, à corriger :** le son ne sort pas sur un écran que personne n'a touché
+  depuis le chargement. Le `try/catch` de `playChime()` attrape une exception qui n'arrive
+  jamais — quand l'autoplay est bloqué, `new AudioContext()` ne lève rien, il rend un
+  contexte `suspended` et le son ne part pas. Il faut débloquer le contexte à la première
+  interaction et le réutiliser. **C'est précisément le cas du kiosque et de la TV**, les
+  deux écrans pour lesquels ce canal existe.
 
-### Canal 2 : Web Push API (Navigateurs & PWA)
-- **Cible :** PC et smartphones Android avec navigateur fermé.
-- **Fonctionnement :** Clefs VAPID configurées sur `@trano/server` et enregistrement d'un Service Worker dans `@trano/web`.
-- **Rendu :** Notification système native poussée par le Push Service du navigateur.
+### ~~Canal 2 : Web Push API (Navigateurs & PWA)~~ — **abandonné le 2026-08-14**
+- **Cible visée :** PC et smartphones Android avec navigateur fermé.
+- **Pourquoi on ne le construit pas :** muet sur iOS par conception ; sur Android et PC il
+  double le canal 3 sans rien apporter ; et sur les écrans toujours allumés le canal 1 est
+  supérieur (overlay plein écran + son, plutôt qu'une bannière).
+- **Ce qui le ferait revenir :** un cas réel de « PC fermé, appel manqué » qui gêne
+  quelqu'un. Pas avant.
 
 ### Canal 3 : Application Native Expo (Alertes Critiques Mobile)
 - **Cible :** Smartphones iOS (famille/membres du foyer) et Android.

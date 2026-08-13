@@ -1,5 +1,11 @@
 # Profils (façon Netflix)
 
+> **Ce document décrit les profils tels qu'ils existent aujourd'hui.** Une refonte du
+> modèle est décidée (suppression d'`isKid` et de `favoriteRooms`, `roomIds` en table de
+> liaison, profil « Maison », nouvelle table `user_devices`) — voir
+> [`plans/2026-08-14-modele-donnees-famille.md`](plans/2026-08-14-modele-donnees-famille.md).
+> Cette page sera mise à jour **quand le code le sera**, pas avant.
+
 Chaque membre de la maison a son profil. Au lancement, si aucun profil n'est
 actif sur l'appareil, l'écran **« Qui est-ce ? »** s'affiche (`ProfileGate`).
 
