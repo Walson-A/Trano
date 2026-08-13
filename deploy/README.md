@@ -62,8 +62,8 @@ rotation 7 quotidiens / 4 hebdomadaires.
   protègent d'une fausse manœuvre ou d'une migration ratée, **pas** de la perte du
   volume.
 - Chaque fichier est **une base complète et autonome**. Restaurer :
-  `docker compose stop`, remplacer `/data/trano.db` par le fichier voulu (et
-  supprimer les `-wal`/`-shm` qui traînent), `docker compose up -d`.
+  `docker compose stop`, remplacer `/data/trano.db` par le fichier voulu, supprimer
+  les `/data/trano.db-wal` et `-shm` de l'ancienne base, `docker compose up -d`.
 - État : `GET /api/backup/status`. Déclenchement manuel avant une migration :
   `POST /api/backup/run`.
 - Réglages : `TRANO_BACKUP_TIME` (défaut `01:30`, **heure locale** — d'où le `TZ`
@@ -72,6 +72,13 @@ rotation 7 quotidiens / 4 hebdomadaires.
 > Une base dont le `quick_check` échoue **n'est jamais sauvegardée** : sa dernière
 > copie saine est conservée. Vérifié en corrompant volontairement une copie de
 > travail — la sauvegarde de la veille a survécu.
+
+> **Piège de diagnostic** : l'image Alpine n'embarque pas `tzdata`, donc
+> `docker exec trano date` affiche **UTC** même avec `TZ=Europe/Paris`. Ça ne veut
+> pas dire que le réglage est inopérant : **Node a son propre ICU** et respecte bien
+> `TZ`. Vérifié en réel — `date` disait 23:09 UTC pendant que Node répondait
+> `getHours() = 1:09` et `toLocaleDateString = 2026-08-14`. C'est Node qui décide de
+> l'heure des sauvegardes, pas le shell.
 
 `.env` :
 

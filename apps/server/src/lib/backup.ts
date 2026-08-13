@@ -149,6 +149,10 @@ export async function runBackup(): Promise<BackupReport> {
     const copyCheck = (copy.prepare('PRAGMA quick_check').get() as { quick_check: string }).quick_check;
     const actual = tableCounts(copy);
     copy.close();
+    // Ouvrir une base en WAL crée ses annexes, même en lecture seule. Les laisser
+    // serait un piège à la restauration : un `-wal` périmé posé à côté d'une
+    // sauvegarde peut être rejoué par SQLite. La copie, elle, est déjà complète.
+    for (const side of ['-wal', '-shm']) rmSync(`${dest}${side}`, { force: true });
 
     if (copyCheck !== 'ok' || JSON.stringify(actual) !== JSON.stringify(expected)) {
       // Une copie douteuse est pire qu'une copie absente : elle inspire confiance.
