@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
  * TRANO_DB_PATH pointe vers /data/trano.db dans le conteneur (persisté
  * et inclus dans les sauvegardes HA).
  */
-const DB_PATH =
+export const DB_PATH =
   process.env.TRANO_DB_PATH ?? fileURLToPath(new URL('../data/trano.db', import.meta.url));
 
 mkdirSync(dirname(DB_PATH), { recursive: true });

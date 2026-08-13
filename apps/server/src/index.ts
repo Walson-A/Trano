@@ -12,7 +12,9 @@ import { roomRoutes } from './routes/rooms.ts';
 import { mcpRoutes } from './routes/mcp.ts';
 import { houseRoutes } from './routes/house.ts';
 import { overrideRoutes } from './routes/overrides.ts';
+import { backupRoutes } from './routes/backup.ts';
 import { startEnergyWatcher } from './lib/energyWatcher.ts';
+import { startBackupScheduler } from './lib/backup.ts';
 import { registerClient } from './ws.ts';
 
 // En dev, les secrets (HA, OpenRouter) vivent dans apps/server/.env (gitignoré).
@@ -58,6 +60,7 @@ roomRoutes(app);
 mcpRoutes(app);
 houseRoutes(app);
 overrideRoutes(app);
+backupRoutes(app);
 
 // En prod (conteneur Docker), le serveur sert aussi le build du frontend.
 const webDist = fileURLToPath(new URL('../../web/dist', import.meta.url));
@@ -75,6 +78,9 @@ if (existsSync(webDist)) {
 // Surveillance proactive de l'autonomie énergétique (hook enregistré avant listen)
 const stopWatcher = startEnergyWatcher((msg) => app.log.info(msg));
 app.addHook('onClose', () => stopWatcher());
+
+// Sauvegardes quotidiennes de la base, avec rattrapage si le conteneur était arrêté.
+startBackupScheduler((msg) => app.log.info(msg));
 
 try {
   await app.listen({ port: PORT, host: HOST });

@@ -1,9 +1,10 @@
 # Modèle de données « famille » — décisions et chantier
 
-> **2026-08-14.** Rien de ce qui suit n'est implémenté : ce document fixe les
-> décisions prises avec Walson avant d'écrire la moindre ligne. Les docs qui
-> décrivent l'existant (`profiles.md`, `architecture.md`) ne changeront qu'une
-> fois le code écrit — sinon elles mentiraient.
+> **2026-08-14.** Ce document fixe les décisions prises avec Walson. **Seule
+> l'étape 0 (sauvegardes) est implémentée** ; tout le reste est encore à écrire.
+> Les docs qui décrivent l'existant (`profiles.md`, `architecture.md`) ne
+> changeront qu'au fur et à mesure du code — sinon elles mentiraient. Les cases
+> cochées du chantier sont la seule source de vérité sur l'avancement.
 
 ## Pourquoi ce chantier
 
@@ -230,11 +231,18 @@ les 5 profils et les 11 pièces de la famille. Or, relevé le 2026-08-14 :
   quasi vide, sans erreur**. Il faut `VACUUM INTO` (que `node:sqlite` sait
   exécuter) ou un checkpoint préalable.
 
-- [ ] Script de sauvegarde par `VACUUM INTO`, pas par copie de fichier
-- [ ] Vérifier la sauvegarde en la **rouvrant** et en comptant les lignes — une
-      sauvegarde jamais restaurée n'est pas une sauvegarde
-- [ ] Timer systemd quotidien + rétention
-- [ ] Corriger le commentaire mensonger de `db.ts`
+- [x] Sauvegarde par l'**Online Backup API** (`node:sqlite` l'expose, comme Oby)
+- [x] Vérification **par réouverture** de la copie + comparaison des comptages
+- [x] `quick_check` d'abord : une base corrompue n'est jamais sauvegardée
+      — *vérifié en corrompant volontairement une copie : la sauvegarde saine a survécu*
+- [x] Ordonnanceur quotidien **dans le serveur Node**, avec rattrapage au démarrage
+- [x] Rotation 7 quotidiens / 4 hebdomadaires
+- [x] Routes `GET /api/backup/status` et `POST /api/backup/run`
+- [ ] **Poser `TZ=Europe/Paris` sur le conteneur** — sans ça il tourne en UTC et
+      la passe de 01:30 s'exécute à 03:30 heure de Paris
+- [ ] Corriger le commentaire mensonger de `db.ts` (« incluse dans les sauvegardes HA »)
+- [ ] Afficher l'état dans l'écran Réglages
+- [ ] *Plus tard* : déposer la copie du jour chez Oby pour le hors-site chiffré
 
 ### 1. Socle données (serveur)
 

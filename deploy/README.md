@@ -38,6 +38,11 @@ services:
     restart: unless-stopped
     ports:
       - "3001:3001"
+    environment:
+      # Sans ça le conteneur tourne en UTC, et la passe de sauvegarde
+      # quotidienne (01:30 par défaut) s'exécute en réalité à 03:30 heure de
+      # Paris. Même raison que le `TZ` de l'unité systemd de l'engine Oby.
+      TZ: Europe/Paris
     env_file: .env
     volumes:
       - trano-data:/data
@@ -45,6 +50,28 @@ services:
 volumes:
   trano-data:
 ```
+
+## Sauvegardes de la base
+
+Depuis le 2026-08-14, le serveur sauvegarde `trano.db` **tout seul**, une fois par
+jour (`apps/server/src/lib/backup.ts`) : `quick_check` → copie à chaud par l'Online
+Backup API → **relecture de la copie pour la vérifier** → `wal_checkpoint` →
+rotation 7 quotidiens / 4 hebdomadaires.
+
+- Les copies vivent dans `/data/backups/` — **le même volume que la base**. Elles
+  protègent d'une fausse manœuvre ou d'une migration ratée, **pas** de la perte du
+  volume.
+- Chaque fichier est **une base complète et autonome**. Restaurer :
+  `docker compose stop`, remplacer `/data/trano.db` par le fichier voulu (et
+  supprimer les `-wal`/`-shm` qui traînent), `docker compose up -d`.
+- État : `GET /api/backup/status`. Déclenchement manuel avant une migration :
+  `POST /api/backup/run`.
+- Réglages : `TRANO_BACKUP_TIME` (défaut `01:30`, **heure locale** — d'où le `TZ`
+  ci-dessus) et `TRANO_BACKUP_DIR` (défaut `/data/backups`).
+
+> Une base dont le `quick_check` échoue **n'est jamais sauvegardée** : sa dernière
+> copie saine est conservée. Vérifié en corrompant volontairement une copie de
+> travail — la sauvegarde de la veille a survécu.
 
 `.env` :
 
