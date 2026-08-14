@@ -17,6 +17,9 @@ import { useProfileStore, useActiveProfile } from './core/store/useProfileStore'
 import { useShoppingStore } from './core/store/useShoppingStore';
 import { useRoomsStore } from './core/store/useRoomsStore';
 import { ProfileGate } from './features/Profiles/ProfileGate';
+import { DeviceSetup } from './features/Devices/DeviceSetup';
+import { getDeviceId } from './lib/deviceInfo';
+import { useDeviceHeartbeat } from './hooks/useDeviceHeartbeat';
 import { connectTranoWs } from './lib/api';
 import { useConfigStore } from './core/store/useConfigStore';
 
@@ -34,6 +37,11 @@ export default function App() {
   const fetchProfiles = useProfileStore((s) => s.fetchProfiles);
   const setActiveProfile = useProfileStore((s) => s.setActiveProfile);
   const activeProfile = useActiveProfile();
+  // Un appareil inconnu se présente avant tout le reste : c'est ce qui relie
+  // ensuite une personne à un téléphone, sans quoi l'interphone ne peut
+  // désigner personne et « qui est là » n'a aucune source.
+  const [deviceKnown, setDeviceKnown] = useState(() => Boolean(getDeviceId()));
+  useDeviceHeartbeat();
 
   // Chargement initial + sync temps réel entre tous les écrans de la maison
   useEffect(() => {
@@ -78,6 +86,10 @@ export default function App() {
   const toggleDarkMode = () => setIsDarkMode(!isDarkMode);
 
   // Pas de profil actif sur cet appareil → écran de sélection façon Netflix
+  if (!deviceKnown) {
+    return <DeviceSetup onDone={() => setDeviceKnown(true)} />;
+  }
+
   if (!activeProfile) {
     return <ProfileGate />;
   }

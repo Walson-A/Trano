@@ -1,5 +1,9 @@
 import type {
   DeviceOverride,
+  UserDevice,
+  UserDeviceHeartbeat,
+  UserDeviceRegister,
+  UserDeviceUpdate,
   DeviceOverrideUpdate,
   Profile,
   ProfileCreate,
@@ -78,6 +82,23 @@ export const api = {
     update: (id: string, data: ShoppingItemUpdate) =>
       request<ShoppingItem>(`/api/shopping/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
     remove: (id: string) => request<void>(`/api/shopping/${id}`, { method: 'DELETE' }),
+  },
+  userDevices: {
+    list: () => request<UserDevice[]>('/api/user-devices'),
+    register: (data: UserDeviceRegister) =>
+      request<UserDevice>('/api/user-devices/register', { method: 'POST', body: JSON.stringify(data) }),
+    heartbeat: (id: string, data: UserDeviceHeartbeat) =>
+      request<UserDevice>(`/api/user-devices/${encodeURIComponent(id)}/heartbeat`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    update: (id: string, data: UserDeviceUpdate) =>
+      request<UserDevice>(`/api/user-devices/${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }),
+    remove: (id: string) =>
+      request<void>(`/api/user-devices/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   },
   backup: {
     status: () => request<BackupStatus>('/api/backup/status'),
