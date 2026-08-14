@@ -18,8 +18,32 @@ import { createApi, type TranoApi } from '@trano/shared/api';
 
 const KEY = 'trano-server-url';
 
-/** Le serveur sur tranoserver, sur le réseau de la maison. */
-export const DEFAULT_SERVER_URL = 'http://192.168.1.65:3001';
+/**
+ * L'adresse de départ, dans l'ordre où elle est cherchée :
+ *
+ * 1. celle que quelqu'un a saisie dans Réglages, gardée sur l'appareil ;
+ * 2. `EXPO_PUBLIC_TRANO_SERVER_URL`, pour pointer une autre machine sans
+ *    toucher au code — un serveur local pendant qu'on développe, par exemple ;
+ * 3. le serveur de la maison, en dernier recours.
+ *
+ * ⚠️ Deux choses à savoir sur le `.env`.
+ *
+ * Il est **lu à la fabrication du paquet, pas au lancement** : Expo remplace
+ * littéralement `process.env.EXPO_PUBLIC_…` par sa valeur pendant la
+ * compilation. Il faut donc écrire l'expression en toutes lettres — un accès
+ * calculé ne serait jamais remplacé — et la valeur se retrouve **en clair dans
+ * le paquet**. Rien de grave ici, l'adresse d'une machine sur le réseau de la
+ * maison n'est pas un secret ; mais aucune clé n'a rien à faire dans un
+ * `EXPO_PUBLIC_`.
+ *
+ * Et il n'est **pas versionné** (`.env*` est ignoré à la racine du dépôt), donc
+ * les machines de construction d'EAS ne le voient pas : une construction dans
+ * le nuage retombe sur la valeur ci-dessous. C'est voulu — c'est la bonne
+ * adresse — mais si elle change un jour, il faut corriger *cette ligne*, pas
+ * seulement son `.env`.
+ */
+export const DEFAULT_SERVER_URL =
+  process.env.EXPO_PUBLIC_TRANO_SERVER_URL?.trim() || 'http://192.168.1.65:3001';
 
 /** Tolère « 192.168.1.65:3001 », « http://…/ », les espaces d'un copier-coller. */
 export function normalizeUrl(raw: string): string {

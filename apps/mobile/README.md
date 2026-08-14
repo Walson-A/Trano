@@ -132,8 +132,27 @@ qui réclame un module natif qu'il n'a pas.
 
 ## L'adresse du serveur
 
-`http://192.168.1.65:3001` par défaut, modifiable dans Réglages et gardée sur
-l'appareil. Deux réglages de plateforme la rendent joignable en clair :
+Cherchée dans cet ordre :
+
+1. **Ce que quelqu'un a saisi dans Réglages**, gardé sur l'appareil. C'est le
+   seul chemin qui compte pour la famille — personne n'ouvrira un `.env`.
+2. **`EXPO_PUBLIC_TRANO_SERVER_URL`** (`.env`, voir `.env.example`). Pour viser
+   un serveur lancé sur son PC pendant qu'on développe.
+3. **`http://192.168.1.65:3001`**, écrit dans `src/lib/server.ts`.
+
+Deux pièges du `.env`, tous deux réels ici :
+
+- Il est lu **à la fabrication du paquet, pas au lancement**. Expo remplace
+  littéralement `process.env.EXPO_PUBLIC_…` pendant la compilation : l'expression
+  doit être écrite en toutes lettres, et la valeur finit **en clair dans le
+  paquet**. Sans conséquence pour une adresse de réseau local — mais aucune clé
+  n'a rien à faire dans un `EXPO_PUBLIC_`.
+- Il **n'est pas versionné** (`.env*` ignoré à la racine), donc les machines
+  d'EAS ne le voient pas : une construction dans le nuage retombe sur la valeur
+  du point 3. Si l'adresse change pour de bon, c'est cette ligne-là qu'il faut
+  corriger, pas seulement son `.env`.
+
+Deux réglages de plateforme la rendent joignable en clair :
 `android.usesCleartextTraffic` et, côté iOS, `NSAllowsLocalNetworking` +
 `NSLocalNetworkUsageDescription`.
 
