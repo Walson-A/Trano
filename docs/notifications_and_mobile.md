@@ -71,7 +71,27 @@ Ce document décrit l'architecture visée pour les notifications, les alertes cr
   interaction et le réutiliser. **C'est précisément le cas du kiosque**, l'écran pour
   lequel ce canal existe et que personne ne touche.
 
-### Canal 2 : Web Push API — **restreint au desktop** (révisé le 2026-08-14)
+### Canal 2 : Web Push API — **bloqué en l'état** (révisé le 2026-08-14)
+
+> ⛔ **Trano est servi en HTTP clair** (`http://192.168.1.65:3001`), donc hors
+> contexte sécurisé. Or le **Service Worker**, le **Web Push** et la
+> **géolocalisation** y sont purement indisponibles — ce n'est pas une
+> dégradation, c'est une absence. Ce canal ne peut donc pas exister tant que la
+> maison n'est pas servie en HTTPS.
+>
+> Découvert le 2026-08-14 par un symptôme sans rapport apparent :
+> `crypto.randomUUID is not a function` à l'enregistrement d'un appareil — la
+> même règle de contexte sécurisé.
+>
+> **Ce qu'il faudrait** : un certificat pour le réseau local. Trois pistes, par
+> ordre de simplicité — `tailscale serve` (déjà utilisé pour l'engine Oby, mais
+> ne couvre que les appareils du tailnet, pas les tablettes murales), un nom de
+> domaine réel pointant en 192.168.x avec un certificat Let's Encrypt par
+> DNS-01, ou une autorité interne (impose d'installer le certificat racine sur
+> chaque appareil de la maison).
+>
+> Tant que ce n'est pas fait, les téléphones passent par le canal 3 (natif) et
+> les écrans fixes par le canal 1 (WebSocket) — qui, eux, marchent en clair.
 - **Cible :** **PC uniquement**, PWA installée, application fermée.
 - **Pourquoi ça vaut le coup sur PC :** le service de push du navigateur tourne en tâche de
   fond même app fermée, et **la notification sonne** sur desktop. Parcours réel :
