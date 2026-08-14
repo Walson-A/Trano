@@ -379,11 +379,47 @@ partir » — le seul endroit qui connaisse l'instant exact de la transition.
       `preview` / `production`, version d'exécution en `fingerprint`.
       Vérification faite au premier plan **et** au lancement : une app qu'on ne
       tue jamais ne se « lance » quasiment plus.
-- [ ] **Trancher l'accès hors maison.** `http://192.168.1.65:3001` ne répond pas
-      hors du Wi-Fi — or le géofence doit signaler un départ **au moment précis**
-      où le Wi-Fi vient d'être perdu. Deux issues : Tailscale sur les téléphones,
-      ou une file d'envoi rejouée à la reconnexion (la présence arrive alors avec
-      quelques minutes de retard). À décider avant d'écrire le géofence.
+- [ ] **L'accès hors maison — tunnel Cloudflare, une seule route.**
+      `http://192.168.1.65:3001` ne répond pas hors du Wi-Fi, or le géofence doit
+      signaler un départ **au moment précis** où le Wi-Fi vient d'être perdu.
+      Les deux pistes notées ici avant le 2026-08-14 sont écartées :
+      - **la file d'envoi rejouée ne marche pas.** La prochaine occasion de
+        joindre le serveur, c'est le retour à la maison : « Papa est parti »
+        serait livré au moment où il rentre ;
+      - **Tailscale** n'est pas écarté pour son prix — le plan Personnel couvre
+        6 utilisateurs et un nombre illimité d'appareils, gratuitement — mais
+        parce qu'il faut le faire installer à cinq personnes et le laisser
+        toujours actif sur leur téléphone.
+      Retenu : un **tunnel Cloudflare** sur le serveur, rien sur les téléphones,
+      ne routant **qu'un seul chemin** (`/api/presence-report`), porteur d'un
+      jeton sur le modèle de `/api/mcp`. Le même tunnel sert le point HTTPS
+      public que la skill Alexa attend, et donnerait le HTTPS qui débloque le
+      Web Push sur les PC. Demande un domaine (`walsonrene.com`, sous-domaines
+      à volonté) dont les serveurs de noms pointent vers Cloudflare.
+- [ ] ⚠️ **Le cloisonnement par IP échoue en silence derrière un tunnel.**
+      `trustProxy` n'est pas activé, donc `req.ip` est le pair TCP — et
+      `cloudflared` tourne sur la même machine, donc se connecte depuis
+      `127.0.0.1`. Une liste blanche RFC1918 côté Fastify **laisserait passer
+      tout le trafic du tunnel** en donnant l'impression du contraire. Le
+      filtrage doit vivre dans l'`ingress` de cloudflared, pas dans le serveur.
+- [ ] 🔴 **`/api/config` livre le jeton HA, et c'est exploitable aujourd'hui.**
+      Pas besoin d'attendre le tunnel : `fastifyCors, { origin: true }`
+      (`index.ts:34`) reflète n'importe quelle origine, donc **n'importe quel
+      onglet ouvert dans la maison peut lire la réponse en JavaScript**. Un
+      jeton longue durée HA survit à tout — fermeture du tunnel, arrêt du
+      conteneur — jusqu'à révocation manuelle.
+      Correctif en trois temps, établi par la session dédiée :
+      1. **CORS en liste blanche** — tout de suite. Pas `origin: false`, qui
+         casserait le widget Maison de LifeOS (autre origine, voir
+         `docs/mcp_oby.md`). Le web de Trano est servi en même origine, et
+         l'app native n'est pas soumise au CORS.
+      2. **Relais WebSocket** — moins cher que prévu : toute la surface HA du
+         navigateur est WebSocket (8 types de messages, aucun REST, aucun
+         `camera_proxy`). Un relais transparent qui **remplace `access_token`
+         dans la trame `auth`** couvre 100 % du besoin : ~80 lignes serveur,
+         ~10 lignes web, et **les 12 fichiers qui consomment `useHA()` ne
+         bougent pas**. Le jeton ne quitte alors plus la machine.
+      3. **Authentification de l'app entière** — seulement le jour du tunnel.
 - [ ] Écran de première connexion : **mêmes trois questions que le web**
       (nom, type, propriétaire — et la pièce sauf pour un téléphone), en
       préremplissant ce que la plateforme donne. Voir
