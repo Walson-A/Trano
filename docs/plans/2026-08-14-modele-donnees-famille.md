@@ -163,6 +163,46 @@ un besoin, ce sera une table dédiée.
   « qui est là ». Une trace de coordonnées, c'est l'historique des déplacements
   de cinq adultes dans une base sauvegardée — à protéger, à purger, pour rien.
 
+  > **Précisé le 2026-08-14, sur une idée de Walson** : le géofence est évalué
+  > **sur le téléphone**, et seul le franchissement est envoyé. Il n'y a donc
+  > aucune coordonnée à protéger — non par politique, mais parce qu'elle
+  > n'existe nulle part. C'est la différence entre une intention et une
+  > garantie ; à la question « qu'est-ce que Trano sait de mes déplacements ? »,
+  > la réponse est « rien ».
+  >
+  > À reprendre d'AtlasMobile : surveiller **une seule région** est pris en
+  > charge par l'OS, sans réveiller l'app — le coût en batterie est quasi nul,
+  > très loin du « suivi permanent » qui relève une position tous les 100 m.
+
+### La présence par le routeur : explorée, écartée
+
+La Freebox expose un `device_tracker` par appareil vu sur son wifi — **130 au
+registre, 122 désactivés par l'intégration**. L'idée était séduisante : une
+présence qui marche sans installer quoi que ce soit, téléphone verrouillé au
+fond d'une poche.
+
+**Elle ne tient pas, à cause de la randomisation d'adresse MAC.** Relevé en
+réel : `iphone_de_walson` marquait « dernière activité : 6 août » alors que le
+téléphone était connecté au wifi à cet instant. Les adresses Wi-Fi privées d'iOS
+et d'Android tournent, **chaque rotation crée un nouvel appareil pour la
+Freebox**, donc un traqueur neuf — et l'ancien reste figé sur `not_home` pour
+toujours. D'où quatre `styledbykev`, deux `iphone_de_walson` et cinq `iPhone`
+anonymes : les mêmes téléphones sous des dizaines d'adresses successives.
+
+Toutes les MAC relevées étaient « localement administrées » (`5E:`, `12:`,
+`EA:`, `CE:`, `FE:`…), signature de la randomisation. Aucun mapping figé n'y
+survit.
+
+La parade existerait — désactiver l'adresse privée **pour ce réseau** sur chaque
+téléphone — mais c'est cinq réglages à faire faire à la famille, soit
+exactement l'effort qu'on cherchait à éviter. **La présence des personnes
+passera donc uniquement par le géofence de l'app native.**
+
+Ce qui reste utile de la Freebox : les appareils qui **ne randomisent pas** —
+télé, Shelly, players, tablette murale. Leur MAC est stable. Ça ne sert pas à
+« qui est là », mais ça pourra servir à « la télé du salon est allumée » sans
+rien installer.
+
 ### L'écran de première connexion
 
 Le moment exact où les gens acceptent de répondre à deux questions ; après, plus
