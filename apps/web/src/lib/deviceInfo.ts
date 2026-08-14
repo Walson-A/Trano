@@ -36,8 +36,36 @@ export function getDeviceId(): string | null {
   }
 }
 
+/**
+ * Un identifiant unique, y compris hors contexte sécurisé.
+ *
+ * `crypto.randomUUID()` n'existe **que** en HTTPS ou sur localhost. Or Trano
+ * est servi en clair sur le réseau de la maison (`http://192.168.1.65:3001`) :
+ * la fonction y est purement absente, et l'appel plantait l'enregistrement avec
+ * « crypto.randomUUID is not a function ».
+ *
+ * `crypto.getRandomValues`, lui, reste disponible partout — seuls `randomUUID`
+ * et `crypto.subtle` sont réservés aux contextes sécurisés. On fabrique donc un
+ * UUID v4 à la main à partir de lui, et on ne retombe sur `Math.random` que si
+ * même ça manque : un identifiant un peu moins solide vaut mieux qu'un appareil
+ * qui ne peut pas s'enregistrer.
+ */
+function randomUuid(): string {
+  const c = globalThis.crypto as Crypto | undefined;
+  if (c?.randomUUID) return c.randomUUID();
+
+  const bytes = new Uint8Array(16);
+  if (c?.getRandomValues) c.getRandomValues(bytes);
+  else for (let i = 0; i < 16; i++) bytes[i] = Math.floor(Math.random() * 256);
+
+  bytes[6] = (bytes[6]! & 0x0f) | 0x40; // version 4
+  bytes[8] = (bytes[8]! & 0x3f) | 0x80; // variante RFC 4122
+  const hex = [...bytes].map((b) => b.toString(16).padStart(2, '0')).join('');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
 export function createDeviceId(): string {
-  const id = crypto.randomUUID();
+  const id = randomUuid();
   try {
     localStorage.setItem(DEVICE_ID_KEY, id);
   } catch {
