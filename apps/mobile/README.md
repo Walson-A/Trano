@@ -60,8 +60,8 @@ npm start
 ```
 
 Expo Go suffit pour l'interface. **Il ne suffira pas** pour le géofence, les
-notifications, les widgets ni les mises à jour par les airs : il faut une
-construction de développement.
+notifications ni les mises à jour par les airs : il faut une construction de
+développement.
 
 ```bash
 npm run build:dev
@@ -76,17 +76,7 @@ Ce qui sera demandé :
 
 1. **La connexion à l'Apple ID**, puis le certificat de distribution. Demande
    une adhésion à l'**Apple Developer Program**.
-2. **Deux profils de provisionnement, pas un.** `expo-widgets` ajoute une
-   seconde cible à l'application :
-
-   | Cible | Identifiant |
-   |---|---|
-   | `Trano` | `com.walson.trano` |
-   | `ExpoWidgetsTarget` | `com.walson.trano.widgets` |
-
-   Elles partagent le certificat mais exigent chacune leur profil. EAS le fait
-   tout seul, il faut juste ne pas s'étonner d'être questionné deux fois.
-3. **L'UDID de chaque iPhone.** Les profils `development` et `preview` sont en
+2. **L'UDID de chaque iPhone.** Les profils `development` et `preview` sont en
    distribution interne : chaque appareil est déclaré un par un.
 
    ```bash
@@ -94,10 +84,52 @@ Ce qui sera demandé :
    ```
 
    (`eas device:create` — donne un lien ou un QR code à ouvrir sur l'iPhone.)
+   À faire **avant** la construction, sinon le profil ne contient aucun
+   appareil.
 
 Android n'est pas construit pour l'instant. Le jour où il le faudra (le Xiaomi
 de Gianni, le TCL de maman), la seule question sera « Generate a new Android
 Keystore? » → oui, une fois pour toutes.
+
+## Widgets et Live Activities — en attente, et pourquoi
+
+`expo-widgets` est **installé mais retiré des `plugins`** (le bloc exact à
+recoller est dans `app.json`, clé `//expo-widgets`).
+
+La première construction iOS a échoué dessus :
+
+```
+Provisioning profile "[expo] com.walson.trano.widgets AdHoc"
+doesn't support the group.com.walson.trano App Group.
+```
+
+Ce n'est pas une erreur de configuration de notre côté. Le greffon crée une
+**seconde cible** iOS (`ExpoWidgetsTarget`, `com.walson.trano.widgets`), et les
+deux cibles doivent partager un **groupe d'app** — c'est le tuyau par lequel
+l'app pousse ses données au widget. Or EAS ne synchronise automatiquement les
+capacités que sur la **cible principale** : l'identifiant de l'extension a bien
+été créé, mais sans le groupe, et son profil de provisionnement est donc né
+invalide.
+
+Pour le rétablir, dans cet ordre :
+
+1. Portail Apple → Identifiers → **App Groups** → créer `group.com.walson.trano`.
+2. Identifiers → App IDs → activer **App Groups** et cocher ce groupe sur
+   **les deux** identifiants : `com.walson.trano` *et*
+   `com.walson.trano.widgets`.
+3. Faire **regénérer les deux profils** — modifier un identifiant invalide les
+   profils existants, et EAS réutilise les siens tant qu'on ne les supprime
+   pas : `eas credentials` → iOS → `development` → supprimer les profils.
+4. Recoller le bloc `//expo-widgets` dans `plugins`, reconstruire.
+
+⚠️ Un défaut connu d'EAS peut faire réutiliser un profil en cache malgré tout
+([expo/expo#40851](https://github.com/expo/expo/issues/40851)) — si l'erreur
+revient à l'identique après les quatre étapes, c'est ça, pas nous.
+
+Rien n'est perdu à attendre : aucun widget n'est encore dessiné, et la
+construction de développement n'est installée par personne d'autre. Le moment
+où l'inventaire des widgets doit être figé, c'est avant la construction
+`preview` que la famille installera.
 
 ## Mises à jour par les airs (OTA)
 
