@@ -64,22 +64,40 @@ notifications, les widgets ni les mises à jour par les airs : il faut une
 construction de développement.
 
 ```bash
-eas build --profile development --platform android
+npm run build:dev
 ```
 
 ⚠️ **La toute première construction doit être lancée depuis un vrai terminal**,
-pas par un agent : EAS pose une question à laquelle on ne peut répondre que de
-façon interactive.
+pas par un agent : EAS pose des questions auxquelles on ne peut répondre que de
+façon interactive (`Input is required, but stdin is not readable`). Une fois les
+réponses données, les fois suivantes passent en `--non-interactive`.
 
-- **Android** — « Generate a new Android Keystore? » → oui. Une seule fois :
-  la clé est ensuite gardée par EAS et réutilisée.
-- **iOS** — connexion à l'Apple ID, puis création du certificat et du profil de
-  provisionnement. Demande une adhésion à l'Apple Developer Program, et
-  l'UDID de chaque iPhone qui installera la construction (profil `development`
-  et `preview` = distribution interne, donc appareils déclarés un par un).
+Ce qui sera demandé :
 
-Une fois ces réponses données, les constructions suivantes passent en
-`--non-interactive`.
+1. **La connexion à l'Apple ID**, puis le certificat de distribution. Demande
+   une adhésion à l'**Apple Developer Program**.
+2. **Deux profils de provisionnement, pas un.** `expo-widgets` ajoute une
+   seconde cible à l'application :
+
+   | Cible | Identifiant |
+   |---|---|
+   | `Trano` | `com.walson.trano` |
+   | `ExpoWidgetsTarget` | `com.walson.trano.widgets` |
+
+   Elles partagent le certificat mais exigent chacune leur profil. EAS le fait
+   tout seul, il faut juste ne pas s'étonner d'être questionné deux fois.
+3. **L'UDID de chaque iPhone.** Les profils `development` et `preview` sont en
+   distribution interne : chaque appareil est déclaré un par un.
+
+   ```bash
+   npm run device
+   ```
+
+   (`eas device:create` — donne un lien ou un QR code à ouvrir sur l'iPhone.)
+
+Android n'est pas construit pour l'instant. Le jour où il le faudra (le Xiaomi
+de Gianni, le TCL de maman), la seule question sera « Generate a new Android
+Keystore? » → oui, une fois pour toutes.
 
 ## Mises à jour par les airs (OTA)
 

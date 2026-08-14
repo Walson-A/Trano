@@ -9,6 +9,8 @@
     "ios": "expo start --ios",
     "lint": "tsc --noEmit",
     "versions": "expo install --check",
+    "build:dev": "eas build --profile development --platform ios",
+    "device": "eas device:create",
     "ota": "eas update --auto"
   },
   "dependencies": {
