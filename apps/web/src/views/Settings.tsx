@@ -475,6 +475,24 @@ const RoomsManager: React.FC = () => {
  * - le **dépôt hors-site** (`offsite`), qui repose sur un comportement du code
  *   d'Oby et pourrait cesser sans un mot (cf. deploy/README.md).
  */
+/**
+ * Les noms de tables SQL n'ont rien à faire sous les yeux de la famille.
+ * Une table inconnue retombe sur son nom brut plutôt que de disparaître :
+ * mieux vaut un mot technique qu'un comptage manquant.
+ */
+const NOMS_DE_TABLES: Record<string, [string, string]> = {
+  profiles: ['profil', 'profils'],
+  rooms: ['pièce', 'pièces'],
+  shopping_items: ['article de courses', 'articles de courses'],
+  device_overrides: ['appareil personnalisé', 'appareils personnalisés'],
+};
+
+function libelleTable(table: string, n: number): string {
+  const libelle = NOMS_DE_TABLES[table];
+  if (!libelle) return `${n} ${table}`;
+  return `${n} ${n > 1 ? libelle[1] : libelle[0]}`;
+}
+
 function BackupSection() {
   const [status, setStatus] = useState<BackupStatus | null>(null);
   const [running, setRunning] = useState(false);
@@ -559,7 +577,7 @@ function BackupSection() {
           <p className="mt-3 pt-3 border-t border-zinc-100 dark:border-white/5 text-xs text-zinc-500">
             {(Object.entries(status.rows) as Array<[string, number]>)
               .filter(([, n]) => n > 0)
-              .map(([table, n]) => `${n} ${table}`)
+              .map(([table, n]) => libelleTable(table, n))
               .join(' · ') || 'base vide'}
           </p>
         )}
