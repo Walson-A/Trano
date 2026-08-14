@@ -486,11 +486,18 @@ const NOMS_DE_TABLES: Record<string, [string, string]> = {
   rooms: ['pièce', 'pièces'],
   shopping_items: ['article de courses', 'articles de courses'],
   device_overrides: ['appareil personnalisé', 'appareils personnalisés'],
+  profile_rooms: ['pièce attribuée', 'pièces attribuées'],
+  user_devices: ['appareil connecté', 'appareils connectés'],
 };
 
 function libelleTable(table: string, n: number): string {
   const libelle = NOMS_DE_TABLES[table];
-  if (!libelle) return `${n} ${table}`;
+  // Une table sans libellé est un oubli, pas un cas normal : on l'affiche
+  // marquée plutôt que de laisser passer son nom SQL l'air de rien. Le repli
+  // « nom brut » de la première version évitait bien un comptage manquant,
+  // mais il masquait le trou — `profile_rooms` s'est affiché tel quel pendant
+  // deux heures sans que rien ne le signale.
+  if (!libelle) return `${n} ⚠︎${table}`;
   return `${n} ${n > 1 ? libelle[1] : libelle[0]}`;
 }
 
