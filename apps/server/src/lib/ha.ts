@@ -187,21 +187,26 @@ export interface ControllableDevice {
 
 /** Appareils contrôlables avec leur pièce (area HA), via template tojson. */
 export async function listControllableDevices(): Promise<ControllableDevice[]> {
-  // Le template ne remonte les attributs que des lumières : c'est le seul
-  // domaine qui a des réglages à offrir, et embarquer les attributs des ~800
-  // entités ferait grossir la réponse d'un ordre de grandeur pour rien.
-  // `attributs` garde les **noms bruts de HA** pour que le repli ci-dessous,
-  // qui lit `/api/states`, passe par le même convertisseur.
-  // `attributs` est un littéral conditionnel (et non une fusion `dict()`) :
-  // les templates HA tournent dans un Jinja **sandboxé**, autant ne rien lui
-  // demander de plus qu'un dictionnaire et une condition.
-  // `a.get(...)` plutôt que `a.brightness` : sur une clé absente, Jinja rend un
-  // Undefined — que `tojson` sérialise en `null`, mais qui répond `true` à un
-  // test `is not none`. `.get` rend un vrai `None`.
+  // ⚠️ NE PAS revenir à `states.light + states.switch + ...` : Home Assistant
+  // répond `TypeError: unsupported operand type(s) for +: 'DomainStates' and
+  // 'DomainStates'`, donc le template échouait **en entier**, en silence. Le
+  // `catch` plus bas retombait sur /api/states, qui ignore les pièces — et
+  // `piece` valait null partout (constaté le 2026-08-15 : 0 pièce sur 12
+  // appareils, quand HA en déclare 11). On filtre `states` par domaine.
+  //
+  // Trois autres détails, chacun payé une fois :
+  // - seules les lumières portent leurs attributs : c'est le seul domaine qui a
+  //   des réglages, et les embarquer pour toutes les entités multiplierait la
+  //   taille d'une réponse demandée toutes les dix secondes ;
+  // - `attributs` garde les **noms bruts de HA**, pour que le repli plus bas
+  //   (qui lit /api/states) passe par le même convertisseur ;
+  // - c'est un littéral conditionnel et non une fusion `dict()` (le Jinja de HA
+  //   est sandboxé), et `a.get('x')` et non `a.x` — sur une clé absente, Jinja
+  //   rend un Undefined qui répond `true` à un test `is not none`.
   const tpl = `
+{% set domaines = ['light', 'switch', 'fan', 'media_player', 'cover'] %}
 {% set out = namespace(items=[]) %}
-{% for s in states.light + states.switch + states.fan + states.media_player + states.cover %}
-{% if s.state != 'unavailable' %}
+{% for s in states if s.domain in domaines and s.state != 'unavailable' %}
 {% set a = s.attributes %}
 {% set out.items = out.items + [{
   'entity_id': s.entity_id,
@@ -218,7 +223,6 @@ export async function listControllableDevices(): Promise<ControllableDevice[]> {
     'supported_color_modes': a.get('supported_color_modes')
   } if s.domain == 'light' else none
 }] %}
-{% endif %}
 {% endfor %}
 {{ out.items | tojson }}`.trim();
   try {
