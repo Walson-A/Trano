@@ -91,6 +91,51 @@ export async function getHouseSnapshot(): Promise<Record<string, unknown>> {
 const CONTROLLABLE_DOMAINS = new Set(['light', 'switch', 'fan', 'media_player', 'cover']);
 const ENTITY_RE = /^[a-z_]+\.[a-z0-9_]+$/;
 
+/**
+ * Ce dont une lumière est capable, dérivé de `supported_color_modes`.
+ *
+ * La classification est faite **ici** et pas chez le client : la même liste de
+ * modes vivait déjà dans `LightSheet.tsx` (l'app), et la dupliquer une
+ * troisième fois dans le widget LifeOS aurait donné trois vérités sur « cette
+ * ampoule est-elle variable ? ». Le client reçoit des booléens, pas des modes.
+ */
+const DIMMABLE_MODES = new Set(['brightness', 'color_temp', 'hs', 'rgb', 'rgbw', 'rgbww', 'xy', 'white']);
+const COLOR_MODES = new Set(['hs', 'rgb', 'rgbw', 'rgbww', 'xy']);
+
+export interface LightSettings {
+  /** 0–100, ou `null` si l'ampoule est éteinte (HA ne publie plus `brightness`). */
+  luminosite_pct: number | null;
+  reglable: boolean;
+  couleur: boolean;
+  blanc_reglable: boolean;
+  hs: [number, number] | null;
+  kelvin: number | null;
+  kelvin_min: number;
+  kelvin_max: number;
+  /** `color_temp` ou une des modes couleur — dit quel réglage porte l'état actuel. */
+  mode: string | null;
+}
+
+/** Attributs HA bruts d'une lumière → ce qu'un client d'application peut afficher. */
+function lightSettingsFrom(attrs: Record<string, unknown>): LightSettings {
+  const modes = Array.isArray(attrs.supported_color_modes) ? (attrs.supported_color_modes as string[]) : [];
+  const brightness = typeof attrs.brightness === 'number' ? attrs.brightness : null;
+  const hs = Array.isArray(attrs.hs_color) && attrs.hs_color.length === 2
+    ? ([Number(attrs.hs_color[0]), Number(attrs.hs_color[1])] as [number, number])
+    : null;
+  return {
+    luminosite_pct: brightness == null ? null : Math.round((brightness / 255) * 100),
+    reglable: modes.some((m) => DIMMABLE_MODES.has(m)),
+    couleur: modes.some((m) => COLOR_MODES.has(m)),
+    blanc_reglable: modes.includes('color_temp'),
+    hs,
+    kelvin: typeof attrs.color_temp_kelvin === 'number' ? attrs.color_temp_kelvin : null,
+    kelvin_min: typeof attrs.min_color_temp_kelvin === 'number' ? attrs.min_color_temp_kelvin : 2200,
+    kelvin_max: typeof attrs.max_color_temp_kelvin === 'number' ? attrs.max_color_temp_kelvin : 6500,
+    mode: typeof attrs.color_mode === 'string' ? attrs.color_mode : null,
+  };
+}
+
 /** Rend un template Jinja côté HA (POST /api/template). Renvoie le texte. */
 export async function haTemplate(template: string): Promise<string> {
   const url = HA_URL();
@@ -131,20 +176,59 @@ export async function controlDevice(
   return `OK, ${service} appelé sur ${entityId}.`;
 }
 
+export interface ControllableDevice {
+  entity_id: string;
+  nom: string;
+  etat: string;
+  piece: string | null;
+  /** Renseigné pour le domaine `light` seulement — `null` partout ailleurs. */
+  lumiere: LightSettings | null;
+}
+
 /** Appareils contrôlables avec leur pièce (area HA), via template tojson. */
-export async function listControllableDevices(): Promise<
-  Array<{ entity_id: string; nom: string; etat: string; piece: string | null }>
-> {
+export async function listControllableDevices(): Promise<ControllableDevice[]> {
+  // Le template ne remonte les attributs que des lumières : c'est le seul
+  // domaine qui a des réglages à offrir, et embarquer les attributs des ~800
+  // entités ferait grossir la réponse d'un ordre de grandeur pour rien.
+  // `attributs` garde les **noms bruts de HA** pour que le repli ci-dessous,
+  // qui lit `/api/states`, passe par le même convertisseur.
+  // `attributs` est un littéral conditionnel (et non une fusion `dict()`) :
+  // les templates HA tournent dans un Jinja **sandboxé**, autant ne rien lui
+  // demander de plus qu'un dictionnaire et une condition.
+  // `a.get(...)` plutôt que `a.brightness` : sur une clé absente, Jinja rend un
+  // Undefined — que `tojson` sérialise en `null`, mais qui répond `true` à un
+  // test `is not none`. `.get` rend un vrai `None`.
   const tpl = `
 {% set out = namespace(items=[]) %}
 {% for s in states.light + states.switch + states.fan + states.media_player + states.cover %}
 {% if s.state != 'unavailable' %}
-{% set out.items = out.items + [{'entity_id': s.entity_id, 'nom': s.name, 'etat': s.state, 'piece': area_name(s.entity_id)}] %}
+{% set a = s.attributes %}
+{% set out.items = out.items + [{
+  'entity_id': s.entity_id,
+  'nom': s.name,
+  'etat': s.state,
+  'piece': area_name(s.entity_id),
+  'attributs': {
+    'brightness': a.get('brightness'),
+    'color_mode': a.get('color_mode'),
+    'hs_color': a.get('hs_color'),
+    'color_temp_kelvin': a.get('color_temp_kelvin'),
+    'min_color_temp_kelvin': a.get('min_color_temp_kelvin'),
+    'max_color_temp_kelvin': a.get('max_color_temp_kelvin'),
+    'supported_color_modes': a.get('supported_color_modes')
+  } if s.domain == 'light' else none
+}] %}
 {% endif %}
 {% endfor %}
 {{ out.items | tojson }}`.trim();
   try {
-    return JSON.parse(await haTemplate(tpl));
+    const raw = JSON.parse(await haTemplate(tpl)) as Array<
+      Omit<ControllableDevice, 'lumiere'> & { attributs?: Record<string, unknown> | null }
+    >;
+    return raw.map(({ attributs, ...d }) => ({
+      ...d,
+      lumiere: attributs ? lightSettingsFrom(attributs) : null,
+    }));
   } catch {
     // Repli sans les pièces si le template échoue
     const states = (await haFetch('/api/states')) as HAState[];
@@ -155,6 +239,7 @@ export async function listControllableDevices(): Promise<
         nom: (s.attributes.friendly_name as string) ?? s.entity_id,
         etat: s.state,
         piece: null,
+        lumiere: s.entity_id.startsWith('light.') ? lightSettingsFrom(s.attributes) : null,
       }));
   }
 }
@@ -250,6 +335,39 @@ export async function setLight(entityId: string, brightnessPct?: number, color?:
     color ? `couleur ${color}` : null,
   ].filter(Boolean);
   return `OK, ${entityId} réglée (${bits.join(', ') || 'allumée'}).`;
+}
+
+/**
+ * Règle une lumière avec des valeurs exactes — pour un **client d'application**.
+ *
+ * `setLight` au-dessus est la porte du LLM : il parle en noms de couleurs
+ * français. Un widget, lui, a un curseur et une roue : il envoie une teinte, une
+ * saturation, des kelvins. Même service HA dessous, deux vocabulaires — on ne
+ * demande pas à une interface de traduire sa teinte en « turquoise » pour que le
+ * serveur la retraduise.
+ */
+export async function setLightState(
+  entityId: string,
+  settings: { brightness_pct?: number; kelvin?: number; hs_color?: [number, number] }
+): Promise<string> {
+  if (!ENTITY_RE.test(entityId) || !entityId.startsWith('light.')) {
+    return `Refusé : "${entityId}" n'est pas une lumière.`;
+  }
+  const body: Record<string, unknown> = { entity_id: entityId };
+  const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, Math.round(v)));
+
+  if (typeof settings.brightness_pct === 'number') body.brightness_pct = clamp(settings.brightness_pct, 1, 100);
+  // Kelvin et teinte s'excluent : HA garde le dernier reçu, mais envoyer les
+  // deux dans le même appel laisse le choix au hasard de l'intégration.
+  if (settings.hs_color) {
+    body.hs_color = [clamp(settings.hs_color[0], 0, 360), clamp(settings.hs_color[1], 0, 100)];
+  } else if (typeof settings.kelvin === 'number') {
+    body.color_temp_kelvin = clamp(settings.kelvin, 1000, 10_000);
+  }
+  if (Object.keys(body).length === 1) return 'Refusé : aucun réglage fourni.';
+
+  await haFetch('/api/services/light/turn_on', { method: 'POST', body: JSON.stringify(body) });
+  return `OK, ${entityId} réglée.`;
 }
 
 /** Liste les scènes HA. */
