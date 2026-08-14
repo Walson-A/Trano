@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import { connectTranoWs } from '@trano/shared/api';
 import { useServer, wsUrlFor } from '@/lib/server';
 import { usePresence } from '@/features/presence/store';
+import { useShopping } from '@/features/shopping/store';
+import { useProfiles } from '@/features/profiles/store';
 
 /**
  * Le fil temps réel avec la maison, ouvert une seule fois à la racine.
@@ -16,14 +18,24 @@ export function useTranoWs(): void {
 
   useEffect(() => {
     const refreshPresence = () => void usePresence.getState().refresh();
+    const refreshShopping = () => void useShopping.getState().refresh();
+    const refreshProfiles = () => void useProfiles.getState().fetch();
 
     return connectTranoWs(wsUrlFor(url), {
       onChanged: (topic) => {
         if (topic === 'presence' || topic === 'user-devices') refreshPresence();
+        // Deux personnes dans le même magasin doivent voir la même liste, et un
+        // article coché doit disparaître de la tablette de la cuisine.
+        if (topic === 'shopping') refreshShopping();
+        if (topic === 'profiles') refreshProfiles();
       },
       // Après une coupure, les événements manqués ne reviendront pas : on
       // relit tout plutôt que d'afficher un état figé au moment de la panne.
-      onReconnect: refreshPresence,
+      onReconnect: () => {
+        refreshPresence();
+        refreshShopping();
+        refreshProfiles();
+      },
     });
   }, [url]);
 }
