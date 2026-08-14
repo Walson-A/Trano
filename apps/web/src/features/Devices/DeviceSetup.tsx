@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { House, Loader2, Smartphone, Tablet, Monitor, Tv } from 'lucide-react';
+import { House, Loader2, Plus, Smartphone, Tablet, Monitor, Tv } from 'lucide-react';
 import type { UserDeviceType } from '@trano/shared';
 import { api } from '../../lib/api';
 import { createDeviceId, detectDevice, type DetectedDevice } from '../../lib/deviceInfo';
 import { useProfileStore } from '../../core/store/useProfileStore';
 import { useRoomsStore } from '../../core/store/useRoomsStore';
+import { ProfileEditor } from '../Profiles/ProfileEditor';
 import { cn } from '../../utils';
 
 /**
@@ -39,6 +40,11 @@ export function DeviceSetup({ onDone }: { onDone: () => void }) {
   const [ownerId, setOwnerId] = useState<string | null>(null);
   const [roomId, setRoomId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  // C'est le tout premier écran de l'app : quelqu'un dont le profil n'existe
+  // pas encore serait obligé de prendre celui d'un autre. On le laisse créer
+  // le sien ici.
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [knownIds, setKnownIds] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -63,6 +69,16 @@ export function DeviceSetup({ onDone }: { onDone: () => void }) {
   const isFixed = type === 'tv' || type === 'kiosk';
 
   const people = profiles.filter((p) => p.kind !== 'house');
+
+  // À la fermeture de l'éditeur, le profil fraîchement créé est celui qu'on ne
+  // connaissait pas avant : on le sélectionne, personne ne crée un profil pour
+  // choisir quelqu'un d'autre juste après.
+  useEffect(() => {
+    if (editorOpen) { setKnownIds(people.map((p) => p.id)); return; }
+    if (knownIds.length === 0) return;
+    const nouveau = people.find((p) => !knownIds.includes(p.id));
+    if (nouveau) { setOwnerId(nouveau.id); setKnownIds([]); }
+  }, [editorOpen, people, knownIds]);
   const house = profiles.find((p) => p.kind === 'house');
 
   const save = async () => {
@@ -102,7 +118,8 @@ export function DeviceSetup({ onDone }: { onDone: () => void }) {
           Bienvenue
         </h1>
         <p className="mt-2 text-zinc-500">
-          Deux questions, une seule fois, pour que la maison sache reconnaître cet appareil.
+          Juste de quoi savoir à qui parler quand la maison a quelque chose à dire.
+          On ne vous le redemandera plus.
         </p>
 
         <label className="block mt-8">
@@ -187,6 +204,13 @@ export function DeviceSetup({ onDone }: { onDone: () => void }) {
                 {p.name}
               </button>
             ))}
+            <button
+              onClick={() => setEditorOpen(true)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700 text-sm text-zinc-500 hover:border-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Nouveau
+            </button>
           </div>
           {house && (
             <button
@@ -201,7 +225,7 @@ export function DeviceSetup({ onDone }: { onDone: () => void }) {
               <House className="w-5 h-5 shrink-0" />
               <span className="text-sm">
                 <span className="font-semibold block">À personne, c'est un écran partagé</span>
-                <span className="text-xs">Tablette murale, télé — il ne dira jamais qui est là</span>
+                <span className="text-xs">Tablette murale, télé — tout le monde s'en sert</span>
               </span>
             </button>
           )}
@@ -218,6 +242,10 @@ export function DeviceSetup({ onDone }: { onDone: () => void }) {
           C'est parti
         </button>
       </motion.div>
+
+      {editorOpen && (
+        <ProfileEditor isOpen={editorOpen} onClose={() => setEditorOpen(false)} profile={null} />
+      )}
     </div>
   );
 }
