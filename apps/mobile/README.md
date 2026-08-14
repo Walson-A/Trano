@@ -149,6 +149,13 @@ Projet EAS : `@walsondev/trano`
 dans `app.json`, les canaux `development` / `preview` / `production` dans
 `eas.json`.
 
+⚠️ **Rien de tout ça ne concerne la construction de développement.** Le client
+de développement charge son JavaScript depuis le Metro local (`npm start`) : le
+code y arrive en direct, et `expo-updates` s'y désactive de lui-même
+(`__DEV__ || !Updates.isEnabled`). L'OTA ne sert qu'aux constructions `preview`
+et `production` — celles que la famille installe, et qui n'ont aucun Metro en
+face.
+
 Publier une correction :
 
 ```bash
