@@ -493,6 +493,25 @@ function libelleTable(table: string, n: number): string {
   return `${n} ${n > 1 ? libelle[1] : libelle[0]}`;
 }
 
+/**
+ * « 2026-08-14 » est une date de développeur. Ce qu'on veut savoir en un coup
+ * d'œil, c'est si la sauvegarde est récente — donc l'heure quand c'est
+ * aujourd'hui ou hier, et le jour écrit en toutes lettres au-delà.
+ */
+function quandFormate(at: string): string {
+  const d = new Date(at);
+  if (Number.isNaN(d.getTime())) return '';
+  const heure = d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  const jour = new Date(d);
+  jour.setHours(0, 0, 0, 0);
+  const minuitAujourdhui = new Date();
+  minuitAujourdhui.setHours(0, 0, 0, 0);
+  const joursEcoules = Math.round((minuitAujourdhui.getTime() - jour.getTime()) / 86_400_000);
+  if (joursEcoules === 0) return `aujourd'hui à ${heure}`;
+  if (joursEcoules === 1) return `hier à ${heure}`;
+  return d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+}
+
 function BackupSection() {
   const [status, setStatus] = useState<BackupStatus | null>(null);
   const [running, setRunning] = useState(false);
@@ -529,9 +548,8 @@ function BackupSection() {
     if (status.neverRun) return "Jamais exécutée — aucune copie n'existe";
     if (!status.ok) return status.detail ?? 'Échec';
     const taille = status.bytes ? `${Math.round(status.bytes / 1024)} Ko` : '';
-    const age =
-      status.ageHours === 0 ? "aujourd'hui" : `il y a ${status.ageHours} h`;
-    return `${status.date} (${age})${taille ? ` · ${taille}` : ''}`;
+    const quand = status.at ? quandFormate(status.at) : (status.date ?? '');
+    return `${quand}${taille ? ` · ${taille}` : ''}`;
   };
 
   return (
