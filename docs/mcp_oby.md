@@ -95,12 +95,20 @@ Attendu : les dix outils, en flux `text/event-stream`. Sans en-tête
 
 ## Et le widget de LifeOS ?
 
-Le bureau de Walson a une **carte Maison** (favoris + bascules, vue focus = cette
-app en iframe). Elle ne passe **pas** par MCP mais par `GET /api/house` et
-`POST /api/house/device` (cf. [`server_api.md`](server_api.md)) : un widget veut
-un objet typé, pas du JSON dans une chaîne dans du SSE. Même couche métier
-dessous, donc les deux surfaces ne peuvent pas diverger. Côté LifeOS :
+Le bureau de Walson a une **carte Maison** (favoris + bascules + réglages des
+lumières, vue focus = cette app en iframe). Elle ne passe **pas** par MCP mais
+par `GET /api/house`, `POST /api/house/device` et `POST /api/house/light`
+(cf. [`server_api.md`](server_api.md)) : un widget veut un objet typé, pas du
+JSON dans une chaîne dans du SSE. Même couche métier dessous, donc les deux
+surfaces ne peuvent pas diverger. Côté LifeOS :
 `Atlas/LifeOS/docs/home-system.md`.
+
+`regler_lumiere` (MCP) et `/api/house/light` (REST) appellent tous deux
+`light.turn_on`, mais avec **deux vocabulaires** : le premier prend un nom de
+couleur français (`setLight`, table `COLOR_MAP`), le second des valeurs exactes
+(`setLightState` : teinte, saturation, kelvins). On ne demande pas à une roue
+chromatique de traduire sa teinte en « turquoise » pour que le serveur la
+retraduise.
 
 ## Limites connues
 

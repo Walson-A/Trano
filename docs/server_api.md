@@ -91,11 +91,48 @@ consommateur : le widget Maison de LifeOS).
 
 | Méthode | Route | Corps / query | Description |
 |---|---|---|---|
-| GET | `/api/house` | `?profile=<id>` (optionnel) | `{ energie, meteo, favoris[], allumes[], total_appareils, profil_connu }`. `favoris` = les entités favorites du profil, dans **leur ordre**, résolues avec leur état et leur pièce ; un favori absent de HA est simplement omis. |
+| GET | `/api/house` | `?profile=<id>` (optionnel) | `{ energie, meteo, favoris[], allumes[], total_appareils, profil_connu }`. `favoris` = les entités favorites du profil, dans **leur ordre**, résolues avec leur état, leur pièce et — pour les lumières — leurs réglages ; un favori absent de HA est simplement omis. |
 | POST | `/api/house/device` | `{ entity_id, action }` | `turn_on` / `turn_off` / `toggle`. `403` si le domaine est refusé (serrures, alarme), `502` si HA est injoignable. |
+| POST | `/api/house/light` | `{ entity_id, brightness_pct?, kelvin?, hs_color? }` | Réglages fins d'une lumière. `400` si aucun réglage n'est fourni, `403` si l'entité n'est pas une `light.`, `502` si HA est injoignable. |
 
 `profil_connu: false` distingue « aucun profil demandé » de « profil sans
 favori » — sans quoi un client ne peut pas savoir s'il doit proposer un choix.
+
+### Les réglages d'une lumière (`favoris[].lumiere`)
+
+Chaque favori du domaine `light` porte un objet `lumiere` ; il vaut `null`
+partout ailleurs.
+
+```jsonc
+{
+  "luminosite_pct": 64,      // null quand l'ampoule est éteinte : HA ne publie plus la valeur
+  "reglable": true,          // variable en intensité
+  "couleur": true,           // teinte/saturation possibles
+  "blanc_reglable": true,    // température de blanc possible
+  "hs": [30, 100],
+  "kelvin": 2700,
+  "kelvin_min": 2200,
+  "kelvin_max": 6500,
+  "mode": "color_temp"       // quel réglage porte l'état actuel
+}
+```
+
+Les trois booléens sont **déduits côté serveur** de `supported_color_modes`. Ce
+n'est pas de la commodité : la même liste de modes vivait déjà dans
+`LightSheet.tsx`, et laisser chaque client la redériver donnait autant de
+vérités que de clients sur « cette ampoule est-elle variable ? ».
+
+`mode` compte plus qu'il n'en a l'air : une ampoule passée en blanc garde une
+`hs_color` **périmée** dans ses attributs HA. Un client qui affiche la teinte
+sans regarder `mode` montre une couleur qui n'est plus allumée.
+
+> `allumes[]` ne porte **pas** ces réglages : il sert à compter les appareils
+> allumés, et joindre les attributs de chaque ampoule de la maison gonflerait
+> une réponse demandée toutes les dix secondes pour un nombre.
+
+Côté écriture, `hs_color` et `kelvin` s'excluent : envoyés ensemble, seule la
+couleur est appliquée. C'est délibéré — HA garderait le dernier reçu, ce qui
+laisse le résultat au hasard de l'intégration.
 
 Les garde-fous sont ceux de `lib/ha.ts` (`controlDevice`) : entity_id validé,
 domaines autorisés, serrures et alarme exclues. Cette route ne les réécrit pas.
