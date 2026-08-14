@@ -1,0 +1,94 @@
+{
+  "expo": {
+    "name": "Trano",
+    "slug": "trano",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "trano",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "plugins": [
+      "expo-router",
+      "expo-updates",
+      "expo-task-manager",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Trano regarde si tu es à la maison pour afficher « Qui est là ».",
+          "locationAlwaysAndWhenInUsePermission": "Trano a besoin de « Toujours » pour savoir que tu es rentré ou parti, même quand l'app est fermée. Il ne regarde qu'une chose : es-tu à la maison, oui ou non. Aucun autre lieu n'est enregistré.",
+          "isIosBackgroundLocationEnabled": true,
+          "isAndroidBackgroundLocationEnabled": true
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#0ea5e9"
+        }
+      ],
+      "expo-status-bar"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.walson.trano",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "UIBackgroundModes": [
+          "location",
+          "remote-notification",
+          "location",
+          "remote-notification"
+        ],
+        "NSLocalNetworkUsageDescription": "Trano parle au serveur de la maison, sur le réseau local.",
+        "NSAppTransportSecurity": {
+          "NSAllowsLocalNetworking": true
+        }
+      }
+    },
+    "android": {
+      "package": "com.walson.trano",
+      "usesCleartextTraffic": true,
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_LOCATION",
+        "POST_NOTIFICATIONS",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_LOCATION",
+        "POST_NOTIFICATIONS",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_LOCATION"
+      ]
+    },
+    "owner": "walsondev",
+    "updates": {
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/eb053b71-cc9e-469c-b011-5e9b978ac986"
+    },
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "eb053b71-cc9e-469c-b011-5e9b978ac986"
+      }
+    }
+  }
+}

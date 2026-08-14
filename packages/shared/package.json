@@ -5,7 +5,9 @@
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
+  "//exports": "`./api` est une entrée séparée, volontairement PAS ré-exportée par `.`. Le serveur importe `@trano/shared` pour les types ; s'il tirait aussi le client HTTP, son `tsc --noEmit` (lib ES2022 + types node, sans DOM) devrait typer fetch, Response et WebSocket. Les deux entrées restent donc étanches : les types pour tout le monde, le client pour les seules apps.",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./api": "./src/api.ts"
   }
 }

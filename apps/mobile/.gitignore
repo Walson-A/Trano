@@ -1,0 +1,9 @@
+node_modules/
+.expo/
+dist/
+expo-env.d.ts
+
+# Dossiers natifs : régénérés par `expo prebuild`, jamais commités. La config
+# vit dans app.json, pas dans du code Xcode/Gradle recopié à la main.
+/ios
+/android

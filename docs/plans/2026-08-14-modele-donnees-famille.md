@@ -353,7 +353,37 @@ partir » — le seul endroit qui connaisse l'instant exact de la transition.
 
 #### Le reste
 
-- [ ] Squelette Expo dans le monorepo, types partagés via `@trano/shared`
+- [x] **Squelette Expo posé** (SDK 57, React Native 0.86) — voir
+      `apps/mobile/README.md`. Six onglets aux noms du web, « Qui est là » en
+      tête de l'accueil, adresse du serveur réglable. Quatre décisions qui
+      engagent la suite :
+      - **Pas un workspace npm.** La racine liste désormais `apps/server`,
+        `apps/web`, `packages/*` au lieu de `apps/*` : `npm ci` tourne à la
+        racine à chaque livraison sur `main`, et le `Dockerfile` du serveur
+        aurait avalé React Native. L'app a son propre `package-lock.json`.
+      - **Client HTTP + WebSocket déplacés dans `@trano/shared/api`**, utilisés
+        tels quels par les deux apps — seule l'adresse diffère. Entrée
+        volontairement séparée de `.` : le serveur importe les types sans
+        hériter de `fetch` et `WebSocket`, absents de son `lib`.
+      - **NativeWind**, donc les mêmes chaînes de classes que le web se
+        recopient. Tailwind 3 côté natif (NativeWind n'a pas la v4) ; sans
+        effet visible, mais `hover:`, `group-hover:` et `backdrop-blur`
+        n'existent pas.
+      - **Modules natifs installés avant d'être utilisés** (`expo-location`,
+        `expo-task-manager`, `expo-notifications`, `expo-battery`,
+        `expo-network`, `expo-crypto`) : une mise à jour par les airs ne
+        transporte que du JavaScript, donc chaque module ajouté plus tard
+        coûterait une réinstallation à toute la famille.
+- [x] **Mises à jour par les airs actives.** Projet EAS `@walsondev/trano`
+      (`eb053b71-cc9e-469c-b011-5e9b978ac986`), canaux `development` /
+      `preview` / `production`, version d'exécution en `fingerprint`.
+      Vérification faite au premier plan **et** au lancement : une app qu'on ne
+      tue jamais ne se « lance » quasiment plus.
+- [ ] **Trancher l'accès hors maison.** `http://192.168.1.65:3001` ne répond pas
+      hors du Wi-Fi — or le géofence doit signaler un départ **au moment précis**
+      où le Wi-Fi vient d'être perdu. Deux issues : Tailscale sur les téléphones,
+      ou une file d'envoi rejouée à la reconnexion (la présence arrive alors avec
+      quelques minutes de retard). À décider avant d'écrire le géofence.
 - [ ] Écran de première connexion : **mêmes trois questions que le web**
       (nom, type, propriétaire — et la pièce sauf pour un téléphone), en
       préremplissant ce que la plateforme donne. Voir

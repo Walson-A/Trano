@@ -3,8 +3,10 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "//workspaces": "Liste explicite, et surtout PAS `apps/*` : le glob happerait apps/mobile. L'app native installe donc ses dependances chez elle, avec son propre package-lock. Deux raisons : `npm ci` tourne a la racine a chaque livraison sur main (workflow publish-image) et installerait React Native pour rien, plusieurs minutes a chaque deploiement du serveur ; et le Dockerfile ferait entrer les memes centaines de megaoctets dans l'image du serveur. React Native s'accommode par ailleurs mieux d'un node_modules a lui que d'un arbre hisse.",
   "workspaces": [
-    "apps/*",
+    "apps/server",
+    "apps/web",
     "packages/*"
   ],
   "scripts": {
