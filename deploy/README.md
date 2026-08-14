@@ -126,10 +126,28 @@ ligne de code côté Oby.
 
 ## Mettre à jour
 
-La CI publie l'image à chaque fusion sur `main`
-(`.github/workflows/publish-image.yml` : build du frontend, image amd64 + arm64,
-tags `:<version>` et `:latest`, puis incrément de la version recommité avec
-`[skip ci]`). Côté serveur :
+**Une fusion sur `main` déploie, sans rien taper.**
+`.github/workflows/publish-image.yml` fait les deux moitiés :
+
+1. `publish` — build du frontend, image amd64 + arm64, tags `:<version>` et
+   `:latest` sur GHCR, puis incrément de la version recommité avec `[skip ci]`.
+2. `deploy` — rejoint le tailnet, se connecte en SSH au serveur et lance
+   `docker compose pull && docker compose up -d`, puis **vérifie** que
+   `/api/health` répond avant de se déclarer vert.
+
+> Le second job existe parce que **rien ne tire l'image tout seul** sur le
+> serveur : ni watchtower, ni timer, ni cron (vérifié le 2026-08-08). Sans lui,
+> une livraison publie une image que personne n'installe — et on croit avoir
+> déployé.
+
+⚠️ **Seule `main` déclenche la CI.** Une livraison sur `dev` ne publie rien et
+ne déploie rien ; c'est voulu, mais ça se confond facilement avec « poussé donc
+en ligne ».
+
+Si les secrets de déploiement manquent (`TS_OAUTH_CLIENT_ID`, `TS_OAUTH_SECRET`,
+`TRANO_DEPLOY_SSH_KEY`), le job `deploy` **se saute proprement** en écrivant un
+avertissement : l'image est publiée, le serveur n'est pas à jour. Le rattrapage
+manuel — c'est aussi la manœuvre à connaître quand le tailnet est en panne :
 
 ```bash
 cd ~/trano && docker compose pull && docker compose up -d
