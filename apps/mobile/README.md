@@ -60,12 +60,26 @@ npm start
 ```
 
 Expo Go suffit pour l'interface. **Il ne suffira pas** pour le géofence, les
-notifications ni les mises à jour par les airs : il faut une construction de
-développement.
+notifications, les widgets ni les mises à jour par les airs : il faut une
+construction de développement.
 
 ```bash
-eas build --profile development --platform ios
+eas build --profile development --platform android
 ```
+
+⚠️ **La toute première construction doit être lancée depuis un vrai terminal**,
+pas par un agent : EAS pose une question à laquelle on ne peut répondre que de
+façon interactive.
+
+- **Android** — « Generate a new Android Keystore? » → oui. Une seule fois :
+  la clé est ensuite gardée par EAS et réutilisée.
+- **iOS** — connexion à l'Apple ID, puis création du certificat et du profil de
+  provisionnement. Demande une adhésion à l'Apple Developer Program, et
+  l'UDID de chaque iPhone qui installera la construction (profil `development`
+  et `preview` = distribution interne, donc appareils déclarés un par un).
+
+Une fois ces réponses données, les constructions suivantes passent en
+`--non-interactive`.
 
 ## Mises à jour par les airs (OTA)
 
