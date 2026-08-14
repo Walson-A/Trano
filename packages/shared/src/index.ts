@@ -192,7 +192,7 @@ export type DeviceOverrideUpdate = Partial<DeviceOverride>;
 
 // ─── Messages WebSocket ─────────────────────────────────────
 
-export type WsTopic = 'profiles' | 'shopping' | 'rooms' | 'device-overrides' | 'user-devices';
+export type WsTopic = 'profiles' | 'shopping' | 'rooms' | 'device-overrides' | 'user-devices' | 'presence';
 
 /** Invalidation : les clients refetchent le topic */
 export interface WsChangedMessage {

@@ -63,6 +63,11 @@ export default function App() {
         if (topic === 'shopping') useShoppingStore.getState().fetchItems();
         if (topic === 'rooms') useRoomsStore.getState().fetchRooms();
         if (topic === 'device-overrides') useConfigStore.getState().fetchOverrides();
+        // Arrivée ou départ : diffusé par le serveur au moment exact du
+        // franchissement. La relecture périodique de PresenceRow reste, mais
+        // comme filet pour le cas silencieux — un téléphone qui s'éteint
+        // n'émet rien.
+        if (topic === 'presence') window.dispatchEvent(new CustomEvent('trano:presence'));
       },
       onIntercom: (msg) => {
         const activeId = useProfileStore.getState().activeProfileId;

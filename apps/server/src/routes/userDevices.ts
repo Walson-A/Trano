@@ -155,10 +155,12 @@ export function userDeviceRoutes(app: FastifyInstance): void {
   app.post<{ Params: { id: string }; Body: UserDeviceHeartbeat }>(
     '/api/user-devices/:id/heartbeat',
     (req, reply) => {
-      const exists = db.prepare('SELECT 1 FROM user_devices WHERE id = ?').get(req.params.id);
+      const avant = db
+        .prepare('SELECT is_home, type FROM user_devices WHERE id = ?')
+        .get(req.params.id) as { is_home: number | null; type: string } | undefined;
       // 404 plutôt qu'une création implicite : au client de s'enregistrer
       // d'abord, sinon on fabriquerait des appareils anonymes sans propriétaire.
-      if (!exists) return reply.code(404).send({ error: 'Appareil inconnu — enregistrez-le' });
+      if (!avant) return reply.code(404).send({ error: 'Appareil inconnu — enregistrez-le' });
 
       const b = req.body ?? {};
       const sets = ['last_seen_at = ?'];
@@ -178,9 +180,23 @@ export function userDeviceRoutes(app: FastifyInstance): void {
       values.push(req.params.id);
       db.prepare(`UPDATE user_devices SET ${sets.join(', ')} WHERE id = ?`).run(...values);
 
-      // Pas de broadcast ici : un heartbeat par appareil et par minute
-      // réveillerait tous les écrans en permanence pour un pourcentage de
-      // batterie. Les clients relisent quand ils affichent.
+      // Un battement ordinaire ne diffuse rien : un par appareil et par minute
+      // réveillerait tous les écrans pour un pourcentage de batterie.
+      //
+      // **Mais un franchissement, si.** Quand un téléphone dit « je pars » ou
+      // « j'arrive », c'est un événement daté, pas une extinction silencieuse :
+      // le serveur le sait à la seconde et peut le diffuser tout de suite. Sans
+      // ça, un départ mettrait jusqu'à 30 s à s'afficher, et surtout rien ne
+      // pourrait s'y accrocher.
+      //
+      // C'est ici que se branchera l'envoi d'une notification (« Papa vient de
+      // partir ») : c'est le seul endroit du code qui connaît l'instant exact
+      // de la transition.
+      const apres = b.isHome === undefined ? avant.is_home : b.isHome === null ? null : b.isHome ? 1 : 0;
+      // Seuls les téléphones portent la présence — un kiosque qui bascule ne
+      // dit rien de personne.
+      if (avant.type === 'phone' && apres !== avant.is_home) broadcast('presence');
+
       return readDevice(req.params.id);
     },
   );

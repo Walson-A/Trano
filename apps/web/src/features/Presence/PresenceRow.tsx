@@ -38,8 +38,17 @@ export function PresenceRow() {
 
   useEffect(() => {
     void refresh();
+    // Deux déclencheurs, pour deux causes différentes :
+    // - l'événement, pour les franchissements (départ, arrivée) — immédiat ;
+    // - le minuteur, pour l'extinction silencieuse d'un téléphone, que rien
+    //   n'annonce.
+    const onPresence = () => void refresh();
+    window.addEventListener('trano:presence', onPresence);
     const timer = setInterval(() => void refresh(), PERIOD_MS);
-    return () => clearInterval(timer);
+    return () => {
+      window.removeEventListener('trano:presence', onPresence);
+      clearInterval(timer);
+    };
   }, [refresh]);
 
   if (!people || people.length === 0) return null;

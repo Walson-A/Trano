@@ -8,7 +8,11 @@ import { useRoomsStore } from '../../core/store/useRoomsStore';
 import { cn } from '../../utils';
 
 /**
- * Les appareils de la maison : qui est connecté, depuis quoi, d'où, vu quand.
+ * Les appareils connectés à Trano : qui, depuis quoi, d'où, vu quand.
+ *
+ * Le titre évite « appareils de la maison » : dans le vocabulaire de la
+ * famille, ce sont les lampes et les prises — les entités Home Assistant, qui
+ * n'ont rien à voir avec ceci.
  *
  * C'est volontairement ça, et pas un explorateur de base de données : ce qu'on
  * veut savoir, ce n'est pas le contenu d'une table, c'est si le téléphone de
@@ -90,7 +94,7 @@ export function HouseDevices() {
   return (
     <section className="mb-8">
       <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-1">
-        Appareils de la maison
+        Appareils connectés à Trano
       </h2>
       <p className="text-sm text-zinc-500 mb-3">
         Les téléphones et écrans qui utilisent Trano. Un appareil oublié réapparaîtra tout seul
