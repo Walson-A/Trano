@@ -26,9 +26,17 @@
           "color": "#0ea5e9"
         }
       ],
-      "expo-status-bar"
+      "expo-status-bar",
+      [
+        "expo-widgets",
+        {
+          "bundleIdentifier": "com.walson.trano.widgets",
+          "groupIdentifier": "group.com.walson.trano",
+          "enablePushNotifications": true
+        }
+      ]
     ],
-    "//expo-widgets": "Greffon RETIRÉ des plugins le 2026-08-14, paquet gardé. Il ajoutait une seconde cible iOS (ExpoWidgetsTarget) réclamant le groupe d'app group.com.walson.trano — mais EAS n'assigne le groupe qu'à la cible principale, pas aux extensions, et la construction échouait sur « Provisioning profile doesn't support the group.com.walson.trano App Group ». Le rétablir demande d'abord de créer le groupe dans le portail Apple ET de l'activer sur les DEUX identifiants (com.walson.trano et .widgets), puis de faire regénérer les profils. Bloc à recoller tel quel dans `plugins` ce jour-là : [\"expo-widgets\", { \"bundleIdentifier\": \"com.walson.trano.widgets\", \"groupIdentifier\": \"group.com.walson.trano\", \"enablePushNotifications\": true }]. Voir README, section « Widgets ».",
+    "//expo-widgets": "Rétabli le 2026-08-14 après activation du groupe d'app côté Apple. Ce greffon ajoute une SECONDE cible iOS (ExpoWidgetsTarget, com.walson.trano.widgets). Elle exige que `group.com.walson.trano` soit activé sur les DEUX identifiants — EAS ne synchronise les capacités que sur la cible principale, jamais sur les extensions. Si la construction rejoue « Provisioning profile doesn't support the App Group », c'est que le profil de l'extension est encore l'ancien : le supprimer via `eas credentials` pour qu'il soit regénéré. Voir README, section « Widgets ».",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.walson.trano",
