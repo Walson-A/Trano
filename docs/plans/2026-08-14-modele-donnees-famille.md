@@ -315,15 +315,65 @@ les 5 profils et les 11 pièces de la famille. Or, relevé le 2026-08-14 :
       à chaque ouverture de l'app.
 - [ ] Présence de la personne **calculée**, jamais stockée
 
-### 3. App native (`apps/mobile`, Expo)
+### 3. App native (`apps/mobile`, Expo) — **le prochain gros morceau**
+
+> **Elle est devenue le seul chemin vers la présence** (la piste routeur est
+> écartée, voir plus haut). Elle porte donc trois choses qu'aucune autre surface
+> ne peut faire : le géofence, le son sur notification, et les alertes critiques.
+
+**Le socle serveur est déjà là et vérifié en production** — inutile d'y toucher :
+
+| Route | Rôle |
+|---|---|
+| `POST /api/user-devices/register` | upsert par identifiant stable généré par le client |
+| `POST /api/user-devices/:id/heartbeat` | `{ isHome?, batteryPct?, batteryCharging?, pushToken? }` |
+| `GET /api/presence` | dérivée, trois états (`true` / `false` / `null` = on ne sait pas) |
+| `GET /api/user-devices` | liste, `online` calculé (90 s) |
+
+Un changement de `isHome` **sur un `type='phone'`** diffuse déjà sur le topic WS
+`presence`, et c'est là que se branchera la notification « Papa vient de
+partir » — le seul endroit qui connaisse l'instant exact de la transition.
+
+#### Le géofence
+
+- [ ] **Une seule région** : l'adresse de la maison. Pas de lieux multiples.
+- [ ] **Évalué sur le téléphone, seul le franchissement est envoyé.** Aucune
+      coordonnée ne quitte l'appareil — c'est une garantie, pas une politique.
+- [ ] Reprendre `expo-location` + `expo-task-manager` d'AtlasMobile
+      (`AtlasMobile/docs/location-tracking.md`), **mais pas son suivi permanent** :
+      ici on surveille une région, ce que l'OS prend en charge sans réveiller
+      l'app — coût batterie quasi nul.
+- [ ] ⚠️ **Le piège déjà documenté** : iOS refire un « Enter » à chaque
+      ré-enregistrement du géofence quand on est déjà dedans. Sans la signature
+      du jeu de régions et la déduplication par lieu courant, la famille reçoit
+      « Papa est arrivé » à chaque ouverture de l'app.
+- [ ] Le géofence exige un **build standalone** — indisponible en Expo Go.
+- [ ] iOS demandera la permission **« Toujours »**, avec ses rappels
+      périodiques. Qui refuse n'a pas de présence : il n'y a plus de repli.
+
+#### Le reste
 
 - [ ] Squelette Expo dans le monorepo, types partagés via `@trano/shared`
-- [ ] Écran de première connexion (préremplir → ajuster → valider)
-- [ ] Push : jeton Expo → `user_devices.push_token`
-- [ ] Sons personnalisés + **Time Sensitive** (aucune approbation nécessaire)
-- [ ] **Demander l'entitlement Critical Alerts** — à lancer tôt, la revue Apple
-      prend des semaines et un refus au premier essai est courant
-- [ ] EAS : TestFlight testeurs internes (iOS), profil `preview` (Android)
+- [ ] Écran de première connexion : **mêmes trois questions que le web**
+      (nom, type, propriétaire — et la pièce sauf pour un téléphone), en
+      préremplissant ce que la plateforme donne. Voir
+      `apps/web/src/features/Devices/DeviceSetup.tsx`, la logique est la même
+      et la récolte y est bien plus riche qu'en navigateur.
+- [ ] Push : jeton Expo → `user_devices.push_token` (déjà en base, jamais
+      renvoyé par l'API — seul `hasPushToken` sort)
+- [ ] Sons personnalisés + **Time Sensitive** : aucune approbation Apple
+- [ ] **Demander l'entitlement Critical Alerts en parallèle**, tôt — la revue
+      prend des semaines et un refus au premier essai est courant. Il n'est
+      **pas** sur le chemin critique : sans lui tout marche sauf « sonner malgré
+      le silencieux ».
+- [ ] EAS : TestFlight **testeurs internes** (aucune Beta App Review), profil
+      `preview` pour Android. Pas de publication App Store.
+
+#### Ce que l'app débloque et que le web ne pourra jamais
+
+Le web de Trano est servi en **HTTP clair**, donc hors contexte sécurisé :
+Service Worker, Web Push et géolocalisation y sont **absents**, pas dégradés.
+L'app native contourne tout ça sans dépendre d'un certificat.
 
 ### 3bis. Canaux d'alerte (voir `notifications_and_mobile.md`)
 
