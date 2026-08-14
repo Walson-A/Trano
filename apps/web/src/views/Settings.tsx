@@ -10,6 +10,7 @@ import type { Room } from '@trano/shared';
 import { getRoomIcon, ROOM_ICON_NAMES } from '../config/rooms';
 import { FREEBOX, PHONES } from '../config/network';
 import { api, type BackupStatus } from '../lib/api';
+import { HouseDevices } from '../features/Devices/HouseDevices';
 import { useConfigStore } from '../core/store/useConfigStore';
 import { useRoomsStore } from '../core/store/useRoomsStore';
 import { useHA } from '../context/HAContext';
@@ -697,6 +698,8 @@ export function Settings({ devices }: SettingsProps) {
       </div>
 
       <FreeboxSection />
+
+      <HouseDevices />
 
       <BackupSection />
 
