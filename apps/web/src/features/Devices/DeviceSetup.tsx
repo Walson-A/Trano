@@ -63,10 +63,11 @@ export function DeviceSetup({ onDone }: { onDone: () => void }) {
   const fetchRooms = useRoomsStore((r) => r.fetchRooms);
   useEffect(() => { void fetchRooms(); }, [fetchRooms]);
 
-  // La pièce n'est demandée qu'aux écrans qui ne bougent pas. Un téléphone
-  // change de pièce dix fois par jour : lui poser la question serait au mieux
-  // inutile, au pire une donnée fausse affichée ailleurs.
-  const isFixed = type === 'tv' || type === 'kiosk';
+  // La pièce est demandée à tout sauf aux téléphones. Un PC de bureau, une
+  // télé, une tablette murale sont quelque part et y restent ; le téléphone est
+  // le seul à changer de pièce dix fois par jour — lui poser la question
+  // donnerait au mieux rien, au pire une donnée fausse affichée ailleurs.
+  const isFixed = type !== 'phone';
 
   const people = profiles.filter((p) => p.kind !== 'house');
 
@@ -115,11 +116,12 @@ export function DeviceSetup({ onDone }: { onDone: () => void }) {
         className="w-full max-w-lg"
       >
         <h1 className="text-2xl sm:text-3xl font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">
-          Bienvenue
+          Un nouvel appareil
         </h1>
         <p className="mt-2 text-zinc-500">
-          Juste de quoi savoir à qui parler quand la maison a quelque chose à dire.
-          On ne vous le redemandera plus.
+          Trano ne connaît pas encore celui-ci. Dites-lui ce que c'est et à qui il est :
+          la maison saura ensuite à qui s'adresser, et depuis quel écran. On ne vous le
+          redemandera plus.
         </p>
 
         <label className="block mt-8">
@@ -166,7 +168,7 @@ export function DeviceSetup({ onDone }: { onDone: () => void }) {
               Dans quelle pièce est-il ?
             </span>
             <p className="text-xs text-zinc-500 mt-0.5">
-              Facultatif — un écran qui sait où il est peut ouvrir sur ce qui l'entoure.
+              Facultatif — un appareil qui sait où il est peut ouvrir sur ce qui l'entoure.
             </p>
             <div className="mt-2 flex flex-wrap gap-2">
               {rooms.map((r) => (
