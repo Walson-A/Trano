@@ -25,10 +25,7 @@ db.exec(`
     name           TEXT NOT NULL,
     avatar         TEXT NOT NULL DEFAULT '😀',
     color          TEXT NOT NULL DEFAULT '#f59e0b',
-    room_ids       TEXT NOT NULL DEFAULT '[]',
-    is_kid         INTEGER NOT NULL DEFAULT 0,
     favorites      TEXT NOT NULL DEFAULT '[]',
-    favorite_rooms TEXT NOT NULL DEFAULT '[]',
     created_at     TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
@@ -58,7 +55,6 @@ function ensureColumn(table: string, column: string, definition: string): void {
   }
 }
 
-ensureColumn('profiles', 'favorite_rooms', "TEXT NOT NULL DEFAULT '[]'");
 ensureColumn('profiles', 'dashboard_layout', "TEXT NOT NULL DEFAULT '[]'");
 
 // ─── Pièces (personnalisables depuis l'app) ─────────────────
@@ -191,18 +187,30 @@ export const HOUSE_PROFILE_ID = 'maison';
 {
   const exists = db.prepare('SELECT 1 FROM profiles WHERE id = ?').get(HOUSE_PROFILE_ID);
   if (!exists) {
+    // Uniquement les colonnes qui survivent à l'étape C : `favorites` et
+    // `dashboard_layout` ont leur propre valeur par défaut. Lister ici une
+    // colonne supprimée casserait la création d'une base neuve — sans que ça
+    // se voie jamais sur une base existante, où elle existe encore à ce
+    // moment-là (la suppression n'intervient qu'ensuite).
     db.prepare(
-      `INSERT INTO profiles (id, name, avatar, color, kind, room_ids, favorites, favorite_rooms, dashboard_layout)
-       VALUES (?, 'Maison', '🏠', '#64748b', 'house', '[]', '[]', '[]', '[]')`,
+      `INSERT INTO profiles (id, name, avatar, color, kind)
+       VALUES (?, 'Maison', '🏠', '#64748b', 'house')`,
     ).run(HOUSE_PROFILE_ID);
   }
 }
 
 // Reprise unique de `room_ids` vers la table de liaison. Ne s'exécute que si
 // celle-ci est vide : une reprise rejouée écraserait des choix faits depuis.
+function hasColumn(table: string, column: string): boolean {
+  const cols = db.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>;
+  return cols.some((c) => c.name === column);
+}
+
 {
   const already = (db.prepare('SELECT COUNT(*) AS n FROM profile_rooms').get() as { n: number }).n;
-  if (already === 0) {
+  // Sur une base neuve, `room_ids` n'existe plus du tout : il n'y a rien à
+  // reprendre, et la lire ferait échouer le démarrage.
+  if (already === 0 && hasColumn('profiles', 'room_ids')) {
     const rows = db.prepare('SELECT id, room_ids FROM profiles').all() as Array<{
       id: string;
       room_ids: string;
@@ -226,6 +234,22 @@ export const HOUSE_PROFILE_ID = 'maison';
         if (typeof roomId === 'string' && known.has(roomId)) link.run(row.id, roomId);
       }
     }
+  }
+}
+
+// ─── Étape C du socle « famille » (2026-08-14) ────────────────
+//
+// Les trois colonnes de l'ancien modèle partent. Plus rien ne les lit depuis
+// l'étape B, et **elles ne sont plus alimentées** : les garder « au cas où »
+// aurait offert un retour en arrière vers un état figé au jour de la migration,
+// qui aurait silencieusement perdu tout changement survenu depuis. Un filet qui
+// pourrit sans le dire est pire qu'aucun filet.
+//
+// Le vrai retour en arrière, c'est la sauvegarde (`lib/backup.ts`) : quotidienne,
+// vérifiée, hors site, et cohérente.
+for (const column of ['room_ids', 'is_kid', 'favorite_rooms']) {
+  if (hasColumn('profiles', column)) {
+    db.exec(`ALTER TABLE profiles DROP COLUMN ${column}`);
   }
 }
 
