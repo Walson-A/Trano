@@ -47,6 +47,36 @@ export interface ApiOptions {
   timeoutMs?: number;
 }
 
+/**
+ * Un appareil pilotable, tel que le serveur le voit (`lib/ha.ts`).
+ * Les noms de champs sont en français : ils viennent de la couche métier, qui
+ * sert aussi les outils MCP lus par un LLM.
+ */
+export interface HouseDevice {
+  entity_id: string;
+  nom: string;
+  etat: string;
+  piece: string | null;
+}
+
+/** Réponse de `GET /api/house`. */
+export interface HouseState {
+  energie: {
+    /** Négatif = on exporte vers EDF (bien), positif = on importe (à éviter). */
+    reseau_W: number | null;
+    commentaire_reseau: string | null;
+    solaire_W: number | null;
+    batterie_pct: number | null;
+    production_du_jour_kWh: number | null;
+  } | null;
+  meteo: unknown;
+  favoris: HouseDevice[];
+  /** Ce qui est allumé maintenant — pas l'inventaire complet. */
+  allumes: HouseDevice[];
+  total_appareils: number;
+  profil_connu: boolean;
+}
+
 /** Rapport de la dernière sauvegarde (voir apps/server/src/lib/backup.ts). */
 export interface BackupStatus {
   neverRun: boolean;
@@ -157,6 +187,26 @@ export function createApi(options: ApiOptions = {}) {
         }),
       remove: (id: string) =>
         request<void>(`/api/user-devices/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    },
+    /**
+     * L'état de la maison, **par le serveur**.
+     *
+     * Le web ouvre une WebSocket vers Home Assistant avec le jeton ; l'app
+     * native, elle, ne parlera jamais à HA directement — ce serait mettre un
+     * jeton d'administrateur dans cinq poches. Elle passe donc par ici, où le
+     * serveur a déjà fait le travail et posé ses garde-fous (`controlDevice`
+     * refuse les serrures et l'alarme).
+     */
+    house: {
+      state: (profileId?: string | null) =>
+        request<HouseState>(
+          profileId ? `/api/house?profile=${encodeURIComponent(profileId)}` : '/api/house',
+        ),
+      control: (entityId: string, action: 'toggle' | 'turn_on' | 'turn_off' = 'toggle') =>
+        request<{ ok: boolean; message: string }>('/api/house/device', {
+          method: 'POST',
+          body: JSON.stringify({ entity_id: entityId, action }),
+        }),
     },
     backup: {
       status: () => request<BackupStatus>('/api/backup/status'),

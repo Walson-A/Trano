@@ -10,6 +10,7 @@ import { useAutoUpdates } from '@/lib/updates';
 import { useTranoWs } from '@/lib/ws';
 import { getDeviceId } from '@/lib/deviceId';
 import { useDeviceHeartbeat } from '@/hooks/useDeviceHeartbeat';
+import { usePushRegistration } from '@/lib/notifications';
 import { useProfiles } from '@/features/profiles/store';
 import { DeviceSetup } from '@/features/devices/DeviceSetup';
 
@@ -34,6 +35,9 @@ export default function RootLayout() {
   useAutoUpdates();
   useTranoWs();
   useDeviceHeartbeat(deviceKnown === true);
+  // Après l'enregistrement, jamais avant : une demande de notifications sortie
+  // de nulle part se fait refuser, et iOS ne repose pas la question.
+  usePushRegistration(deviceKnown === true);
 
   useEffect(() => {
     void load();
