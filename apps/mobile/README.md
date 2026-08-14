@@ -122,9 +122,20 @@ Pour le rétablir, dans cet ordre :
    pas : `eas credentials` → iOS → `development` → supprimer les profils.
 4. Recoller le bloc `//expo-widgets` dans `plugins`, reconstruire.
 
-⚠️ Un défaut connu d'EAS peut faire réutiliser un profil en cache malgré tout
-([expo/expo#40851](https://github.com/expo/expo/issues/40851)) — si l'erreur
-revient à l'identique après les quatre étapes, c'est ça, pas nous.
+⚠️ **L'étape 3 n'est pas facultative, c'est constaté ici.** Trois constructions
+ont échoué en nommant **exactement le même profil**,
+`[expo] com.walson.trano.widgets AdHoc 1786732185956` — y compris après
+activation du groupe côté Apple, et y compris avec eas-cli 22. EAS ne
+regénère pas le profil d'une cible d'extension tout seul
+([expo/expo#40851](https://github.com/expo/expo/issues/40851)) ; il faut le
+supprimer pour le forcer.
+
+Le nom du profil dans l'erreur est le bon diagnostic :
+
+| Ce que dit l'erreur | Ce que ça veut dire |
+|---|---|
+| **même** numéro de profil | le cache n'est pas vidé — étape 3 |
+| **nouveau** numéro de profil | le cache est vidé, mais le groupe manque sur `com.walson.trano.widgets` — étape 2 |
 
 Rien n'est perdu à attendre : aucun widget n'est encore dessiné, et la
 construction de développement n'est installée par personne d'autre. Le moment
