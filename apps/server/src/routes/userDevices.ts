@@ -264,10 +264,13 @@ export function userDeviceRoutes(app: FastifyInstance): void {
         name: r.name,
         avatar: r.avatar,
         color: r.color,
-        isHome: false,
+        // `null` = on ne sait pas, et c'est très différent de « sorti ».
+        // Quelqu'un sans téléphone enregistré ne doit pas être affiché absent :
+        // ce serait une affirmation fausse, et la famille la croirait.
+        isHome: null,
         lastSeenAt: null,
       };
-      if (r.is_home === 1) entry.isHome = true;
+      if (r.is_home !== null) entry.isHome = entry.isHome === true || r.is_home === 1;
       // On garde le passage le plus récent, tous téléphones confondus.
       if (r.last_seen_at && (!entry.lastSeenAt || r.last_seen_at > entry.lastSeenAt)) {
         entry.lastSeenAt = r.last_seen_at;

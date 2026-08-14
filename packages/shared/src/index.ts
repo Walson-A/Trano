@@ -56,8 +56,12 @@ export interface PresenceEntry {
   name: string;
   avatar: string;
   color: string;
-  /** Vrai si **au moins un** téléphone de la personne est à la maison. */
-  isHome: boolean;
+  /**
+   * Vrai si **au moins un** téléphone de la personne est à la maison.
+   * **`null` = on ne sait pas** — aucun téléphone enregistré, ou aucun n'a
+   * encore rapporté. À ne surtout pas confondre avec « sorti ».
+   */
+  isHome: boolean | null;
   lastSeenAt: string | null;
 }
 

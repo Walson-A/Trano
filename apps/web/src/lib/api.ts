@@ -1,5 +1,6 @@
 import type {
   DeviceOverride,
+  PresenceEntry,
   UserDevice,
   UserDeviceHeartbeat,
   UserDeviceRegister,
@@ -82,6 +83,9 @@ export const api = {
     update: (id: string, data: ShoppingItemUpdate) =>
       request<ShoppingItem>(`/api/shopping/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
     remove: (id: string) => request<void>(`/api/shopping/${id}`, { method: 'DELETE' }),
+  },
+  presence: {
+    list: () => request<PresenceEntry[]>('/api/presence'),
   },
   userDevices: {
     list: () => request<UserDevice[]>('/api/user-devices'),

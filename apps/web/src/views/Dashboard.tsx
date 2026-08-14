@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { PresenceRow } from '../features/Presence/PresenceRow';
 import { Device } from '../types';
 import type { Profile } from '@trano/shared';
 import { DeviceCard } from '../components/DeviceCard';
@@ -33,6 +34,7 @@ interface DashboardProps {
 /** Blocs disponibles sur le dashboard — chaque profil choisit et ordonne */
 const WIDGETS: Array<{ id: string; label: string }> = [
   { id: 'status', label: 'Aperçu (météo, conso…)' },
+  { id: 'presence', label: 'Qui est là' },
   { id: 'favorite-rooms', label: 'Mes pièces' },
   { id: 'favorite-devices', label: 'Appareils favoris' },
   { id: 'energy', label: 'Énergie' },
@@ -40,7 +42,9 @@ const WIDGETS: Array<{ id: string; label: string }> = [
   { id: 'intercom', label: 'Interphone' },
 ];
 
-const DEFAULT_LAYOUT = ['status', 'favorite-rooms', 'favorite-devices'];
+// « Qui est là » juste après l'aperçu : c'est ce qu'on regarde en passant
+// devant un écran, avant même la domotique.
+const DEFAULT_LAYOUT = ['status', 'presence', 'favorite-rooms', 'favorite-devices'];
 
 const StatusCard = ({ icon, label, value, color, onClick }: {
   icon: React.ReactNode,
@@ -164,6 +168,9 @@ export function Dashboard({ currentUser, devices, roomClimate, onToggleDevice, o
             />
           </div>
         );
+
+      case 'presence':
+        return <PresenceRow />;
 
       case 'favorite-rooms':
         if (myRooms.length === 0 && !editing) return null;
