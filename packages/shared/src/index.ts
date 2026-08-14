@@ -1,3 +1,62 @@
+// ─── Appareils des gens ─────────────────────────────────────
+//
+// ⚠️ À ne pas confondre avec les « appareils » de la maison, qui sont les
+// entités Home Assistant (lampes, prises, volets) et vivent dans `Device` côté
+// web. Ici ce sont les téléphones, tablettes et écrans qui portent l'app.
+
+/**
+ * Ce qui décide de tout : qui rapporte la présence (seuls les `phone`), par
+ * quel canal on alerte (push pour les téléphones, WebSocket pour les écrans
+ * toujours ouverts), et quelle icône s'affiche.
+ */
+export type UserDeviceType = 'phone' | 'tablet' | 'pc' | 'tv' | 'kiosk';
+
+export interface UserDevice {
+  /** Généré par le client et stable : c'est lui qui évite les doublons. */
+  id: string;
+  name: string;
+  /** Jamais vide : les écrans partagés portent le profil « Maison ». */
+  profileId: string;
+  type: UserDeviceType;
+  platform: string | null;
+  model: string | null;
+  osVersion: string | null;
+  /** Présence d'un jeton push, jamais sa valeur — un secret ne s'affiche pas. */
+  hasPushToken: boolean;
+  batteryPct: number | null;
+  batteryCharging: boolean | null;
+  isHome: boolean | null;
+  lastSeenAt: string | null;
+  /** **Calculé**, jamais stocké : `now - lastSeenAt < 90 s`. */
+  online: boolean;
+  createdAt: string;
+}
+
+/** Première connexion d'un appareil : ce que l'écran d'accueil fait valider. */
+export type UserDeviceRegister = Pick<UserDevice, 'id' | 'name' | 'profileId'> &
+  Partial<Pick<UserDevice, 'type' | 'platform' | 'model' | 'osVersion'>> & { pushToken?: string };
+
+/** Battement de cœur : uniquement ce qui bouge. */
+export interface UserDeviceHeartbeat {
+  batteryPct?: number | null;
+  batteryCharging?: boolean | null;
+  isHome?: boolean | null;
+  pushToken?: string;
+}
+
+export type UserDeviceUpdate = Partial<Pick<UserDevice, 'name' | 'profileId' | 'type'>>;
+
+/** Qui est là — dérivé des appareils, jamais stocké sur la personne. */
+export interface PresenceEntry {
+  profileId: string;
+  name: string;
+  avatar: string;
+  color: string;
+  /** Vrai si **au moins un** téléphone de la personne est à la maison. */
+  isHome: boolean;
+  lastSeenAt: string | null;
+}
+
 // ─── Profils (façon Netflix) ────────────────────────────────
 
 export interface Profile {
@@ -125,7 +184,7 @@ export type DeviceOverrideUpdate = Partial<DeviceOverride>;
 
 // ─── Messages WebSocket ─────────────────────────────────────
 
-export type WsTopic = 'profiles' | 'shopping' | 'rooms' | 'device-overrides';
+export type WsTopic = 'profiles' | 'shopping' | 'rooms' | 'device-overrides' | 'user-devices';
 
 /** Invalidation : les clients refetchent le topic */
 export interface WsChangedMessage {
