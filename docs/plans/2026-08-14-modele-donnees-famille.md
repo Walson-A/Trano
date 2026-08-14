@@ -243,8 +243,9 @@ les 5 profils et les 11 pièces de la famille. Or, relevé le 2026-08-14 :
 - [x] Commentaire mensonger de `db.ts` corrigé (« incluse dans les sauvegardes HA »)
 - [x] **État affiché dans l'écran Réglages** — sauvegarde locale, son âge, et le
       dépôt hors-site, parce que les trois tombent en panne séparément
-- [ ] **Poser les 3 secrets CI** (`TS_OAUTH_CLIENT_ID`, `TS_OAUTH_SECRET`,
-      `TRANO_DEPLOY_SSH_KEY`) — sans eux le déploiement reste manuel
+- [x] **Les 3 secrets CI posés** (`TS_OAUTH_CLIENT_ID`, `TS_OAUTH_SECRET`,
+      `TRANO_DEPLOY_SSH_KEY`) — le déploiement sur le serveur est automatique
+      depuis un merge sur `main`, plus besoin de tirer l'image à la main
 - [x] **Dépôt chez Oby** pour le hors-site chiffré — le conteneur tourne sous l'uid
       1000, donc aucun bricolage de permissions. Couplage documenté des deux côtés
 
