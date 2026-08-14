@@ -116,12 +116,10 @@ export function DeviceSetup({ onDone }: { onDone: () => void }) {
         className="w-full max-w-lg"
       >
         <h1 className="text-2xl sm:text-3xl font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">
-          Un nouvel appareil
+          Un nouvel appareil détecté
         </h1>
         <p className="mt-2 text-zinc-500">
-          Trano ne connaît pas encore celui-ci. Dites-lui ce que c'est et à qui il est :
-          la maison saura ensuite à qui s'adresser, et depuis quel écran. On ne vous le
-          redemandera plus.
+          Dites-nous ce que c'est et à qui il est — une seule fois.
         </p>
 
         <label className="block mt-8">
