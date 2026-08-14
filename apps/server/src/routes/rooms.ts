@@ -81,16 +81,10 @@ export function roomRoutes(app: FastifyInstance): void {
     const result = db.prepare('DELETE FROM rooms WHERE id = ?').run(req.params.id);
     if (result.changes === 0) return reply.code(404).send({ error: 'Pièce introuvable' });
 
-    // Nettoyage des références dans les profils (pièces attitrées/favorites)
-    const profiles = db.prepare('SELECT id, room_ids, favorite_rooms FROM profiles').all() as Array<{
-      id: string; room_ids: string; favorite_rooms: string;
-    }>;
-    const clean = db.prepare('UPDATE profiles SET room_ids = ?, favorite_rooms = ? WHERE id = ?');
-    for (const p of profiles) {
-      const roomIds = (JSON.parse(p.room_ids) as string[]).filter((r) => r !== req.params.id);
-      const favRooms = (JSON.parse(p.favorite_rooms ?? '[]') as string[]).filter((r) => r !== req.params.id);
-      clean.run(JSON.stringify(roomIds), JSON.stringify(favRooms), p.id);
-    }
+    // Les liens profil↔pièce partent tout seuls : `profile_rooms` déclare
+    // `ON DELETE CASCADE` sur `rooms(id)`. Ce nettoyage était auparavant écrit
+    // à la main ici — il marchait, mais il fallait penser à le réécrire dans
+    // chaque futur endroit qui supprimerait une pièce.
 
     broadcast('rooms');
     broadcast('profiles');

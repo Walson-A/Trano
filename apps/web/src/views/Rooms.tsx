@@ -31,12 +31,12 @@ const RoomAccordion: React.FC<{
   climate?: { temperature?: number; humidity?: number };
   isSelected: boolean;
   favorites: string[];
-  isFavoriteRoom: boolean;
+  isMyRoom: boolean;
   onToggle: () => void;
   onToggleDevice: (id: string) => void;
   onToggleFavorite: (id: string) => void;
-  onToggleFavoriteRoom: () => void;
-}> = ({ room, devices, climate, isSelected, favorites, isFavoriteRoom, onToggle, onToggleDevice, onToggleFavorite, onToggleFavoriteRoom }) => {
+  onToggleMyRoom: () => void;
+}> = ({ room, devices, climate, isSelected, favorites, isMyRoom, onToggle, onToggleDevice, onToggleFavorite, onToggleMyRoom }) => {
   const Icon = getRoomIcon(room.icon);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -113,17 +113,17 @@ const RoomAccordion: React.FC<{
           <span
             role="button"
             tabIndex={0}
-            aria-label={isFavoriteRoom ? 'Retirer la pièce des favoris' : 'Ajouter la pièce aux favoris'}
-            onClick={(e) => { e.stopPropagation(); onToggleFavoriteRoom(); }}
-            onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); onToggleFavoriteRoom(); } }}
+            aria-label={isMyRoom ? 'Retirer la pièce des favoris' : 'Ajouter la pièce aux favoris'}
+            onClick={(e) => { e.stopPropagation(); onToggleMyRoom(); }}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); onToggleMyRoom(); } }}
             className={cn(
               "p-1.5 rounded-full transition-all",
-              isFavoriteRoom
+              isMyRoom
                 ? "text-amber-500"
                 : "text-zinc-300 dark:text-zinc-600 hover:text-amber-400 dark:hover:text-amber-400"
             )}
           >
-            <Star className={cn("w-5 h-5", isFavoriteRoom && "fill-current")} />
+            <Star className={cn("w-5 h-5", isMyRoom && "fill-current")} />
           </span>
           <ChevronRight className={cn(
             "w-5 h-5 transition-transform duration-500",
@@ -192,11 +192,11 @@ export function Rooms({ devices, roomClimate, initialRoom, onInitialRoomConsumed
     }
   }, [initialRoom, onInitialRoomConsumed]);
   const toggleFavorite = useProfileStore((s) => s.toggleFavorite);
-  const toggleFavoriteRoom = useProfileStore((s) => s.toggleFavoriteRoom);
+  const toggleMyRoom = useProfileStore((s) => s.toggleMyRoom);
   const activeProfile = useActiveProfile();
   const rooms = useRoomsStore((s) => s.rooms);
   const favorites = activeProfile?.favorites ?? [];
-  const favoriteRooms = activeProfile?.favoriteRooms ?? [];
+  const myRooms = activeProfile?.roomIds ?? [];
 
   const filteredRooms = floorFilter === 'all'
     ? rooms
@@ -245,11 +245,11 @@ export function Rooms({ devices, roomClimate, initialRoom, onInitialRoomConsumed
               climate={roomClimate[room.id]}
               isSelected={selectedRoom === room.id}
               favorites={favorites}
-              isFavoriteRoom={favoriteRooms.includes(room.id)}
+              isMyRoom={myRooms.includes(room.id)}
               onToggle={() => setSelectedRoom(selectedRoom === room.id ? null : room.id)}
               onToggleDevice={onToggleDevice}
               onToggleFavorite={toggleFavorite}
-              onToggleFavoriteRoom={() => toggleFavoriteRoom(room.id)}
+              onToggleMyRoom={() => toggleMyRoom(room.id)}
             />
           ))}
         </AnimatePresence>

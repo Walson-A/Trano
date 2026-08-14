@@ -32,7 +32,6 @@ export function ProfileEditor({ isOpen, onClose, profile }: ProfileEditorProps) 
   const [avatar, setAvatar] = useState(profile?.avatar ?? AVATARS[0]);
   const [color, setColor] = useState(profile?.color ?? COLORS[0]);
   const [roomIds, setRoomIds] = useState<string[]>(profile?.roomIds ?? []);
-  const [isKid, setIsKid] = useState(profile?.isKid ?? false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,9 +51,9 @@ export function ProfileEditor({ isOpen, onClose, profile }: ProfileEditorProps) 
     setError(null);
     try {
       if (profile) {
-        await updateProfile(profile.id, { name, avatar, color, roomIds, isKid });
+        await updateProfile(profile.id, { name, avatar, color, roomIds });
       } else {
-        await createProfile({ name, avatar, color, roomIds, isKid });
+        await createProfile({ name, avatar, color, roomIds });
       }
       onClose();
     } catch (err) {
@@ -166,30 +165,6 @@ export function ProfileEditor({ isOpen, onClose, profile }: ProfileEditorProps) 
             </div>
           ))}
         </div>
-
-        {/* Profil enfant */}
-        <button
-          onClick={() => setIsKid(!isKid)}
-          className="flex items-center justify-between bg-white/5 rounded-2xl px-5 py-4 hover:bg-white/10 transition-colors"
-        >
-          <div className="text-left">
-            <p className="font-semibold text-white">Profil enfant</p>
-            <p className="text-xs text-zinc-500">Interface simplifiée, sans gestion des profils</p>
-          </div>
-          <div
-            className={cn(
-              'w-12 h-7 rounded-full transition-colors relative shrink-0',
-              isKid ? 'bg-emerald-500' : 'bg-zinc-700'
-            )}
-          >
-            <div
-              className={cn(
-                'absolute top-1 w-5 h-5 rounded-full bg-white transition-all',
-                isKid ? 'left-6' : 'left-1'
-              )}
-            />
-          </div>
-        </button>
 
         {error && <p className="text-sm text-red-400 text-center">{error}</p>}
 

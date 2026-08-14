@@ -110,10 +110,17 @@ notification. Sa suppression doit être **interdite côté API**.
 Une personne a plusieurs pièces **et** une pièce a plusieurs personnes : c'est du
 plusieurs-à-plusieurs, donc une table de liaison, pas une colonne.
 
-**Corrige un bug réel** : aujourd'hui `room_ids` est un tableau JSON dans une
-colonne texte ; supprimer une pièce laisse un id mort que rien ne nettoie.
-`PRAGMA foreign_keys = ON` est **déjà posé** (`db.ts:21`) — les contraintes
-seront réellement appliquées.
+**Correction du 2026-08-14** : j'avais écrit ici que supprimer une pièce laissait
+un identifiant mort « que rien ne nettoie ». **C'était faux** — `routes/rooms.ts`
+nettoie bien les références au moment de la suppression. L'argument réel est plus
+modeste, mais tient : ce nettoyage est **manuel et à réécrire dans chaque endroit
+qui supprimera une pièce**, alors que `ON DELETE CASCADE` est structurel et ne
+s'oublie pas. S'ajoute le fait qu'un tableau JSON ne se joint pas et ne se
+contraint pas.
+
+`PRAGMA foreign_keys = ON` est **déjà posé** (`db.ts:21`) — les contraintes sont
+donc réellement appliquées (vérifié : supprimer une pièce retire le lien et
+laisse le profil intact).
 
 ### `rooms` — inchangée
 

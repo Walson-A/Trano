@@ -22,7 +22,12 @@ export function Sidebar({ activeTab, setActiveTab, profile, onProfileClick }: Si
     { id: 'energy', icon: Zap, label: 'Énergie' },
   ] as const;
 
-  const showSettings = !profile.isKid;
+  // Les Réglages sont masqués sur le profil « Maison », celui des écrans
+  // partagés : une tablette murale n'a pas à proposer de renommer les pièces à
+  // qui passe devant. Ce n'est pas une sécurité — il n'y en a aucune dans
+  // Trano — c'est un écran qu'on garde simple. Chacun retrouve les Réglages en
+  // choisissant son propre profil.
+  const showSettings = profile.kind !== 'house';
 
   const avatarBadge = (size: string) => (
     <div

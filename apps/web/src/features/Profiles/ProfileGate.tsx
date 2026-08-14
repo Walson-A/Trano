@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import type { Profile } from '@trano/shared';
-import { Pencil, Plus, RefreshCw } from 'lucide-react';
+import { House, Pencil, Plus, RefreshCw } from 'lucide-react';
 import { useProfileStore } from '../../core/store/useProfileStore';
 import { ProfileEditor } from './ProfileEditor';
 import { cn } from '../../utils';
@@ -12,6 +12,8 @@ import { cn } from '../../utils';
  */
 export function ProfileGate() {
   const { profiles, loaded, error, setActiveProfile, fetchProfiles } = useProfileStore();
+  const people = profiles.filter((p) => p.kind !== 'house');
+  const house = profiles.find((p) => p.kind === 'house');
   const [manageMode, setManageMode] = useState(false);
   const [editorState, setEditorState] = useState<{ open: boolean; profile: Profile | null }>({
     open: false,
@@ -66,7 +68,13 @@ export function ProfileGate() {
         {loaded && !error && (
           <>
             <div className="flex flex-wrap justify-center gap-6 sm:gap-8">
-              {profiles.map((profile, index) => (
+              {/*
+                Uniquement les personnes. La Maison est le profil des écrans
+                partagés — tablette murale, TV : ce n'est pas quelqu'un, elle
+                n'a rien à faire dans une rangée de visages. Elle a son propre
+                bouton en bas.
+              */}
+              {people.map((profile, index) => (
                 <motion.button
                   key={profile.id}
                   initial={{ opacity: 0, scale: 0.8 }}
@@ -107,7 +115,7 @@ export function ProfileGate() {
               <motion.button
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: profiles.length * 0.06 }}
+                transition={{ delay: people.length * 0.06 }}
                 onClick={() => openEditor(null)}
                 className="group flex flex-col items-center gap-3 w-28 sm:w-36"
               >
@@ -120,11 +128,29 @@ export function ProfileGate() {
               </motion.button>
             </div>
 
-            {profiles.length > 0 && (
+            {/*
+              Délibérément d'une autre nature que les tuiles : pas un visage à
+              choisir, mais un réglage de l'écran. Ce qu'on installe une fois
+              sur la tablette du couloir, et qu'on ne retouche jamais.
+            */}
+            {house && !manageMode && (
+              <button
+                onClick={() => setActiveProfile(house.id)}
+                className="mt-10 sm:mt-14 flex items-center gap-3 px-5 py-3 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700 text-left text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 hover:border-zinc-500 transition-colors"
+              >
+                <House className="w-5 h-5 shrink-0" />
+                <span className="text-sm">
+                  <span className="font-semibold block">Cet écran est partagé</span>
+                  <span className="text-xs">Tablette murale, TV — aucun profil personnel</span>
+                </span>
+              </button>
+            )}
+
+            {people.length > 0 && (
               <button
                 onClick={() => setManageMode(!manageMode)}
                 className={cn(
-                  'mt-12 sm:mt-16 px-8 py-3 rounded-2xl font-medium transition-all',
+                  'mt-6 px-8 py-3 rounded-2xl font-medium transition-all',
                   manageMode
                     ? 'bg-zinc-900 dark:bg-zinc-100 text-zinc-100 dark:text-zinc-900'
                     : 'border border-zinc-300 dark:border-zinc-700 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:border-zinc-500'

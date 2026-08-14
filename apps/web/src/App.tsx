@@ -132,7 +132,7 @@ export default function App() {
 
           {activeTab === 'energy' && <Energy />}
 
-          {activeTab === 'settings' && !activeProfile.isKid && (
+          {activeTab === 'settings' && activeProfile.kind !== 'house' && (
             <Settings devices={allDevices} />
           )}
         </div>

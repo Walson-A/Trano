@@ -18,7 +18,7 @@ interface ProfileState {
   /** Épingle/désépingle un appareil dans les favoris du profil actif */
   toggleFavorite: (entityId: string) => Promise<void>;
   /** Épingle/désépingle une pièce dans les favoris du profil actif */
-  toggleFavoriteRoom: (roomId: string) => Promise<void>;
+  toggleMyRoom: (roomId: string) => Promise<void>;
   /** Patch optimiste d'un profil : applique, écrit, et revient en arrière si le serveur refuse. */
   applyProfilePatch: (id: string, patch: ProfileUpdate) => Promise<void>;
 }
@@ -91,17 +91,21 @@ export const useProfileStore = create<ProfileState>()(
         await get().applyProfilePatch(profile.id, { favorites });
       },
 
-      toggleFavoriteRoom: async (roomId) => {
+      toggleMyRoom: async (roomId) => {
         const { activeProfileId, profiles } = get();
         const profile = profiles.find((p) => p.id === activeProfileId);
         if (!profile) {
           set({ error: 'Aucun profil actif : impossible d’épingler une pièce.' });
           return;
         }
-        const favoriteRooms = profile.favoriteRooms.includes(roomId)
-          ? profile.favoriteRooms.filter((r) => r !== roomId)
-          : [...profile.favoriteRooms, roomId];
-        await get().applyProfilePatch(profile.id, { favoriteRooms });
+        // L'étoile ne pose plus un « favori » distinct : elle dit « c'est ma
+        // pièce ». Il y avait deux mécanismes pour une seule intention — les
+        // pièces attitrées et les pièces épinglées — et personne n'en
+        // remplissait aucun. Il n'en reste qu'un.
+        const roomIds = profile.roomIds.includes(roomId)
+          ? profile.roomIds.filter((r) => r !== roomId)
+          : [...profile.roomIds, roomId];
+        await get().applyProfilePatch(profile.id, { roomIds });
       },
 
       applyProfilePatch: async (id, patch) => {

@@ -89,7 +89,7 @@ export function Dashboard({ currentUser, devices, roomClimate, onToggleDevice, o
   const unavailableFavorites = currentUser.favorites.filter(
     (id) => !devices.some((d) => d.id === id)
   );
-  const favoriteRooms = currentUser.favoriteRooms
+  const myRooms = currentUser.roomIds
     .map((id) => rooms.find((r) => r.id === id))
     .filter((r): r is NonNullable<typeof r> => Boolean(r));
 
@@ -166,20 +166,20 @@ export function Dashboard({ currentUser, devices, roomClimate, onToggleDevice, o
         );
 
       case 'favorite-rooms':
-        if (favoriteRooms.length === 0 && !editing) return null;
+        if (myRooms.length === 0 && !editing) return null;
         return (
           <section>
             <div className="flex items-center gap-2 mb-4">
               <Star className="w-5 h-5 text-amber-500 fill-current" />
               <h2 className="text-lg sm:text-xl font-semibold text-zinc-900 dark:text-zinc-100">Mes pièces</h2>
             </div>
-            {favoriteRooms.length === 0 ? (
+            {myRooms.length === 0 ? (
               <p className="text-sm text-zinc-500 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl py-6 text-center">
                 Étoilez une pièce (★) dans l'onglet Pièces pour la voir ici.
               </p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                {favoriteRooms.map((room) => {
+                {myRooms.map((room) => {
                   const roomDevices = devices.filter((d) => d.roomId === room.id);
                   const active = countActive(roomDevices);
                   const climate = roomClimate[room.id];

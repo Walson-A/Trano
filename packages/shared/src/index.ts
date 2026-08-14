@@ -7,14 +7,19 @@ export interface Profile {
   avatar: string;
   /** Couleur d'accent du profil (hex) */
   color: string;
-  /** Pièces attitrées (ids de RoomConfig) — souvent la chambre, plusieurs possibles */
+  /**
+   * Personne, ou le profil « Maison » auquel se rattachent les écrans partagés
+   * (tablette murale, TV). La Maison n'est pas quelqu'un : elle ne doit
+   * apparaître ni dans « qui est là », ni comme destinataire d'un message.
+   */
+  kind: 'person' | 'house';
+  /**
+   * Pièces attitrées — souvent la chambre, plusieurs possibles. Stockées dans
+   * la table de liaison `profile_rooms`, plus dans un tableau JSON.
+   */
   roomIds: string[];
-  /** Profil enfant : interface simplifiée, pas de gestion des profils */
-  isKid: boolean;
   /** entity_ids favoris affichés en premier sur le dashboard */
   favorites: string[];
-  /** ids de pièces (RoomConfig) épinglées sur le dashboard */
-  favoriteRooms: string[];
   /**
    * Blocs du dashboard, dans l'ordre. Vide = disposition par défaut.
    * Ids connus : status, favorite-rooms, favorite-devices, energy,
@@ -25,12 +30,12 @@ export interface Profile {
 }
 
 export type ProfileCreate = Pick<Profile, 'name'> &
-  Partial<Pick<Profile, 'avatar' | 'color' | 'roomIds' | 'isKid'>>;
+  Partial<Pick<Profile, 'avatar' | 'color' | 'roomIds'>>;
 
 export type ProfileUpdate = Partial<
   Pick<
     Profile,
-    'name' | 'avatar' | 'color' | 'roomIds' | 'isKid' | 'favorites' | 'favoriteRooms' | 'dashboardLayout'
+    'name' | 'avatar' | 'color' | 'roomIds' | 'favorites' | 'dashboardLayout'
   >
 >;
 
