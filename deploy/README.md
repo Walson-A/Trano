@@ -189,3 +189,36 @@ publiquement. Si un jour un `docker compose pull` échoue sur une erreur
 d'authentification, c'est que le paquet est repassé en privé : page du dépôt →
 colonne de droite, section **Packages** → **trano** → **Package settings** →
 *Danger Zone* → **Change visibility** → **Public**.
+
+## Déploiement automatique (secrets de la CI)
+
+La CI publie l'image à chaque livraison sur `main`, mais **ne déploie sur le
+serveur que si trois secrets sont posés** dans le dépôt Trano (Settings →
+Secrets and variables → Actions). Sans eux l'étape se saute proprement en
+rappelant la commande manuelle.
+
+| Secret | Où l'obtenir |
+|---|---|
+| `TS_OAUTH_CLIENT_ID` | Console Tailscale → Trust credentials → nouveau client OAuth |
+| `TS_OAUTH_SECRET` | idem — **affiché une seule fois** |
+| `TRANO_DEPLOY_SSH_KEY` | clé privée ed25519 dédiée (voir ci-dessous) |
+
+**Pourquoi Tailscale** : le runner GitHub est sur Internet, le serveur est
+derrière la Freebox sans adresse publique. Le runner rejoint donc le tailnet le
+temps du déploiement. Scope nécessaire : **`auth_keys` en écriture**, avec le
+tag **`tag:ci`** (obligatoire pour ce scope).
+
+**Pourquoi une clé SSH dédiée** — et pas celle d'Oby, dont le workflow déploie
+sur la même machine : pour pouvoir **couper le déploiement de Trano sans toucher
+au sien**. Sa publique est dans les `authorized_keys` du serveur sous le
+commentaire `github-actions-deploy-trano`.
+
+```bash
+ssh-keygen -t ed25519 -C "github-actions-deploy-trano" -f ~/.ssh/trano_deploy -N ""
+```
+
+> ⚠️ Les secrets GitHub sont en **écriture seule** : une fois enregistrés,
+> personne ne peut les relire, pas même leur auteur. On ne peut donc pas les
+> recopier depuis un autre dépôt — il faut les valeurs d'origine, ou en
+> regénérer. Et une clé privée collée **sans son retour à la ligne final** fait
+> échouer la CI avec un message peu parlant.

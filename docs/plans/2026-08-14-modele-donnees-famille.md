@@ -241,7 +241,10 @@ les 5 profils et les 11 pièces de la famille. Or, relevé le 2026-08-14 :
 - [x] **`TZ=Europe/Paris` posé** — sans ça le conteneur tourne en UTC et la passe
       de 01:30 s'exécute à 03:30 heure de Paris
 - [x] Commentaire mensonger de `db.ts` corrigé (« incluse dans les sauvegardes HA »)
-- [ ] Afficher l'état dans l'écran Réglages
+- [x] **État affiché dans l'écran Réglages** — sauvegarde locale, son âge, et le
+      dépôt hors-site, parce que les trois tombent en panne séparément
+- [ ] **Poser les 3 secrets CI** (`TS_OAUTH_CLIENT_ID`, `TS_OAUTH_SECRET`,
+      `TRANO_DEPLOY_SSH_KEY`) — sans eux le déploiement reste manuel
 - [x] **Dépôt chez Oby** pour le hors-site chiffré — le conteneur tourne sous l'uid
       1000, donc aucun bricolage de permissions. Couplage documenté des deux côtés
 

@@ -15,8 +15,10 @@ name: Publier l'image et deployer
 #   TS_OAUTH_CLIENT_ID / TS_OAUTH_SECRET — client OAuth Tailscale (scope
 #     auth_keys, tag:ci). Sans tailnet, l'IP du serveur est injoignable
 #     depuis un runner GitHub.
-#   OBY_DEPLOY_SSH_KEY — clé privée ed25519 dédiée (sa .pub est déjà dans
-#     les authorized_keys de trano).
+#   TRANO_DEPLOY_SSH_KEY — clé privée ed25519 **dédiée à Trano** (sa .pub est
+#     dans les authorized_keys du serveur sous le commentaire
+#     `github-actions-deploy-trano`). Volontairement distincte de celle d'Oby :
+#     on peut couper le déploiement de Trano sans toucher au sien.
 # Tant qu'ils manquent, l'étape se saute proprement en disant quoi taper
 # à la main : une CI qui échoue à chaque livraison serait pire que rien.
 on:
@@ -114,7 +116,7 @@ jobs:
         id: secrets
         env:
           TS_ID: ${{ secrets.TS_OAUTH_CLIENT_ID }}
-          SSH_KEY: ${{ secrets.OBY_DEPLOY_SSH_KEY }}
+          SSH_KEY: ${{ secrets.TRANO_DEPLOY_SSH_KEY }}
         run: |
           if [ -z "$TS_ID" ] || [ -z "$SSH_KEY" ]; then
             echo "::warning::Secrets de déploiement absents — image publiée, serveur NON mis à jour."
@@ -137,7 +139,7 @@ jobs:
         env:
           # La clé passe par l'environnement plutôt que d'être interpolée dans
           # le script : elle n'apparaît alors jamais dans la ligne de commande.
-          SSH_KEY: ${{ secrets.OBY_DEPLOY_SSH_KEY }}
+          SSH_KEY: ${{ secrets.TRANO_DEPLOY_SSH_KEY }}
         run: |
           mkdir -p ~/.ssh
           echo "$SSH_KEY" > ~/.ssh/id_ed25519
