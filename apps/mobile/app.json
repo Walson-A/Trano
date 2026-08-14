@@ -26,7 +26,15 @@
           "color": "#0ea5e9"
         }
       ],
-      "expo-status-bar"
+      "expo-status-bar",
+      [
+        "expo-widgets",
+        {
+          "bundleIdentifier": "com.walson.trano.widgets",
+          "groupIdentifier": "group.com.walson.trano",
+          "enablePushNotifications": true
+        }
+      ]
     ],
     "ios": {
       "supportsTablet": true,
@@ -35,10 +43,9 @@
         "ITSAppUsesNonExemptEncryption": false,
         "UIBackgroundModes": [
           "location",
-          "remote-notification",
-          "location",
           "remote-notification"
         ],
+        "NSSupportsLiveActivities": true,
         "NSLocalNetworkUsageDescription": "Trano parle au serveur de la maison, sur le réseau local.",
         "NSAppTransportSecurity": {
           "NSAllowsLocalNetworking": true
@@ -49,29 +56,14 @@
       "package": "com.walson.trano",
       "usesCleartextTraffic": true,
       "edgeToEdgeEnabled": true,
+      "//permissions": "Les greffons de config (expo-location, expo-notifications) ré-ajoutent les leurs à chaque `expo install`, sans dédoublonner. La liste enfle à chaque passage : la remettre au propre de temps en temps est sans risque, Expo normalise les deux écritures vers la forme préfixée.",
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
         "ACCESS_BACKGROUND_LOCATION",
         "FOREGROUND_SERVICE",
         "FOREGROUND_SERVICE_LOCATION",
-        "POST_NOTIFICATIONS",
-        "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION",
-        "android.permission.ACCESS_BACKGROUND_LOCATION",
-        "android.permission.FOREGROUND_SERVICE",
-        "android.permission.FOREGROUND_SERVICE_LOCATION",
-        "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION",
-        "ACCESS_BACKGROUND_LOCATION",
-        "FOREGROUND_SERVICE",
-        "FOREGROUND_SERVICE_LOCATION",
-        "POST_NOTIFICATIONS",
-        "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION",
-        "android.permission.ACCESS_BACKGROUND_LOCATION",
-        "android.permission.FOREGROUND_SERVICE",
-        "android.permission.FOREGROUND_SERVICE_LOCATION"
+        "POST_NOTIFICATIONS"
       ]
     },
     "owner": "walsondev",
