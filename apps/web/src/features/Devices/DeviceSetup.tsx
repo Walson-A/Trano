@@ -5,6 +5,7 @@ import type { UserDeviceType } from '@trano/shared';
 import { api } from '../../lib/api';
 import { createDeviceId, detectDevice, type DetectedDevice } from '../../lib/deviceInfo';
 import { useProfileStore } from '../../core/store/useProfileStore';
+import { useRoomsStore } from '../../core/store/useRoomsStore';
 import { cn } from '../../utils';
 
 /**
@@ -36,6 +37,7 @@ export function DeviceSetup({ onDone }: { onDone: () => void }) {
   const [name, setName] = useState('');
   const [type, setType] = useState<UserDeviceType>('phone');
   const [ownerId, setOwnerId] = useState<string | null>(null);
+  const [roomId, setRoomId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,6 +53,15 @@ export function DeviceSetup({ onDone }: { onDone: () => void }) {
     });
   }, []);
 
+  const rooms = useRoomsStore((r) => r.rooms);
+  const fetchRooms = useRoomsStore((r) => r.fetchRooms);
+  useEffect(() => { void fetchRooms(); }, [fetchRooms]);
+
+  // La pièce n'est demandée qu'aux écrans qui ne bougent pas. Un téléphone
+  // change de pièce dix fois par jour : lui poser la question serait au mieux
+  // inutile, au pire une donnée fausse affichée ailleurs.
+  const isFixed = type === 'tv' || type === 'kiosk';
+
   const people = profiles.filter((p) => p.kind !== 'house');
   const house = profiles.find((p) => p.kind === 'house');
 
@@ -65,6 +76,7 @@ export function DeviceSetup({ onDone }: { onDone: () => void }) {
         name: name.trim(),
         profileId: ownerId,
         type,
+        roomId: isFixed ? roomId : null,
         platform: detected?.platform ?? null,
         model: detected?.model ?? null,
         osVersion: detected?.osVersion ?? null,
@@ -130,6 +142,33 @@ export function DeviceSetup({ onDone }: { onDone: () => void }) {
             ))}
           </div>
         </div>
+
+        {isFixed && (
+          <div className="mt-6">
+            <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+              Dans quelle pièce est-il ?
+            </span>
+            <p className="text-xs text-zinc-500 mt-0.5">
+              Facultatif — un écran qui sait où il est peut ouvrir sur ce qui l'entoure.
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {rooms.map((r) => (
+                <button
+                  key={r.id}
+                  onClick={() => setRoomId(roomId === r.id ? null : r.id)}
+                  className={cn(
+                    'px-3.5 py-2 rounded-xl border text-sm transition-colors',
+                    roomId === r.id
+                      ? 'bg-zinc-900 dark:bg-zinc-100 text-zinc-100 dark:text-zinc-900 border-transparent'
+                      : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-white/10 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400',
+                  )}
+                >
+                  {r.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="mt-6">
           <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">À qui est-il ?</span>

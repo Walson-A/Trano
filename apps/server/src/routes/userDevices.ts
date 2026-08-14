@@ -44,6 +44,7 @@ interface DeviceRow {
   battery_pct: number | null;
   battery_charging: number | null;
   is_home: number | null;
+  room_id: string | null;
   last_seen_at: string | null;
   created_at: string;
 }
@@ -69,6 +70,7 @@ function toDevice(row: DeviceRow): UserDevice {
     batteryPct: row.battery_pct,
     batteryCharging: row.battery_charging === null ? null : row.battery_charging === 1,
     isHome: row.is_home === null ? null : row.is_home === 1,
+    roomId: row.room_id,
     lastSeenAt: row.last_seen_at,
     online: isOnline(row.last_seen_at),
     createdAt: row.created_at,
@@ -113,8 +115,8 @@ export function userDeviceRoutes(app: FastifyInstance): void {
     const now = new Date().toISOString();
 
     db.prepare(
-      `INSERT INTO user_devices (id, name, profile_id, type, platform, model, os_version, push_token, last_seen_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `INSERT INTO user_devices (id, name, profile_id, type, platform, model, os_version, push_token, room_id, last_seen_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(id) DO UPDATE SET
          name = excluded.name,
          profile_id = excluded.profile_id,
@@ -125,6 +127,7 @@ export function userDeviceRoutes(app: FastifyInstance): void {
          -- Un ré-enregistrement sans jeton (le web n'en a pas) ne doit pas
          -- effacer celui que l'app native avait déjà posé.
          push_token = COALESCE(excluded.push_token, user_devices.push_token),
+         room_id = excluded.room_id,
          last_seen_at = excluded.last_seen_at`,
     ).run(
       b.id.trim(),
@@ -135,6 +138,9 @@ export function userDeviceRoutes(app: FastifyInstance): void {
       b.model ?? null,
       b.osVersion ?? null,
       b.pushToken ?? null,
+      // Une pièce inconnue devient NULL plutôt que de faire échouer
+      // l'enregistrement : mieux vaut un écran sans pièce qu'un écran absent.
+      b.roomId && db.prepare('SELECT 1 FROM rooms WHERE id = ?').get(b.roomId) ? b.roomId : null,
       now,
     );
 
@@ -191,6 +197,12 @@ export function userDeviceRoutes(app: FastifyInstance): void {
 
       if (b.name !== undefined) { sets.push('name = ?'); values.push(b.name.trim()); }
       if (b.type !== undefined && DEVICE_TYPES.has(b.type)) { sets.push('type = ?'); values.push(b.type); }
+      if (b.roomId !== undefined) {
+        const ok = b.roomId === null || db.prepare('SELECT 1 FROM rooms WHERE id = ?').get(b.roomId);
+        if (!ok) return reply.code(400).send({ error: 'Pièce inconnue' });
+        sets.push('room_id = ?');
+        values.push(b.roomId);
+      }
       if (b.profileId !== undefined) {
         const ok = db.prepare('SELECT 1 FROM profiles WHERE id = ?').get(b.profileId);
         if (!ok) return reply.code(400).send({ error: 'Profil inconnu' });

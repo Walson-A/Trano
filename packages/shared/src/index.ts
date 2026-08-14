@@ -26,6 +26,8 @@ export interface UserDevice {
   batteryPct: number | null;
   batteryCharging: boolean | null;
   isHome: boolean | null;
+  /** Où se trouve l'écran — seulement pour les fixes : un téléphone bouge. */
+  roomId: string | null;
   lastSeenAt: string | null;
   /** **Calculé**, jamais stocké : `now - lastSeenAt < 90 s`. */
   online: boolean;
@@ -34,7 +36,9 @@ export interface UserDevice {
 
 /** Première connexion d'un appareil : ce que l'écran d'accueil fait valider. */
 export type UserDeviceRegister = Pick<UserDevice, 'id' | 'name' | 'profileId'> &
-  Partial<Pick<UserDevice, 'type' | 'platform' | 'model' | 'osVersion'>> & { pushToken?: string };
+  Partial<Pick<UserDevice, 'type' | 'platform' | 'model' | 'osVersion' | 'roomId'>> & {
+    pushToken?: string;
+  };
 
 /** Battement de cœur : uniquement ce qui bouge. */
 export interface UserDeviceHeartbeat {
@@ -44,7 +48,7 @@ export interface UserDeviceHeartbeat {
   pushToken?: string;
 }
 
-export type UserDeviceUpdate = Partial<Pick<UserDevice, 'name' | 'profileId' | 'type'>>;
+export type UserDeviceUpdate = Partial<Pick<UserDevice, 'name' | 'profileId' | 'type' | 'roomId'>>;
 
 /** Qui est là — dérivé des appareils, jamais stocké sur la personne. */
 export interface PresenceEntry {

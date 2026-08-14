@@ -174,10 +174,16 @@ db.exec(`
     battery_pct   INTEGER,
     battery_charging INTEGER,
     is_home       INTEGER,
+    -- Uniquement pour les ecrans fixes : ou est cet ecran. Un telephone bouge,
+    -- la question n'a pas de sens pour lui. ON DELETE SET NULL : supprimer une
+    -- piece ne doit pas emporter l'appareil qui s'y trouvait.
+    room_id       TEXT REFERENCES rooms(id) ON DELETE SET NULL,
     last_seen_at  TEXT,
     created_at    TEXT NOT NULL DEFAULT (datetime('now'))
   );
 `);
+
+ensureColumn('user_devices', 'room_id', 'TEXT REFERENCES rooms(id) ON DELETE SET NULL');
 
 /** Le profil auquel se rattachent les écrans partagés (tablette murale, TV). */
 export const HOUSE_PROFILE_ID = 'maison';
