@@ -185,8 +185,27 @@ export interface ControllableDevice {
   lumiere: LightSettings | null;
 }
 
-/** Appareils contrôlables avec leur pièce (area HA), via template tojson. */
+export interface HomeScene {
+  entity_id: string;
+  nom: string;
+  piece: string | null;
+}
+
+/** Appareils **et** scènes en un seul rendu — voir `fetchEntities`. */
 export async function listControllableDevices(): Promise<ControllableDevice[]> {
+  return (await fetchEntities()).devices;
+}
+
+/**
+ * Un seul appel à HA pour les appareils et les scènes.
+ *
+ * Les scènes auraient pu tenir dans `listScenes()`, qui existe déjà pour le LLM
+ * — mais il refait un `/api/states` complet, et `/api/house` est demandé toutes
+ * les dix secondes. Le template rend donc un objet à deux clés plutôt qu'un
+ * tableau. `listControllableDevices` reste au-dessus, inchangée pour ses
+ * appelants (`tools.ts`).
+ */
+export async function fetchEntities(): Promise<{ devices: ControllableDevice[]; scenes: HomeScene[] }> {
   // ⚠️ NE PAS revenir à `states.light + states.switch + ...` : Home Assistant
   // répond `TypeError: unsupported operand type(s) for +: 'DomainStates' and
   // 'DomainStates'`, donc le template échouait **en entier**, en silence. Le
@@ -224,27 +243,43 @@ export async function listControllableDevices(): Promise<ControllableDevice[]> {
   } if s.domain == 'light' else none
 }] %}
 {% endfor %}
-{{ out.items | tojson }}`.trim();
+{% set scenes = namespace(items=[]) %}
+{% for s in states.scene %}
+{% set scenes.items = scenes.items + [{'entity_id': s.entity_id, 'nom': s.name, 'piece': area_name(s.entity_id)}] %}
+{% endfor %}
+{{ {'appareils': out.items, 'scenes': scenes.items} | tojson }}`.trim();
+  // Une scène n'est jamais filtrée sur son état : celui d'une scène est l'heure
+  // de sa dernière activation, et vaut `unknown` tant qu'on ne l'a jamais jouée.
   try {
-    const raw = JSON.parse(await haTemplate(tpl)) as Array<
-      Omit<ControllableDevice, 'lumiere'> & { attributs?: Record<string, unknown> | null }
-    >;
-    return raw.map(({ attributs, ...d }) => ({
-      ...d,
-      lumiere: attributs ? lightSettingsFrom(attributs) : null,
-    }));
+    const raw = JSON.parse(await haTemplate(tpl)) as {
+      appareils: Array<Omit<ControllableDevice, 'lumiere'> & { attributs?: Record<string, unknown> | null }>;
+      scenes: HomeScene[];
+    };
+    return {
+      devices: raw.appareils.map(({ attributs, ...d }) => ({
+        ...d,
+        lumiere: attributs ? lightSettingsFrom(attributs) : null,
+      })),
+      scenes: raw.scenes,
+    };
   } catch {
     // Repli sans les pièces si le template échoue
     const states = (await haFetch('/api/states')) as HAState[];
-    return states
-      .filter((s) => CONTROLLABLE_DOMAINS.has(s.entity_id.split('.')[0]) && s.state !== 'unavailable')
-      .map((s) => ({
-        entity_id: s.entity_id,
-        nom: (s.attributes.friendly_name as string) ?? s.entity_id,
-        etat: s.state,
-        piece: null,
-        lumiere: s.entity_id.startsWith('light.') ? lightSettingsFrom(s.attributes) : null,
-      }));
+    const nom = (s: HAState) => (s.attributes.friendly_name as string) ?? s.entity_id;
+    return {
+      devices: states
+        .filter((s) => CONTROLLABLE_DOMAINS.has(s.entity_id.split('.')[0]) && s.state !== 'unavailable')
+        .map((s) => ({
+          entity_id: s.entity_id,
+          nom: nom(s),
+          etat: s.state,
+          piece: null,
+          lumiere: s.entity_id.startsWith('light.') ? lightSettingsFrom(s.attributes) : null,
+        })),
+      scenes: states
+        .filter((s) => s.entity_id.startsWith('scene.'))
+        .map((s) => ({ entity_id: s.entity_id, nom: nom(s), piece: null })),
+    };
   }
 }
 
