@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import {
-  getHouseSnapshot, listControllableDevices, controlDevice, setLightState, haConfigured,
-  type ControllableDevice,
+  getHouseSnapshot, fetchEntities, controlDevice, setLightState, activateScene, haConfigured,
+  type ControllableDevice, type HomeScene,
 } from '../lib/ha.ts';
 import { db } from '../db.ts';
 
@@ -42,9 +42,13 @@ export function houseRoutes(app: FastifyInstance): void {
 
     let snapshot: Record<string, unknown>;
     let devices: ControllableDevice[];
+    let scenes: HomeScene[];
     try {
-      // Deux appels HA : les états (énergie, météo) et le template des pièces.
-      [snapshot, devices] = await Promise.all([getHouseSnapshot(), listControllableDevices()]);
+      // Deux appels HA seulement : les états (énergie, météo) et le template,
+      // qui rend les appareils ET les scènes en un rendu.
+      const [snap, entites] = await Promise.all([getHouseSnapshot(), fetchEntities()]);
+      snapshot = snap;
+      ({ devices, scenes } = entites);
     } catch (err) {
       req.log.error({ err }, 'GET /api/house');
       return reply.code(502).send({ error: err instanceof Error ? err.message : 'Home Assistant injoignable.' });
@@ -68,6 +72,10 @@ export function houseRoutes(app: FastifyInstance): void {
       favoris: favorites,
       allumes: devices.map(({ lumiere: _l, ...d }) => d).filter((d) => ON_STATES.has(d.etat)),
       total_appareils: devices.length,
+      // Les scènes de la maison, dans l'ordre où HA les rend. Elles ne sont pas
+      // filtrées par profil : une scène est une ambiance de la maison, pas un
+      // favori de quelqu'un.
+      scenes,
       // `null` = aucun profil demandé ; `[]` = profil sans favori. Le client doit
       // pouvoir distinguer « tu n'as rien choisi » de « ta liste est vide ».
       profil_connu: wanted !== null,
@@ -134,6 +142,23 @@ export function houseRoutes(app: FastifyInstance): void {
       return reply.code(refused ? 403 : 200).send({ ok: !refused, message });
     } catch (err) {
       req.log.error({ err }, 'POST /api/house/light');
+      return reply.code(502).send({ error: err instanceof Error ? err.message : 'Home Assistant injoignable.' });
+    }
+  });
+
+  /** Joue une scène. `activateScene` refuse tout ce qui n'est pas `scene.`. */
+  app.post<{ Body: { entity_id?: string } }>('/api/house/scene', async (req, reply) => {
+    const entityId = req.body?.entity_id?.trim();
+    if (!entityId) return reply.code(400).send({ error: 'entity_id manquant.' });
+    if (!haConfigured()) {
+      return reply.code(503).send({ error: 'Home Assistant non configuré côté serveur.' });
+    }
+    try {
+      const message = await activateScene(entityId);
+      const refused = message.startsWith('Refusé');
+      return reply.code(refused ? 403 : 200).send({ ok: !refused, message });
+    } catch (err) {
+      req.log.error({ err }, 'POST /api/house/scene');
       return reply.code(502).send({ error: err instanceof Error ? err.message : 'Home Assistant injoignable.' });
     }
   });
