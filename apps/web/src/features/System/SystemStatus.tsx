@@ -77,10 +77,10 @@ export function SystemStatus() {
 
   if (!isConnected) {
     const state = remote.homeId === homeId ? remote.status : 'connecting';
-    const label = state === 'connected' ? 'Connecté via Trano' : state === 'error' ? 'Connexion indisponible' : 'Connexion…';
+    const label = state === 'connected' ? 'Connecté' : state === 'error' ? 'Connexion indisponible' : 'Connexion…';
     const provider = homes.find(home => home.id === homeId)?.provider;
     return <div className="flex items-center gap-2 rounded-2xl border px-3 py-2 text-xs" role="status" aria-label={label}
-      title={state === 'connected' ? 'Le serveur Trano communique avec le connecteur de ce logement. Actualisation périodique.' : label}
+      title={state === 'connected' ? 'Connexion via Trano. Actualisation périodique.' : label}
       style={{ color: state === 'connected' ? '#10b981' : state === 'error' ? '#ef4444' : '#71717a', borderColor: 'currentColor' }}>
       {state === 'connected' ? <Wifi size={18} /> : <WifiOff size={18} />}<span>{provider === 'tuya' ? 'Tuya' : 'HA'} · {label}</span>
     </div>;

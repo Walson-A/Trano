@@ -31,11 +31,12 @@ await page.route('**/api/**',async route=>{
 });
 try{
  await page.goto('http://127.0.0.1:3142/?home=main');
- await page.getByRole('status',{name:'Connecté via Trano'}).waitFor();
+ await page.getByRole('status',{name:'Connecté',exact:true}).waitFor();
  assert.equal(await page.getByText('HA déconnecté',{exact:true}).count(),0);
  await page.getByText('19°C',{exact:true}).waitFor();
  await page.screenshot({path:resolve(output,'main-connected.png'),fullPage:true});
- await page.getByRole('combobox',{name:'Logement contrôlé'}).selectOption('apartment');
+ await page.getByRole('combobox',{name:/Logement contrôlé/}).click();
+ await page.getByRole('option',{name:'Appartement',exact:true}).click();
  await page.getByRole('heading',{name:'Lumière',exact:true}).waitFor();
  await page.getByRole('button',{name:"Ouvrir l'assistant",exact:true}).click();
  const input=page.getByPlaceholder('Demandez quelque chose · Appartement…');
@@ -45,7 +46,8 @@ try{
  assert.equal(requests.at(-1).home_id,'apartment');
  await page.screenshot({path:resolve(output,'apartment-chat.png'),fullPage:true});
  await page.getByRole('button',{name:"Fermer l'assistant"}).click();
- await page.getByRole('combobox',{name:'Logement contrôlé'}).selectOption('main');
+ await page.getByRole('combobox',{name:/Logement contrôlé/}).click();
+ await page.getByRole('option',{name:'Maison familiale',exact:true}).click();
  await page.getByRole('button',{name:"Ouvrir l'assistant",exact:true}).click();
  assert.equal(await page.getByText('Commande reçue pour apartment.',{exact:true}).count(),0);
  await page.getByPlaceholder('Demandez quelque chose · Maison familiale…').fill('Quels appareils sont allumés ?');

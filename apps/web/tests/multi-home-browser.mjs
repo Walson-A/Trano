@@ -93,17 +93,19 @@ try {
   await tranoFrame.getByRole('heading', { name: 'Appartement', exact: true }).waitFor();
   await tranoFrame.getByRole('heading', { name: 'LED Télé', exact: true }).waitFor();
   await page.screenshot({ path: resolve(output, 'atlas-focus-apartment.png'), fullPage: true });
-  await tranoFrame.getByRole('combobox', { name: 'Logement contrôlé' }).selectOption('main');
-  await page.waitForFunction(() => document.querySelector('select')?.value === 'main');
-  await page.getByRole('combobox', { name: 'Logement contrôlé' }).first().evaluate(select => {
-    if (select.value !== 'main') throw new Error('Iframe home selection did not synchronize with Atlas.');
+  await tranoFrame.getByRole('combobox', { name: /Logement contrôlé/ }).click();
+  await tranoFrame.getByRole('option', { name: 'Maison familiale', exact: true }).click();
+  await page.waitForFunction(() => document.querySelector('[data-home-id]')?.getAttribute('data-home-id') === 'main');
+  await page.getByRole('combobox', { name: /Logement contrôlé/ }).first().evaluate(select => {
+    if (select.getAttribute('data-home-id') !== 'main') throw new Error('Iframe home selection did not synchronize with Atlas.');
   });
   await page.goto('http://127.0.0.1:3141/home-multi.html?home=apartment');
   await page.getByText('LED Télé', { exact: true }).waitFor();
   await page.screenshot({ path: resolve(output, 'atlas-widget-apartment.png'), fullPage: true });
   await page.locator('#home-container').screenshot({ path: resolve(output, 'atlas-widget-apartment-detail.png') });
-  await page.getByRole('combobox', { name: 'Logement contrôlé' }).selectOption('main');
-  assert.ok(await page.getByRole('combobox', { name: 'Logement contrôlé' }).inputValue() === 'main');
+  await page.getByRole('combobox', { name: /Logement contrôlé/ }).click();
+  await page.getByRole('option', { name: 'Maison familiale', exact: true }).click();
+  assert.equal(await page.getByRole('combobox', { name: /Logement contrôlé/ }).getAttribute('data-home-id'), 'main');
   await page.screenshot({ path: resolve(output, 'atlas-widget-main.png'), fullPage: true });
   legacyHouse = true;
   await page.goto('http://127.0.0.1:3141/home-multi.html?home=apartment');

@@ -4,6 +4,7 @@ import { SystemStatus } from '../features/System/SystemStatus';
 import { Sun, Moon, Megaphone } from 'lucide-react';
 import { useHomeStore } from '../core/store/useHomeStore';
 import { useHomeConnectionPolling } from '../core/store/useHomeConnection';
+import { HomePicker } from './HomePicker';
 
 interface TopbarProps {
   isDarkMode: boolean;
@@ -14,7 +15,7 @@ interface TopbarProps {
 export const Topbar: React.FC<TopbarProps> = ({ isDarkMode, toggleDarkMode, onOpenIntercom }) => {
   useHomeConnectionPolling();
   const [time, setTime] = useState(new Date());
-  const { homeId, homes, select, error } = useHomeStore();
+  const homeId = useHomeStore(s => s.homeId);
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
@@ -39,13 +40,7 @@ export const Topbar: React.FC<TopbarProps> = ({ isDarkMode, toggleDarkMode, onOp
 
       {/* Droite : actions essentielles */}
       <div className="flex items-center gap-1 sm:gap-2">
-        <label className="min-w-0 text-zinc-900 dark:text-zinc-100">
-          <span className="sr-only">Logement contrôlé</span>
-          <select value={homeId} onChange={e => select(e.target.value)} className="max-w-[180px] sm:max-w-[230px] rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-900 px-3 py-2 text-sm">
-            {!homes.some(home => home.id === homeId) && <option value={homeId}>{error ? 'Logement indisponible' : 'Chargement…'}</option>}
-            {homes.map(home => <option key={home.id} value={home.id}>{home.name}</option>)}
-          </select>
-        </label>
+        <HomePicker />
         {homeId === 'main' && <WeatherWidget />}
         <div className="w-px h-6 bg-zinc-300 dark:bg-zinc-800 mx-1 hidden sm:block" />
         <div className="hidden sm:block"><SystemStatus /></div>

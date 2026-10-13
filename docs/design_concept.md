@@ -5,6 +5,12 @@ Interface premium, minimaliste, optimisée pour tablettes tactiles et écrans OL
 ## Logement contrôlé
 
 La barre supérieure porte un sélecteur de logement permanent, distinct du profil.
+Il prend la forme d'un bouton arrondi avec icône et chevron, puis un menu court
+où le logement actif porte une coche et un fond ambré discret. Flèches, Entrée,
+Échap et sortie par Tab restent utilisables ; un clic extérieur ferme le menu.
+Les noms longs reviennent à la ligne dans les choix. Le badge indique simplement
+« Connecté » ; la voie serveur reste expliquée dans son infobulle.
+[Revue du sélecteur](reviews/home-selector/review.md).
 Le titre de la page confirme le logement. L’appartement propose les appareils
 compatibles et les courses ; plan/énergie/réglages de la maison familiale restent
 dans `main`. L’état Tuya non connecté explique la prochaine action tout en laissant
