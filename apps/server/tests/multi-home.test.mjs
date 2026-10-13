@@ -112,6 +112,8 @@ test('HA commun : affectation puis exclusion de main et refus des commandes croi
   assert.deepEqual((await request('GET', '/api/house?home_id=shared&profile=moving-profile')).json().favoris, []);
   assert.equal((await request('GET', '/api/house?home_id=main')).json().appareils.length, 0);
   assert.equal((await request('GET', '/api/house?home_id=shared')).json().appareils[0].nom, 'main-token');
+  assert.equal((await request('GET', '/api/house?home_id=shared')).json().appareils[0].piece, null);
+  assert.equal((await request('GET', '/api/house?home_id=other')).json().appareils[0].piece, 'Salon');
   assert.equal((await request('POST', '/api/house/device?home_id=main', { entity_id: 'light.shared', action: 'turn_off' })).statusCode, 404);
   const before = commands.length;
   assert.match(await runTool('regler_lumiere', { home_id: 'main', entity_id: 'light.shared', luminosite: 50 }, { profile: null }), /Refusé/);

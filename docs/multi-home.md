@@ -30,6 +30,10 @@ Lors de la première affectation d’un appareil déjà favori dans main, chaque
 concerné retrouve ce favori dans le logement destinataire. Les autres favoris sont
 conservés ; modifier à nouveau la même affectation ne rétablit pas un favori retiré
 explicitement dans ce logement.
+Les anciennes pièces HA ne sont pas reprises pour l’appartement : un appareil
+déplacé peut encore y porter « Chambre Parents ». Son logement est confirmé, mais
+sa pièce reste non renseignée dans Trano tant qu’un rangement propre à ce logement
+n’a pas été défini. Les pièces de la maison familiale restent intactes.
 Les scènes Tuya ne déclarant pas leurs membres, une scène non affectée n’est plus
 proposée lorsque le HA sert plusieurs logements ; ne pas présumer son périmètre.
 

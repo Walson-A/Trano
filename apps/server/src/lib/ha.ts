@@ -209,7 +209,13 @@ export async function listControllableDevices(): Promise<ControllableDevice[]> {
  * appelants (`tools.ts`).
  */
 export async function fetchEntities(unscoped = false): Promise<{ devices: ControllableDevice[]; scenes: HomeScene[] }> {
-  const scope = <T extends { entity_id: string }>(entities: T[]): T[] => unscoped ? entities : homeEntities(entities);
+  const scope = <T extends { entity_id: string }>(entities: T[]): T[] => {
+    if (unscoped) return entities;
+    const scoped = homeEntities(entities);
+    // A moved device can retain its former HA area. That area belongs to main,
+    // not to the apartment; never present it as the apartment's room.
+    return currentHome().haSource === 'main' ? scoped.map(entity => ({ ...entity, piece: null })) : scoped;
+  };
   // ⚠️ NE PAS revenir à `states.light + states.switch + ...` : Home Assistant
   // répond `TypeError: unsupported operand type(s) for +: 'DomainStates' and
   // 'DomainStates'`, donc le template échouait **en entier**, en silence. Le
@@ -299,6 +305,7 @@ export async function getDeviceInfo(entityId: string): Promise<Record<string, un
 null
 {% endif %}`.trim();
   const out = JSON.parse(await haTemplate(tpl));
+  if (out && currentHome().haSource === 'main') out.piece = null;
   return out ?? { erreur: `Appareil "${entityId}" introuvable` };
 }
 
