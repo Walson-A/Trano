@@ -169,3 +169,8 @@ une image puis tente son déploiement ; vérifier le job et le commit installé,
 puis affecter LED Télé à `apartment` et vérifier son favori repris. Son compte
 Tuya est déjà relié au HA familial : aucun nouvel appairage n’est nécessaire.
 Pas d’essai matériel annoncé avant la vérification après livraison.
+
+Livraison vérifiée : **Trano 1.2.34**, lot `9e48f64` et correctif `40c0b61`.
+LED Télé est affectée à l’appartement, son favori existant est repris et les
+commandes à la maison familiale sont refusées pour cette cible.
+[Preuves du déploiement et limites](reviews/multi-home/deployment.md).

@@ -50,5 +50,8 @@ navigateur sont exécutables dans `apps/web/tests/multi-home-browser.mjs`.
 
 Le focus/clavier et la région native Windows demandent une réception WebView2.
 Le compte Tuya direct, facultatif, n’a pas été activé ; le HA commun est la voie
-retenue. Un état lu en HA ne prouve pas une commande matérielle. La livraison
-doit encore être vérifiée sur le serveur après le déploiement autorisé.
+retenue. Un état lu en HA ne prouve pas une commande matérielle : les vérifications
+après déploiement sont consignées séparément ci-dessous.
+
+La [vérification de livraison](deployment.md) confirme désormais la version
+installée, l’affectation réelle, les favoris et les commandes après déploiement.
