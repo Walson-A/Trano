@@ -53,3 +53,7 @@ autorisé par la revue automatique, donc n’a pas été soumis. Cette limite ne
 modifie ni le déploiement, ni l’affectation, ni les clients Atlas déjà enregistrés.
 Le connecteur Tuya direct reste facultatif ; aucun projet cloud supplémentaire
 n’a été créé pour la voie retenue, qui conserve le HA familial et son lien Tuya.
+
+## Réglage effectif confirmé
+
+Une variation de luminosité d’un point a été envoyée via Trano, puis la nouvelle valeur a été relue dans l’état publié par la lampe. La valeur initiale a ensuite été restaurée et vérifiée ; état d’allumage et couleur sont restés identiques. Cette vérification complète les simples acquittements des commandes.
