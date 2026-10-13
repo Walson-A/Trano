@@ -28,3 +28,5 @@ routes serveur). Les deux thèmes Trano et les libellés longs ont été relus.
 
 TypeScript et build passent pour Trano et Atlas ; les neuf tests serveur, le
 contrat client multi-home et le parcours de chat par logement restent validés.
+
+Livré sur main avec `63c4b3e`, Trano **1.2.37**. Le [workflow de publication et déploiement](https://github.com/Walson-A/Trano/actions/runs/38448054375) est réussi. Les deux bundles (moderne et legacy) servis en production contiennent le menu « Vos logements » et ne contiennent plus le libellé « Connecté via Trano ». Le parcours complet widget/iframe, changement de logement, commandes scoped et courses a aussi été rejoué avec les vrais composants et API simulée.
