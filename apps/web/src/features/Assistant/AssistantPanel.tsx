@@ -25,7 +25,7 @@ export function AssistantFab({ onClick }: { onClick: () => void }) {
   );
 }
 
-export function AssistantPanel({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+export function AssistantPanel({ isOpen, onClose }: { key?: string; isOpen: boolean; onClose: () => void }) {
   if (typeof document === 'undefined') return null;
 
   return createPortal(

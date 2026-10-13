@@ -23,6 +23,8 @@ const PHONE_SERVICES = ['mobile_app_iphone_de_walson', 'mobile_app_iphonerenew']
 
 export interface ToolCtx {
   profile: { id: string; name: string; avatar: string; color: string } | null;
+  /** Screen-selected home, fixed for the whole assistant request. */
+  homeId?: string;
 }
 
 export interface ToolDef {
@@ -109,7 +111,7 @@ export const TOOL_DEFS: ToolDef[] = [
 
 /** Schéma JSON des paramètres d'un outil — la forme attendue par OpenAI comme par MCP. */
 export function toolInputSchema(t: ToolDef): { type: 'object'; properties: Record<string, unknown>; required: string[] } {
-  return { type: 'object', properties: t.params, required: t.required ?? [] };
+  return { type: 'object', properties: t.params, required: t.name === 'lister_logements' ? t.required ?? [] : [...(t.required ?? []), 'home_id'] };
 }
 
 /** Les outils au format function-calling d'OpenRouter (tous). */
@@ -123,9 +125,9 @@ export const OPENROUTER_TOOLS = TOOL_DEFS.map((t) => ({
 }));
 
 /** Les outils exposés à Oby (lecture + pilotage des appareils). */
-// Every tool names its home. Omitting it preserves the historical main contract.
+// Every scoped tool requires its home; never silently command main.
 for (const tool of TOOL_DEFS) {
-  if (tool.name !== 'lister_logements') tool.params.home_id = { type: 'string', description: 'Identifiant du logement, via lister_logements. Défaut historique : main (maison familiale).' };
+  if (tool.name !== 'lister_logements') tool.params.home_id = { type: 'string', description: 'Identifiant explicite du logement choisi, via lister_logements. Obligatoire, aucun logement par défaut.' };
 }
 export const OBY_TOOL_DEFS = TOOL_DEFS.filter((t) => t.oby);
 
@@ -138,9 +140,12 @@ export function isExposedToOby(name: string): boolean {
 
 export async function runTool(name: string, args: Record<string, unknown>, ctx: ToolCtx): Promise<string> {
   try {
-    const home = resolveHome(args.home_id ?? 'main');
+    if (ctx.homeId && args.home_id !== undefined && args.home_id !== ctx.homeId) return 'Refusé : cet appel vise un autre logement que celui choisi à l’écran.';
+    if (name === 'lister_logements') return JSON.stringify(publicHomes());
+    const requested = ctx.homeId ?? args.home_id;
+    if (requested === undefined) return 'Refusé : home_id est obligatoire. Choisir explicitement un logement.';
+    const home = resolveHome(requested);
     return await withHome(home, async () => {
-      if (name === 'lister_logements') return JSON.stringify(publicHomes());
       if (home.provider === 'tuya' && !name.startsWith('courses_')) {
         const devices = await tuyaDevices(home);
         if (name === 'etat_maison') return JSON.stringify({ home_id: home.id, appareils: devices, energie: null, meteo: null });
@@ -178,6 +183,7 @@ async function runScopedTool(name: string, args: Record<string, unknown>, ctx: T
       case 'infos_appareil':
         return JSON.stringify(await getDeviceInfo(String(args.entity_id)));
       case 'controler_appareil':
+        if (!['turn_on', 'turn_off', 'toggle'].includes(String(args.action))) return 'Refusé : action invalide.';
         return await controlDevice(String(args.entity_id), args.action as 'turn_on' | 'turn_off' | 'toggle');
 
       case 'courses_lister':

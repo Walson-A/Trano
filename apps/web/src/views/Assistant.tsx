@@ -5,6 +5,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useActiveProfile } from '../core/store/useProfileStore';
 import { cn } from '../utils';
+import { useHomeStore } from '../core/store/useHomeStore';
+import { homeRequest } from '../lib/api';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -16,17 +18,17 @@ interface ChatMessage {
  * localStorage (survit au rechargement). Une conversation par appareil.
  */
 const useAssistantChat = create<{
-  messages: ChatMessage[];
-  setMessages: (m: ChatMessage[] | ((prev: ChatMessage[]) => ChatMessage[])) => void;
-  clear: () => void;
+  threads: Record<string, ChatMessage[]>;
+  setMessages: (home: string, m: ChatMessage[] | ((prev: ChatMessage[]) => ChatMessage[])) => void;
+  clear: (home: string) => void;
 }>()(
   persist(
     (set) => ({
-      messages: [],
-      setMessages: (m) => set((state) => ({ messages: typeof m === 'function' ? m(state.messages) : m })),
-      clear: () => set({ messages: [] }),
+      threads: {},
+      setMessages: (home, m) => set((state) => ({ threads: { ...state.threads, [home]: typeof m === 'function' ? m(state.threads[home] ?? []) : m } })),
+      clear: home => set(state => ({ threads: { ...state.threads, [home]: [] } })),
     }),
-    { name: 'trano-assistant-chat' }
+    { name: 'trano-assistant-chat', version: 1, migrate: old => ({ threads: { main: (old as { messages?: ChatMessage[] }).messages ?? [] } }) }
   )
 );
 
@@ -151,19 +153,23 @@ const SUGGESTIONS = [
 
 export function Assistant({ onClose }: { onClose?: () => void }) {
   const profile = useActiveProfile();
+  const { homeId, homes } = useHomeStore();
+  const homeName = homes.find(home => home.id === homeId)?.name ?? homeId;
   const [status, setStatus] = useState<AssistantStatus | null>(null);
-  const { messages, setMessages, clear } = useAssistantChat();
+  const { threads, setMessages, clear } = useAssistantChat();
+  const messages = threads[homeId] ?? [];
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetch('/api/assistant/status')
-      .then((r) => r.json())
-      .then(setStatus)
-      .catch(() => setStatus({ configured: false, haReady: false, model: '' }));
-  }, []);
+    let live = true;
+    homeRequest<AssistantStatus>('/api/assistant/status')
+      .then(value => { if (live) setStatus(value); })
+      .catch(() => { if (live) setStatus({ configured: false, haReady: false, model: '' }); });
+    return () => { live = false; };
+  }, [homeId]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -175,13 +181,14 @@ export function Assistant({ onClose }: { onClose?: () => void }) {
     setError(null);
     setInput('');
     const next = [...messages, { role: 'user' as const, content }];
-    setMessages(next);
+    setMessages(homeId, next);
     setBusy(true);
     try {
       const res = await fetch('/api/assistant/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          home_id: homeId,
           messages: next,
           profile: profile ? { id: profile.id, name: profile.name, avatar: profile.avatar, color: profile.color } : null,
         }),
@@ -196,7 +203,7 @@ export function Assistant({ onClose }: { onClose?: () => void }) {
       }
       if (!res.ok) throw new Error(data.error ?? `Erreur ${res.status}`);
       if (!data.reply) throw new Error('Réponse vide de l\'assistant, réessayez.');
-      setMessages((m) => [...m, { role: 'assistant', content: data.reply! }]);
+      setMessages(homeId, (m) => [...m, { role: 'assistant', content: data.reply! }]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur inconnue');
     } finally {
@@ -231,6 +238,7 @@ export function Assistant({ onClose }: { onClose?: () => void }) {
             <Sparkles className="w-7 h-7 text-amber-500" />
             Assistant
           </h1>
+          <p className="text-sm text-zinc-500 mt-2">{homeName} · les commandes restent dans ce logement</p>
           {status && !status.haReady && (
             <p className="text-xs text-amber-500 mt-1">⚠️ Home Assistant injoignable — les questions maison échoueront</p>
           )}
@@ -238,7 +246,7 @@ export function Assistant({ onClose }: { onClose?: () => void }) {
         <div className="flex items-center gap-1 shrink-0">
           {messages.length > 0 && (
             <button
-              onClick={() => { clear(); setError(null); }}
+              onClick={() => { clear(homeId); setError(null); }}
               title="Nouvelle conversation"
               className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/50 dark:hover:bg-white/5 transition-colors"
             >
@@ -266,7 +274,7 @@ export function Assistant({ onClose }: { onClose?: () => void }) {
               Bonjour{profile ? ` ${profile.name}` : ''} ! Posez-moi une question ou demandez une action.
             </p>
             <div className="flex flex-wrap justify-center gap-2">
-              {SUGGESTIONS.map((s) => (
+              {(homeId === 'main' ? SUGGESTIONS : ['Quels appareils sont allumés ?', 'Ajoute du lait aux courses', 'Éteins les lumières']).map((s) => (
                 <button
                   key={s}
                   onClick={() => send(s)}
@@ -317,7 +325,7 @@ export function Assistant({ onClose }: { onClose?: () => void }) {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && send(input)}
-          placeholder="Demandez quelque chose à la maison…"
+          placeholder={`Demandez quelque chose · ${homeName}…`}
           disabled={busy}
           className="flex-1 min-w-0 bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-white/5 rounded-2xl px-5 py-4 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-600 outline-none focus:border-zinc-400 dark:focus:border-white/20 transition-colors disabled:opacity-50"
         />

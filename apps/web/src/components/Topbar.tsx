@@ -3,6 +3,7 @@ import { WeatherWidget } from '../features/Weather/WeatherWidget';
 import { SystemStatus } from '../features/System/SystemStatus';
 import { Sun, Moon, Megaphone } from 'lucide-react';
 import { useHomeStore } from '../core/store/useHomeStore';
+import { useHomeConnectionPolling } from '../core/store/useHomeConnection';
 
 interface TopbarProps {
   isDarkMode: boolean;
@@ -11,6 +12,7 @@ interface TopbarProps {
 }
 
 export const Topbar: React.FC<TopbarProps> = ({ isDarkMode, toggleDarkMode, onOpenIntercom }) => {
+  useHomeConnectionPolling();
   const [time, setTime] = useState(new Date());
   const { homeId, homes, select, error } = useHomeStore();
 
@@ -46,7 +48,7 @@ export const Topbar: React.FC<TopbarProps> = ({ isDarkMode, toggleDarkMode, onOp
         </label>
         {homeId === 'main' && <WeatherWidget />}
         <div className="w-px h-6 bg-zinc-300 dark:bg-zinc-800 mx-1 hidden sm:block" />
-        {homeId === 'main' && <div className="hidden sm:block"><SystemStatus /></div>}
+        <div className="hidden sm:block"><SystemStatus /></div>
         <button
           onClick={onOpenIntercom}
           title="Interphone"

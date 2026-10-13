@@ -23,7 +23,7 @@ const SERVER_INFO = { name: 'trano', version: '1.0.0' };
 
 const INSTRUCTIONS = [
   "Outils des logements de la famille (Home Assistant et Tuya, via Trano).",
-  "Appelle lister_logements puis indique home_id dans chaque appel pour le logement demandé. Sans home_id, le logement historique est main ; ne suppose jamais que c’est la position actuelle de Walson.",
+  "Appelle lister_logements puis indique home_id dans chaque appel pour le logement choisi à l’écran. Sans home_id, l’appel est refusé. « Tout » se limite à ce logement ; ne devine jamais la position actuelle de Walson.",
   "Lecture : état de la maison, météo, énergie solaire et batteries, pièces, appareils.",
   "Action : allumer/éteindre lumières, prises, ventilateurs, volets, régler une lumière, activer une scène.",
   "Trouve toujours l'entity_id avec lister_appareils avant d'agir.",
@@ -51,6 +51,7 @@ function buildServer(): Server {
       name: t.name,
       description: t.description,
       inputSchema: toolInputSchema(t),
+      annotations: { readOnlyHint: !['controler_appareil', 'regler_lumiere', 'activer_scene'].includes(t.name) },
     })),
   }));
 
@@ -66,7 +67,7 @@ function buildServer(): Server {
     // seuls les courses et l'interphone signent leurs écritures, et ils sont hors
     // liste blanche.
     const text = await runTool(name, (args ?? {}) as Record<string, unknown>, { profile: null });
-    return { content: [{ type: 'text' as const, text }] };
+    return { content: [{ type: 'text' as const, text }], isError: /^(Refusé|Erreur)/.test(text) };
   });
 
   return server;

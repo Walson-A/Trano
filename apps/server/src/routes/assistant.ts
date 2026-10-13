@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { haConfigured } from '../lib/ha.ts';
 import { OPENROUTER_TOOLS, runTool, type ToolCtx } from '../lib/tools.ts';
+import { resolveHome, withHome } from '../lib/homes.ts';
 
 /**
  * Assistant IA de la maison, via OpenRouter.
@@ -14,11 +15,12 @@ const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const apiKey = () => process.env.TRANO_OPENROUTER_KEY?.trim() || null;
 const model = () => process.env.TRANO_OPENROUTER_MODEL?.trim() || 'nvidia/nemotron-3-super-120b-a12b:free';
 
-const SYSTEM_PROMPT = `Tu es Trano, l'assistant de la maison familiale (malgache : "trano" = maison).
+const SYSTEM_PROMPT = `Tu es Trano, l'assistant du logement choisi (malgache : "trano" = maison).
 Tu réponds en français, chaleureusement et brièvement — tes réponses s'affichent sur une tablette murale.
 Formate en Markdown simple (gras, listes à puces) mais évite les gros tableaux.
 La maison vise l'autonomie énergétique totale (solaire + batteries, 0 € chez EDF) : sois proactif là-dessus.
 Utilise TOUJOURS tes outils pour répondre avec les VRAIES données — n'invente jamais une valeur ni un entity_id.
+« Tout » signifie uniquement les appareils du logement choisi. N'utilise jamais une scène ou un appareil d'un autre logement. Pour changer de logement, demande de changer le sélecteur à l'écran.
 Pour agir sur un appareil, trouve d'abord son entity_id via lister_appareils.`;
 
 interface ChatMessage {
@@ -58,18 +60,27 @@ async function callOpenRouter(key: string, messages: ChatMessage[]): Promise<Res
 }
 
 export function assistantRoutes(app: FastifyInstance): void {
-  app.get('/api/assistant/status', () => ({
+  app.get<{ Querystring: { home_id?: string } }>('/api/assistant/status', (req, reply) => {
+    try { const home = resolveHome(req.query.home_id); return withHome(home, () => ({
     configured: Boolean(apiKey()),
-    haReady: haConfigured(),
+    haReady: home.provider === 'tuya' ? Boolean(home.tuya) : haConfigured(),
     model: model(),
-  }));
+    home_id: home.id,
+  })); } catch { return reply.code(400).send({ error: 'Logement inconnu.' }); }
+  });
 
   app.post<{
     Body: {
       messages: Array<{ role: 'user' | 'assistant'; content: string }>;
       profile?: ToolCtx['profile'];
+      home_id?: string;
     };
   }>('/api/assistant/chat', async (req, reply) => {
+    let home;
+    try {
+      if (!req.body?.home_id) throw new Error('missing');
+      home = resolveHome(req.body.home_id);
+    } catch { return reply.code(400).send({ error: 'Choisir explicitement un logement (home_id).' }); }
     const key = apiKey();
     if (!key) {
       return reply.code(503).send({ error: "Assistant non configuré : clé OpenRouter absente (variable TRANO_OPENROUTER_KEY)." });
@@ -79,9 +90,9 @@ export function assistantRoutes(app: FastifyInstance): void {
       return reply.code(400).send({ error: 'Il faut au moins un message utilisateur.' });
     }
 
-    const ctx: ToolCtx = { profile: req.body?.profile ?? null };
+    const ctx: ToolCtx = { profile: req.body?.profile ?? null, homeId: home.id };
     const messages: ChatMessage[] = [
-      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'system', content: `${SYSTEM_PROMPT}\nLogement choisi pour tout ce tour : ${home.name} (home_id=${home.id}). Tous les appels doivent utiliser cet identifiant. Ce choix prime sur l'historique.` },
       ...userMessages.map((m) => ({ role: m.role, content: m.content }) as ChatMessage),
     ];
 

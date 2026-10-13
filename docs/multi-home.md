@@ -1,5 +1,24 @@
 # Plusieurs logements, une famille
 
+## Assistants et connexion depuis un autre réseau
+
+Chaque requête du chat web transmet `home_id`, figé côté serveur pour tous ses
+outils. Les outils peuvent l'omettre mais ne peuvent pas en choisir un autre.
+Sans logement explicite, la requête est refusée avant d'appeler le modèle.
+Le chat conserve un fil distinct par logement ; l'ancien fil reste dans main.
+« Éteins tout » signifie uniquement les appareils de la cible choisie. Pour
+agir ailleurs, changer le sélecteur puis envoyer un nouveau message.
+
+MCP : `home_id` est obligatoire pour tous les outils de logement (schéma et
+exécution), sans défaut main. `lister_logements` reste indépendant. Les lectures
+portent `readOnlyHint` ; un refus est transmis avec `isError`. L'engine Oby doit
+lier ce paramètre au choix du client avant l'exécution et les approbations.
+
+Si le navigateur ne peut pas joindre HA directement, le badge indique
+« HA · Connecté via Trano » seulement après une lecture scoped réussie de
+`/api/house`. La météo utilise alors la même voie serveur. Si cette voie échoue,
+le badge devient indisponible et la météo ne conserve pas d'ancienne valeur.
+
 Contrat du 13 octobre 2026 : Walson utilise Tuya Smart à l’appartement ; chez ses
 parents, Home Assistant réunit plusieurs comptes. Chaque logement garde ses
 appareils et sa liste de courses. Les profils de la famille restent communs.

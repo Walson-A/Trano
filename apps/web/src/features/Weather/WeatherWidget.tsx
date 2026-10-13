@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useHA } from '../../context/HAContext';
 import { getWeatherEntity } from '../../lib/runtimeConfig';
+import { useHomeConnection } from '../../core/store/useHomeConnection';
+import { useHomeStore } from '../../core/store/useHomeStore';
 import { 
   Sun, Moon, Cloud, CloudFog, CloudHail, 
   CloudLightning, CloudSun, CloudRain, 
@@ -58,10 +60,21 @@ export const WeatherIcon: React.FC<{ state: string; size?: number }> = ({ state,
 
 export const WeatherWidget: React.FC<{ entityId?: string }> = ({ entityId }) => {
   const { entities, status } = useHA();
+  const remote = useHomeConnection();
+  const homeId = useHomeStore(s => s.homeId);
   // Résolution unique : sans prop (topbar), on prend l'entité météo configurée.
   const resolvedId = entityId ?? getWeatherEntity();
   const weatherEntity = entities[resolvedId];
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  if (status !== 'connected') {
+    const weather = remote.homeId === homeId && remote.status === 'connected' ? remote.weather : null;
+    return <div className="flex items-center gap-3 px-4 py-2" title="Météo du logement, via Trano">
+      {weather ? <WeatherIcon state={weather.etat} size={24} /> : <CloudOff size={24} className="text-zinc-500" />}
+      <div><span className="text-lg font-bold">{weather?.temperature != null ? `${Math.round(weather.temperature)}°C` : '--°C'}</span>
+        <p className="text-xs text-zinc-500">{weather ? WEATHER_MAPPING[weather.etat]?.label ?? weather.etat : 'Météo indisponible'}</p></div>
+    </div>;
+  }
 
   const isUnavailable = !weatherEntity || weatherEntity.state === 'unavailable' || weatherEntity.state === 'unknown';
 

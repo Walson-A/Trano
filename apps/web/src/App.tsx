@@ -179,8 +179,8 @@ export default function App() {
       </main>
 
       {/* Assistant à portée de main sur toutes les pages */}
-      {historicalHome && <AssistantFab onClick={() => setAssistantOpen(true)} />}
-      {historicalHome && <AssistantPanel isOpen={assistantOpen} onClose={() => setAssistantOpen(false)} />}
+      <AssistantFab onClick={() => setAssistantOpen(true)} />
+      <AssistantPanel key={homeId} isOpen={assistantOpen} onClose={() => setAssistantOpen(false)} />
 
       {/* Interphone : envoi (modal) et réception (overlay plein écran) */}
       <IntercomModal isOpen={intercomOpen} onClose={() => setIntercomOpen(false)} />

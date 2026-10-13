@@ -3,6 +3,8 @@ import type { HassEntities } from 'home-assistant-js-websocket';
 import { useHA } from '../../context/HAContext';
 import { Wifi, WifiOff, Activity, Landmark, Cloud, RefreshCw } from 'lucide-react';
 import { cn } from '../../utils';
+import { useHomeConnection } from '../../core/store/useHomeConnection';
+import { useHomeStore } from '../../core/store/useHomeStore';
 
 /**
  * Mise a jour de Home Assistant disponible ?
@@ -32,6 +34,8 @@ function useHaUpdate(entities: HassEntities) {
 
 export function SystemStatus() {
   const { connection, status, entities } = useHA();
+  const remote = useHomeConnection();
+  const { homeId, homes } = useHomeStore();
   const isConnected = status === 'connected';
   const update = useHaUpdate(entities);
   const [showSystemStatus, setShowSystemStatus] = useState(false);
@@ -71,6 +75,16 @@ export function SystemStatus() {
     return () => clearInterval(interval);
   }, [connection, status]);
 
+  if (!isConnected) {
+    const state = remote.homeId === homeId ? remote.status : 'connecting';
+    const label = state === 'connected' ? 'Connecté via Trano' : state === 'error' ? 'Connexion indisponible' : 'Connexion…';
+    const provider = homes.find(home => home.id === homeId)?.provider;
+    return <div className="flex items-center gap-2 rounded-2xl border px-3 py-2 text-xs" role="status" aria-label={label}
+      title={state === 'connected' ? 'Le serveur Trano communique avec le connecteur de ce logement. Actualisation périodique.' : label}
+      style={{ color: state === 'connected' ? '#10b981' : state === 'error' ? '#ef4444' : '#71717a', borderColor: 'currentColor' }}>
+      {state === 'connected' ? <Wifi size={18} /> : <WifiOff size={18} />}<span>{provider === 'tuya' ? 'Tuya' : 'HA'} · {label}</span>
+    </div>;
+  }
   return (
     <div className="relative" ref={containerRef}>
       {/* Connection Indicator Trigger */}
