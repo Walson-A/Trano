@@ -1,5 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
+/* Explicit source keeps responsive utilities in isolated/ignored worktrees. */
+@source "./";
 /* Forme descendante (pas :where) : Safari 12 (iPad mural) ne parse pas
    :where() et jetterait toutes les règles dark:*. */
 @variant dark (.dark &);

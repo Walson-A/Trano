@@ -3,6 +3,14 @@
 Base : même origine que l'app (`/api/...`). Toutes les réponses sont en JSON.
 Types de référence dans `packages/shared/src/index.ts`.
 
+Les routes maison et courses acceptent `?home_id=…` (défaut historique `main`).
+Les lectures/écritures restent dans ce logement. `/api/homes` liste les logements,
+et `/api/shopping/send` copie une sélection vers un autre logement sans modifier la
+source. Contrats, migration et activation Tuya : [multi-home.md](multi-home.md).
+L’affectation d’appareils via `/api/homes/:id/devices` reprend les favoris existants
+pour les entités nouvellement déplacées depuis main ; elle ne rétablit pas les
+favoris que le profil a ensuite retirés du logement destinataire.
+
 ## Santé & config
 
 | Méthode | Route | Description |

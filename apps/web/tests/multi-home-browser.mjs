@@ -1,0 +1,114 @@
+import { createRequire } from 'node:module';
+import { mkdirSync } from 'node:fs';
+import { resolve } from 'node:path';
+import assert from 'node:assert/strict';
+const require = createRequire(import.meta.url);
+const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
+const output = resolve(process.argv[2] || 'docs/reviews/multi-home');
+mkdirSync(output, { recursive: true });
+const browser = await chromium.launch({ headless: true, channel: process.env.PLAYWRIGHT_CHANNEL || 'msedge' });
+const page = await browser.newPage({ viewport: { width: 1365, height: 900 } });
+const profile = { id: 'bench-walson', name: 'Walson · banc', avatar: '😀', color: '#f59e0b', favorites: [], kind: 'person', role: 'admin', roomIds: [], favoriteRooms: [], dashboardLayout: [], isKid: false };
+let configured = false;
+let provider = 'tuya';
+let assignedIds = [];
+const homes = () => [{ id: 'main', name: 'Maison familiale', provider: 'ha', configured: true, excludedEntityIds: provider === 'ha' ? assignedIds : [] }, { id: 'apartment', name: 'Appartement', provider, configured, sharedHA: provider === 'ha', entityIds: provider === 'ha' ? assignedIds : [] }];
+const light = { entity_id: 'light.tuya_bench', nom: 'Lampe du bureau', etat: 'on', piece: null, lumiere: { luminosite_pct: 65, reglable: true, couleur: true, blanc_reglable: false, hs: [210, 80], kelvin: null, kelvin_min: 2200, kelvin_max: 6500, mode: 'hs' } };
+const off = { entity_id: 'light.tuya_offline', nom: 'Lampe du salon hors ligne', etat: 'unavailable', piece: null, lumiere: null };
+const house = (homeId = 'apartment') => {
+  const devices = provider === 'ha' ? [light, off].filter(device => homeId === 'main' ? !assignedIds.includes(device.entity_id) : assignedIds.includes(device.entity_id)) : [light, off];
+  const favorites = devices.filter(device => device.entity_id === light.entity_id);
+  return { home_id: homeId, appareils: devices, favorite_ids: favorites.map(device => device.entity_id), favoris: favorites, allumes: devices.filter(device => device.etat === 'on'), energie: null, meteo: null, scenes: [], total_appareils: devices.length, profil_connu: true, refresh_seconds: 120 };
+};
+const item = { id: 'bench-milk', title: 'Lait', category: 'alimentaire', quantity: '2 bouteilles', status: 'todo', authorId: profile.id, recurrenceDays: null, nextDue: null, boughtAt: null, boughtBy: null, createdAt: '2026-10-13T08:00:00Z' };
+const requests = [];
+let legacyHouse = false;
+await page.addInitScript(() => {
+  localStorage.setItem('trano-device-id', 'bench-device');
+  localStorage.setItem('trano-active-profile', JSON.stringify({ state: { activeProfileId: 'bench-walson' }, version: 0 }));
+});
+await page.route('**/api/**', async route => {
+  const url = new URL(route.request().url());
+  if (!url.pathname.startsWith('/api/')) return route.continue();
+  requests.push({ path: url.pathname, home: url.searchParams.get('home_id'), method: route.request().method() });
+  let result = {};
+  if (url.pathname === '/api/profiles') result = [profile];
+  if (url.pathname === '/api/homes') result = homes();
+  if (url.pathname === '/api/config') result = { haUrl: null, haToken: null };
+  if (url.pathname === '/api/house') {
+    if (!configured) return route.fulfill({ status: 503, json: { error: 'Tuya à connecter : autoriser le compte Tuya Smart.' } });
+    result = house(url.searchParams.get('home_id') ?? 'main');
+    if (legacyHouse) delete result.home_id;
+  }
+  if (url.pathname === '/api/shopping') result = [item];
+  if (url.pathname === '/api/shopping/send') result = { added: 1, alreadySent: 0 };
+  if (url.pathname === '/api/rooms' || url.pathname === '/api/presence' || url.pathname === '/api/user-devices') result = [];
+  if (url.pathname.startsWith('/api/house/') || url.pathname.endsWith('/favorites')) result = { ok: true };
+  if (url.pathname.endsWith('/candidates')) result = [light, off];
+  if (url.pathname.endsWith('/devices') && route.request().method() === 'PUT') { assignedIds = route.request().postDataJSON().entityIds; configured = true; result = { ok: true }; }
+  await route.fulfill({ json: result, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type', 'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,PATCH,OPTIONS' } });
+});
+try {
+  await page.goto('http://127.0.0.1:3142/?home=apartment');
+  await page.getByRole('heading', { name: 'Connecter Tuya Smart' }).waitFor();
+  assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector('aside')).display), 'flex');
+  await page.screenshot({ path: resolve(output, 'trano-apartment-connect.png'), fullPage: true });
+  await page.getByRole('button', { name: 'Courses', exact: true }).first().click();
+  await page.getByRole('heading', { name: 'Courses · Appartement' }).waitFor();
+  await page.getByRole('checkbox', { name: 'Sélectionner Lait pour l’envoi' }).check();
+  await page.screenshot({ path: resolve(output, 'trano-shopping-selection.png'), fullPage: true });
+  await page.getByRole('button', { name: 'Envoyer (1)', exact: true }).click();
+  await page.getByRole('status').filter({ hasText: 'Votre liste est conservée' }).waitFor();
+  assert.ok(requests.some(req => req.path === '/api/shopping/send' && req.home === 'apartment'));
+  await page.screenshot({ path: resolve(output, 'trano-shopping-sent.png'), fullPage: true });
+  configured = true;
+  await page.goto('http://127.0.0.1:3142/?home=apartment');
+  await page.getByRole('heading', { name: 'Lampe du bureau' }).waitFor();
+  await page.screenshot({ path: resolve(output, 'trano-apartment-devices.png'), fullPage: true });
+  await page.getByRole('button', { name: 'Éteindre', exact: true }).click();
+  assert.ok(requests.some(req => req.path === '/api/house/device' && req.home === 'apartment'));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: resolve(output, 'trano-apartment-narrow.png'), fullPage: true });
+  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+  await page.setViewportSize({ width: 1365, height: 900 });
+  provider = 'ha'; configured = false;
+  light.entity_id = 'light.led_tele'; light.nom = 'LED Télé';
+  await page.goto('http://127.0.0.1:3142/?home=apartment');
+  await page.getByRole('heading', { name: 'Retrouver les appareils de l’appartement' }).waitFor();
+  await page.getByRole('button', { name: 'Choisir les appareils de ce logement' }).click();
+  await page.getByRole('checkbox').first().check();
+  await page.screenshot({ path: resolve(output, 'trano-shared-ha-assignment.png'), fullPage: true });
+  await page.getByRole('button', { name: 'Enregistrer', exact: true }).click();
+  await page.getByRole('heading', { name: 'LED Télé', exact: true }).waitFor();
+  assert.ok(requests.some(req => req.path === '/api/homes/apartment/devices' && req.method === 'PUT'));
+  await page.screenshot({ path: resolve(output, 'trano-shared-ha-apartment.png'), fullPage: true });
+  await page.route('http://100.80.77.107:3001/**', async route => {
+    const url = new URL(route.request().url());
+    if (url.pathname.startsWith('/api/')) return route.fallback();
+    const response = await route.fetch({ url: 'http://127.0.0.1:3142' + url.pathname + url.search });
+    await route.fulfill({ response });
+  });
+  await page.goto('http://127.0.0.1:3141/home-multi.html?home=apartment&focus');
+  const tranoFrame = page.frameLocator('iframe');
+  await tranoFrame.getByRole('heading', { name: 'Appartement', exact: true }).waitFor();
+  await tranoFrame.getByRole('heading', { name: 'LED Télé', exact: true }).waitFor();
+  await page.screenshot({ path: resolve(output, 'atlas-focus-apartment.png'), fullPage: true });
+  await tranoFrame.getByRole('combobox', { name: 'Logement contrôlé' }).selectOption('main');
+  await page.waitForFunction(() => document.querySelector('select')?.value === 'main');
+  await page.getByRole('combobox', { name: 'Logement contrôlé' }).first().evaluate(select => {
+    if (select.value !== 'main') throw new Error('Iframe home selection did not synchronize with Atlas.');
+  });
+  await page.goto('http://127.0.0.1:3141/home-multi.html?home=apartment');
+  await page.getByText('LED Télé', { exact: true }).waitFor();
+  await page.screenshot({ path: resolve(output, 'atlas-widget-apartment.png'), fullPage: true });
+  await page.locator('#home-container').screenshot({ path: resolve(output, 'atlas-widget-apartment-detail.png') });
+  await page.getByRole('combobox', { name: 'Logement contrôlé' }).selectOption('main');
+  assert.ok(await page.getByRole('combobox', { name: 'Logement contrôlé' }).inputValue() === 'main');
+  await page.screenshot({ path: resolve(output, 'atlas-widget-main.png'), fullPage: true });
+  legacyHouse = true;
+  await page.goto('http://127.0.0.1:3141/home-multi.html?home=apartment');
+  await page.getByText('Cette version de Trano ne confirme pas le logement demandé. Mettre Trano à jour.').waitFor();
+  assert.equal(await page.getByText('LED Télé', { exact: true }).count(), 0);
+  await page.screenshot({ path: resolve(output, 'atlas-widget-legacy-refused.png'), fullPage: true });
+  console.log('Browser contracts passed: shared HA assignment, optional Tuya setup, scoped command, shopping send, narrow layout, Atlas home switch, iframe sync and legacy refusal.');
+} finally { await browser.close(); }

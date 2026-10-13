@@ -56,6 +56,25 @@ function ensureColumn(table: string, column: string, definition: string): void {
 }
 
 ensureColumn('profiles', 'dashboard_layout', "TEXT NOT NULL DEFAULT '[]'");
+// Existing groceries remain in the historical home. No copy or deletion.
+ensureColumn('shopping_items', 'home_id', "TEXT NOT NULL DEFAULT 'main'");
+ensureColumn('shopping_items', 'source_item_id', 'TEXT');
+db.exec(`
+  CREATE INDEX IF NOT EXISTS shopping_home ON shopping_items(home_id);
+  CREATE UNIQUE INDEX IF NOT EXISTS shopping_transfer ON shopping_items(home_id, source_item_id) WHERE source_item_id IS NOT NULL;
+  CREATE TABLE IF NOT EXISTS home_favorites (
+    home_id TEXT NOT NULL,
+    profile_id TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    entity_ids TEXT NOT NULL DEFAULT '[]',
+    PRIMARY KEY(home_id, profile_id)
+  );
+  CREATE TABLE IF NOT EXISTS home_devices (
+    source_id TEXT NOT NULL,
+    entity_id TEXT NOT NULL,
+    home_id TEXT NOT NULL,
+    PRIMARY KEY(source_id, entity_id)
+  );
+`);
 
 // ─── Pièces (personnalisables depuis l'app) ─────────────────
 

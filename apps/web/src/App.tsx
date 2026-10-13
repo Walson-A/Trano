@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Topbar } from './components/Topbar';
 import { Dashboard } from './views/Dashboard';
@@ -22,6 +22,9 @@ import { getDeviceId } from './lib/deviceInfo';
 import { useDeviceHeartbeat } from './hooks/useDeviceHeartbeat';
 import { connectTranoWs } from './lib/api';
 import { useConfigStore } from './core/store/useConfigStore';
+import { useHomeStore } from './core/store/useHomeStore';
+import { HomeDevices } from './features/Homes/HomeDevices';
+import { useDeviceControls } from './core/store/useDeviceControls';
 
 export type Tab = 'dashboard' | 'floorplan' | 'rooms' | 'courses' | 'energy' | 'settings';
 
@@ -32,11 +35,29 @@ export default function App() {
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [intercomOpen, setIntercomOpen] = useState(false);
   const [incomingCall, setIncomingCall] = useState<WsIntercomMessage | null>(null);
+  const { homeId, fetchHomes } = useHomeStore();
+  const historicalHome = homeId === 'main';
+  useEffect(() => { void fetchHomes(); }, [fetchHomes]);
+  useEffect(() => {
+    setActiveTab('dashboard'); setAssistantOpen(false);
+    useDeviceControls.getState().close();
+    useShoppingStore.setState({ items: [], loaded: false, error: null });
+    void useShoppingStore.getState().fetchItems();
+  }, [homeId]);
 
-  const { devices, allDevices, roomClimate, toggleDevice } = useHAAdapter();
+  const { devices, allDevices, roomClimate, toggleDevice, status: haStatus } = useHAAdapter();
+  const localHA = historicalHome && haStatus === 'connected';
   const fetchProfiles = useProfileStore((s) => s.fetchProfiles);
   const setActiveProfile = useProfileStore((s) => s.setActiveProfile);
   const activeProfile = useActiveProfile();
+  const profiles = useProfileStore(s => s.profiles);
+  const requestedProfile = useRef(new URLSearchParams(location.search).get('profile'));
+  useEffect(() => {
+    if (requestedProfile.current && profiles.some(profile => profile.id === requestedProfile.current)) {
+      setActiveProfile(requestedProfile.current);
+      requestedProfile.current = null;
+    }
+  }, [profiles, setActiveProfile]);
   // Un appareil inconnu se présente avant tout le reste : c'est ce qui relie
   // ensuite une personne à un téléphone, sans quoi l'interphone ne peut
   // désigner personne et « qui est là » n'a aucune source.
@@ -59,7 +80,7 @@ export default function App() {
 
     const disconnect = connectTranoWs({
       onChanged: (topic) => {
-        if (topic === 'profiles') fetchProfiles();
+        if (topic === 'profiles') { fetchProfiles(); void fetchHomes(); useDeviceControls.getState().close(); }
         if (topic === 'shopping') useShoppingStore.getState().fetchItems();
         if (topic === 'rooms') useRoomsStore.getState().fetchRooms();
         if (topic === 'device-overrides') useConfigStore.getState().fetchOverrides();
@@ -106,6 +127,7 @@ export default function App() {
         setActiveTab={setActiveTab}
         profile={activeProfile}
         onProfileClick={() => setActiveProfile(null)}
+        fullHouse={localHA}
       />
 
       <main className="flex-1 flex flex-col h-full overflow-hidden relative">
@@ -116,7 +138,8 @@ export default function App() {
         />
 
         <div className="flex-1 overflow-y-auto scrollbar-hide p-6 lg:p-12">
-          {activeTab === 'dashboard' && (
+          {!localHA && activeTab !== 'courses' && <HomeDevices key={homeId} />}
+          {localHA && activeTab === 'dashboard' && (
             <Dashboard
               currentUser={activeProfile}
               devices={devices}
@@ -131,11 +154,11 @@ export default function App() {
             />
           )}
 
-          {activeTab === 'floorplan' && (
+          {localHA && activeTab === 'floorplan' && (
             <FloorPlan devices={devices} onToggleDevice={toggleDevice} />
           )}
 
-          {activeTab === 'rooms' && (
+          {localHA && activeTab === 'rooms' && (
             <Rooms
               devices={devices}
               roomClimate={roomClimate}
@@ -145,26 +168,26 @@ export default function App() {
             />
           )}
 
-          {activeTab === 'courses' && <Shopping />}
+          {activeTab === 'courses' && <Shopping key={homeId} />}
 
-          {activeTab === 'energy' && <Energy />}
+          {localHA && activeTab === 'energy' && <Energy />}
 
-          {activeTab === 'settings' && activeProfile.kind !== 'house' && (
+          {localHA && activeTab === 'settings' && activeProfile.kind !== 'house' && (
             <Settings devices={allDevices} />
           )}
         </div>
       </main>
 
       {/* Assistant à portée de main sur toutes les pages */}
-      <AssistantFab onClick={() => setAssistantOpen(true)} />
-      <AssistantPanel isOpen={assistantOpen} onClose={() => setAssistantOpen(false)} />
+      {historicalHome && <AssistantFab onClick={() => setAssistantOpen(true)} />}
+      {historicalHome && <AssistantPanel isOpen={assistantOpen} onClose={() => setAssistantOpen(false)} />}
 
       {/* Interphone : envoi (modal) et réception (overlay plein écran) */}
       <IntercomModal isOpen={intercomOpen} onClose={() => setIntercomOpen(false)} />
       <IntercomOverlay message={incomingCall} onDismiss={() => setIncomingCall(null)} />
 
       {/* Fiche de contrôle détaillée (luminosité, couleur des lumières) */}
-      <DeviceControlSheet />
+      {historicalHome && <DeviceControlSheet />}
     </div>
   );
 }

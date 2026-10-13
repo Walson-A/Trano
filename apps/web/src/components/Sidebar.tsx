@@ -3,6 +3,7 @@ import { Home, Map, Settings, LayoutGrid, Zap, ShoppingCart } from 'lucide-react
 import type { Profile } from '@trano/shared';
 import type { Tab } from '../App';
 import { cn } from '../utils';
+import { useHomeStore } from '../core/store/useHomeStore';
 
 interface SidebarProps {
   activeTab: Tab;
@@ -10,24 +11,27 @@ interface SidebarProps {
   profile: Profile;
   /** Retour à l'écran de sélection de profil */
   onProfileClick: () => void;
+  fullHouse?: boolean;
 }
 
-export function Sidebar({ activeTab, setActiveTab, profile, onProfileClick }: SidebarProps) {
+export function Sidebar({ activeTab, setActiveTab, profile, onProfileClick, fullHouse = true }: SidebarProps) {
+  const historicalHome = useHomeStore(s => s.homeId === 'main') && fullHouse;
   // Destinations principales (au centre). Réglages est une utilité (en bas).
-  const navItems = [
+  const allNavItems = [
     { id: 'dashboard', icon: Home, label: 'Accueil' },
     { id: 'floorplan', icon: Map, label: 'Plan' },
     { id: 'rooms', icon: LayoutGrid, label: 'Pièces' },
     { id: 'courses', icon: ShoppingCart, label: 'Courses' },
     { id: 'energy', icon: Zap, label: 'Énergie' },
   ] as const;
+  const navItems = allNavItems.filter(item => historicalHome || item.id === 'dashboard' || item.id === 'courses');
 
   // Les Réglages sont masqués sur le profil « Maison », celui des écrans
   // partagés : une tablette murale n'a pas à proposer de renommer les pièces à
   // qui passe devant. Ce n'est pas une sécurité — il n'y en a aucune dans
   // Trano — c'est un écran qu'on garde simple. Chacun retrouve les Réglages en
   // choisissant son propre profil.
-  const showSettings = profile.kind !== 'house';
+  const showSettings = historicalHome && profile.kind !== 'house';
 
   const avatarBadge = (size: string) => (
     <div

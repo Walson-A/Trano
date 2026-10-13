@@ -17,6 +17,7 @@ import { userDeviceRoutes } from './routes/userDevices.ts';
 import { startEnergyWatcher } from './lib/energyWatcher.ts';
 import { startBackupScheduler } from './lib/backup.ts';
 import { registerClient } from './ws.ts';
+import { homeRoutes, homeScope } from './routes/homes.ts';
 
 // En dev, les secrets (HA, OpenRouter) vivent dans apps/server/.env (gitignoré).
 // En prod, ils viennent du .env du conteneur (env_file du docker-compose).
@@ -54,12 +55,13 @@ app.register(async (instance) => {
 });
 
 profileRoutes(app);
-shoppingRoutes(app);
+app.register(async scoped => { homeScope(scoped); shoppingRoutes(scoped); });
 assistantRoutes(app);
 intercomRoutes(app);
 roomRoutes(app);
 mcpRoutes(app);
-houseRoutes(app);
+homeRoutes(app);
+app.register(async scoped => { homeScope(scoped); houseRoutes(scoped); });
 overrideRoutes(app);
 backupRoutes(app);
 userDeviceRoutes(app);

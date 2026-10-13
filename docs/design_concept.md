@@ -2,6 +2,20 @@
 
 Interface premium, minimaliste, optimisée pour tablettes tactiles et écrans OLED.
 
+## Logement contrôlé
+
+La barre supérieure porte un sélecteur de logement permanent, distinct du profil.
+Le titre de la page confirme le logement. L’appartement propose les appareils
+compatibles et les courses ; plan/énergie/réglages de la maison familiale restent
+dans `main`. L’état Tuya non connecté explique la prochaine action tout en laissant
+les courses accessibles. Les commandes indisponibles restent désactivées.
+La liste de courses affiche un choix d’envoi séparé du bouton « acheté », le
+destinataire et une confirmation de conservation de la source.
+« Choisir les appareils de ce logement » permet d’affecter les entités du HA
+familial à l’appartement, sans demander de clés cloud Tuya pour une lampe déjà
+reliée. La grande vue passe par la REST quand le WebSocket HA du LAN est inaccessible.
+Voir [le contrat](multi-home.md) et [la revue](reviews/multi-home/review.md).
+
 ## 1. Palette de Couleurs
 
 L'interface supporte Dark et Light mode (toggle manuel).

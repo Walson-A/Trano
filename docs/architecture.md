@@ -2,6 +2,14 @@
 
 ## Vue d'ensemble
 
+Le [multi-logement](multi-home.md) ajoute un contexte de logement aux routes maison
+et courses, un connecteur Tuya côté serveur et des favoris par logement/profil.
+`main` conserve le WebSocket HA et les données historiques ; les logements
+supplémentaires utilisent la vue d’appareils REST. Les profils restent familiaux.
+La voie retenue pour l’appartement réutilise le HA familial et son lien cloud Tuya.
+`home_devices` affecte ses entités à un logement et les exclut de main. Si le
+WebSocket HA du LAN est inaccessible, la grande vue utilise aussi la REST pour main.
+
 Trano est un **monorepo npm workspaces** composé de trois paquets :
 
 ```

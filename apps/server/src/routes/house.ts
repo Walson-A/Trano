@@ -4,6 +4,8 @@ import {
   type ControllableDevice, type HomeScene,
 } from '../lib/ha.ts';
 import { db } from '../db.ts';
+import { currentHome } from '../lib/homes.ts';
+import { tuyaDevices, tuyaControl } from '../lib/tuya.ts';
 
 /**
  * L'état de la maison en un objet, pour un client d'application.
@@ -26,6 +28,11 @@ function favoritesOf(profileId: string | undefined): string[] | null {
     | { favorites: string }
     | undefined;
   if (!row) return null;
+  if (currentHome().id !== 'main') {
+    const homeRow = db.prepare('SELECT entity_ids FROM home_favorites WHERE home_id = ? AND profile_id = ?')
+      .get(currentHome().id, profileId) as { entity_ids: string } | undefined;
+    return homeRow ? JSON.parse(homeRow.entity_ids) : [];
+  }
   try {
     const list = JSON.parse(row.favorites);
     return Array.isArray(list) ? list.map(String) : [];
@@ -36,7 +43,8 @@ function favoritesOf(profileId: string | undefined): string[] | null {
 
 export function houseRoutes(app: FastifyInstance): void {
   app.get<{ Querystring: { profile?: string } }>('/api/house', async (req, reply) => {
-    if (!haConfigured()) {
+    const home = currentHome();
+    if (home.provider === 'ha' && !haConfigured()) {
       return reply.code(503).send({ error: 'Home Assistant non configuré côté serveur.' });
     }
 
@@ -46,7 +54,9 @@ export function houseRoutes(app: FastifyInstance): void {
     try {
       // Deux appels HA seulement : les états (énergie, météo) et le template,
       // qui rend les appareils ET les scènes en un rendu.
-      const [snap, entites] = await Promise.all([getHouseSnapshot(), fetchEntities()]);
+      const [snap, entites] = home.provider === 'tuya'
+        ? [{}, { devices: await tuyaDevices(home), scenes: [] }]
+        : await Promise.all([getHouseSnapshot(), fetchEntities()]);
       snapshot = snap;
       ({ devices, scenes } = entites);
     } catch (err) {
@@ -63,6 +73,10 @@ export function houseRoutes(app: FastifyInstance): void {
     const favorites = (wanted ?? []).map((id) => byId.get(id)).filter((d): d is ControllableDevice => Boolean(d));
 
     return {
+      home_id: home.id,
+      appareils: devices,
+      favorite_ids: wanted ?? [],
+      refresh_seconds: home.provider === 'tuya' ? 120 : 10,
       energie: snapshot.energie ?? null,
       meteo: snapshot.meteo ?? null,
       // Seuls les favoris portent leurs réglages de lumière : ce sont les seules
@@ -89,14 +103,18 @@ export function houseRoutes(app: FastifyInstance): void {
     if (action !== 'turn_on' && action !== 'turn_off' && action !== 'toggle') {
       return reply.code(400).send({ error: "action doit être turn_on, turn_off ou toggle." });
     }
-    if (!haConfigured()) {
+    if (currentHome().provider === 'ha' && !haConfigured()) {
       return reply.code(503).send({ error: 'Home Assistant non configuré côté serveur.' });
     }
 
     try {
       // `controlDevice` porte déjà les garde-fous : entity_id validé, domaines
       // autorisés, serrures et alarme exclues. On ne les réécrit pas ici.
-      const message = await controlDevice(entityId, action);
+      const home = currentHome();
+      // Check membership before delegating: identical HA IDs can exist in two homes.
+      const devices = home.provider === 'tuya' ? await tuyaDevices(home) : (await fetchEntities()).devices;
+      if (!devices.some(d => d.entity_id === entityId)) return reply.code(404).send({ error: 'Appareil absent de ce logement.' });
+      const message = home.provider === 'tuya' ? await tuyaControl(home, entityId, action) : await controlDevice(entityId, action);
       const refused = message.startsWith('Refusé');
       return reply.code(refused ? 403 : 200).send({ ok: !refused, message });
     } catch (err) {
@@ -118,7 +136,7 @@ export function houseRoutes(app: FastifyInstance): void {
   }>('/api/house/light', async (req, reply) => {
     const entityId = req.body?.entity_id?.trim();
     if (!entityId) return reply.code(400).send({ error: 'entity_id manquant.' });
-    if (!haConfigured()) {
+    if (currentHome().provider === 'ha' && !haConfigured()) {
       return reply.code(503).send({ error: 'Home Assistant non configuré côté serveur.' });
     }
 
@@ -133,11 +151,18 @@ export function houseRoutes(app: FastifyInstance): void {
     if (brightness_pct === undefined && kelvin === undefined && hs_color === undefined) {
       return reply.code(400).send({ error: 'Aucun réglage fourni.' });
     }
+    if ((brightness_pct !== undefined && (brightness_pct < 0 || brightness_pct > 100))
+      || (hs_color && (hs_color[0] < 0 || hs_color[0] > 360 || hs_color[1] < 0 || hs_color[1] > 100))) {
+      return reply.code(400).send({ error: 'Réglage hors limites.' });
+    }
 
     try {
       // Les bornes et le refus des non-lumières sont dans `setLightState` ;
       // on ne les réécrit pas ici.
-      const message = await setLightState(entityId, { brightness_pct, kelvin, hs_color });
+      const home = currentHome();
+      const devices = home.provider === 'tuya' ? await tuyaDevices(home) : (await fetchEntities()).devices;
+      if (!devices.some(d => d.entity_id === entityId)) return reply.code(404).send({ error: 'Appareil absent de ce logement.' });
+      const message = home.provider === 'tuya' ? await tuyaControl(home, entityId, 'turn_on', { brightness_pct, kelvin, hs_color }) : await setLightState(entityId, { brightness_pct, kelvin, hs_color });
       const refused = message.startsWith('Refusé');
       return reply.code(refused ? 403 : 200).send({ ok: !refused, message });
     } catch (err) {
@@ -148,6 +173,7 @@ export function houseRoutes(app: FastifyInstance): void {
 
   /** Joue une scène. `activateScene` refuse tout ce qui n'est pas `scene.`. */
   app.post<{ Body: { entity_id?: string } }>('/api/house/scene', async (req, reply) => {
+    if (currentHome().provider !== 'ha') return reply.code(400).send({ error: 'Les scènes ne sont pas encore disponibles pour ce connecteur.' });
     const entityId = req.body?.entity_id?.trim();
     if (!entityId) return reply.code(400).send({ error: 'entity_id manquant.' });
     if (!haConfigured()) {

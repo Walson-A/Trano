@@ -6,6 +6,8 @@ import {
 } from './ha.ts';
 import { db, newId } from '../db.ts';
 import { broadcast, broadcastMessage } from '../ws.ts';
+import { currentHome, resolveHome, publicHomes, withHome } from './homes.ts';
+import { tuyaDevices, tuyaControl } from './tuya.ts';
 
 /**
  * Les outils de la maison — la table unique.
@@ -41,6 +43,7 @@ export interface ToolDef {
 }
 
 export const TOOL_DEFS: ToolDef[] = [
+  { name: 'lister_logements', description: 'Logements de la famille : identifiant, nom et connecteur. Toujours choisir le logement avant une commande.', params: {}, oby: true },
   { name: 'etat_maison', description: "Vue d'ensemble temps réel : météo, énergie, lumières allumées, lecture en cours, présence des membres, wifi, appels manqués.", params: {}, oby: true },
   { name: 'meteo', description: 'Météo détaillée (température, ressenti, humidité, vent, pression).', params: {}, oby: true },
   { name: 'energie', description: 'Bilan énergétique détaillé : production solaire par source, réseau EDF (import/export), chaque batterie, production du jour/semaine/totale.', params: {}, oby: true },
@@ -120,6 +123,10 @@ export const OPENROUTER_TOOLS = TOOL_DEFS.map((t) => ({
 }));
 
 /** Les outils exposés à Oby (lecture + pilotage des appareils). */
+// Every tool names its home. Omitting it preserves the historical main contract.
+for (const tool of TOOL_DEFS) {
+  if (tool.name !== 'lister_logements') tool.params.home_id = { type: 'string', description: 'Identifiant du logement, via lister_logements. Défaut historique : main (maison familiale).' };
+}
 export const OBY_TOOL_DEFS = TOOL_DEFS.filter((t) => t.oby);
 
 /** Liste blanche vérifiée au moment de l'appel, pas seulement à la déclaration. */
@@ -130,6 +137,32 @@ export function isExposedToOby(name: string): boolean {
 }
 
 export async function runTool(name: string, args: Record<string, unknown>, ctx: ToolCtx): Promise<string> {
+  try {
+    const home = resolveHome(args.home_id ?? 'main');
+    return await withHome(home, async () => {
+      if (name === 'lister_logements') return JSON.stringify(publicHomes());
+      if (home.provider === 'tuya' && !name.startsWith('courses_')) {
+        const devices = await tuyaDevices(home);
+        if (name === 'etat_maison') return JSON.stringify({ home_id: home.id, appareils: devices, energie: null, meteo: null });
+        if (name === 'lister_appareils') return JSON.stringify(devices);
+        if (name === 'infos_appareil') return JSON.stringify(devices.find(d => d.entity_id === args.entity_id) ?? { error: 'Appareil absent de ce logement.' });
+        if (name === 'controler_appareil') {
+          if (!['turn_on', 'turn_off', 'toggle'].includes(String(args.action))) return 'Refusé : action invalide.';
+          return tuyaControl(home, String(args.entity_id), String(args.action));
+        }
+        if (name === 'regler_lumiere' && !args.couleur && typeof args.luminosite === 'number' && Number.isFinite(args.luminosite) && args.luminosite >= 0 && args.luminosite <= 100) {
+          return tuyaControl(home, String(args.entity_id), 'turn_on', { brightness_pct: args.luminosite });
+        }
+        return 'Fonction non disponible pour ce connecteur. Les appareils de la maison familiale ne sont pas utilisés en remplacement.';
+      }
+      // Rooms and family-wide intercom still belong to the original installation.
+      if (home.id !== 'main' && ['lister_pieces', 'interphone', 'controler_freebox'].includes(name)) return 'Fonction disponible uniquement dans la maison familiale.';
+      return runScopedTool(name, args, ctx);
+    });
+  } catch (e) { return `Erreur : ${e instanceof Error ? e.message : 'commande impossible'}`; }
+}
+
+async function runScopedTool(name: string, args: Record<string, unknown>, ctx: ToolCtx): Promise<string> {
   try {
     switch (name) {
       case 'etat_maison':
@@ -149,7 +182,7 @@ export async function runTool(name: string, args: Record<string, unknown>, ctx: 
 
       case 'courses_lister':
         return JSON.stringify(
-          db.prepare('SELECT id, title AS titre, category AS categorie, quantity AS quantite, status, author_id FROM shopping_items ORDER BY created_at DESC').all()
+          db.prepare('SELECT id, title AS titre, category AS categorie, quantity AS quantite, status, author_id FROM shopping_items WHERE home_id = ? ORDER BY created_at DESC').all(currentHome().id)
         );
       case 'courses_categories':
         return JSON.stringify(SHOPPING_CATEGORIES.map((c) => ({ id: c, label: SHOPPING_CATEGORY_LABELS[c] })));
@@ -158,22 +191,22 @@ export async function runTool(name: string, args: Record<string, unknown>, ctx: 
         if (!titre) return 'Titre manquant.';
         const categorie = SHOPPING_CATEGORIES.includes(args.categorie as never) ? (args.categorie as string) : 'autre';
         const id = newId();
-        db.prepare('INSERT INTO shopping_items (id, title, category, quantity, author_id) VALUES (?, ?, ?, ?, ?)')
-          .run(id, titre, categorie, args.quantite ? String(args.quantite) : null, ctx.profile?.id ?? null);
+        db.prepare('INSERT INTO shopping_items (id, title, category, quantity, author_id, home_id) VALUES (?, ?, ?, ?, ?, ?)')
+          .run(id, titre, categorie, args.quantite ? String(args.quantite) : null, ctx.profile?.id ?? null, currentHome().id);
         broadcast('shopping');
         return `Ajouté : "${titre}" (${categorie}).`;
       }
       case 'courses_cocher': {
         const acheté = Boolean(args.achete);
         const res = db.prepare(
-          `UPDATE shopping_items SET status = ?, bought_at = ?, bought_by = ? WHERE id = ?`
-        ).run(acheté ? 'bought' : 'todo', acheté ? new Date().toISOString() : null, acheté ? (ctx.profile?.id ?? null) : null, String(args.id));
+          `UPDATE shopping_items SET status = ?, bought_at = ?, bought_by = ? WHERE id = ? AND home_id = ?`
+        ).run(acheté ? 'bought' : 'todo', acheté ? new Date().toISOString() : null, acheté ? (ctx.profile?.id ?? null) : null, String(args.id), currentHome().id);
         if (res.changes === 0) return 'Article introuvable.';
         broadcast('shopping');
         return acheté ? 'Marqué comme acheté.' : 'Remis dans la liste.';
       }
       case 'courses_supprimer': {
-        const res = db.prepare('DELETE FROM shopping_items WHERE id = ?').run(String(args.id));
+        const res = db.prepare('DELETE FROM shopping_items WHERE id = ? AND home_id = ?').run(String(args.id), currentHome().id);
         if (res.changes === 0) return 'Article introuvable.';
         broadcast('shopping');
         return 'Article supprimé.';

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   SHOPPING_CATEGORIES,
@@ -13,6 +13,8 @@ import {
 import { useShoppingStore } from '../core/store/useShoppingStore';
 import { useProfileStore, useActiveProfile } from '../core/store/useProfileStore';
 import { cn } from '../utils';
+import { useHomeStore } from '../core/store/useHomeStore';
+import { homeRequest } from '../lib/api';
 
 const CATEGORY_ICONS: Record<ShoppingCategory, React.ComponentType<{ className?: string }>> = {
   alimentaire: Apple,
@@ -42,6 +44,25 @@ export function Shopping() {
   const [showBought, setShowBought] = useState(false);
   const [adding, setAdding] = useState(false);
   const [composerOpen, setComposerOpen] = useState(false);
+  const { homeId, homes } = useHomeStore();
+  const home = homes.find(home => home.id === homeId);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [sharing, setSharing] = useState(false);
+  const [targetHomeId, setTargetHomeId] = useState(() => homes.find(home => home.id !== homeId)?.id ?? '');
+  const [notice, setNotice] = useState<string | null>(null);
+  useEffect(() => {
+    setSelected(ids => ids.filter(id => items.some(item => item.id === id && item.status === 'todo')));
+  }, [items]);
+  const send = async () => {
+    if (sharing || !selected.length || !targetHomeId) return;
+    setSharing(true);
+    try {
+      const result = await homeRequest<{ added: number; alreadySent: number }>('/api/shopping/send', { method: 'POST', body: JSON.stringify({ targetHomeId, itemIds: selected }) });
+      setNotice(`${result.added} article${result.added > 1 ? 's' : ''} envoyé${result.added > 1 ? 's' : ''} à ${homes.find(home => home.id === targetHomeId)?.name ?? 'ce logement'}.${result.alreadySent ? ` ${result.alreadySent} déjà envoyé(s).` : ''} Votre liste est conservée.`);
+      setSelected([]);
+    } catch (e) { setNotice(e instanceof Error ? e.message : 'Envoi impossible.'); }
+    finally { setSharing(false); }
+  };
 
   const profileById = useMemo(
     () => Object.fromEntries(profiles.map((p) => [p.id, p])),
@@ -90,7 +111,7 @@ export function Shopping() {
     <div className="max-w-3xl mx-auto pb-24 md:pb-4">
       <header className="mb-6 md:mb-8">
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">
-          Liste de courses
+          Courses · {home?.name ?? 'ce logement'}
         </h1>
         <p className="text-zinc-500 dark:text-zinc-400 mt-1">
           {todoItems.length === 0
@@ -98,6 +119,15 @@ export function Shopping() {
             : `${todoItems.length} article${todoItems.length > 1 ? 's' : ''} à acheter`}
         </p>
       </header>
+
+      {homes.length > 1 && <div className="mb-6 border-y border-zinc-200 dark:border-zinc-800 py-4">
+        <p className="text-sm text-zinc-500 mb-3">Sélectionnez les articles à envoyer à un autre logement. Ils resteront dans votre liste.</p>
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="text-sm text-zinc-600 dark:text-zinc-300">Envoyer à <select aria-label="Logement destinataire" value={targetHomeId} onChange={e => setTargetHomeId(e.target.value)} className="ml-2 rounded-lg bg-zinc-100 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 px-3 py-2">{homes.filter(home => home.id !== homeId).map(home => <option key={home.id} value={home.id}>{home.name}</option>)}</select></label>
+          <button disabled={!selected.length || sharing || !targetHomeId} onClick={send} className="px-4 py-2 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-sm font-medium disabled:opacity-40">{sharing ? 'Envoi…' : `Envoyer${selected.length ? ` (${selected.length})` : ''}`}</button>
+        </div>
+        {notice && <p role="status" className="text-sm text-zinc-600 dark:text-zinc-300 mt-3">{notice}</p>}
+      </div>}
 
       {/* Ajout d'article : compact au repos, les options n'apparaissent
           que pendant la saisie pour laisser la liste respirer */}
@@ -237,6 +267,7 @@ export function Shopping() {
                     exit={{ opacity: 0, x: 40 }}
                     className="flex items-center gap-3 bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-white/5 rounded-2xl px-4 py-3"
                   >
+                    {homes.length > 1 && <input type="checkbox" aria-label={`Sélectionner ${item.title} pour l’envoi`} checked={selected.includes(item.id)} onChange={e => setSelected(ids => e.target.checked ? [...ids, item.id] : ids.filter(id => id !== item.id))} className="w-4 h-4 shrink-0 accent-amber-500" />}
                     <button
                       onClick={() => toggleBought(item.id, activeProfile?.id ?? null)}
                       className="w-9 h-9 shrink-0 rounded-full border-2 border-zinc-300 dark:border-zinc-600 hover:border-emerald-500 dark:hover:border-emerald-500 flex items-center justify-center transition-colors group"

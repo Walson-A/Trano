@@ -32,3 +32,9 @@ catégories, cocher = un tap.
 - Quantités éditables après création
 - Notification quand quelqu'un part faire les courses
 - Suggestions basées sur l'historique d'achats
+
+## Courses par logement
+
+Chaque logement possède sa liste ; les articles historiques appartiennent à
+`main`. L’envoi choisi vers un autre logement copie les articles à acheter, conserve
+la source et évite les doubles envois. [Contrat multi-logement](multi-home.md).

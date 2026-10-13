@@ -22,7 +22,8 @@ import { OBY_TOOL_DEFS, isExposedToOby, runTool, toolInputSchema } from '../lib/
 const SERVER_INFO = { name: 'trano', version: '1.0.0' };
 
 const INSTRUCTIONS = [
-  "Outils de la maison familiale (domotique Home Assistant, via Trano).",
+  "Outils des logements de la famille (Home Assistant et Tuya, via Trano).",
+  "Appelle lister_logements puis indique home_id dans chaque appel pour le logement demandé. Sans home_id, le logement historique est main ; ne suppose jamais que c’est la position actuelle de Walson.",
   "Lecture : état de la maison, météo, énergie solaire et batteries, pièces, appareils.",
   "Action : allumer/éteindre lumières, prises, ventilateurs, volets, régler une lumière, activer une scène.",
   "Trouve toujours l'entity_id avec lister_appareils avant d'agir.",

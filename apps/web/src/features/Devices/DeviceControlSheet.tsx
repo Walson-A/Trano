@@ -7,6 +7,7 @@ import { LightSheet } from './LightSheet';
 import { MediaSheet } from './MediaSheet';
 import { CoverSheet } from './CoverSheet';
 import { ClimateSheet } from './ClimateSheet';
+import { useHomeStore } from '../../core/store/useHomeStore';
 
 // Une fiche par domaine HA — chacune ne montre que les capacités réelles
 // de l'appareil (supported_features / supported_color_modes).
@@ -20,10 +21,12 @@ const SHEETS: Record<string, React.ComponentType<SheetProps>> = {
 export function DeviceControlSheet() {
   const { openId, close } = useDeviceControls();
   const { entities } = useHA();
+  const { homes, homeId } = useHomeStore();
+  const excluded = homes.find(home => home.id === homeId)?.excludedEntityIds ?? [];
   const entity = openId ? entities[openId] : undefined;
   const Sheet = openId ? SHEETS[openId.split('.')[0]] : undefined;
 
-  if (!openId || !entity || !Sheet) {
+  if (!openId || excluded.includes(openId) || !entity || !Sheet) {
     return <Modal isOpen={false} onClose={close} title=""><div /></Modal>;
   }
   return <Sheet entityId={openId} entity={entity} onClose={close} />;

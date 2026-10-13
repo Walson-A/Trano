@@ -5,6 +5,7 @@ import { HassEntity } from 'home-assistant-js-websocket';
 import { useConfigStore } from '../core/store/useConfigStore';
 import { useRoomsStore } from '../core/store/useRoomsStore';
 import { HA_AREA_TO_ROOM } from '../config/rooms';
+import { useHomeStore } from '../core/store/useHomeStore';
 
 // ─── HA Registry Types ──────────────────────────────────────
 
@@ -74,6 +75,8 @@ export function useHAAdapter() {
   const { entities, connection, status } = useHA();
   const deviceOverrides = useConfigStore((s) => s.deviceOverrides);
   const rooms = useRoomsStore((s) => s.rooms);
+  const { homeId, homes } = useHomeStore();
+  const excluded = homes.find(home => home.id === homeId)?.excludedEntityIds ?? [];
 
   // HA registries (areas, entity registry, device registry)
   const [areas, setAreas] = useState<HAArea[]>([]);
@@ -160,6 +163,7 @@ export function useHAAdapter() {
   const allDevices = useMemo(() => {
     return (Object.values(entities) as HassEntity[])
       .filter(entity => {
+        if (excluded.includes(entity.entity_id)) return false;
         const domain = entity.entity_id.split('.')[0];
         if (!SUPPORTED_DOMAINS.includes(domain as any)) return false;
         // Filter out unavailable entities
@@ -182,7 +186,7 @@ export function useHAAdapter() {
           state: buildDeviceState(entity, type),
         };
       });
-  }, [entities, deviceOverrides, areaMap, rooms]);
+  }, [entities, deviceOverrides, areaMap, rooms, homes, homeId]);
 
   // Liste visible dans les vues (les masqués sont exclus)
   const devices = useMemo(
@@ -195,6 +199,7 @@ export function useHAAdapter() {
   const roomClimate = useMemo(() => {
     const climate: Record<string, { temperature?: number; humidity?: number }> = {};
     for (const entity of Object.values(entities) as HassEntity[]) {
+      if (excluded.includes(entity.entity_id)) continue;
       const dc = entity.attributes.device_class;
       if (dc !== 'temperature' && dc !== 'humidity') continue;
       if (!entity.entity_id.startsWith('sensor.')) continue;
@@ -212,10 +217,11 @@ export function useHAAdapter() {
       if (dc === 'humidity' && entry.humidity === undefined) entry.humidity = value;
     }
     return climate;
-  }, [entities, areaMap]);
+  }, [entities, areaMap, homes, homeId]);
 
   // Toggle device
   const toggleDevice = async (id: string) => {
+    if (excluded.includes(id)) return;
     if (!connection) return;
 
     const entity = entities[id];

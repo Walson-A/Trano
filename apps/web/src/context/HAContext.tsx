@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useRef, ReactNod
 import { connectHA } from '../lib/ha';
 import { getRuntimeConfig } from '../lib/runtimeConfig';
 import { subscribeEntities, Connection, HassEntities } from 'home-assistant-js-websocket';
+import { useHomeStore } from '../core/store/useHomeStore';
 
 interface HAContextType {
   connection: Connection | null;
@@ -30,13 +31,18 @@ export const HAProvider: React.FC<HAProviderProps> = ({ children }) => {
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<HAContextType['status']>('disconnected');
   const connRef = useRef<Connection | null>(null);
+  const homeId = useHomeStore(s => s.homeId);
 
   useEffect(() => {
+    let live = true;
     let unsubEntities: (() => void) | undefined;
+    setEntities({}); setConnection(null); setError(null);
+    if (homeId !== 'main') { setStatus('disconnected'); return; }
 
     const initHA = async () => {
       setStatus('connecting');
       const { haUrl: url, haToken: token } = await getRuntimeConfig();
+      if (!live) return;
 
       if (!url || !token) {
         setError(
@@ -48,6 +54,7 @@ export const HAProvider: React.FC<HAProviderProps> = ({ children }) => {
 
       try {
         const conn = await connectHA(url, token);
+        if (!live) { conn.close(); return; }
         connRef.current = conn;
         setConnection(conn);
         setStatus('connected');
@@ -62,6 +69,7 @@ export const HAProvider: React.FC<HAProviderProps> = ({ children }) => {
         });
 
       } catch (err) {
+        if (!live) return;
         console.error("HA Connection Error:", err);
         setError("Impossible de se connecter à Home Assistant. Vérifiez l'URL, le token et le réseau.");
         setStatus('error');
@@ -71,10 +79,11 @@ export const HAProvider: React.FC<HAProviderProps> = ({ children }) => {
     initHA();
 
     return () => {
+      live = false;
       if (unsubEntities) unsubEntities();
       if (connRef.current) connRef.current.close();
     };
-  }, []);
+  }, [homeId]);
 
   return (
     <HAContext.Provider value={{ connection, entities, status, error }}>

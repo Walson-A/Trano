@@ -1,5 +1,10 @@
 # Serveur MCP — la maison vue par Oby
 
+Depuis le lot multi-logement, `lister_logements` fournit les contextes et chaque
+outil accepte `home_id` (défaut historique `main`). Les appareils affectés à
+l’appartement dans le HA commun sont exclus de main. Les fonctions indisponibles
+ne retombent jamais sur la maison familiale. Voir [multi-home.md](multi-home.md).
+
 Trano expose ses outils domotiques à **Oby** (l'assistant de Walson) via le
 protocole **MCP**, en streamable-HTTP. Oby garde le cerveau — sa mémoire, ses
 sessions, son contexte — et Trano fournit les mains : Home Assistant, les

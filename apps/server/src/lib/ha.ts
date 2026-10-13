@@ -3,8 +3,9 @@
  * En production, HA est joignable via les variables TRANO_HA_* du conteneur.
  */
 
-const HA_URL = () => process.env.TRANO_HA_URL?.replace(/\/$/, '') ?? null;
-const HA_TOKEN = () => process.env.TRANO_HA_TOKEN ?? null;
+import { haCredentials, homeEntities, currentHome } from './homes.ts';
+const HA_URL = () => haCredentials().url?.replace(/\/$/, '') ?? null;
+const HA_TOKEN = () => haCredentials().token ?? null;
 
 export function haConfigured(): boolean {
   return Boolean(HA_URL() && HA_TOKEN());
@@ -40,29 +41,30 @@ interface HAState {
  */
 export async function getHouseSnapshot(): Promise<Record<string, unknown>> {
   const states = (await haFetch('/api/states')) as HAState[];
-  const byId = new Map(states.map((s) => [s.entity_id, s]));
+  const scopedStates = homeEntities(states);
+  const byId = new Map(scopedStates.map((s) => [s.entity_id, s]));
 
   const num = (id: string) => {
     const v = parseFloat(byId.get(id)?.state ?? '');
     return Number.isNaN(v) ? null : v;
   };
 
-  const lightsOn = states
+  const lightsOn = scopedStates
     .filter((s) => s.entity_id.startsWith('light.') && s.state === 'on')
     .map((s) => (s.attributes.friendly_name as string) ?? s.entity_id);
 
-  const mediaPlaying = states
+  const mediaPlaying = scopedStates
     .filter((s) => s.entity_id.startsWith('media_player.') && s.state === 'playing')
     .map((s) => (s.attributes.friendly_name as string) ?? s.entity_id);
 
-  const presence = states
+  const presence = scopedStates
     .filter((s) => s.entity_id.startsWith('device_tracker.') && s.attributes.source_type === 'gps')
     .map((s) => ({
       name: ((s.attributes.friendly_name as string) ?? s.entity_id).replace(/ Battery.*/i, ''),
       at_home: s.state === 'home',
     }));
 
-  const weather = states.find((s) => s.entity_id.startsWith('weather.'));
+  const weather = scopedStates.find((s) => s.entity_id.startsWith('weather.'));
 
   const gridW = num('sensor.shellypro3em_ac15187b3e18_puissance');
   const solarKw = num('sensor.envoy_122237060306_production_d_electricite_actuelle');
@@ -155,6 +157,7 @@ export async function controlDevice(
   entityId: string,
   action: 'turn_on' | 'turn_off' | 'toggle'
 ): Promise<string> {
+  if (!homeEntities([{ entity_id: entityId }]).length) return 'Refusé : appareil absent de ce logement.';
   if (!ENTITY_RE.test(entityId)) return `Refusé : entity_id invalide "${entityId}".`;
   const domain = entityId.split('.')[0];
   if (!CONTROLLABLE_DOMAINS.has(domain)) {
@@ -205,7 +208,8 @@ export async function listControllableDevices(): Promise<ControllableDevice[]> {
  * tableau. `listControllableDevices` reste au-dessus, inchangée pour ses
  * appelants (`tools.ts`).
  */
-export async function fetchEntities(): Promise<{ devices: ControllableDevice[]; scenes: HomeScene[] }> {
+export async function fetchEntities(unscoped = false): Promise<{ devices: ControllableDevice[]; scenes: HomeScene[] }> {
+  const scope = <T extends { entity_id: string }>(entities: T[]): T[] => unscoped ? entities : homeEntities(entities);
   // ⚠️ NE PAS revenir à `states.light + states.switch + ...` : Home Assistant
   // répond `TypeError: unsupported operand type(s) for +: 'DomainStates' and
   // 'DomainStates'`, donc le template échouait **en entier**, en silence. Le
@@ -256,18 +260,18 @@ export async function fetchEntities(): Promise<{ devices: ControllableDevice[]; 
       scenes: HomeScene[];
     };
     return {
-      devices: raw.appareils.map(({ attributs, ...d }) => ({
+      devices: scope(raw.appareils.map(({ attributs, ...d }) => ({
         ...d,
         lumiere: attributs ? lightSettingsFrom(attributs) : null,
-      })),
-      scenes: raw.scenes,
+      }))),
+      scenes: scope(raw.scenes),
     };
   } catch {
     // Repli sans les pièces si le template échoue
     const states = (await haFetch('/api/states')) as HAState[];
     const nom = (s: HAState) => (s.attributes.friendly_name as string) ?? s.entity_id;
     return {
-      devices: states
+      devices: scope(states
         .filter((s) => CONTROLLABLE_DOMAINS.has(s.entity_id.split('.')[0]) && s.state !== 'unavailable')
         .map((s) => ({
           entity_id: s.entity_id,
@@ -275,16 +279,17 @@ export async function fetchEntities(): Promise<{ devices: ControllableDevice[]; 
           etat: s.state,
           piece: null,
           lumiere: s.entity_id.startsWith('light.') ? lightSettingsFrom(s.attributes) : null,
-        })),
-      scenes: states
+        }))),
+      scenes: scope(states
         .filter((s) => s.entity_id.startsWith('scene.'))
-        .map((s) => ({ entity_id: s.entity_id, nom: nom(s), piece: null })),
+        .map((s) => ({ entity_id: s.entity_id, nom: nom(s), piece: null }))),
     };
   }
 }
 
 /** Détail complet d'un appareil : état, pièce, attributs utiles. */
 export async function getDeviceInfo(entityId: string): Promise<Record<string, unknown>> {
+  if (!homeEntities([{ entity_id: entityId }]).length) return { erreur: 'Appareil absent de ce logement.' };
   if (!ENTITY_RE.test(entityId)) return { erreur: `entity_id invalide "${entityId}"` };
   const tpl = `
 {% set e = '${entityId}' %}
@@ -299,6 +304,7 @@ null
 
 /** Météo détaillée (entité weather + prévisions si présentes). */
 export async function getWeatherDetail(): Promise<Record<string, unknown>> {
+  if (currentHome().id !== 'main') return { erreur: 'Météo non configurée pour ce logement.' };
   const states = (await haFetch('/api/states')) as HAState[];
   const w = states.find((s) => s.entity_id.startsWith('weather.'));
   if (!w) return { erreur: 'Aucune entité météo' };
@@ -315,6 +321,7 @@ export async function getWeatherDetail(): Promise<Record<string, unknown>> {
 
 /** Bilan énergétique détaillé pour le LLM (production, batteries, réseau). */
 export async function getEnergyDetail(): Promise<Record<string, unknown>> {
+  if (currentHome().id !== 'main') return { erreur: 'Énergie non configurée pour ce logement.' };
   const states = (await haFetch('/api/states')) as HAState[];
   const byId = new Map(states.map((s) => [s.entity_id, s]));
   const num = (id: string, factor = 1) => {
@@ -362,6 +369,7 @@ const COLOR_MAP: Record<string, string> = {
 
 /** Règle une lumière : luminosité (%) et/ou couleur (nom FR ou anglais). */
 export async function setLight(entityId: string, brightnessPct?: number, color?: string): Promise<string> {
+  if (!homeEntities([{ entity_id: entityId }]).length) return 'Refusé : appareil absent de ce logement.';
   if (!ENTITY_RE.test(entityId) || !entityId.startsWith('light.')) {
     return `Refusé : "${entityId}" n'est pas une lumière.`;
   }
@@ -389,6 +397,7 @@ export async function setLightState(
   entityId: string,
   settings: { brightness_pct?: number; kelvin?: number; hs_color?: [number, number] }
 ): Promise<string> {
+  if (!homeEntities([{ entity_id: entityId }]).length) return 'Refusé : appareil absent de ce logement.';
   if (!ENTITY_RE.test(entityId) || !entityId.startsWith('light.')) {
     return `Refusé : "${entityId}" n'est pas une lumière.`;
   }
@@ -412,13 +421,14 @@ export async function setLightState(
 /** Liste les scènes HA. */
 export async function listScenes(): Promise<Array<{ entity_id: string; nom: string }>> {
   const states = (await haFetch('/api/states')) as HAState[];
-  return states
+  return homeEntities(states)
     .filter((s) => s.entity_id.startsWith('scene.'))
     .map((s) => ({ entity_id: s.entity_id, nom: (s.attributes.friendly_name as string) ?? s.entity_id }));
 }
 
 /** Active une scène. */
 export async function activateScene(entityId: string): Promise<string> {
+  if (!homeEntities([{ entity_id: entityId }]).length) return 'Refusé : scène non affectée à ce logement.';
   if (!ENTITY_RE.test(entityId) || !entityId.startsWith('scene.')) return `Refusé : "${entityId}" n'est pas une scène.`;
   await haFetch('/api/services/scene/turn_on', { method: 'POST', body: JSON.stringify({ entity_id: entityId }) });
   return `Scène ${entityId} activée.`;
