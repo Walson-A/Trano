@@ -1,7 +1,8 @@
 # Serveur MCP — la maison vue par Oby
 
 Depuis le lot multi-logement, `lister_logements` fournit les contextes et chaque
-outil accepte `home_id` (défaut historique `main`). Les appareils affectés à
+outil exige `home_id` (aucun logement par défaut). Le chat Oby lie cet identifiant
+au sélecteur Maison du client, avant l'exécution et l'approbation. Les appareils affectés à
 l’appartement dans le HA commun sont exclus de main. Les fonctions indisponibles
 ne retombent jamais sur la maison familiale. Voir [multi-home.md](multi-home.md).
 

@@ -36,6 +36,7 @@ export const HAProvider: React.FC<HAProviderProps> = ({ children }) => {
   useEffect(() => {
     let live = true;
     let unsubEntities: (() => void) | undefined;
+    let detachStatus: (() => void) | undefined;
     setEntities({}); setConnection(null); setError(null);
     if (homeId !== 'main') { setStatus('disconnected'); return; }
 
@@ -58,6 +59,14 @@ export const HAProvider: React.FC<HAProviderProps> = ({ children }) => {
         connRef.current = conn;
         setConnection(conn);
         setStatus('connected');
+        const ready = () => { if (live) { setStatus('connected'); setError(null); } };
+        const disconnected = () => { if (live) { setStatus('disconnected'); setEntities({}); } };
+        conn.addEventListener('ready', ready);
+        conn.addEventListener('disconnected', disconnected);
+        detachStatus = () => {
+          conn.removeEventListener('ready', ready);
+          conn.removeEventListener('disconnected', disconnected);
+        };
 
         // Accès debug à la connexion HA depuis la console (dev uniquement)
         if (import.meta.env.DEV) {
@@ -81,6 +90,7 @@ export const HAProvider: React.FC<HAProviderProps> = ({ children }) => {
     return () => {
       live = false;
       if (unsubEntities) unsubEntities();
+      detachStatus?.();
       if (connRef.current) connRef.current.close();
     };
   }, [homeId]);
