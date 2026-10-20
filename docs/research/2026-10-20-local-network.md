@@ -262,6 +262,57 @@ Références supplémentaires :
   pour le principe d'un accès depuis Internet ; cette possibilité n'est pas
   activée par l'investigation.
 
+## Agent QML et passerelle : chaîne réelle sur le LAN
+
+La passerelle `packages/lan/src/gateway.ts` et l'agent
+`packages/lan/devialet/agent.qml` sont implémentés en lecture seule. Les
+listeners sont séparés : l'un sert le WebSocket et les fichiers de démarrage
+protégés, l'autre l'API de lecture pour Trano avec un jeton différent. Le Player
+s'authentifie dans son premier message, puis publie un inventaire toutes les
+cinq secondes. Une observation expire au bout de vingt secondes ; une connexion
+fermée invalide immédiatement le cache lorsque sa fermeture est observée.
+
+L'essai `devialet-agent-check.mjs` a réellement lancé cet agent sur le Player,
+avec une durée de vingt secondes et une passerelle temporaire sur le PC. Les
+lectures HTTP et SOAP GetVolume/GetMute étaient exécutées par le Player, puis
+les données ont traversé le WebSocket et le véritable adaptateur LAN de Trano :
+
+| Appareil | Identité reçue dans Trano | État reçu |
+| --- | --- | --- |
+| TV | UE43TU7125KXXC, MAC configurée vérifiée, joignable | volume 0, sourdine fausse, lecture inconnue |
+| Player | Freebox v7, marque Freebox vérifiée via Spotify, joignable | volume, sourdine et lecture inconnus |
+
+`controlEnabled` est faux et les capacités de commande sont vides. À l'arrêt
+automatique de l'agent, l'adaptateur signale le relais indisponible, sans conserver
+un faux état en ligne. Le script confirme `timedAgentExitObserved`,
+`staleStateHidden` et `temporaryGatewayClosed`. Aucun service n'est resté lancé.
+Cet essai utilise des jetons aléatoires éphémères et un WebSocket **sans TLS sur
+le LAN** ; il ne valide pas WSS depuis le logement vers le serveur distant.
+
+La passerelle refuse les identifiants de rôle incorrects, les changements de
+MAC, les séquences rejouées et les observations périmées. Le listener destiné
+à l'agent n'expose pas l'inventaire et n'embarque pas le jeton du lecteur dans
+le QML. Les tests couvrent ces frontières et le passage par l'adaptateur réel.
+Le premier test de déconnexion a révélé une attente incorrecte de fermeture
+synchrone entre les deux extrémités ; le contrôle tient maintenant compte de
+l'état du socket et le test attend la propagation effective de la fermeture.
+
+Validation après intégration : **34 tests passent sur Windows et Linux**,
+typage de tous les workspaces réussi. Les tests Linux utilisent une copie des
+sources dans un conteneur isolé fondé sur l'image de production existante,
+sans réseau externe ni volume de production ; leur conteneur et leurs fichiers
+temporaires sont supprimés. Aucun nouveau bundle web n'est nécessaire à ces
+changements de relais. Guide de configuration et limites :
+[relais Devialet](../devialet-relay.md).
+
+Un script de test distant borné est préparé pour le prochain passage WSS. Sa
+syntaxe locale et celle du programme distant embarqué ont été vérifiées, ainsi
+que son mode plan sans réseau. La CLI Funnel présente sur le serveur confirme
+les options `--bg` et `--https`. L'essai public n'a pas été exécuté : il nécessite
+l'accord explicite de Walson pour rendre un point d'entrée dédié temporairement
+joignable depuis Internet. Le parcours proposé n'ouvre pas le proxy Atlas 443
+et ne déploie pas le nouveau serveur Trano.
+
 ## Sources de protocole
 
 - [Samsung Smart TV — Home Assistant](https://www.home-assistant.io/integrations/samsungtv/)

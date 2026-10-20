@@ -8,6 +8,7 @@ import { samsungRemote } from './samsung-remote.ts';
 import { discover } from './discovery.ts';
 import { readDevice, commandDevice } from './devices.ts';
 import { createRelayServer } from './server.ts';
+import { createAgentGateway, loadGatewayConfig } from './gateway.ts';
 
 export async function main(args: string[]): Promise<void> {
   const [command, ...rest] = args;
@@ -15,6 +16,22 @@ export async function main(args: string[]): Promise<void> {
   if (command === 'interfaces') {
     console.log(JSON.stringify(Object.entries(networkInterfaces()).flatMap(([name, list]) =>
       (list ?? []).filter((i) => !i.internal && i.family === 'IPv4').map((i) => ({ name, address: i.address, cidr: i.cidr }))), null, 2));
+    return;
+  }
+  if (command === 'gateway') {
+    const index = rest.indexOf('--config');
+    if (index < 0 || !rest[index + 1]) throw new Error('gateway requiert --config <fichier privé>.');
+    const config = loadGatewayConfig(rest[index + 1]);
+    const gateway = createAgentGateway(config);
+    try {
+      await new Promise<void>((resolve, reject) => { gateway.reader.once('error', reject); gateway.reader.listen(config.readerPort, config.readerHost, resolve); });
+      await new Promise<void>((resolve, reject) => { gateway.agent.once('error', reject); gateway.agent.listen(config.agentPort, config.agentHost, resolve); });
+    } catch {
+      await gateway.close(); throw new Error('Impossible de démarrer la passerelle : vérifie les adresses et les ports.');
+    }
+    console.log('Passerelle QML démarrée, lecture seule. Aucun agent lancé et aucun accès public configuré.');
+    const stop = () => { void gateway.close(); };
+    process.once('SIGINT', stop); process.once('SIGTERM', stop);
     return;
   }
   if (command === 'discover') {
@@ -85,6 +102,7 @@ export async function main(args: string[]): Promise<void> {
     '  interfaces                         Afficher les interfaces du PC\n' +
     '  discover --interface <IPv4>         Découverte SSDP/mDNS en lecture seule\n' +
     '  token                              Générer un jeton aléatoire\n' +
+    '  gateway --config <fichier>          Passerelle pour agent QML Devialet (lecture seule)\n' +
     '  inspect --config <fichier>          Lire les appareils configurés\n' +
     '  pair --config <fichier> --device <id TV>    Appairer Samsung, validation sur la télévision\n' +
     '  control --config <fichier> --device <id> --action <action> [--volume <0-100>] [--muted true|false]\n' +

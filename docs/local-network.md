@@ -75,8 +75,13 @@ vers l'adresse HTTPS privée actuelle du serveur de la maison retourne zéro.
 Cela ne valide ni une session WebSocket, ni une base persistante, ni une liaison
 distante prête à l'emploi. La prochaine étape est un agent QML avec connexion
 sortante vers une passerelle dédiée, accessible en HTTPS depuis le logement.
-La passerelle et son exposition restent à préparer ; aucun accès public n'a été
+La liaison distante reste à mettre en service ; aucun accès public n'a été
 ouvert sur le serveur par ces diagnostics.
+
+La passerelle et l'agent QML en lecture seule sont maintenant implémentés et
+testés ensemble sur le LAN. Voir [leur guide](devialet-relay.md) pour la
+configuration, les secrets distincts, le test réel et la mise en service
+distante qui reste à valider. L'exposition HTTPS distante n'est pas activée.
 
 ## Découvrir les appareils
 

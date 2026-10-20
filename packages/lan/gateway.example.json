@@ -1,0 +1,26 @@
+{
+  "readerToken": "REPLACE_WITH_FIRST_64_HEX_TOKEN",
+  "agentToken": "REPLACE_WITH_SECOND_64_HEX_TOKEN",
+  "bootstrapToken": "REPLACE_WITH_THIRD_64_HEX_TOKEN",
+  "publicBaseUrl": "https://gateway.example.invalid:8443",
+  "readerHost": "127.0.0.1",
+  "readerPort": 3015,
+  "agentHost": "127.0.0.1",
+  "agentPort": 3014,
+  "devices": [
+    {
+      "id": "tv",
+      "name": "Télévision",
+      "kind": "samsung",
+      "host": "192.168.50.10",
+      "mac": "aa:bb:cc:dd:ee:ff"
+    },
+    {
+      "id": "devialet",
+      "name": "Devialet",
+      "kind": "freebox-player",
+      "host": "192.168.50.11",
+      "spotifyPort": 56000
+    }
+  ]
+}
