@@ -14,6 +14,7 @@ import { houseRoutes } from './routes/house.ts';
 import { overrideRoutes } from './routes/overrides.ts';
 import { backupRoutes } from './routes/backup.ts';
 import { userDeviceRoutes } from './routes/userDevices.ts';
+import { lanRoutes } from './routes/lan.ts';
 import { startEnergyWatcher } from './lib/energyWatcher.ts';
 import { startBackupScheduler } from './lib/backup.ts';
 import { registerClient } from './ws.ts';
@@ -63,6 +64,7 @@ houseRoutes(app);
 overrideRoutes(app);
 backupRoutes(app);
 userDeviceRoutes(app);
+lanRoutes(app);
 
 // En prod (conteneur Docker), le serveur sert aussi le build du frontend.
 const webDist = fileURLToPath(new URL('../../web/dist', import.meta.url));

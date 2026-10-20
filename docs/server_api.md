@@ -149,9 +149,28 @@ stateless), protégés par `Authorization: Bearer <TRANO_MCP_TOKEN>` — sans ce
 variable la route répond `503`. `GET`/`DELETE` répondent `405` : le serveur ne
 tient aucune session.
 
-Dix outils exposés (lecture + pilotage des appareils) ; les courses,
-l'interphone et la Freebox restent hors de portée d'Oby. Détail complet,
+Douze outils exposés (lecture + pilotage des appareils, dont deux pour les
+relais locaux) ; les courses, l'interphone et le routeur Freebox restent hors
+de portée d'Oby. Détail complet,
 raisons et branchement côté engine : **[`docs/mcp_oby.md`](mcp_oby.md)**.
+
+## Lecteurs de réseaux locaux sans Home Assistant
+
+Ces routes exigent `Authorization: Bearer <TRANO_MCP_TOKEN>` et fonctionnent
+sans configuration HA. Sans jeton : 503 ; jeton invalide : 401.
+
+| Méthode | Route | Corps / réponse |
+| --- | --- | --- |
+| GET | `/api/lan/devices` | `{ relays: [{ id, name, online, controlEnabled, devices, error }] }` |
+| POST | `/api/lan/relays/:relayId/devices/:deviceId/commands` | `{ action, volume?, muted? }` ; retourne la confirmation de transmission |
+
+Les identifiants viennent de la liste. Les hôtes et jetons sont lus uniquement
+dans le fichier privé `TRANO_LAN_RELAYS_FILE`, jamais dans le corps des requêtes.
+Un relais hors ligne a `online: false`, sans état d'appareil inventé.
+Les erreurs de commande distinguent 400 (arguments), 403 (lecture seule),
+404 (identifiant), 409 (configuration appareil manquante), 422 (action non
+supportée), 502 (communication). Configuration complète et limites :
+[`local-network.md`](local-network.md).
 
 ## Base de données
 

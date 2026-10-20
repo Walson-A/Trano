@@ -22,10 +22,11 @@ import { OBY_TOOL_DEFS, isExposedToOby, runTool, toolInputSchema } from '../lib/
 const SERVER_INFO = { name: 'trano', version: '1.0.0' };
 
 const INSTRUCTIONS = [
-  "Outils de la maison familiale (domotique Home Assistant, via Trano).",
+  "Outils domotiques de Trano : maison familiale via Home Assistant, autres logements via leurs relais locaux.",
   "Lecture : état de la maison, météo, énergie solaire et batteries, pièces, appareils.",
   "Action : allumer/éteindre lumières, prises, ventilateurs, volets, régler une lumière, activer une scène.",
   "Trouve toujours l'entity_id avec lister_appareils avant d'agir.",
+  "Pour l’appartement et les autres réseaux locaux : lister_appareils_locaux puis controler_media_local, avec les identifiants relais/appareil et les seules capacités annoncées.",
 ].join('\n');
 
 const mcpToken = (): string | null => process.env.TRANO_MCP_TOKEN?.trim() || null;
@@ -50,6 +51,7 @@ function buildServer(): Server {
       name: t.name,
       description: t.description,
       inputSchema: toolInputSchema(t),
+      ...(t.readOnly !== undefined ? { annotations: { readOnlyHint: t.readOnly } } : {}),
     })),
   }));
 
@@ -65,7 +67,8 @@ function buildServer(): Server {
     // seuls les courses et l'interphone signent leurs écritures, et ils sont hors
     // liste blanche.
     const text = await runTool(name, (args ?? {}) as Record<string, unknown>, { profile: null });
-    return { content: [{ type: 'text' as const, text }] };
+    const localFailure = (name === 'lister_appareils_locaux' || name === 'controler_media_local') && text.startsWith("Erreur de l'outil ");
+    return { content: [{ type: 'text' as const, text }], ...(localFailure ? { isError: true } : {}) };
   });
 
   return server;

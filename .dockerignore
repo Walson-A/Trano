@@ -4,6 +4,8 @@ node_modules
 **/node_modules
 .git
 .github
+.local
+**/.local
 docs
 deploy/README.md
 apps/web/src

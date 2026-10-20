@@ -36,7 +36,7 @@ maison à tout le réseau.
 
 ## Les outils exposés
 
-Dix, marqués `oby: true` dans `lib/tools.ts` :
+Douze, marqués `oby: true` dans `lib/tools.ts` :
 
 | Outil | |
 |---|---|
@@ -44,19 +44,28 @@ Dix, marqués `oby: true` dans `lib/tools.ts` :
 | `lister_pieces` · `lister_appareils` · `infos_appareil` | lecture — la maison et ses appareils |
 | `controler_appareil` · `regler_lumiere` | action — allumer/éteindre, luminosité, couleur |
 | `lister_scenes` · `activer_scene` | action — les scènes HA |
+| `lister_appareils_locaux` | lecture — relais des autres logements, lecteurs, états réels et capacités |
+| `controler_media_local` | action — lecteur identifié par relais/appareil, sans Home Assistant |
+
+Les deux outils locaux utilisent le pont optionnel configuré par
+`TRANO_LAN_RELAYS_FILE`. Ils fonctionnent sans HA et distinguent le logement
+avec l'identifiant du relais. Ils exposent les annotations MCP `readOnlyHint`
+adaptées. Le relais démarre en lecture seule et ne reçoit aucun code du LLM :
+le code de télécommande du Player reste dans sa configuration locale privée.
+Voir [le fonctionnement et les preuves](local-network.md).
 
 **Restent dehors, délibérément :**
 
 - **les courses** (`courses_*`) — elles écrivent dans la liste partagée de la famille ;
 - **l'interphone** — il sonne sur les téléphones de tout le monde ;
-- **`controler_freebox`** — couper le wifi couperait accessoirement le lien entre
+- **`controler_freebox`** (le routeur, distinct du Player Devialet) — couper le wifi couperait accessoirement le lien entre
   Oby et la maison.
 
 Les **serrures et l'alarme** ne sont exposées à personne : `controlDevice`
 (`lib/ha.ts`) les exclut déjà, pour l'assistant de la maison comme pour Oby.
 
 La liste blanche est vérifiée **deux fois** : à la déclaration (`tools/list` ne
-montre que les dix) et à l'appel (`tools/call` refuse le reste). Un client MCP
+montre que les douze) et à l'appel (`tools/call` refuse le reste). Un client MCP
 peut très bien demander un outil qu'on ne lui a jamais listé.
 
 ## Le branchement côté Oby
@@ -90,7 +99,7 @@ curl -s -X POST http://127.0.0.1:3001/api/mcp \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
 ```
 
-Attendu : les dix outils, en flux `text/event-stream`. Sans en-tête
+Attendu : les douze outils, en flux `text/event-stream`. Sans en-tête
 `Authorization`, la même requête répond `401`.
 
 ## Et le widget de LifeOS ?

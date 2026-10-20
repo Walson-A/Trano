@@ -11,6 +11,7 @@ coverage/
 
 # Données locales du serveur Trano (SQLite)
 apps/server/data/
+.local/
 
 # Sources copiées dans l'add-on par deploy/build-addon.sh
 deploy/ha-addon/trano/app/

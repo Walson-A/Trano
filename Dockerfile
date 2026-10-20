@@ -22,6 +22,7 @@ COPY package.json package-lock.json ./
 COPY apps/web/package.json apps/web/
 COPY apps/server/package.json apps/server/
 COPY packages/shared/package.json packages/shared/
+COPY packages/lan/package.json packages/lan/
 RUN npm ci --omit=dev
 
 COPY packages ./packages

@@ -2,17 +2,22 @@
 
 ## Vue d'ensemble
 
-Trano est un **monorepo npm workspaces** composé de trois paquets :
+Trano est un **monorepo npm workspaces** composé de quatre paquets :
 
 ```
 apps/web          Frontend React (l'interface)
 apps/server       Serveur Trano (Fastify + SQLite) — profils, courses, config
 packages/shared   Types TypeScript partagés entre web et server
+packages/lan       Relais Node 24 et connecteurs multimédias locaux, sans HA
 ```
 
 **Répartition des rôles :**
 - Le **navigateur** parle directement à Home Assistant en WebSocket pour le
   temps réel domotique (états, commandes).
+- Les **réseaux d'autres logements** peuvent avoir un relais local optionnel :
+  le serveur Trano le joint via Tailscale et un jeton privé. Les assistants
+  utilisent des identifiants relais/appareil, indépendants des entity_id HA.
+  Connecteurs, validation terrain et mise en service : [local-network.md](local-network.md).
 - Le **serveur Trano** est la source de vérité pour tout ce qui est partagé
   entre les membres de la famille : profils, liste de courses, pièces et
   **surcharges d'appareils** (renommages, pièce, masquage, plan). Il sert aussi
@@ -27,6 +32,8 @@ packages/shared   Types TypeScript partagés entre web et server
 - **Backend :** Fastify 5 + `node:sqlite` (SQLite intégré à Node, zéro
   dépendance native — l'image Docker reste multi-arch sans compilation)
 - **Domotique :** Home Assistant via WebSocket (`home-assistant-js-websocket`)
+- **Lecteurs d'un autre LAN :** relais optionnel `packages/lan`, HTTP authentifié,
+  connecteurs Samsung UPnP/WSS et télécommande Freebox Player.
 - **Déploiement :** conteneur Docker sur le serveur de la maison
   (voir `deploy/README.md`)
 
@@ -47,6 +54,8 @@ packages/shared   Types TypeScript partagés entre web et server
   est la liste blanche : c'est le seul endroit où se décide ce qu'Oby a le droit
   de faire.
 - `src/routes/mcp.ts` : serveur MCP pour Oby (voir `docs/mcp_oby.md`).
+- `src/lib/lan.ts` et `src/routes/lan.ts` : pont optionnel vers les relais ;
+  lectures et commandes sans dépendance à Home Assistant.
 - `src/ws.ts` : broadcast d'invalidation vers tous les clients connectés.
 
 ## `packages/shared/`
@@ -165,3 +174,4 @@ Variables d'environnement :
 | `TRANO_DB_PATH` | env serveur | Chemin SQLite (défaut `apps/server/data/trano.db`) |
 | `TRANO_OPENROUTER_KEY` / `TRANO_OPENROUTER_MODEL` | env serveur | Assistant IA des écrans (`docs/assistant.md`) |
 | `TRANO_MCP_TOKEN` | env serveur | Jeton du serveur MCP servi à Oby. Absent = route fermée (`docs/mcp_oby.md`) |
+| `TRANO_LAN_RELAYS_FILE` | env serveur | Fichier privé des relais de logements (URL, jeton, identifiant). Absent = aucun relais. Voir `docs/local-network.md`. |

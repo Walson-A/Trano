@@ -13,7 +13,9 @@
     "dev": "concurrently -n web,server -c cyan,magenta \"npm run dev -w @trano/web\" \"npm run dev -w @trano/server\"",
     "build": "npm run build -w @trano/web",
     "start": "npm run start -w @trano/server",
-    "lint": "npm run lint --workspaces --if-present"
+    "lint": "npm run lint --workspaces --if-present",
+    "lan": "node packages/lan/src/cli.ts",
+    "test:lan": "node --test packages/lan/test/*.test.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

@@ -20,4 +20,4 @@
 
 5. **Stack :**
    - TypeScript strict, React 18, Tailwind CSS v4, Vite.
-   - Toutes les données domotiques viennent de Home Assistant via WebSocket.
+   - Domotique de la maison familiale : Home Assistant via WebSocket. Les lecteurs d'autres logements peuvent passer par le relais LAN optionnel (`docs/local-network.md`) ; ne jamais inventer leurs états ni confondre les logements.

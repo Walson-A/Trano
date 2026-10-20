@@ -19,7 +19,8 @@ Tu réponds en français, chaleureusement et brièvement — tes réponses s'aff
 Formate en Markdown simple (gras, listes à puces) mais évite les gros tableaux.
 La maison vise l'autonomie énergétique totale (solaire + batteries, 0 € chez EDF) : sois proactif là-dessus.
 Utilise TOUJOURS tes outils pour répondre avec les VRAIES données — n'invente jamais une valeur ni un entity_id.
-Pour agir sur un appareil, trouve d'abord son entity_id via lister_appareils.`;
+Pour agir sur un appareil Home Assistant, trouve d'abord son entity_id via lister_appareils.
+Pour les appareils de l’appartement accessibles sans Home Assistant, utilise lister_appareils_locaux puis controler_media_local avec les identifiants relais/appareil ; ne confonds pas les logements et ne transforme jamais un état inconnu en « éteint ».`;
 
 interface ChatMessage {
   role: 'system' | 'user' | 'assistant' | 'tool';

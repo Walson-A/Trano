@@ -6,6 +6,8 @@ import {
 } from './ha.ts';
 import { db, newId } from '../db.ts';
 import { broadcast, broadcastMessage } from '../ws.ts';
+import { listLocalDevices, controlLocalMedia } from './lan.ts';
+import { MEDIA_ACTIONS } from '../../../../packages/lan/src/types.ts';
 
 /**
  * Les outils de la maison — la table unique.
@@ -38,9 +40,27 @@ export interface ToolDef {
    * par `controlDevice` lui-même.
    */
   oby?: boolean;
+  /** MCP annotation for the new local-network tools. */
+  readOnly?: boolean;
 }
 
 export const TOOL_DEFS: ToolDef[] = [
+  {
+    name: 'lister_appareils_locaux',
+    description: "Liste les appareils des réseaux locaux reliés à Trano sans Home Assistant : nom du lieu, identifiants du relais et de l’appareil, état réel, capacités et configuration manquante. Un relais hors ligne ne prouve pas que les appareils sont éteints.",
+    params: {}, oby: true, readOnly: true,
+  },
+  {
+    name: 'controler_media_local',
+    description: "Pilote un lecteur local avec les identifiants relais/appareil obtenus via lister_appareils_locaux. Utilise uniquement les capacités annoncées. power_toggle inverse l’état du lecteur : ce n’est pas une commande explicite allumer/éteindre. Les commandes restent refusées si le relais est en lecture seule.",
+    params: {
+      relais: { type: 'string' }, appareil: { type: 'string' },
+      action: { type: 'string', enum: [...MEDIA_ACTIONS] },
+      volume: { type: 'number', minimum: 0, maximum: 100, description: 'Seulement avec volume_set.' },
+      muted: { type: 'boolean', description: 'Seulement avec mute_set.' },
+    },
+    required: ['relais', 'appareil', 'action'], oby: true, readOnly: false,
+  },
   { name: 'etat_maison', description: "Vue d'ensemble temps réel : météo, énergie, lumières allumées, lecture en cours, présence des membres, wifi, appels manqués.", params: {}, oby: true },
   { name: 'meteo', description: 'Météo détaillée (température, ressenti, humidité, vent, pression).', params: {}, oby: true },
   { name: 'energie', description: 'Bilan énergétique détaillé : production solaire par source, réseau EDF (import/export), chaque batterie, production du jour/semaine/totale.', params: {}, oby: true },
@@ -132,6 +152,14 @@ export function isExposedToOby(name: string): boolean {
 export async function runTool(name: string, args: Record<string, unknown>, ctx: ToolCtx): Promise<string> {
   try {
     switch (name) {
+      case 'lister_appareils_locaux':
+        return JSON.stringify(await listLocalDevices());
+      case 'controler_media_local':
+        return JSON.stringify(await controlLocalMedia(args.relais, args.appareil, {
+          action: args.action,
+          ...(args.volume !== undefined ? { volume: args.volume } : {}),
+          ...(args.muted !== undefined ? { muted: args.muted } : {}),
+        }));
       case 'etat_maison':
         return JSON.stringify(await getHouseSnapshot());
       case 'meteo':

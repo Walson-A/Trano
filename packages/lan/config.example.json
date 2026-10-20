@@ -1,0 +1,22 @@
+{
+  "token": "REPLACE_ME",
+  "listenHost": "127.0.0.1",
+  "port": 3012,
+  "allowControl": false,
+  "devices": [
+    {
+      "id": "tv",
+      "name": "Télévision",
+      "kind": "samsung",
+      "host": "192.168.50.10",
+      "port": 9197,
+      "samsungControl": "remote"
+    },
+    {
+      "id": "player",
+      "name": "Player",
+      "kind": "freebox-player",
+      "host": "192.168.50.20"
+    }
+  ]
+}
