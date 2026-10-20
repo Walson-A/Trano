@@ -190,6 +190,23 @@ Node et Tailscale ne sont pas démontrés disponibles sur ce firmware. Le relais
 Node existant ne peut donc pas être présenté comme déployable tel quel ici.
 Une liaison autonome du Player au serveur distant reste à concevoir et tester.
 
+Un essai supplémentaire charge un programme d'une minute, puis ferme le serveur
+HTTP de ses fichiers après environ douze secondes. Les journaux du Player
+montrent ensuite de nouvelles lectures HTTP 200 de la TV, toutes les cinq
+secondes. Les seuls liens conservés avec le PC sont les sockets de lecture
+des journaux du SDK ; aucun appel applicatif au PC n'est programmé dans cet essai.
+Cela valide la poursuite d'exécution après retrait du serveur de fichiers,
+pas un fonctionnement après extinction effective du PC. Les sockets sont
+fermées à la fin de l'observation et le programme s'arrête par minuterie.
+
+Les journaux de ce dernier essai signalent aussi l'impossibilité de créer un
+contexte graphique pour le backend `intelce`, alors que le JavaScript et les
+lectures réseau continuent. Le rendu du diagnostic et l'identification de son
+premier plan ne sont donc pas validés. Il faut vérifier séparément la coexistence
+avec une utilisation réelle du Player. Une première tentative de collecte des
+journaux a échoué sur l'encodage de la console Windows ; elle a été corrigée
+avant le nouvel essai, sans modification du firmware.
+
 Sources officielles lues directement, sans exécuter leur code :
 
 - [SDK Player](https://dev.freebox.fr/sdk/player.html) : applications QML et

@@ -37,6 +37,11 @@ C'est un premier résultat favorable au fonctionnement après retour à l'accuei
 observé sur une courte durée. La propriété QML `visible` restait vraie : elle
 ne permet donc pas à elle seule de déterminer quelle interface est au premier plan.
 
+Un autre essai a fermé le serveur de fichiers du PC après le chargement : le
+programme du Player a continué à lire la TV. Cela établit que ces fichiers ne
+sont pas nécessaires en continu à ce programme déjà chargé. Le PC est resté
+allumé pour observer les journaux ; le départ réel du PC n'a pas été testé.
+
 Cela ne valide pas encore un service permanent : maintien en arrière-plan,
 veille, redémarrage automatique, installation indépendante du PC, connexion
 sécurisée au serveur distant et contrôle Samsung restent à vérifier. Le SDK
