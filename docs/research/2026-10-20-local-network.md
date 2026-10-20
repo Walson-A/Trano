@@ -220,6 +220,48 @@ Les scripts ponctuels et journaux des diagnostics restent dans `.local/`,
 hors Git et du contexte Docker. Aucune modification de firmware ni installation
 de paquet système n'a été effectuée sur le Player.
 
+## Diagnostic reproductible des capacités réseau
+
+Le diagnostic `packages/lan/scripts/devialet-check.py` et son application
+`packages/lan/devialet/probe.qml` reproduisent une vérification courte sans
+Qt installé sur le PC. La commande exige `--launch`, des adresses privées
+explicites et n'exécute aucune commande multimédia. Les ressources sont servies
+sur un chemin temporaire aléatoire, seulement à l'IP du Player ; le lanceur ne
+suit pas de redirection HTTP. L'application se ferme par minuterie, le serveur
+temporaire est ensuite arrêté. Le script n'écrit aucune configuration du Player.
+
+Exécution réelle du 20 octobre 2026, après les essais précédents :
+
+| Vérification exécutée sur le Player | Résultat observé | Limite |
+| --- | --- | --- |
+| Création `QtWebSockets 1.0; WebSocket { active: false }` | Objet créé | Pas encore de connexion WS/WSS |
+| Création `QtWebSockets 1.0; WebSocketServer { listen: false }` | Objet créé | Aucun port ouvert |
+| Import `QtQuick.LocalStorage 2.0` | Import réussi | Aucune base créée, persistance non testée |
+| GET identité Samsung | HTTP 200 | Lecture seule |
+| GET `https://example.com/` | HTTP 200 | Une destination HTTPS publique testée |
+| GET `/health` de l'adresse HTTPS habituelle du serveur | Statut QML zéro | Cause non distinguée entre DNS, routage et TLS |
+
+Le lanceur reçoit le signal `started`, trois signaux de présence et dix rapports
+au total ; il termine normalement et ferme le serveur temporaire.
+La vérification syntaxique Python et l'aide CLI réussissent aussi.
+
+La configuration Tailscale du serveur a été lue, sans modification : le proxy
+HTTPS 443 pointe vers l'engine local sur 7777. Aucun nouveau proxy ni accès
+Funnel n'a été activé. Il ne faut pas rendre ce proxy existant public pour
+résoudre le besoin du relais. Une solution à préparer est une passerelle
+séparée, à authentification dédiée, recevant une connexion sortante du Player
+et accessible à Trano côté serveur. Son exposition et son déploiement ne sont
+pas réalisés. Le démarrage autonome du Player reste une question distincte.
+
+Références supplémentaires :
+
+- [Qt WebSockets QML](https://doc.qt.io/qt-6/qtwebsockets-qmlmodule.html) pour
+  les types client/serveur ; la disponibilité de l'import 1.0 sur le Player
+  provient du test réel, pas de cette documentation Qt 6.
+- [Tailscale Funnel](https://tailscale.com/docs/features/tailscale-funnel)
+  pour le principe d'un accès depuis Internet ; cette possibilité n'est pas
+  activée par l'investigation.
+
 ## Sources de protocole
 
 - [Samsung Smart TV — Home Assistant](https://www.home-assistant.io/integrations/samsungtv/)

@@ -50,6 +50,34 @@ sur ce Player. Le lancement de développement charge le manifeste depuis un
 serveur temporaire sur le PC. Ne pas annoncer le relais autonome comme livré.
 Sources et résultats : [relevé terrain](research/2026-10-20-local-network.md).
 
+Un diagnostic reproductible est disponible pour un Player appartenant à
+l'utilisateur, dont le mode développeur est activé :
+
+```powershell
+python packages/lan/scripts/devialet-check.py --player <IPv4-Player> --samsung <IPv4-TV> --bind <IPv4-PC> --launch
+```
+
+`--launch` est obligatoire : ce test exécute une application QML temporaire et
+peut interrompre l'écran en cours. Elle s'arrête après environ seize secondes.
+Les adresses doivent être des IPv4 privées explicites ; aucun scan n'est lancé.
+Le serveur de fichiers temporaire accepte seulement le Player indiqué et ferme
+à la fin. Python 3 suffit côté PC. Aucune installation Qt n'y est nécessaire.
+
+Le test vérifie l'existence des modules WebSocket client/serveur sans ouvrir de
+socket WebSocket, l'import du module LocalStorage sans créer de base, une lecture
+HTTP de la TV et une requête HTTPS publique. `--server-url https://<serveur>/health`
+ajoute une requête sans authentification à un serveur choisi ; aucun contenu de
+réponse ni secret n'est rapporté. Un statut zéro ne distingue pas DNS, routage et TLS.
+
+Sur le Devialet testé, les deux modules WebSocket et l'import LocalStorage sont
+disponibles ; la lecture Samsung et le HTTPS public retournent 200. La requête
+vers l'adresse HTTPS privée actuelle du serveur de la maison retourne zéro.
+Cela ne valide ni une session WebSocket, ni une base persistante, ni une liaison
+distante prête à l'emploi. La prochaine étape est un agent QML avec connexion
+sortante vers une passerelle dédiée, accessible en HTTPS depuis le logement.
+La passerelle et son exposition restent à préparer ; aucun accès public n'a été
+ouvert sur le serveur par ces diagnostics.
+
 ## Découvrir les appareils
 
 Depuis la racine du dépôt :
