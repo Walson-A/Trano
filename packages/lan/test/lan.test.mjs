@@ -242,3 +242,17 @@ test('MCP declares the local tools and runs an HA-free read and a refused comman
   assert.match(refused.result.content[0].text, /Relais non configuré/);
   assert.equal(refused.result.isError, true);
 });
+
+test('Freebox navigation uses only fixed remote keys and never accepts a raw key', async () => {
+  const player = { id: 'player', name: 'Player', kind: 'freebox-player', host: '192.168.50.20', remoteCode: '12345678' };
+  const expected = { home: 'home', back: 'red', up: 'up', down: 'down', left: 'left', right: 'right', select: 'ok' };
+  for (const [action, key] of Object.entries(expected)) {
+    let sent = null;
+    await commandDevice(player, { action }, async (url) => { sent = new URL(url); return new Response(''); });
+    assert.equal(sent.pathname, '/pub/remote_control');
+    assert.equal(sent.searchParams.get('key'), key);
+  }
+  let calls = 0;
+  await assert.rejects(commandDevice(player, { action: 'factory_reset' }, async () => { calls++; }), /Action/);
+  assert.equal(calls, 0);
+});

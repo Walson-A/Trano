@@ -53,6 +53,7 @@ const SAMSUNG_ACTIONS: Record<string, MediaAction> = {
 const FREEBOX_KEYS: Partial<Record<MediaAction, string>> = {
   volume_up: 'vol_inc', volume_down: 'vol_dec', play_pause: 'play',
   power_toggle: 'power',
+  home: 'home', back: 'red', up: 'up', down: 'down', left: 'left', right: 'right', select: 'ok',
 };
 
 async function samsungIdentity(d: DeviceConfig, fetcher: Fetcher): Promise<{ model: string | null }> {

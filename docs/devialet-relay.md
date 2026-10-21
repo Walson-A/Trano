@@ -247,3 +247,38 @@ par les diagnostics. Pour les tests Linux et les essais publics, installer les
 dépendances verrouillées avec npm ci : les scripts montent une copie du runtime
 ws correspondant au lockfile dans leur conteneur temporaire, vérifient sa version
 et préservent les dépendances de l’image de production.
+
+
+## Code privé et navigation du Devialet — 22 octobre 2026
+
+Le code télécommande réseau a été saisi dans un formulaire local à usage unique,
+puis enregistré uniquement dans la configuration privée du PC. Il n'est ni dans
+Git, ni dans le bootstrap QML, ni dans les journaux. Pour refaire cette saisie :
+
+    python -B packages/lan/scripts/freebox-code-setup.py .local/relay.json devialet
+
+Ouvrir l'URL locale affichée et saisir le code dans le champ masqué. Le formulaire
+expire après quinze minutes et se ferme après une sauvegarde. Il préserve les
+autres appareils et le réglage allowControl ; une modification concurrente de la
+configuration empêche la sauvegarde. Le message de confirmation ne contient pas
+le code. Vérification avec une configuration jetable :
+
+    python -B packages/lan/test/freebox_code_test.py
+
+Le pilote accepte désormais les actions fixes home, back, up, down, left, right
+et select, en plus des actions existantes. Les clés Freebox correspondantes sont
+home, red, up, down, left, right et ok. Une clé arbitraire reste refusée. Leur
+présence dans le pilote ne constitue pas une validation matérielle de chaque touche.
+
+La touche home a été envoyée au Player identifié comme Freebox v7 ; Walson a
+confirmé le retour à l'accueil du Devialet. Un second essai a lancé le relais,
+envoyé home, puis reçu un nouvel inventaire après 8,54 secondes. L'agent a ensuite
+terminé son diagnostic minuté ; les observations périmées ont été masquées et les
+listeners temporaires fermés. Commande reproductible, pouvant interrompre l'écran :
+
+    node packages/lan/scripts/devialet-agent-check.mjs .local/relay.json <IPv4 locale> --launch --home
+
+Cette variante ne contacte que le Player, vérifie son identité avant la touche et
+n'active pas le contrôle dans la configuration sauvegardée. La passerelle reste
+en lecture seule. Cela prouve une continuité courte après Accueil, pas un service
+installé, un démarrage après reboot ni une autonomie vérifiée PC éteint.

@@ -483,3 +483,26 @@ avec « Télécommande Samsung sans réponse », sans touche envoyée. L’appai
 enregistré et une réutilisation antérieure sont établis ; leur disponibilité
 continue ne l’est pas. Aucune nouvelle paire, réinitialisation de jeton ou
 nouvelle bascule n’a été tentée après ce constat.
+
+
+## 22 octobre — contrôle Devialet et essai après Accueil
+
+Priorité explicite de Walson : Devialet ; abandon des essais Samsung. La saisie du
+code local a nécessité une réouverture du formulaire après expiration ; aucune
+récupération du POST d'erreur du navigateur n'a été effectuée. La nouvelle saisie
+a été enregistrée et seule sa présence a été inspectée.
+
+Identité Spotify vérifiée : status 101, marque Freebox, modèle Freebox v7. La
+commande HTTP home a réussi ; Walson a confirmé le retour effectif à l'accueil.
+Essai devialet-agent-check.mjs --launch --home : inventaire du seul Player,
+commande home acceptée, nouvel inventaire après 8540 ms, arrêt minuté observé,
+état périmé masqué, passerelle temporaire fermée. Pas de preuve de reboot ou de
+PC éteint ; aucune lecture vidéo supplémentaire. Aucun service permanent déployé.
+
+Validation : 39 tests Node passent sur Windows et dans le conteneur Linux isolé ;
+TypeScript LAN passe. Les commandes npm ont d'abord échoué à lancer leur shell
+Git Bash (3221225794) ; les mêmes outils ont réussi par invocation Node directe.
+Deux tests Python du formulaire vérifient le refus des entrées non autorisées,
+la confidentialité du code fictif, la conservation des autres réglages et le refus
+d'écraser une modification concurrente. Les fichiers et conteneur du test Linux
+ont été supprimés par le script ; aucun volume de production n'a été monté.

@@ -1,6 +1,7 @@
 export const MEDIA_ACTIONS = [
   'volume_set', 'mute_set', 'play', 'pause', 'stop', 'next', 'previous',
   'volume_up', 'volume_down', 'mute_toggle', 'play_pause', 'power_toggle',
+  'home', 'back', 'up', 'down', 'left', 'right', 'select',
 ] as const;
 export type MediaAction = typeof MEDIA_ACTIONS[number];
 

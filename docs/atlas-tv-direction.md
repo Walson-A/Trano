@@ -50,6 +50,16 @@ utiliser comme s'ils étaient un service permanent. Il faudra une API dédiée
 sur le serveur et un chemin de lecture compatible avec le matériel, avec des
 permissions limitées et des identifiants propres à la TV.
 
+## Priorité matérielle confirmée le 22 octobre
+
+Walson utilise le Devialet pour le son et demande de concentrer le travail sur ce
+Player. Les essais Samsung sont arrêtés ; sa connexion Wi-Fi est intermittente.
+Le changement de source TV reste une possibilité secondaire. La piste Tizen
+ci-dessous conserve le contexte de recherche et ne constitue pas un chantier actif.
+Le contrôle Accueil du Devialet est maintenant confirmé à l'écran, ainsi qu'un
+nouvel inventaire du relais reçu après cette commande. Le redémarrage automatique
+et la lecture vidéo restent à vérifier.
+
 ## Choix du moteur à établir par une vraie lecture
 
 Deux surfaces sont possibles, sans confondre leur rôle :
