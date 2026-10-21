@@ -571,8 +571,30 @@ leurs limites sont dans .local/research/official-devialet-docs-2026-10-22/.
 Une observation serveur de dix minutes a été armée avant de demander à Walson un
 vrai redémarrage depuis le menu système. Elle ne relance pas l'application et
 sépare connexion de l'agent et identité du Player, car un port Spotify peut changer
-au reboot. Le résultat du reboot est encore attendu ; ne pas confondre cela avec
+au reboot. Le résultat du reboot est consigné ci-dessous ; ne pas confondre cela avec
 les essais Accueil ou le redémarrage de la passerelle précédents.
 
 Trois tests du diagnostic passent, dont le refus d'un lancement sans --launch et
 d'options incompatibles. git diff --check est vérifié avant livraison.
+
+
+## 22 octobre — reboot confirmé, absence de reprise automatique
+
+Walson a confirmé le retour de l'accueil après son redémarrage système. Perte
+observée de l'agent à 23:46:02 UTC le 21 octobre, soit 01:46:02 le 22 octobre à
+Paris. Aucun retour de l'agent avant la fin de l'observation, aucun appel de
+lancement pendant celle-ci. Le port HTTP du Player était à nouveau joignable.
+La relance manuelle du SDK, après confirmation de l'accueil, a réussi.
+
+La sonde --boot-layout a essayé quatre lectures fixes de métadonnées OS/init,
+sans écriture ni collecte des fichiers bruts : process_identity, kernel, init et
+os. Toutes ont signalé readable=false ; cause non établie (chemin absent ou
+lecture refusée/indisponible). Le serveur temporaire a été fermé. Relance du
+relais acceptée, puis inventaire Freebox v7 confirmé avec observation âgée de
+1,5 seconde. L'observateur de reboot est terminé ; seul le service permanent
+reste volontairement actif. Aucun flash/root ni changement système n'a été fait.
+
+Le démarrage automatique du relais de développement est donc réfuté pour cet
+essai réel. Aucun mécanisme alternatif de boot n'est encore établi avec les
+accès disponibles. Le nouveau mode refuse lui aussi le lancement sans --launch
+et les autres modes simultanés ; les trois tests du diagnostic passent.

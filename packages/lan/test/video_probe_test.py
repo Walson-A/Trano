@@ -15,6 +15,8 @@ class VideoRangeTest(unittest.TestCase):
         script = Path(__file__).resolve().parents[1] / 'scripts/devialet-check.py'
         common = [sys.executable, '-B', str(script), '--player', '192.168.50.20', '--bind', '192.168.50.21']
         for arguments, message in [(['--startup-api'], '--launch is required'),
+                                   (['--boot-layout'], '--launch is required'),
+                                   (['--boot-layout', '--startup-api', '--launch'], 'not allowed with argument'),
                                    (['--startup-api', '--media', '--launch'], 'not allowed with argument')]:
             result = subprocess.run(common + arguments, capture_output=True, text=True, timeout=15)
             self.assertEqual(result.returncode, 2)

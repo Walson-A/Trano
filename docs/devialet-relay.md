@@ -375,6 +375,34 @@ Sans cet artefact, aucune analyse binaire REA du firmware n'est annoncée.
 
 Les pages officielles consultées et leur provenance sont conservées hors Git
 sous .local/research/official-devialet-docs-2026-10-22/. Le relevé natif borné est
-dans .local/startup-api-evidence.json. Un vrai reboot manuel a été demandé avec
-observation de la passerelle sans appel de relance ; aucun résultat de reprise
-au boot n'en est encore déduit.
+dans .local/startup-api-evidence.json. Un vrai reboot manuel a ensuite été observé, avec le résultat décrit ci-dessous.
+
+
+### Reboot réel et accès aux informations de boot
+
+Walson a déclenché un vrai redémarrage du Player, puis confirmé le retour de son
+accueil. La passerelle a observé la perte de l'agent le 22 octobre à 01:46:02,
+heure de Paris. Aucun appel SDK n'a été envoyé pendant la mesure. L'observateur
+s'est terminé sans retour de l'agent ; le Player répondait pourtant de nouveau
+sur son port HTTP. Après la confirmation de l'accueil, un lancement SDK manuel
+a rétabli le relais. Cela établit que le relais de développement actuel ne
+reprend pas automatiquement sur ce firmware après ce reboot.
+
+Une sonde supplémentaire --boot-layout a ensuite tenté des lectures en mémoire
+de quatre chemins fixes : /proc/self/status, /proc/version, /etc/inittab et
+/etc/os-release. Elle ne transmet que des résumés bornés (UID/GID, version noyau,
+exécutables init, identifiant OS), jamais les fichiers bruts, réglages ou données
+utilisateur. Les quatre lectures ont renvoyé readable=false. Ce résultat ne
+permet pas de distinguer une restriction du moteur d'une absence de ces chemins.
+Aucune écriture de fichier ou de configuration système n'a été tentée.
+
+Le serveur temporaire s'est fermé et le relais permanent a été relancé. Une
+nouvelle observation Freebox v7, âgée de 1,5 seconde, a confirmé sa restauration.
+Le relevé borné de cette sonde est conservé dans .local/boot-layout-evidence.json.
+
+Le blocage restant est l'absence de mécanisme persistant démontré et d'accès aux
+informations natives de démarrage avec les interfaces disponibles. Une reconnexion
+WSS et le redémarrage automatique du conteneur serveur ne résolvent pas l'absence
+de processus agent après le boot du Player. La suite utile exige une preuve sur
+le runtime natif exact ou un mécanisme d'installation/lancement système établi ;
+aucune impossibilité absolue du firmware n'est affirmée.
