@@ -17,7 +17,11 @@ packages/lan       Relais Node 24 et connecteurs multimédias locaux, sans HA
 - Les **réseaux d'autres logements** peuvent avoir un relais local optionnel :
   le serveur Trano le joint via Tailscale et un jeton privé. Les assistants
   utilisent des identifiants relais/appareil, indépendants des entity_id HA.
-  Connecteurs, validation terrain et mise en service : [local-network.md](local-network.md).
+  Un agent QML expérimental peut aussi exécuter ces lectures sur le Devialet et
+  les publier vers une passerelle par connexion sortante. Son composant non visuel
+  est séparé de l'application hôte pour permettre une future interface Atlas TV.
+  Le chemin complet est vérifié sur LAN ; la liaison WSS distante reste à tester.
+  Connecteurs : [local-network.md](local-network.md), [relais Devialet](devialet-relay.md).
 - Le **serveur Trano** est la source de vérité pour tout ce qui est partagé
   entre les membres de la famille : profils, liste de courses, pièces et
   **surcharges d'appareils** (renommages, pièce, masquage, plan). Il sert aussi

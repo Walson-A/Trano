@@ -59,6 +59,11 @@ Application {
         probeModule("websocket_client", 'import QtWebSockets 1.0; WebSocket { active: false }');
         probeModule("websocket_server", 'import QtWebSockets 1.0; WebSocketServer { listen: false }');
         probeModule("local_storage_module", 'import QtQuick 2.4; import QtQuick.LocalStorage 2.0; QtObject {}');
+        if (config.mediaProbe) {
+            // No source and no autoplay: module availability is not a playback test.
+            probeModule("qt_multimedia_player", 'import QtMultimedia 5.0; MediaPlayer { autoPlay: false }');
+            probeModule("qt_multimedia_output", 'import QtQuick 2.4; import QtMultimedia 5.0; VideoOutput {}');
+        }
         readUrl("samsung", config.samsungUrl);
         readUrl("public_https", "https://example.com/");
         if (config.serverUrl) readUrl("trano_server_https", config.serverUrl);

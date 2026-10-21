@@ -54,6 +54,12 @@ test('public listener exposes neither inventory nor reader credential; bootstrap
   assert.ok(qml.includes(INPUT.agentToken));
   assert.ok(!qml.includes(INPUT.readerToken));
   assert.ok(!qml.includes('__TRANO_AGENT_CONFIG__'));
+  const component = await fetch(g.public + '/bootstrap/' + INPUT.bootstrapToken + '/RelayAgent.qml');
+  assert.equal(component.status, 200);
+  const componentSource = await component.text();
+  assert.ok(!componentSource.includes(INPUT.agentToken));
+  assert.ok(!componentSource.includes(INPUT.readerToken));
+  assert.equal((await fetch(g.public + '/bootstrap/' + 'd'.repeat(64) + '/RelayAgent.qml')).status, 404);
   assert.equal((await fetch(g.read + '/v1/devices')).status, 401);
   assert.equal((await fetch(g.read + '/v1/devices', { headers: auth })).status, 503);
 });
@@ -99,4 +105,31 @@ test('wrong token, MAC change and replayed sequence terminate the agent', async 
   await send(ws, { type: 'inventory', sequence: 1, devices: [ROW] });
   closed = once(ws, 'close'); ws.send(JSON.stringify({ type: 'inventory', sequence: 1, devices: [ROW] }));
   assert.equal((await closed)[0], 1008);
+});
+
+test('an authenticated reconnect replaces a half-open stale agent without reusing its inventory', async (t) => {
+  let time = 0;
+  const g = await start(t, () => time);
+  const first = await authenticate(g.public);
+  await send(first, { type: 'inventory', sequence: 1, devices: [ROW] });
+  const firstClosed = once(first, 'close');
+  time = 20001;
+  const replacement = await authenticate(g.public);
+  await firstClosed;
+  assert.equal((await fetch(g.read + '/v1/devices', { headers: auth })).status, 503);
+  await send(replacement, { type: 'inventory', sequence: 1, devices: [{ ...ROW, volume: 17 }] });
+  const result = await (await fetch(g.read + '/v1/devices', { headers: auth })).json();
+  assert.equal(result.devices[0].state.volume, 17);
+});
+
+test('a second agent cannot evict a still-fresh authenticated connection', async (t) => {
+  const g = await start(t);
+  const first = await authenticate(g.public);
+  await send(first, { type: 'inventory', sequence: 1, devices: [ROW] });
+  const contender = await connect(g.public);
+  const closed = once(contender, 'close');
+  contender.send(JSON.stringify({ type: 'hello', token: INPUT.agentToken }));
+  assert.equal((await closed)[0], 1008);
+  await send(first, { type: 'inventory', sequence: 2, devices: [ROW] });
+  assert.equal((await fetch(g.read + '/v1/devices', { headers: auth })).status, 200);
 });

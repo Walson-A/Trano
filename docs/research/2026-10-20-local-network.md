@@ -327,3 +327,46 @@ et ne déploie pas le nouveau serveur Trano.
   pour la négociation et les événements de la télécommande. Le connecteur
   implémente les messages du protocole ; aucun code de cette bibliothèque
   n'a été incorporé.
+
+
+## Suite du 21 octobre : préparation sans interrompre la TV
+
+Walson a autorisé l'ouverture du point d'entrée distant et demandé trente minutes
+sans tests sur la TV ou le Player. La reprise de ces essais n'est pas autorisée
+avant le 21 octobre 2026 à 20:25:36 UTC. Il souhaite également une application TV
+Atlas réutilisable, notamment pour retrouver son parcours d'animés du PC.
+
+Les changements préparés pendant cette pause sont :
+
+- Séparation du relais non visuel RelayAgent.qml et de son hôte SDK. La fin
+  d'un diagnostic est un signal, pas une sortie imposée à une future interface.
+  La nouvelle composition attend encore son essai sur le Player.
+- Libération des anciennes connexions authentifiées sans observation depuis
+  vingt secondes, pour que le Player puisse se reconnecter après une coupure.
+  Une connexion encore fraîche ne peut pas être remplacée par un second client.
+- Refus d'annoncer un test distant réussi si les appareils ne sont pas tous
+  identifiés, si la liaison tombe trop tôt, si l'arrêt attendu n'est pas observé
+  ou si un seul contrôle de nettoyage manque ou échoue.
+- Sept simulations Python sans réseau vérifient ces échecs. Un échec du nettoyage
+  Funnel ne doit pas empêcher le nettoyage indépendant du conteneur et des fichiers.
+- Préparation d'un diagnostic QtMultimedia sans source et sans autoplay ; il
+  n'a pas été exécuté pendant l'utilisation de la télévision.
+
+Le mode serveur seul a réellement démarré le runtime de la passerelle sur Linux,
+sans contacter le Player et sans publier de Funnel. Le manifeste, l'hôte QML
+et le composant ont été servis correctement ; le jeton de lecture privée ne
+figure pas dans les sources envoyées à l'agent. L'inventaire sans agent a renvoyé
+503. Le rapport final confirme la suppression du conteneur
+trano-devialet-trial-47786210042a et de ses fichiers, sans changement du proxy 443.
+
+Les contrats Atlas des animés ont été lus dans le code PC et dans le ref local
+origin/dev de l'engine. Cela prépare le portage sans prétendre que les appels
+Tauri, la résolution de flux sur PC ou le proxy localhost fonctionnent sur une TV.
+Voir [la direction Atlas TV](../atlas-tv-direction.md).
+
+
+Validation hors ligne de cette suite : 36 tests Node réussis sur Windows et
+Linux, sept simulations Python réussies et typage des workspaces réussi.
+Les liens relatifs des documents sont relus. Aucun essai sur la TV ou le
+Player n'a été lancé pendant la pause demandée. La lecture et le rendu vidéo
+sur la future application Atlas TV ne sont pas validés.

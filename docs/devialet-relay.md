@@ -56,7 +56,9 @@ Le listener destiné à Internet ne sert jamais l'API de lecture de Trano.
 Les origines de navigateur sont refusées. Les identifiants de connexion de
 l'agent sont envoyés dans le premier message WebSocket, pas dans son URL.
 Le Player publie toutes les cinq secondes ; une observation de plus de vingt
-secondes, ou une connexion fermée, rend le relais indisponible.
+secondes, ou une connexion fermée, rend le relais indisponible. Une connexion TCP
+restée ouverte mais sans observations est libérée, afin de permettre la reconnexion
+du même Player après une coupure réseau.
 
 Depuis un checkout et ses dépendances déjà installées, Node 24 :
 
@@ -101,8 +103,9 @@ ensuite la suppression de son Funnel, de son conteneur et de ses fichiers, en
 vérifiant et rapportant séparément chaque résultat. Un changement concurrent du
 proxy 8443 empêche sa suppression automatique pour préserver le travail d'autrui.
 Un échec de nettoyage doit être traité à partir de ce rapport, sans annoncer
-l'essai terminé. Le script et son plan ont été vérifiés ; le test public n'a
-pas encore été exécuté.
+l'essai terminé. Walson a autorisé ce test le 21 octobre 2026. Il a également demandé de ne pas
+solliciter la TV pendant trente minutes, jusqu'au 21 octobre à 20:25:36 UTC
+(22:25:36 à Paris). Le test public n'a pas encore été exécuté.
 
 Le lancement du Player utilise ensuite `debug_qml_app`, avec l'URL secrète du
 manifeste hébergé sur le serveur permanent et `wait: false`. Le SDK public ne
@@ -150,3 +153,42 @@ séparés utilisent des fixtures.
 
 Les preuves et limites terrain sont dans le
 [relevé du 20 octobre](research/2026-10-20-local-network.md).
+
+
+## Vérifier le serveur sans solliciter le Player
+
+Commande de précontrôle, sans lancement sur le Player :
+
+    python packages/lan/scripts/remote-devialet-trial.py .local/relay.json <user@serveur> <nom-Tailscale.ts.net> --server-preflight
+
+Le mode --server-preflight démarre uniquement le runtime de la passerelle dans
+son conteneur temporaire. Il ne contacte pas le Player, ne lance aucun QML et
+n'active pas Funnel. Il vérifie les fichiers de démarrage et l'indisponibilité
+correcte de l'inventaire tant qu'aucun agent n'est connecté, puis contrôle le
+nettoyage et la préservation du proxy 443.
+
+Ce mode a été exécuté avec succès le 21 octobre sur le vrai serveur Linux :
+manifest et deux fichiers QML accessibles avec le secret de démarrage, séparation
+des secrets vérifiée, inventaire sans agent en HTTP 503. Le conteneur et les
+fichiers temporaires ont été supprimés ; le proxy 443 est resté inchangé.
+
+Les simulations de pannes du script distant s'exécutent sans réseau :
+
+    python -B packages/lan/test/remote_trial_test.py
+
+Elles couvrent le nettoyage partiel, les erreurs de lecture de configuration
+Funnel, les appareils non identifiés, l'absence d'arrêt attendu et la perte
+précoce de liaison. Un code de sortie SSH nul ne suffit pas : les preuves de
+lecture et chacun des contrôles de nettoyage doivent être présents et vrais.
+
+## Préparer Atlas TV
+
+Le relais est maintenant séparé en composant non visuel RelayAgent.qml et hôte
+SDK minimal agent.qml. La passerelle sert les deux fichiers sur le chemin de
+démarrage protégé. Le composant ne décide pas de quitter son application hôte :
+il signale seulement la fin d'un diagnostic, que l'hôte peut traiter.
+
+La direction pour une application Atlas TV réutilisable, dont les animés,
+est documentée dans [atlas-tv-direction.md](atlas-tv-direction.md). La séparation
+est faite dans le code ; la lecture vidéo, l'interface TV et la nouvelle
+composition QML sur matériel restent à vérifier.

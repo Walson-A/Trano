@@ -34,6 +34,7 @@ def main():
     parser.add_argument('--bind', required=True, type=private_ipv4)
     parser.add_argument('--server-url', default='')
     parser.add_argument('--port', type=int, default=3013)
+    parser.add_argument('--media', action='store_true', help='Probe QtMultimedia types without loading or playing a video.')
     parser.add_argument('--launch', action='store_true', help='Required: may interrupt the Player display.')
     args = parser.parse_args()
     if not args.launch:
@@ -52,7 +53,7 @@ def main():
 
     nonce = secrets.token_urlsafe(24)
     base = f'http://{args.bind}:{args.port}/{nonce}'
-    config = {'reportUrl': base + '/report', 'samsungUrl': f'http://{args.samsung}:8001/api/v2/', 'serverUrl': args.server_url}
+    config = {'reportUrl': base + '/report', 'samsungUrl': f'http://{args.samsung}:8001/api/v2/', 'serverUrl': args.server_url, 'mediaProbe': args.media}
     source = pathlib.Path(__file__).resolve().parent.parent / 'devialet' / 'probe.qml'
     qml = source.read_text(encoding='utf-8').replace('__TRANO_PROBE_CONFIG__', json.dumps(config))
     manifest = {'name': 'Trano diagnostic reseau', 'identifier': 'fr.trano.runtimeprobe',

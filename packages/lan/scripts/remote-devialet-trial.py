@@ -79,29 +79,64 @@ try:
             pass
         if time.monotonic() > until: raise RuntimeError("Temporary gateway did not start")
         time.sleep(0.2)
-    funnel_requested = True
-    run(["tailscale", "funnel", "--bg", "--https=8443", "http://127.0.0.1:3014"])
-    manifest = config["publicBaseUrl"] + "/bootstrap/" + config["bootstrapToken"] + "/manifest.json"
-    print(json.dumps({"publicTrialReady": True, "bootstrapUrl": manifest}), flush=True)
-    proved = False; disconnected = False; first_seen = None
-    until = time.monotonic() + 100
-    while time.monotonic() < until:
+    if setup.get("preflightOnly") is True:
+        # Validate the actual mounted runtime and bootstrap without launching a Player or opening Funnel.
+        base = "http://127.0.0.1:3014/bootstrap/" + config["bootstrapToken"] + "/"
+        with opener.open(base + "manifest.json", timeout=2) as response:
+            manifest_data = json.loads(response.read(32768))
+        if manifest_data.get("entryPoints", {}).get("main", {}).get("file") != "agent.qml":
+            raise RuntimeError("Bootstrap manifest is invalid")
+        with opener.open(base + "agent.qml", timeout=2) as response:
+            host_qml = response.read(262144).decode()
+        with opener.open(base + "RelayAgent.qml", timeout=2) as response:
+            core_qml = response.read(262144).decode()
+        if config["agentToken"] not in host_qml or config["readerToken"] in host_qml or config["readerToken"] in core_qml:
+            raise RuntimeError("Bootstrap credential separation failed")
+        private_status = None
         request = urllib.request.Request("http://127.0.0.1:3015/v1/devices", headers={"Authorization":"Bearer "+config["readerToken"]})
         try:
-            with opener.open(request, timeout=2) as response:
-                inventory = json.loads(response.read(32768))
-            if not proved:
-                proved = True; first_seen = time.monotonic()
-                print(json.dumps({"remoteWssInventory": True, "controlEnabled": inventory["controlEnabled"],
-                                  "devices":[{"id":d["id"],"model":d["model"],"reachable":d["reachable"],"state":d["state"]} for d in inventory["devices"]]}), flush=True)
-        except urllib.error.HTTPError as error:
-            if error.code == 503 and proved and time.monotonic() - first_seen > 10:
-                disconnected = True; break
-        time.sleep(1)
-    print(json.dumps({"agentReported": proved, "timedAgentExitObserved": disconnected}), flush=True)
-    if not proved: raise RuntimeError("No inventory received over remote WSS")
+            with opener.open(request, timeout=2): pass
+        except urllib.error.HTTPError as response:
+            private_status = response.code
+        if private_status != 503:
+            raise RuntimeError("Private reader invented an online agent")
+        print(json.dumps({"gatewayRuntimeReady": True, "bootstrapAssetsVerified": True, "unstartedAgentUnavailable": True,
+                          "funnelPublished": False, "playerLaunched": False}), flush=True)
+    else:
+        funnel_requested = True
+        run(["tailscale", "funnel", "--bg", "--https=8443", "http://127.0.0.1:3014"])
+        manifest = config["publicBaseUrl"] + "/bootstrap/" + config["bootstrapToken"] + "/manifest.json"
+        print(json.dumps({"publicTrialReady": True, "bootstrapUrl": manifest}), flush=True)
+        proved = False; disconnected = False; first_seen = None
+        until = time.monotonic() + 100
+        while time.monotonic() < until:
+            request = urllib.request.Request("http://127.0.0.1:3015/v1/devices", headers={"Authorization":"Bearer "+config["readerToken"]})
+            try:
+                with opener.open(request, timeout=2) as response:
+                    inventory = json.loads(response.read(32768))
+                if inventory.get("controlEnabled") is not False or not isinstance(inventory.get("devices"), list):
+                    raise RuntimeError("Gateway read-only contract is not verified")
+                rows = inventory["devices"]
+                expected = {device["id"] for device in setup["devices"]}
+                complete = len(rows) == len(expected) and {row.get("id") for row in rows} == expected and all(
+                    row.get("reachable") is True and isinstance(row.get("model"), str) and row["model"] and row.get("capabilities") == [] for row in rows)
+                if complete and not proved:
+                    proved = True; first_seen = time.monotonic()
+                    print(json.dumps({"remoteWssInventory": True, "controlEnabled": inventory["controlEnabled"],
+                                      "devices":[{"id":d["id"],"model":d["model"],"reachable":d["reachable"],"state":d["state"]} for d in inventory["devices"]]}), flush=True)
+            except urllib.error.HTTPError as error:
+                if error.code == 503 and proved:
+                    if time.monotonic() - first_seen < 45:
+                        raise RuntimeError("Agent disconnected before the expected diagnostic end")
+                    disconnected = True; break
+                if error.code != 503:
+                    raise RuntimeError("Private reader refused the trial")
+            time.sleep(1)
+        print(json.dumps({"agentReported": proved, "timedAgentExitObserved": disconnected}), flush=True)
+        if not proved: raise RuntimeError("No complete verified inventory received over remote WSS")
+        if not disconnected: raise RuntimeError("Expected agent disconnect was not observed")
 finally:
-    removed_funnel = False
+    removed_funnel = not funnel_requested
     unchanged_443 = None; removed_container = False; removed_files = False
     try:
         if funnel_requested:
@@ -112,7 +147,8 @@ finally:
                 cleaned = status()
                 removed_funnel = "8443" not in cleaned.get("TCP", {}) and not any(key.endswith(":8443") for key in cleaned.get("Web", {})) and not any(key.endswith(":8443") and enabled for key,enabled in cleaned.get("AllowFunnel", {}).items())
             elif not handlers:
-                removed_funnel = True
+                removed_funnel = "8443" not in current.get("TCP", {}) and not any(
+                    key.endswith(":8443") and enabled for key,enabled in current.get("AllowFunnel", {}).items())
     except Exception:
         pass  # Continue independent cleanup and report the unverified Funnel state.
     try:
@@ -124,7 +160,8 @@ finally:
     try:
         after = status() if before is not None else None
         unchanged_443 = before is not None and before.get("TCP", {}).get("443") == after.get("TCP", {}).get("443") and \
-            {k:v for k,v in before.get("Web", {}).items() if k.endswith(":443")} == {k:v for k,v in after.get("Web", {}).items() if k.endswith(":443")}
+            {k:v for k,v in before.get("Web", {}).items() if k.endswith(":443")} == {k:v for k,v in after.get("Web", {}).items() if k.endswith(":443")} and \
+            {k:v for k,v in before.get("AllowFunnel", {}).items() if k.endswith(":443")} == {k:v for k,v in after.get("AllowFunnel", {}).items() if k.endswith(":443")}
     except Exception:
         pass
     if root.parent == pathlib.Path(tempfile.gettempdir()).resolve() and root.name.startswith("trano-devialet-trial-"):
@@ -135,7 +172,30 @@ finally:
     print(json.dumps({"trialFunnelRemoved": removed_funnel, "temporaryFilesRemoved": removed_files, "temporaryContainerRemoved": removed_container,
                       "existingHttps443Unchanged": unchanged_443, "trialContainer": name,
                       "remainingTemporaryDirectory": None if removed_files else str(root)}), flush=True)
+    if not (removed_funnel and removed_container and removed_files and unchanged_443 is True):
+        raise RuntimeError("Trial cleanup or preservation of the existing HTTPS service is unverified")
 '''
+
+
+def verify_trial_reports(reports, returncode, launch_error, expected_ids):
+    """A successful SSH exit alone is never proof of successful cleanup."""
+    if returncode or launch_error:
+        raise RuntimeError('Remote trial failed; inspect cleanup reports before retrying.')
+    inventory = next((row for row in reports if row.get('remoteWssInventory') is True), None)
+    outcome = next((row for row in reversed(reports) if 'agentReported' in row), None)
+    cleanup = next((row for row in reversed(reports) if 'trialFunnelRemoved' in row), None)
+    if not inventory or inventory.get('controlEnabled') is not False:
+        raise RuntimeError('No verified read-only remote inventory.')
+    devices = inventory.get('devices')
+    if (not isinstance(devices, list) or len(devices) != len(expected_ids)
+            or {d.get('id') for d in devices} != set(expected_ids)
+            or not all(d.get('reachable') is True and isinstance(d.get('model'), str) and d['model'] for d in devices)):
+        raise RuntimeError('Complete configured device identities were not verified.')
+    if not outcome or outcome.get('agentReported') is not True or outcome.get('timedAgentExitObserved') is not True:
+        raise RuntimeError('Expected end of the temporary agent is unverified.')
+    required = ('trialFunnelRemoved', 'temporaryFilesRemoved', 'temporaryContainerRemoved', 'existingHttps443Unchanged')
+    if not cleanup or not all(cleanup.get(key) is True for key in required):
+        raise RuntimeError('Cleanup or preservation of the existing HTTPS service is unverified.')
 
 
 def main():
@@ -143,7 +203,9 @@ def main():
     parser.add_argument('relay_config', type=pathlib.Path)
     parser.add_argument('ssh_target')
     parser.add_argument('server_name')
-    parser.add_argument('--execute-public-trial', action='store_true')
+    modes = parser.add_mutually_exclusive_group()
+    modes.add_argument('--execute-public-trial', action='store_true')
+    modes.add_argument('--server-preflight', action='store_true', help='Validate the isolated server runtime without publishing Funnel or contacting the Player.')
     args = parser.parse_args()
     if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.@:-]+', args.ssh_target):
         parser.error('Invalid SSH target')
@@ -161,20 +223,21 @@ def main():
     player = next((row for row in devices if row['kind'] == 'freebox-player'), None)
     if not player or not player.get('spotifyPort'):
         parser.error('A configured Player with discovered Spotify port is required')
-    plan = {'publicTrial': args.execute_public_trial, 'endpoint': 'https://' + args.server_name + ':8443',
+    plan = {'publicTrial': args.execute_public_trial, 'serverPreflight': args.server_preflight, 'endpoint': 'https://' + args.server_name + ':8443',
             'agentListener': '127.0.0.1:3014', 'privateReader': '127.0.0.1:3015', 'agentLifetimeSeconds': 60,
             'maximumObservationSeconds': 100, 'productionVolumesMounted': False, 'existing443Modified': False,
             'cleanup': 'dedicated Funnel 8443, named temporary container, private temporary sources and credentials'}
     print(json.dumps(plan), flush=True)
-    if not args.execute_public_trial:
+    if not args.execute_public_trial and not args.server_preflight:
         print('Dry run only. Explicit owner approval is required before publication.')
         return
 
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
-    with opener.open(f'http://{player["host"]}:{player["spotifyPort"]}/zc?action=getInfo&version=2.10.0', timeout=3) as response:
-        info = json.loads(response.read(65536))
-    if info.get('status') != 101 or info.get('brandDisplayName') != 'Freebox':
-        raise RuntimeError('Player identity is not verified; no publication attempted')
+    if args.execute_public_trial:
+        with opener.open(f'http://{player["host"]}:{player["spotifyPort"]}/zc?action=getInfo&version=2.10.0', timeout=3) as response:
+            info = json.loads(response.read(65536))
+        if info.get('status') != 101 or info.get('brandDisplayName') != 'Freebox':
+            raise RuntimeError('Player identity is not verified; no publication attempted')
     root = pathlib.Path(__file__).resolve().parents[1]
     archive = io.BytesIO()
     with tarfile.open(fileobj=archive, mode='w:gz') as bundle:
@@ -183,16 +246,20 @@ def main():
                 if path.is_file() and not path.is_symlink():
                     bundle.add(path, arcname='lan/' + path.relative_to(root).as_posix(), recursive=False)
         bundle.add(root / 'package.json', arcname='lan/package.json', recursive=False)
-        payload = json.dumps({'publicBaseUrl': plan['endpoint'], 'devices': devices}).encode()
+        payload = json.dumps({'publicBaseUrl': plan['endpoint'], 'devices': devices, 'preflightOnly': args.server_preflight}).encode()
         entry = tarfile.TarInfo('setup.json'); entry.size = len(payload)
         bundle.addfile(entry, io.BytesIO(payload))
-    process = subprocess.Popen(['ssh', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=8', '-o', 'StrictHostKeyChecking=yes',
+    process = subprocess.Popen(['ssh', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=8', '-o', 'ServerAliveInterval=10', '-o', 'ServerAliveCountMax=3', '-o', 'StrictHostKeyChecking=yes',
                                 args.ssh_target, 'python3 -c ' + shlex.quote(REMOTE)], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     process.stdin.write(archive.getvalue()); process.stdin.close()
     launch_error = None
+    reports = []
     for line in process.stdout:
         report = json.loads(line)
+        if not isinstance(report, dict):
+            raise RuntimeError('Invalid trial report.')
         manifest = report.pop('bootstrapUrl', None)
+        reports.append(report)
         print(json.dumps(report), flush=True)
         if manifest:
             body = {'jsonrpc': '2.0', 'id': 'trano-remote-trial', 'method': 'debug_qml_app',
@@ -207,9 +274,16 @@ def main():
                 launch_error = 'Player launch not confirmed; remote trial is waiting for its cleanup deadline.'
                 print(launch_error, flush=True)
     process.wait(timeout=30)
-    if process.returncode or launch_error:
-        # The remote traceback contains no secret URL or credential; keep it out of default output.
-        raise SystemExit('Remote trial failed; inspect cleanup reports before retrying.')
+    # Keep the remote traceback out of default output: only explicit evidence determines success.
+    if args.server_preflight:
+        ready = next((row for row in reports if row.get('gatewayRuntimeReady') is True), None)
+        if process.returncode or not ready or ready.get('bootstrapAssetsVerified') is not True or ready.get('playerLaunched') is not False or ready.get('funnelPublished') is not False:
+            raise RuntimeError('Server preflight was not verified.')
+        cleanup = reports[-1] if reports else {}
+        if not all(cleanup.get(key) is True for key in ('trialFunnelRemoved', 'temporaryFilesRemoved', 'temporaryContainerRemoved', 'existingHttps443Unchanged')):
+            raise RuntimeError('Server preflight cleanup is unverified.')
+    else:
+        verify_trial_reports(reports, process.returncode, launch_error, [d['id'] for d in devices])
 
 
 if __name__ == '__main__':
