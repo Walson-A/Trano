@@ -106,3 +106,17 @@ test('Samsung remote read survives an unavailable UPnP renderer without inventin
   assert.equal(result.capabilities.includes('volume_set'), false);
   assert.deepEqual(result.transports, ['samsung_remote']);
 });
+
+test('an authenticated pairing probe reuses the pinned token without sending any key', async (t) => {
+  const fixture = await television(t);
+  const result = await samsungRemote({ ...fixture.device, samsungToken: TOKEN, samsungFingerprint256: fingerprint },
+    undefined, { authenticationOnly: true, timeoutMs: 2000 });
+  assert.equal(result.token, TOKEN);
+  assert.equal(fixture.requests[0].searchParams.get('token'), TOKEN);
+  assert.deepEqual(fixture.commands, []);
+});
+test('an authentication-only probe rejects a key or pairing flag before any connection', async () => {
+  const device = { id: 'tv', name: 'Fixture', kind: 'samsung', host: '127.0.0.1', samsungPort: 1 };
+  await assert.rejects(samsungRemote(device, 'mute_toggle', { authenticationOnly: true }), /sans commande/);
+  await assert.rejects(samsungRemote(device, undefined, { authenticationOnly: true, pairing: true }), /sans commande/);
+});

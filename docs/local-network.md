@@ -42,12 +42,12 @@ programme du Player a continué à lire la TV. Cela établit que ces fichiers ne
 sont pas nécessaires en continu à ce programme déjà chargé. Le PC est resté
 allumé pour observer les journaux ; le départ réel du PC n'a pas été testé.
 
-Cela ne valide pas encore un service permanent : maintien en arrière-plan,
-veille, redémarrage automatique, installation indépendante du PC, connexion
-sécurisée au serveur distant et contrôle Samsung restent à vérifier. Le SDK
-public fournit QML ; il ne démontre pas la disponibilité de Node ou de Tailscale
-sur ce Player. Le lancement de développement charge le manifeste depuis un
-serveur temporaire sur le PC. Ne pas annoncer le relais autonome comme livré.
+Le passage WSS public vers le serveur permanent a ensuite été vérifié, avec
+les fichiers QML servis à distance. Le Player s’est aussi reconnecté seul après
+redémarrage de la passerelle temporaire. Maintien prolongé en arrière-plan,
+veille, redémarrage et installation persistante du Player restent à vérifier.
+Le SDK public fournit QML ; Node et Tailscale sur le Player ne sont pas établis.
+Le service autonome permanent n’est pas encore livré.
 Sources et résultats : [relevé terrain](research/2026-10-20-local-network.md).
 
 Un diagnostic reproductible est disponible pour un Player appartenant à
@@ -72,16 +72,15 @@ réponse ni secret n'est rapporté. Un statut zéro ne distingue pas DNS, routag
 Sur le Devialet testé, les deux modules WebSocket et l'import LocalStorage sont
 disponibles ; la lecture Samsung et le HTTPS public retournent 200. La requête
 vers l'adresse HTTPS privée actuelle du serveur de la maison retourne zéro.
-Cela ne valide ni une session WebSocket, ni une base persistante, ni une liaison
-distante prête à l'emploi. La prochaine étape est un agent QML avec connexion
-sortante vers une passerelle dédiée, accessible en HTTPS depuis le logement.
-La liaison distante reste à mettre en service ; aucun accès public n'a été
-ouvert sur le serveur par ces diagnostics.
+Ce diagnostic initial ne prouvait ni une session WebSocket, ni une base
+persistante. Les essais suivants ont validé une liaison WSS réelle vers une
+passerelle dédiée. Leur route publique 8443 a été refermée après chaque essai.
 
 La passerelle et l'agent QML en lecture seule sont maintenant implémentés et
-testés ensemble sur le LAN. Voir [leur guide](devialet-relay.md) pour la
-configuration, les secrets distincts, le test réel et la mise en service
-distante qui reste à valider. L'exposition HTTPS distante n'est pas activée.
+testés sur le LAN et en WSS distant. Voir [leur guide](devialet-relay.md) pour
+la configuration, les secrets distincts et les preuves de reconnexion.
+Le [service dédié](devialet-gateway-deployment.md) est préparé et testé en
+conteneur temporaire ; aucune exposition publique permanente n’est active.
 
 ## Découvrir les appareils
 
@@ -174,9 +173,19 @@ cette connexion ; aucune vérification TLS globale n'est désactivée.
 
 La télécommande préparée expose volume relatif, sourdine par bascule,
 lecture, pause, arrêt et bascule d'alimentation. Une touche transmise n'est
-pas une preuve que l'application courante l'a exécutée. L'appairage et ces
-touches restent à vérifier sur la vraie télévision ; aucun essai d'appairage
-n'a été lancé pendant l'absence de Walson.
+pas une preuve que l'application courante l'a exécutée. Walson a validé le
+véritable appairage le 21 octobre ; une connexion suivante a réutilisé son
+jeton et son certificat sans touche, avec succès.
+
+    node packages/lan/scripts/samsung-auth-check.mjs .local/relay.json tv
+
+Une première commande de sourdine n’a pas été confirmée ; une seconde a été
+transmise mais GetMute est resté faux. L’effet physique n’est donc pas validé.
+Le diagnostic explicite samsung-mute-check.mjs exige --execute : il tente une
+seule bascule, ne compense qu’un état changé observé et échoue si l’effet ou
+le retour de la valeur API ne sont pas confirmés. Un retour API à sa valeur
+initiale ne prouve pas une restauration à l’écran ; si les deux divergent,
+vérifier sur place avant toute nouvelle bascule.
 
 Le mode `samsungControl: "upnp"` (défaut historique) reste disponible pour
 les télévisions qui exécutent réellement ces actions. Il n'y a aucun

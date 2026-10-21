@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import signal
 import socket
+import ssl
 import subprocess
 import sys
 import tarfile
@@ -27,7 +28,7 @@ ROW = {'id': 'tv', 'model': 'FixtureTV', 'reachable': True, 'state': {'volume': 
 
 def simulate(mode='success'):
     archive = io.BytesIO()
-    data = json.dumps({'publicBaseUrl': 'https://server.tail.ts.net:8443', 'devices': [DEVICE], 'dockerFunnelAdmin': mode.startswith('docker_'), 'publicDnsWaitSeconds': 30 if mode.startswith('dns_') else 0}).encode()
+    data = json.dumps({'publicBaseUrl': 'https://server.tail.ts.net:8443', 'wsVersion': '8.22.0', 'devices': [DEVICE], 'dockerFunnelAdmin': mode.startswith('docker_'), 'publicDnsWaitSeconds': 30 if mode.startswith(('dns_', 'https_')) else 0, 'restartGateway': mode.startswith('restart_')}).encode()
     with tarfile.open(fileobj=archive, mode='w:gz') as bundle:
         member = tarfile.TarInfo('setup.json')
         member.size = len(data)
@@ -36,6 +37,7 @@ def simulate(mode='success'):
     state = json.loads(json.dumps(BASE))
     commands = []
     published = [False]
+    restarted_at = [None]
     container = [False]
     output = io.StringIO()
     error = None
@@ -53,6 +55,10 @@ def simulate(mode='success'):
             stdout = 'sha256:' + 'd' * 64
         elif command[:2] == ['docker', 'run'] and 'funnel' not in command:
             container[0] = True
+        elif command[:2] == ['docker', 'exec']:
+            stdout = '8.22.0'
+        elif command[:2] == ['docker', 'restart']:
+            restarted_at[0] = clock[0]
         elif command[:2] == ['docker', 'rm']:
             container[0] = False
         elif command[:2] == ['docker', 'ps']:
@@ -83,7 +89,13 @@ def simulate(mode='success'):
             stop = 8 if mode == 'early_disconnect' else 60
             if mode != 'never_disconnect' and clock[0] >= stop:
                 raise urllib.error.HTTPError(request.full_url, 503, 'fixture', None, None)
-            row = dict(ROW, reachable=mode != 'unreachable')
+            if restarted_at[0] is not None:
+                elapsed = clock[0] - restarted_at[0]
+                if elapsed < 2:
+                    raise OSError('fixture gateway restarting')
+                if elapsed < 5 or mode == 'restart_missing':
+                    raise urllib.error.HTTPError(request.full_url, 503, 'fixture', None, None)
+            row = dict(ROW, reachable=mode != 'unreachable' and not (mode == 'restart_unreachable' and restarted_at[0] is not None))
             return io.BytesIO(json.dumps({'controlEnabled': False, 'devices': [row]}).encode())
 
     with contextlib.ExitStack() as stack:
@@ -94,6 +106,9 @@ def simulate(mode='success'):
         stack.enter_context(mock.patch.object(os, 'getuid', return_value=1000, create=True))
         stack.enter_context(mock.patch.object(os, 'getgid', return_value=1000, create=True))
         stack.enter_context(mock.patch.object(socket, 'socket'))
+        stack.enter_context(mock.patch.object(socket, 'create_connection'))
+        ssl_context = stack.enter_context(mock.patch.object(ssl, 'create_default_context'))
+        ssl_context.return_value.wrap_socket.return_value.__enter__.return_value.recv.return_value = b'HTTP/1.1 503 Not Ready\r\n' if mode == 'https_missing' else b'HTTP/1.1 404 Not Found\r\n'
         stack.enter_context(mock.patch.object(subprocess, 'check_output', side_effect=check_output))
         stack.enter_context(mock.patch.object(subprocess, 'run', side_effect=run))
         stack.enter_context(mock.patch.object(urllib.request, 'build_opener', return_value=Opener()))
@@ -118,12 +133,52 @@ class RemoteTrialTests(unittest.TestCase):
         self.assertIsNone(error)
         trial.verify_trial_reports(reports, 0, None, ['tv'])
 
+    def test_player_recovers_after_only_the_trial_gateway_is_restarted(self):
+        reports, error, commands = simulate('restart_success')
+        self.assertIsNone(error)
+        trial.verify_trial_reports(reports, 0, None, ['tv'], expected_restart=True)
+        restarts = [cmd for cmd in commands if cmd[:2] == ['docker', 'restart']]
+        self.assertEqual(len(restarts), 1)
+        self.assertTrue(restarts[0][-1].startswith('trano-devialet-trial-'))
+        self.assertNotEqual(restarts[0][-1], 'trano')
+        self.assertTrue(any(row.get('remoteWssRecovered') and 'devices' in row for row in reports))
+
+    def test_missing_player_recovery_fails_and_cleans_up(self):
+        reports, error, _ = simulate('restart_missing')
+        self.assertIn('did not reconnect', error)
+        self.assertTrue(reports[-1]['trialFunnelRemoved'])
+        self.assertTrue(reports[-1]['temporaryContainerRemoved'])
+        with self.assertRaises(RuntimeError):
+            trial.verify_trial_reports(reports, 0, None, ['tv'], expected_restart=True)
+
+    def test_unidentified_recovered_devices_do_not_prove_recovery(self):
+        reports, error, _ = simulate('restart_unreachable')
+        self.assertIsNotNone(error)
+        self.assertFalse(any(row.get('remoteWssRecovered') and 'devices' in row for row in reports))
+
+    def test_restart_mode_requires_separate_recovery_evidence(self):
+        reports, _, _ = simulate()
+        with self.assertRaises(RuntimeError):
+            trial.verify_trial_reports(reports, 0, None, ['tv'], expected_restart=True)
+        reports, _, _ = simulate('restart_success')
+        recovery = next(row for row in reports if row.get('remoteWssRecovered') and 'devices' in row)
+        recovery['devices'][0]['reachable'] = False
+        with self.assertRaises(RuntimeError):
+            trial.verify_trial_reports(reports, 0, None, ['tv'], expected_restart=True)
+
     def test_public_dns_is_required_before_player_launch_is_offered(self):
         reports, error, _ = simulate('dns_missing')
         self.assertIsNotNone(error)
         self.assertFalse(any(row.get('publicTrialReady') for row in reports))
         self.assertTrue(reports[-1]['trialFunnelRemoved'])
         self.assertTrue(reports[-1]['temporaryFilesRemoved'])
+
+    def test_public_dns_without_https_never_offers_a_player_launch(self):
+        reports, error, _ = simulate('https_missing')
+        self.assertIsNotNone(error)
+        self.assertTrue(any(row.get('publicDnsReady') for row in reports))
+        self.assertFalse(any(row.get('publicTrialReady') for row in reports))
+        self.assertTrue(reports[-1]['trialFunnelRemoved'])
 
     def test_public_dns_readiness_allows_the_trial(self):
         reports, error, _ = simulate('dns_ready')

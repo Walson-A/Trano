@@ -425,3 +425,55 @@ programme distant et liens documentaires vérifiés. Aucun bundle web n’a chan
 Le worktree de feature et sa configuration privée sont conservés pour la suite :
 installation persistante, reprise après redémarrage, appairage et contrôle,
 puis interface Atlas TV et lecture vidéo restent à réaliser.
+
+## Reprise autonome et conditionnement dédié
+
+Un premier essai de reprise a été arrêté avant tout agent : le SDK refusait
+le manifeste avec « Connection closed » malgré une réponse DNS publique.
+Le test vérifie désormais un échange HTTPS réel vers une IPv4 publique,
+certificat et nom du serveur validés, avant de solliciter le Player. Aucune
+information secrète n’est transmise pendant ce contrôle.
+
+L’essai suivant a démarré une seule fois le Player puis redémarré uniquement
+son conteneur temporaire de passerelle. Le Player s’est reconnecté sans relance
+du SDK et a renvoyé les deux identités et les états Samsung. L’arrêt minuté,
+la suppression de 8443, du conteneur trano-devialet-trial-281bd74157ad et de ses
+fichiers, ainsi que la préservation du proxy 443, ont été vérifiés.
+
+L’image dédiée et Compose ont été construits et testés séparément sans appareil
+ni publication Internet. Le premier build a identifié deux avis ws ; le lockfile
+a été mis à jour uniquement sur ws vers 8.22.0. Le worktree possède maintenant ses
+propres dépendances ; la jonction précédente a été retirée sans toucher à sa cible.
+L’image corrigée a démarré, servi tous les assets protégés et refusé l’accès
+privé sans jeton. Sans agent, elle renvoie 503. Sa vie de processus est vérifiée
+séparément de la présence d’appareils. Mesures et limites :
+[conditionnement dédié](../devialet-gateway-deployment.md).
+
+Les bancs Linux et d’essai public montent maintenant le ws verrouillé plutôt
+que celui de l’ancienne image de production. Les 36 tests passent sur Windows
+et Linux avec ws 8.22.0 ; seize simulations Python couvrent aussi la reprise,
+l’absence de reprise, la réponse DNS sans HTTPS prêt et le nettoyage.
+
+La reprise matérielle a ensuite été répétée avec ws 8.22.0 réellement chargé :
+le rapport annonce cette version, le premier inventaire, le redémarrage de la
+passerelle puis le nouvel inventaire complet. L’arrêt attendu et tous les
+contrôles de nettoyage ont réussi, conteneur temporaire
+trano-devialet-trial-0ec27a1792b7 supprimé. Le typage de tous les workspaces
+réussit également. Ces essais ne constituent pas un redémarrage du Player
+ni une validation de sa veille ou de son installation persistante.
+
+## Appairage Samsung avec Walson présent
+
+Après accord de disponibilité de Walson, la commande pair a réellement reçu
+et stocké localement le jeton et le certificat de la Samsung, sans touche.
+La réutilisation de cet appairage a été vérifiée ensuite par une sonde
+authenticationOnly : connexion acceptée, aucune touche envoyée.
+Deux tests automatiques couvrent cette sonde et son refus de paramètres
+ambigus ; les 38 tests passent sur Windows et Linux avec ws 8.22.0.
+
+La première tentative de sourdine n’a pas confirmé de transmission. Après
+la sonde authentifiée, une seconde touche a été transmise sans erreur du
+connecteur, mais GetMute est resté faux. Aucun changement physique ni aucune
+restauration à l’écran ne sont déduits de cette valeur. L’observation de Walson
+est demandée avant toute autre bascule. Le relais sauvegardé reste en lecture
+seule et le QML ne reçoit ni jeton Samsung ni code de télécommande.

@@ -21,6 +21,7 @@ export const SAMSUNG_REMOTE_KEYS: Partial<Record<MediaAction, string>> = {
 
 interface RemoteOptions {
   pairing?: boolean;
+  authenticationOnly?: boolean;
   timeoutMs?: number;
 }
 /** Self-signed TV certificate accepted only on this socket and pinned before an HTTP token is sent. */
@@ -60,8 +61,12 @@ export async function samsungRemote(
   options: RemoteOptions = {},
 ): Promise<{ token: string; fingerprint256: string }> {
   const pairing = options.pairing === true;
+  const authenticationOnly = options.authenticationOnly === true;
+  if ((pairing && authenticationOnly) || (authenticationOnly && action !== undefined)) {
+    throw new LanError('Sonde Samsung sans commande requise.', 400);
+  }
   const key = action ? SAMSUNG_REMOTE_KEYS[action] : undefined;
-  if (!pairing && (!key || !device.samsungToken || !device.samsungFingerprint256)) throw new LanError('Appairage Samsung requis ; aucune touche envoyée.', 409);
+  if (!pairing && ((!key && !authenticationOnly) || !device.samsungToken || !device.samsungFingerprint256)) throw new LanError('Appairage Samsung requis ; aucune touche envoyée.', 409);
   const port = device.samsungPort ?? 8002;
   let fingerprint256 = '';
   const agent = pinnedAgent(device.host, port, pairing ? undefined : device.samsungFingerprint256, (fp) => { fingerprint256 = fp; });
@@ -96,7 +101,7 @@ export async function samsungRemote(
       if (typeof token !== 'string' || !/^[A-Za-z0-9._~-]{1,512}$/.test(token) || !fingerprint256) {
         finish(new LanError('La télévision n’a pas fourni un appairage réutilisable.')); return;
       }
-      if (pairing) { finish(undefined, { token, fingerprint256 }); return; }
+      if (pairing || authenticationOnly) { finish(undefined, { token, fingerprint256 }); return; }
       sending = true;
       socket.send(JSON.stringify({ method: 'ms.remote.control', params: {
         Cmd: 'Click', DataOfCmd: key, Option: 'false', TypeOfRemote: 'SendRemoteKey',

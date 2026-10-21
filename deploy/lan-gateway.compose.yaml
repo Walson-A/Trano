@@ -1,0 +1,26 @@
+# Linux host networking preserves explicit loopback/Tailscale listen addresses.
+# This service does not start the Player, publish Funnel, or modify Trano.
+name: trano-lan-gateway
+services:
+  lan-gateway:
+    image: ${TRANO_GATEWAY_IMAGE:-trano-lan-gateway:local}
+    build:
+      context: ..
+      dockerfile: packages/lan/Dockerfile
+    restart: unless-stopped
+    init: true
+    network_mode: host
+    user: "${TRANO_GATEWAY_UID:-1000}:${TRANO_GATEWAY_GID:-1000}"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 96m
+    cpus: 0.25
+    pids_limit: 32
+    volumes:
+      - type: bind
+        source: ${TRANO_GATEWAY_CONFIG:?Set an absolute private gateway configuration path}
+        target: /run/secrets/gateway.json
+        read_only: true
+        bind:
+          create_host_path: false

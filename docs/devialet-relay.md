@@ -220,3 +220,30 @@ Le contrôle des ports accepte les sockets TIME_WAIT d’un essai fini tout en
 refusant une écoute concurrente. Le DNS est vérifié par un résolveur public
 en HTTPS avant le lancement du Player : une réponse MagicDNS privée ne
 constitue pas une preuve d’accès depuis le logement.
+
+## Vérifier une reconnexion autonome
+
+Ajouter --restart-gateway à un essai public pour redémarrer uniquement son
+conteneur temporaire, dix secondes après le premier inventaire complet.
+Le Player n’est lancé qu’une fois. Le test exige ensuite un nouvel inventaire
+complet reçu après le redémarrage, dans les vingt secondes, puis l’arrêt
+minuté habituel de l’agent et tous les contrôles de nettoyage. Un inventaire
+incomplet, une reprise manquante ou une déconnexion trop précoce font échouer
+le test. Le conteneur de production n’est jamais une cible de redémarrage.
+
+Avant de proposer le lancement SDK, le contrôle de disponibilité utilise une
+IPv4 publique annoncée par le DNS, établit TLS en vérifiant le nom du serveur
+avec le magasin de certificats système, puis exige la réponse HTTP 404
+attendue sur la racine du listener agent. Il ne transmet aucun jeton. Une
+réponse DNS positive seule ne garantit pas que la route Funnel est déjà prête.
+Ce contrôle ne garantit pas le DNS ou le chemin réseau propre au Player.
+
+## Image dédiée pour le serveur permanent
+
+Le [guide de conditionnement et de mise en service](devialet-gateway-deployment.md)
+décrit le service Linux isolé, ses limites de ressources, la configuration privée
+et le contrôle de build reproductible. Aucun service permanent n’a été installé
+par les diagnostics. Pour les tests Linux et les essais publics, installer les
+dépendances verrouillées avec npm ci : les scripts montent une copie du runtime
+ws correspondant au lockfile dans leur conteneur temporaire, vérifient sa version
+et préservent les dépendances de l’image de production.
