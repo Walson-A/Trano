@@ -85,6 +85,7 @@ export function createAgentGateway(input: GatewayConfig, options: { allowHttpFor
   if (!Number.isInteger(lifetime) || lifetime < 0 || lifetime > 3600000) throw new Error('Durée de diagnostic invalide.');
   const template = readFileSync(new URL('../devialet/agent.qml', import.meta.url), 'utf8');
   const relayComponent = readFileSync(new URL('../devialet/RelayAgent.qml', import.meta.url), 'utf8');
+  const directory = readFileSync(new URL('../devialet/qmldir', import.meta.url), 'utf8');
   let current: AgentSocket | null = null;
   let snapshot: MediaDevice[] | null = null;
   let receivedAt = -Infinity;
@@ -100,7 +101,7 @@ export function createAgentGateway(input: GatewayConfig, options: { allowHttpFor
   });
   const agent = createServer((req, reply) => {
     if (req.headers.origin || req.method !== 'GET') { json(reply, 403, { error: 'Accès refusé.' }); return; }
-    const match = /^\/bootstrap\/([a-f0-9]{64})\/(manifest.json|agent.qml|RelayAgent.qml)$/i.exec(req.url ?? '');
+    const match = /^\/bootstrap\/([a-f0-9]{64})\/(manifest.json|agent.qml|RelayAgent.qml|qmldir)$/i.exec(req.url ?? '');
     if (!match || !equal(match[1], config.bootstrapToken)) { json(reply, 404, { error: 'Route inconnue.' }); return; }
     if (match[2] === 'manifest.json') {
       json(reply, 200, { name: 'Trano relais', identifier: 'fr.trano.lanagent', description: 'Relais des appareils du logement', capabilities: { net_wan: 'required' }, entryPoints: { main: { file: 'agent.qml', default: true } } });
@@ -108,7 +109,7 @@ export function createAgentGateway(input: GatewayConfig, options: { allowHttpFor
     }
     const runtime = { url: config.publicBaseUrl.replace(/^http/, 'ws') + '/agent', token: config.agentToken, devices: config.devices, lifetimeMs: lifetime };
     reply.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer' });
-    reply.end(match[2] === 'RelayAgent.qml' ? relayComponent : template.replace('__TRANO_AGENT_CONFIG__', JSON.stringify(runtime)));
+    reply.end(match[2] === 'qmldir' ? directory : match[2] === 'RelayAgent.qml' ? relayComponent : template.replace('__TRANO_AGENT_CONFIG__', JSON.stringify(runtime)));
   });
   for (const server of [reader, agent]) { server.requestTimeout = 5000; server.headersTimeout = 5000; server.maxConnections = 16; }
   const wss = new WebSocketServer({ server: agent, path: '/agent', maxPayload: 32768, perMessageDeflate: false,

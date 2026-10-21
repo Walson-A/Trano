@@ -60,6 +60,10 @@ test('public listener exposes neither inventory nor reader credential; bootstrap
   assert.ok(!componentSource.includes(INPUT.agentToken));
   assert.ok(!componentSource.includes(INPUT.readerToken));
   assert.equal((await fetch(g.public + '/bootstrap/' + 'd'.repeat(64) + '/RelayAgent.qml')).status, 404);
+  const directory = await fetch(g.public + '/bootstrap/' + INPUT.bootstrapToken + '/qmldir');
+  assert.equal(directory.status, 200);
+  assert.equal((await directory.text()).trim(), 'RelayAgent RelayAgent.qml');
+  assert.equal((await fetch(g.public + '/bootstrap/' + 'd'.repeat(64) + '/qmldir')).status, 404);
   assert.equal((await fetch(g.read + '/v1/devices')).status, 401);
   assert.equal((await fetch(g.read + '/v1/devices', { headers: auth })).status, 503);
 });

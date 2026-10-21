@@ -27,7 +27,7 @@ ROW = {'id': 'tv', 'model': 'FixtureTV', 'reachable': True, 'state': {'volume': 
 
 def simulate(mode='success'):
     archive = io.BytesIO()
-    data = json.dumps({'publicBaseUrl': 'https://server.tail.ts.net:8443', 'devices': [DEVICE]}).encode()
+    data = json.dumps({'publicBaseUrl': 'https://server.tail.ts.net:8443', 'devices': [DEVICE], 'dockerFunnelAdmin': mode.startswith('docker_'), 'publicDnsWaitSeconds': 30 if mode.startswith('dns_') else 0}).encode()
     with tarfile.open(fileobj=archive, mode='w:gz') as bundle:
         member = tarfile.TarInfo('setup.json')
         member.size = len(data)
@@ -51,15 +51,15 @@ def simulate(mode='success'):
         stdout = ''
         if command[:2] == ['docker', 'inspect']:
             stdout = 'sha256:' + 'd' * 64
-        elif command[:2] == ['docker', 'run']:
+        elif command[:2] == ['docker', 'run'] and 'funnel' not in command:
             container[0] = True
         elif command[:2] == ['docker', 'rm']:
             container[0] = False
         elif command[:2] == ['docker', 'ps']:
             stdout = '' if not container[0] else 'trial-still-running'
-        elif command[:2] == ['tailscale', 'funnel']:
+        elif command[:2] == ['tailscale', 'funnel'] or (command[:2] == ['docker', 'run'] and 'funnel' in command):
             if 'off' in command:
-                if mode == 'funnel_cleanup_failure':
+                if mode in ('funnel_cleanup_failure', 'docker_funnel_cleanup_failure'):
                     raise subprocess.TimeoutExpired(command, 15)
                 state['TCP'].pop('8443', None)
                 state['Web'].pop('server.tail.ts.net:8443', None)
@@ -75,6 +75,9 @@ def simulate(mode='success'):
 
     class Opener:
         def open(self, request, **_):
+            if isinstance(request, str) and request.startswith('https://dns.google/'):
+                answer = [{'type': 1, 'data': '203.0.113.1'}] if mode == 'dns_missing' else [{'type': 1, 'data': '8.8.8.8'}]
+                return io.BytesIO(json.dumps({'Answer': answer}).encode())
             if isinstance(request, str):
                 raise urllib.error.HTTPError(request, 404, 'fixture', None, None)
             stop = 8 if mode == 'early_disconnect' else 60
@@ -114,6 +117,41 @@ class RemoteTrialTests(unittest.TestCase):
         reports, error, _ = simulate()
         self.assertIsNone(error)
         trial.verify_trial_reports(reports, 0, None, ['tv'])
+
+    def test_public_dns_is_required_before_player_launch_is_offered(self):
+        reports, error, _ = simulate('dns_missing')
+        self.assertIsNotNone(error)
+        self.assertFalse(any(row.get('publicTrialReady') for row in reports))
+        self.assertTrue(reports[-1]['trialFunnelRemoved'])
+        self.assertTrue(reports[-1]['temporaryFilesRemoved'])
+
+    def test_public_dns_readiness_allows_the_trial(self):
+        reports, error, _ = simulate('dns_ready')
+        self.assertIsNone(error)
+        self.assertTrue(any(row.get('publicDnsReady') for row in reports))
+        trial.verify_trial_reports(reports, 0, None, ['tv'])
+
+    def test_docker_admin_helper_is_bounded_and_temporary(self):
+        reports, error, commands = simulate('docker_success')
+        self.assertIsNone(error)
+        trial.verify_trial_reports(reports, 0, None, ['tv'])
+        helpers = [cmd for cmd in commands if cmd[:2] == ['docker', 'run'] and 'funnel' in cmd]
+        self.assertEqual(len(helpers), 2)
+        for cmd in helpers:
+            self.assertIn('--rm', cmd)
+            self.assertIn('none', cmd)
+            self.assertIn('--read-only', cmd)
+            self.assertNotIn('--privileged', cmd)
+        self.assertEqual(helpers[0][-4:], ['funnel', '--bg', '--https=8443', 'http://127.0.0.1:3014'])
+        self.assertEqual(helpers[1][-3:], ['funnel', '--https=8443', 'off'])
+        self.assertTrue(any(cmd[:3] == ['docker', 'rm', '-f'] and cmd[-1].endswith('-funnel') for cmd in commands))
+
+    def test_docker_helper_failure_does_not_skip_independent_cleanup(self):
+        reports, error, _ = simulate('docker_funnel_cleanup_failure')
+        self.assertIsNotNone(error)
+        self.assertFalse(reports[-1]['trialFunnelRemoved'])
+        self.assertTrue(reports[-1]['temporaryContainerRemoved'])
+        self.assertTrue(reports[-1]['temporaryFilesRemoved'])
 
     def test_funnel_cleanup_failure_still_removes_container_and_files(self):
         reports, error, commands = simulate('funnel_cleanup_failure')

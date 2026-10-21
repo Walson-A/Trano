@@ -370,3 +370,58 @@ Linux, sept simulations Python réussies et typage des workspaces réussi.
 Les liens relatifs des documents sont relus. Aucun essai sur la TV ou le
 Player n'a été lancé pendant la pause demandée. La lecture et le rendu vidéo
 sur la future application Atlas TV ne sont pas validés.
+
+## Reprise après la pause du 21 octobre
+
+Les tests matériels ont repris après 20:25:36 UTC. Le premier lancement
+modulaire n’a reçu aucun inventaire : l’import QML distant exigeait qmldir.
+Après ajout de cet index protégé et de l’import local, le vrai Player a publié
+vers le véritable adaptateur Trano : Samsung UE43TU7125KXXC, volume 0, sourdine
+fausse, et identité Freebox v7 via Spotify. L’arrêt de diagnostic, l’invalidation
+des états et la fermeture de la passerelle temporaire ont été vérifiés.
+
+Le diagnostic optionnel a créé MediaPlayer et VideoOutput (QtMultimedia 5.0),
+sans source ni lecture. QtWebSockets client/serveur et l’import
+QtQuick.LocalStorage fonctionnent également. Aucun codec, rendu, son,
+sous-titre ou recherche temporelle n’est établi par ce test.
+
+Après connexion de Walson à la console Tailscale, l’attribut Funnel a été
+enregistré pour la seule IPv4 du serveur ; sa réception a été vérifiée.
+Le compte Linux a refusé la modification Serve. Un helper Docker temporaire,
+avec les droits Docker existants, a pu ouvrir puis refermer la seule route 8443.
+Le proxy privé 443 et son état Funnel sont restés inchangés.
+
+Ce premier essai public n’a pas confirmé le lancement SDK ni reçu d’agent.
+Google DNS renvoyait NXDOMAIN alors que MagicDNS répondait avec l’IP privée.
+Le script attend désormais le DNS public avant le lancement et conserve des
+erreurs expurgées. Un précontrôle a aussi identifié des sockets TIME_WAIT,
+sans écoute concurrente ni conteneur restant : le bind de vérification utilise
+maintenant SO_REUSEADDR.
+
+## Passage WSS distant réel du 21 octobre
+
+Après propagation, le résolveur public a renvoyé des IPv4 de relais Funnel
+(et non l’IP Tailscale privée). Le SDK a accepté le manifeste HTTPS distant.
+Le vrai Player a ensuite ouvert WSS vers le serveur chez les parents et
+l’API privée de la passerelle a reçu les deux appareils identifiés :
+
+- Samsung UE43TU7125KXXC, joignable, volume 0, sourdine fausse, lecture inconnue.
+- Freebox v7, joignable, volume et sourdine inconnus, lecture inconnue.
+
+Le contrôle reste désactivé et les capacités de commande vides. Le PC ne
+servait ni les fichiers QML, ni la passerelle, ni les lectures des appareils ;
+il transmettait le lancement SDK et observait SSH. Cela démontre le transport
+distant sans relais sur PC, mais pas un essai PC physiquement éteint ni une
+installation persistante ou un retour automatique après reboot.
+
+L’essai s’est terminé avec un code de sortie nul. L’arrêt attendu de l’agent
+a été observé ; le rapport confirme la suppression de Funnel 8443, des deux
+conteneurs temporaires et des fichiers privés. Le proxy 443 est inchangé.
+Le conteneur principal de cet essai était trano-devialet-trial-e56ef02f40cf.
+
+Validation de cette suite : 36 tests Node réussis sur Windows et Linux,
+11 simulations Python réussies, typage des workspaces réussi, syntaxe du
+programme distant et liens documentaires vérifiés. Aucun bundle web n’a changé.
+Le worktree de feature et sa configuration privée sont conservés pour la suite :
+installation persistante, reprise après redémarrage, appairage et contrôle,
+puis interface Atlas TV et lecture vidéo restent à réaliser.

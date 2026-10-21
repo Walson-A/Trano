@@ -18,8 +18,13 @@ L'essai terrain a parcouru cette chaîne sur le LAN : les lectures sont exécut�
 sur le vrai Devialet et l'adaptateur réel de Trano reçoit les deux identités,
 le volume et la sourdine de la TV. La passerelle était temporairement sur le PC,
 avec des jetons de test aléatoires et sans TLS. L'agent s'est fermé après vingt
-secondes et l'inventaire est devenu indisponible. Ce test ne valide pas encore
-la liaison distante WSS, la veille, le redémarrage du Player ou le départ du PC.
+secondes et l'inventaire est devenu indisponible. Cet essai LAN ne validait pas WSS. Un essai suivant, le 21 octobre, a réellement
+reçu les deux identités et les lectures Samsung sur le serveur distant par
+WSS public. Le code de lecture tournait sur le Player, la passerelle sur Linux ;
+le PC lançait le SDK et observait le test. L’arrêt minuté, la suppression de
+Funnel 8443, des conteneurs et des fichiers privés ont été vérifiés, sans changer
+le proxy 443. Aucun arrêt physique du PC, reboot,
+réveil ou démarrage automatique du Player n’a encore été testé.
 
 ## Préparer la passerelle
 
@@ -80,9 +85,9 @@ sur 8443**, dirigé uniquement vers `127.0.0.1:3014`, par exemple via Tailscale
 Funnel. Cela rendrait le listener de l'agent joignable depuis Internet avec TLS ;
 les secrets resteraient obligatoires et la lecture de Trano resterait privée.
 
-Aucun Funnel n'a été activé pour cette feature. Avant mise en service : revoir
-la configuration exacte, vérifier les restrictions du tailnet, préparer un
-service isolé et sa suppression, puis obtenir l'accord pour cette publication.
+Walson a autorisé les essais publics le 21 octobre. L’attribut Funnel a été
+accordé au seul serveur. Les essais utilisent puis referment exclusivement 8443.
+Le parcours complet doit être vérifié avant une mise en service permanente.
 Ne pas activer Funnel sur le proxy 443 existant.
 
 Un essai distant borné est préparé dans
@@ -98,14 +103,15 @@ pour la publication**. Le script refuse un port 8443 déjà configuré et des po
 locaux déjà occupés, puis utilise un conteneur jetable et l'image immuable déjà
 présente. Il monte uniquement ses propres sources et secrets temporaires, aucun
 volume de production. Il expose uniquement le listener agent via Funnel 8443,
-lance un agent d'une minute et observe pendant au plus cent secondes. Il demande
+attend le DNS public pendant au plus dix minutes, puis lance un agent d’une
+minute et observe pendant au plus cent secondes. Il demande
 ensuite la suppression de son Funnel, de son conteneur et de ses fichiers, en
 vérifiant et rapportant séparément chaque résultat. Un changement concurrent du
 proxy 8443 empêche sa suppression automatique pour préserver le travail d'autrui.
 Un échec de nettoyage doit être traité à partir de ce rapport, sans annoncer
 l'essai terminé. Walson a autorisé ce test le 21 octobre 2026. Il a également demandé de ne pas
 solliciter la TV pendant trente minutes, jusqu'au 21 octobre à 20:25:36 UTC
-(22:25:36 à Paris). Le test public n'a pas encore été exécuté.
+(22:25:36 à Paris). La pause a été respectée ; les essais publics ont repris après son expiration.
 
 Le lancement du Player utilise ensuite `debug_qml_app`, avec l'URL secrète du
 manifeste hébergé sur le serveur permanent et `wait: false`. Le SDK public ne
@@ -184,11 +190,33 @@ lecture et chacun des contrôles de nettoyage doivent être présents et vrais.
 ## Préparer Atlas TV
 
 Le relais est maintenant séparé en composant non visuel RelayAgent.qml et hôte
-SDK minimal agent.qml. La passerelle sert les deux fichiers sur le chemin de
-démarrage protégé. Le composant ne décide pas de quitter son application hôte :
+SDK minimal agent.qml. La passerelle sert les deux fichiers et leur index qmldir sur le chemin de
+démarrage protégé. L’import distant de RelayAgent exige cet index. Le composant ne décide pas de quitter son application hôte :
 il signale seulement la fin d'un diagnostic, que l'hôte peut traiter.
 
 La direction pour une application Atlas TV réutilisable, dont les animés,
 est documentée dans [atlas-tv-direction.md](atlas-tv-direction.md). La séparation
-est faite dans le code ; la lecture vidéo, l'interface TV et la nouvelle
-composition QML sur matériel restent à vérifier.
+est faite dans le code et a été retestée sur le vrai Player après correction
+de l’index qmldir. Les lectures ont traversé l’adaptateur Trano, puis l’arrêt
+et l’invalidation des états ont été vérifiés. L’interface TV et la lecture
+vidéo restent à vérifier.
+
+## Administration temporaire de Funnel
+
+L’autorisation du tailnet ne remplace pas les droits locaux du daemon. Le
+compte Linux peut lire l’état mais la modification Serve a été refusée.
+L’option explicite --docker-funnel-admin utilise les droits Docker existants
+pour deux commandes fixes : ouvrir 8443 vers 127.0.0.1:3014, puis fermer 8443.
+Elle ne crée pas d’opérateur Tailscale permanent.
+
+Le helper monte le binaire Tailscale de l’hôte et son socket daemon, utilise
+l’image immuable existante, sans réseau de conteneur ni volume de production.
+L’accès administrateur au socket reste puissant : cette option exige l’accord
+d’administrer le point d’entrée. Les deux conteneurs portent des noms réservés
+à l’essai ; leur suppression est vérifiée. Les erreurs sont bornées, URL et
+jetons hexadécimaux de 64 caractères masqués.
+
+Le contrôle des ports accepte les sockets TIME_WAIT d’un essai fini tout en
+refusant une écoute concurrente. Le DNS est vérifié par un résolveur public
+en HTTPS avant le lancement du Player : une réponse MagicDNS privée ne
+constitue pas une preuve d’accès depuis le logement.

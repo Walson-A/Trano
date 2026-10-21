@@ -68,10 +68,10 @@ définitif attend un test d'image, de son, de recherche temporelle et de sous-ti
 sur le matériel réel. L'avertissement de backend graphique observé pendant les
 diagnostics QML reste à résoudre ; un import de module réussi ne suffit pas.
 
-L'option --media de devialet-check.py est préparée pour vérifier la création
-d'un MediaPlayer sans source et sans autoplay, ainsi que d'un VideoOutput.
-Elle ne prouve pas une lecture. Ce diagnostic n'est pas exécuté pendant
-l'utilisation de la télévision par Walson.
+L’option --media de devialet-check.py a réellement créé MediaPlayer sans source
+et sans autoplay, ainsi que VideoOutput, après la pause du 21 octobre. Les deux
+types QtMultimedia sont disponibles. Aucune vidéo, sortie audio, recherche
+temporelle ou piste de sous-titres n’a été testée.
 
 ## Premier parcours à rendre concret
 

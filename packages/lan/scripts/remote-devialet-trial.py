@@ -18,7 +18,7 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
         return None
 
 REMOTE = r'''
-import json, os, pathlib, secrets, shutil, signal, socket, subprocess, sys, tarfile, tempfile, time, urllib.request, uuid
+import ipaddress, json, os, pathlib, re, secrets, shutil, signal, socket, subprocess, sys, tarfile, tempfile, time, urllib.request, uuid
 root = pathlib.Path(tempfile.mkdtemp(prefix="trano-devialet-trial-")).resolve()
 name = "trano-devialet-trial-" + uuid.uuid4().hex[:12]
 funnel_requested = False
@@ -26,7 +26,26 @@ before = None
 def status():
     return json.loads(subprocess.check_output(["tailscale", "serve", "status", "--json"], text=True, timeout=8))
 def run(args, timeout=15):
-    return subprocess.run(args, capture_output=True, text=True, timeout=timeout, check=True)
+    try:
+        return subprocess.run(args, capture_output=True, text=True, timeout=timeout, check=True)
+    except subprocess.CalledProcessError as error:
+        # No credentials or approval URLs may escape through command diagnostics.
+        detail = re.sub(r"https?://[^\s]+", "[redacted-url]", error.stderr or "")
+        detail = re.sub(r"[A-Fa-f0-9]{64}", "[redacted-token]", detail)
+        print(json.dumps({"commandFailed": args[:2], "exitCode": error.returncode, "detail": detail[:1200]}), flush=True)
+        raise RuntimeError("Remote command failed") from None
+def funnel(arguments):
+    allowed = (["--bg", "--https=8443", "http://127.0.0.1:3014"], ["--https=8443", "off"])
+    if arguments not in allowed:
+        raise RuntimeError("Only the dedicated trial Funnel route is allowed")
+    if not setup.get("dockerFunnelAdmin"):
+        return run(["tailscale", "funnel"] + arguments)
+    # Explicit opt-in: existing Docker administration, with no persistent operator grant.
+    return run(["docker", "run", "--rm", "--name", name+"-funnel", "--network", "none",
+                "--read-only", "--cap-drop", "ALL", "--security-opt", "no-new-privileges", "--user", "0:0",
+                "--mount", "type=bind,src=/usr/bin/tailscale,dst=/usr/local/bin/tailscale,readonly",
+                "--mount", "type=bind,src=/var/run/tailscale/tailscaled.sock,dst=/var/run/tailscale/tailscaled.sock",
+                "--entrypoint", "/usr/local/bin/tailscale", image, "funnel"] + arguments)
 def interrupted(*_):
     raise RuntimeError("Trial interrupted")
 class NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -50,6 +69,7 @@ try:
         raise RuntimeError("Port 8443 already configured; existing configuration preserved")
     for port in (3014, 3015):
         with socket.socket() as check:
+            check.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             check.bind(("127.0.0.1", port))
     image = run(["docker", "inspect", "--format", "{{.Image}}", "trano"]).stdout.strip()
     if not image.startswith("sha256:"):
@@ -90,6 +110,10 @@ try:
             host_qml = response.read(262144).decode()
         with opener.open(base + "RelayAgent.qml", timeout=2) as response:
             core_qml = response.read(262144).decode()
+        with opener.open(base + "qmldir", timeout=2) as response:
+            qml_directory = response.read(32768).decode()
+        if "RelayAgent RelayAgent.qml" not in qml_directory.splitlines():
+            raise RuntimeError("Remote QML directory index is missing")
         if config["agentToken"] not in host_qml or config["readerToken"] in host_qml or config["readerToken"] in core_qml:
             raise RuntimeError("Bootstrap credential separation failed")
         private_status = None
@@ -104,7 +128,25 @@ try:
                           "funnelPublished": False, "playerLaunched": False}), flush=True)
     else:
         funnel_requested = True
-        run(["tailscale", "funnel", "--bg", "--https=8443", "http://127.0.0.1:3014"])
+        funnel(["--bg", "--https=8443", "http://127.0.0.1:3014"])
+        dns_wait = setup.get("publicDnsWaitSeconds", 0)
+        if dns_wait:
+            hostname = urllib.parse.urlsplit(config["publicBaseUrl"]).hostname
+            print(json.dumps({"waitingForPublicDns": True, "maximumSeconds": dns_wait}), flush=True)
+            deadline = time.monotonic() + dns_wait
+            while True:
+                try:
+                    with opener.open("https://dns.google/resolve?name="+hostname+"&type=A", timeout=4) as response:
+                        dns = json.loads(response.read(32768))
+                    public = any(row.get("type") == 1 and ipaddress.ip_address(row["data"]).is_global for row in dns.get("Answer", []))
+                except (OSError, ValueError):
+                    public = False
+                if public:
+                    print(json.dumps({"publicDnsReady": True}), flush=True)
+                    break
+                if time.monotonic() >= deadline:
+                    raise RuntimeError("Public DNS is not ready; no Player launched")
+                time.sleep(10)
         manifest = config["publicBaseUrl"] + "/bootstrap/" + config["bootstrapToken"] + "/manifest.json"
         print(json.dumps({"publicTrialReady": True, "bootstrapUrl": manifest}), flush=True)
         proved = False; disconnected = False; first_seen = None
@@ -135,6 +177,11 @@ try:
         print(json.dumps({"agentReported": proved, "timedAgentExitObserved": disconnected}), flush=True)
         if not proved: raise RuntimeError("No complete verified inventory received over remote WSS")
         if not disconnected: raise RuntimeError("Expected agent disconnect was not observed")
+except Exception as error:
+    detail = re.sub(r"https?://[^\s]+", "[redacted-url]", str(error))
+    detail = re.sub(r"[A-Fa-f0-9]{64}", "[redacted-token]", detail)
+    print(json.dumps({"remoteFailure": type(error).__name__, "detail": detail[:600]}), flush=True)
+    raise
 finally:
     removed_funnel = not funnel_requested
     unchanged_443 = None; removed_container = False; removed_files = False
@@ -143,7 +190,7 @@ finally:
             current = status()
             handlers = [value.get("Handlers", {}).get("/", {}).get("Proxy") for key,value in current.get("Web", {}).items() if key.endswith(":8443")]
             if handlers == ["http://127.0.0.1:3014"]:
-                run(["tailscale", "funnel", "--https=8443", "off"])
+                funnel(["--https=8443", "off"])
                 cleaned = status()
                 removed_funnel = "8443" not in cleaned.get("TCP", {}) and not any(key.endswith(":8443") for key in cleaned.get("Web", {})) and not any(key.endswith(":8443") and enabled for key,enabled in cleaned.get("AllowFunnel", {}).items())
             elif not handlers:
@@ -152,8 +199,8 @@ finally:
     except Exception:
         pass  # Continue independent cleanup and report the unverified Funnel state.
     try:
-        subprocess.run(["docker", "rm", "-f", name], capture_output=True, timeout=10)
-        remaining = run(["docker", "ps", "-a", "--filter", "name=^/"+name+"$", "--format", "{{.Names}}"])
+        subprocess.run(["docker", "rm", "-f", name, name+"-funnel"], capture_output=True, timeout=10)
+        remaining = run(["docker", "ps", "-a", "--filter", "name=^/"+name+"(-funnel)?$", "--format", "{{.Names}}"])
         removed_container = not remaining.stdout.strip()
     except Exception:
         pass
@@ -206,7 +253,11 @@ def main():
     modes = parser.add_mutually_exclusive_group()
     modes.add_argument('--execute-public-trial', action='store_true')
     modes.add_argument('--server-preflight', action='store_true', help='Validate the isolated server runtime without publishing Funnel or contacting the Player.')
+    parser.add_argument('--docker-funnel-admin', action='store_true', help='Use existing Docker administration for only the dedicated Funnel 8443 commands; no persistent operator grant.')
+    parser.add_argument('--public-dns-wait-seconds', type=int, default=600, help='Wait up to 600 seconds for public DNS before launching the Player.')
     args = parser.parse_args()
+    if not 0 <= args.public_dns_wait_seconds <= 600:
+        parser.error('Public DNS wait must be between 0 and 600 seconds')
     if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.@:-]+', args.ssh_target):
         parser.error('Invalid SSH target')
     if not re.fullmatch(r'[a-z0-9-]+\.[a-z0-9-]+\.ts\.net', args.server_name):
@@ -225,7 +276,7 @@ def main():
         parser.error('A configured Player with discovered Spotify port is required')
     plan = {'publicTrial': args.execute_public_trial, 'serverPreflight': args.server_preflight, 'endpoint': 'https://' + args.server_name + ':8443',
             'agentListener': '127.0.0.1:3014', 'privateReader': '127.0.0.1:3015', 'agentLifetimeSeconds': 60,
-            'maximumObservationSeconds': 100, 'productionVolumesMounted': False, 'existing443Modified': False,
+            'maximumObservationSeconds': 100, 'productionVolumesMounted': False, 'existing443Modified': False, 'dockerFunnelAdmin': args.docker_funnel_admin, 'publicDnsWaitSeconds': args.public_dns_wait_seconds,
             'cleanup': 'dedicated Funnel 8443, named temporary container, private temporary sources and credentials'}
     print(json.dumps(plan), flush=True)
     if not args.execute_public_trial and not args.server_preflight:
@@ -246,7 +297,7 @@ def main():
                 if path.is_file() and not path.is_symlink():
                     bundle.add(path, arcname='lan/' + path.relative_to(root).as_posix(), recursive=False)
         bundle.add(root / 'package.json', arcname='lan/package.json', recursive=False)
-        payload = json.dumps({'publicBaseUrl': plan['endpoint'], 'devices': devices, 'preflightOnly': args.server_preflight}).encode()
+        payload = json.dumps({'publicBaseUrl': plan['endpoint'], 'devices': devices, 'preflightOnly': args.server_preflight, 'dockerFunnelAdmin': args.docker_funnel_admin, 'publicDnsWaitSeconds': args.public_dns_wait_seconds}).encode()
         entry = tarfile.TarInfo('setup.json'); entry.size = len(payload)
         bundle.addfile(entry, io.BytesIO(payload))
     process = subprocess.Popen(['ssh', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=8', '-o', 'ServerAliveInterval=10', '-o', 'ServerAliveCountMax=3', '-o', 'StrictHostKeyChecking=yes',
@@ -268,9 +319,12 @@ def main():
             try:
                 with opener.open(request, timeout=10) as response:
                     result = json.loads(response.read(65536))
-                if not result.get('result'): raise RuntimeError('SDK launch not accepted')
+                if not result.get('result'): raise RuntimeError('SDK launch not accepted: ' + str(result.get('error', 'no result')))
                 print(json.dumps({'sdkLaunchAccepted': True}), flush=True)
-            except Exception:
+            except Exception as error:
+                detail = re.sub(r'https?://[^\s]+', '[redacted-url]', str(error))
+                detail = re.sub(r'[A-Fa-f0-9]{64}', '[redacted-token]', detail)
+                print(json.dumps({'sdkLaunchAccepted': False, 'detail': detail[:600]}), flush=True)
                 launch_error = 'Player launch not confirmed; remote trial is waiting for its cleanup deadline.'
                 print(launch_error, flush=True)
     process.wait(timeout=30)
