@@ -60,14 +60,15 @@ def main():
     media = parser.add_mutually_exclusive_group()
     media.add_argument('--media', action='store_true', help='Probe QtMultimedia types without loading or playing a video.')
     media.add_argument('--video-file', type=pathlib.Path, help='Play one H264 MP4, at most 20 seconds, without audio. Requires ffprobe.')
+    media.add_argument('--startup-api', action='store_true', help='Read only native App member names; never reads settings values or calls a setter.')
     parser.add_argument('--launch', action='store_true', help='Required: may interrupt the Player display.')
     args = parser.parse_args()
     if not args.launch:
         parser.error('--launch is required; the QML application may interrupt the Player display.')
     if not 1024 <= args.port <= 65535:
         parser.error('--port must be between 1024 and 65535.')
-    if not args.video_file and not args.samsung:
-        parser.error('--samsung is required for the network probe; video mode only contacts the Player.')
+    if not args.video_file and not args.startup_api and not args.samsung:
+        parser.error('--samsung is required for the network probe; video/startup modes only contact the Player.')
     video = None
     if args.video_file:
         if not args.video_file.is_file() or not 0 < args.video_file.stat().st_size <= 16 * 1024 * 1024:
@@ -90,7 +91,7 @@ def main():
     nonce = secrets.token_urlsafe(24)
     base = f'http://{args.bind}:{args.port}/{nonce}'
     config = {'reportUrl': base + '/report', 'samsungUrl': f'http://{args.samsung}:8001/api/v2/', 'serverUrl': args.server_url, 'mediaProbe': args.media, 'videoUrl': base + '/test.mp4'}
-    source = pathlib.Path(__file__).resolve().parent.parent / 'devialet' / ('video-probe.qml' if video else 'probe.qml')
+    source = pathlib.Path(__file__).resolve().parent.parent / 'devialet' / ('startup-probe.qml' if args.startup_api else 'video-probe.qml' if video else 'probe.qml')
     qml = source.read_text(encoding='utf-8').replace('__TRANO_PROBE_CONFIG__', json.dumps(config))
     manifest = {'name': 'Trano diagnostic reseau', 'identifier': 'fr.trano.runtimeprobe',
                 'description': 'Diagnostic temporaire en lecture seule', 'capabilities': {'net_wan': 'required'},
@@ -181,7 +182,7 @@ def main():
         if 'error' in result:
             raise RuntimeError('Player rejected the diagnostic: ' + json.dumps(result['error']))
         print(json.dumps({'launchAccepted': 'result' in result}), flush=True)
-        deadline = time.monotonic() + (28 if video else 19)
+        deadline = time.monotonic() + (7 if args.startup_api else 28 if video else 19)
         while time.monotonic() < deadline:
             time.sleep(0.25)
         if not any(report.get('event') == 'started' for report in reports):

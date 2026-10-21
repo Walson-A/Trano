@@ -552,3 +552,27 @@ existantes de panne ont d'abord échoué sur le nettoyage des fichiers temporair
 dans l'environnement Windows restreint ; leur relance avec accès approprié au
 dossier temporaire a réussi : seize tests passent. Aucun code du diagnostic
 distant existant n’a été changé pour obtenir ce résultat.
+
+
+## 22 octobre — inspection ciblée du démarrage, firmware 1.5.26
+
+Nouvelle sonde startup-probe.qml : noms des 21 membres natifs App seulement,
+modèle/firmware lus via Device selon le contrat public. Résultat matériel :
+fbx7hd-delta / 1.5.26. Le canal shellRequest/shellResponse existe, mais aucune
+commande de boot n'est documentée dans Shell ; aucune méthode devinée ni écriture
+de réglage n'a été tentée. Les deux diagnostics ont fermé leur serveur temporaire,
+puis le relais permanent a été relancé avec succès.
+
+Ports TCP 22 et 5555 : connexion impossible sur le seul Player. Le catalogue FLOSS
+officiel ne lie pas 1.5.26 ; son URL exacte renvoie 404. Il n'y a pas d'artefact
+natif du firmware sélectionné pour une analyse REA. Les preuves documentaires et
+leurs limites sont dans .local/research/official-devialet-docs-2026-10-22/.
+
+Une observation serveur de dix minutes a été armée avant de demander à Walson un
+vrai redémarrage depuis le menu système. Elle ne relance pas l'application et
+sépare connexion de l'agent et identité du Player, car un port Spotify peut changer
+au reboot. Le résultat du reboot est encore attendu ; ne pas confondre cela avec
+les essais Accueil ou le redémarrage de la passerelle précédents.
+
+Trois tests du diagnostic passent, dont le refus d'un lancement sans --launch et
+d'options incompatibles. git diff --check est vérifié avant livraison.

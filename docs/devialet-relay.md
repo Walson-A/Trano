@@ -334,3 +334,47 @@ vers ce logement et ne peut donc pas relancer spontanément son adresse privée.
 Aucun hook firmware, root, flash ou reboot du Player n'a été réalisé. Le relais
 peut fonctionner sans processus sur le PC après lancement ; sa récupération après
 reboot reste non résolue.
+
+
+### Inspection native du firmware installé — 22 octobre, étape suivante
+
+Le diagnostic --startup-api a lu Device.model=fbx7hd-delta et
+Device.firmwareVersion=1.5.26 via le singleton public fbx.system 1.0. Il a ensuite
+énuméré les noms des membres App, sans lire leurs valeurs ni App.settings :
+accountId, context, contextChanged, currentUrl, currentUrlChanged, logicalFactor,
+notifyUser, objectName, objectNameChanged, profileId, setRemoteMapping,
+setRemoteMetadata, settings, settingsChanged, settingsSaved, settingsStatus,
+settingsStatusChanged, shellRequest, shellResponse, urlOpen, urlOpenWithCheckpoint.
+
+La présence de shellRequest/shellResponse indique un canal natif ; elle ne donne
+ni sa liste de commandes ni un droit de modifier le démarrage. Aucun appel
+interne deviné n'a été exécuté. Le [contrat Shell public](https://dev.freebox.fr/sdk/libfbxqml/pub/async/shell.html)
+documente Shell.request et les opérations gw_authz_query/parental_code_validate,
+pas une commande de boot. Le [contrat Device](https://dev.freebox.fr/sdk/libfbxqml/pub/system/device.html)
+documente les deux propriétés de modèle/firmware utilisées.
+
+Le diagnostic est temporaire et peut remplacer l'application en cours. Pour
+lancer cette inspection puis remettre le relais, utiliser les commandes avec le
+fichier privé déjà préparé ; ne pas laisser le Player sans relance du relais :
+
+    python -B packages/lan/scripts/devialet-check.py --player <IPv4 Player> --bind <IPv4 PC> --startup-api --launch
+    node packages/lan/scripts/launch-devialet-agent.mjs .local/gateway-standalone.json devialet --launch
+
+Les deux inspections matérielles ont été suivies d'une relance acceptée du relais.
+Un contrôle TCP limité aux ports 22 et 5555 du seul Player n'a reçu aucune
+connexion ; cela n'est pas un inventaire complet des services. Sur le PC, les
+IPv6 observées hors Tailscale étaient uniquement link-local ; cela ne décrit
+pas à lui seul toutes les adresses du Player.
+
+L'[index FLOSS officiel](https://floss.freebox.fr/) consulté publie six versions
+Player Delta allant de 1.0.2 à 1.5.3, pas de lien 1.5.26 ni de runtime propriétaire.
+L'URL exacte freebox_player_delta/1.5.26/index.html répond 404. Ce résultat borné
+ne prouve pas qu'aucun artefact n'existe ailleurs. Les sources historiques BusyBox
+et Linux ne donnent pas les scripts de boot ni le code natif App de ce Player.
+Sans cet artefact, aucune analyse binaire REA du firmware n'est annoncée.
+
+Les pages officielles consultées et leur provenance sont conservées hors Git
+sous .local/research/official-devialet-docs-2026-10-22/. Le relevé natif borné est
+dans .local/startup-api-evidence.json. Un vrai reboot manuel a été demandé avec
+observation de la passerelle sans appel de relance ; aucun résultat de reprise
+au boot n'en est encore déduit.
