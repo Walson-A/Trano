@@ -175,7 +175,9 @@ La télécommande préparée expose volume relatif, sourdine par bascule,
 lecture, pause, arrêt et bascule d'alimentation. Une touche transmise n'est
 pas une preuve que l'application courante l'a exécutée. Walson a validé le
 véritable appairage le 21 octobre ; une connexion suivante a réutilisé son
-jeton et son certificat sans touche, avec succès.
+jeton et son certificat sans touche, avec succès. Une vérification ultérieure
+a expiré sans réponse : la réutilisation n’est pas encore fiable et ne valide
+pas un contrôle disponible en permanence.
 
     node packages/lan/scripts/samsung-auth-check.mjs .local/relay.json tv
 

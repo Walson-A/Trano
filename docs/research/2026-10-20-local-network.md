@@ -477,3 +477,9 @@ connecteur, mais GetMute est resté faux. Aucun changement physique ni aucune
 restauration à l’écran ne sont déduits de cette valeur. L’observation de Walson
 est demandée avant toute autre bascule. Le relais sauvegardé reste en lecture
 seule et le QML ne reçoit ni jeton Samsung ni code de télécommande.
+
+La validation du diagnostic livré samsung-auth-check.mjs a ensuite expiré
+avec « Télécommande Samsung sans réponse », sans touche envoyée. L’appairage
+enregistré et une réutilisation antérieure sont établis ; leur disponibilité
+continue ne l’est pas. Aucune nouvelle paire, réinitialisation de jeton ou
+nouvelle bascule n’a été tentée après ce constat.
