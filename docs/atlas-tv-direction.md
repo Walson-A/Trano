@@ -8,9 +8,9 @@ utilisé sur PC : choisir, reprendre et lancer rapidement un épisode avec la
 télécommande. Le relais permanent reste prioritairement hébergé sur le Devialet,
 qui demeure au logement lorsque le PC est emporté.
 
-Cette direction ne signifie pas qu'une interface TV ou la lecture vidéo sont
-déjà livrées. Les essais précédents établissent l'exécution QML et les lectures
-réseau ; ils n'établissent ni le rendu vidéo, ni les codecs, ni la distribution
+Une interface Atlas TV n'est pas encore livrée. Une mire H264 muette de douze
+secondes a été lue le 22 octobre et Walson a confirmé l'image. Cela ne valide
+pas encore le son, les flux des animés, les sous-titres ni la distribution
 permanente d'une application TV.
 
 ## Séparation mise en place
@@ -58,15 +58,15 @@ Le changement de source TV reste une possibilité secondaire. La piste Tizen
 ci-dessous conserve le contexte de recherche et ne constitue pas un chantier actif.
 Le contrôle Accueil du Devialet est maintenant confirmé à l'écran, ainsi qu'un
 nouvel inventaire du relais reçu après cette commande. Le redémarrage automatique
-et la lecture vidéo restent à vérifier.
+du Player reste à résoudre ; le premier essai vidéo est décrit ci-dessous.
 
 ## Choix du moteur à établir par une vraie lecture
 
 Deux surfaces sont possibles, sans confondre leur rôle :
 
 - **Application QML sur le Devialet, affichée par HDMI** : elle peut héberger le
-  relais et l'interface Atlas. Le SDK public décrit QtMultimedia, mais aucune
-  lecture vidéo n'a encore été vérifiée sur ce Player. Les objets privés
+  relais et l'interface Atlas. La lecture de la mire H264 est maintenant vérifiée
+  sur ce Player avec QtMultimedia. Les objets privés
   fbx.media ne sont pas une dépendance publique garantie.
 - **Application Tizen sur la Samsung** : Samsung documente AVPlay pour la vidéo,
   les flux adaptatifs et les sous-titres. Cela exige un parcours d'installation
@@ -80,8 +80,8 @@ diagnostics QML reste à résoudre ; un import de module réussi ne suffit pas.
 
 L’option --media de devialet-check.py a réellement créé MediaPlayer sans source
 et sans autoplay, ainsi que VideoOutput, après la pause du 21 octobre. Les deux
-types QtMultimedia sont disponibles. Aucune vidéo, sortie audio, recherche
-temporelle ou piste de sous-titres n’a été testée.
+types QtMultimedia sont disponibles. Ce premier import ne constituait pas une
+lecture ; l'essai du 22 octobre ci-dessous apporte cette preuve pour la seule mire.
 
 ## Premier parcours à rendre concret
 
@@ -104,3 +104,30 @@ compilation : il devra être vu aux dimensions d'usage et piloté à la téléco
 - [Bibliothèque Freebox](https://dev.freebox.fr/sdk/libfbxqml/) : distinction entre API publique et API restreinte.
 - [Samsung, lecture AVPlay](https://developer.samsung.com/smarttv/develop/guides/multimedia/media-playback/using-avplay.html) : moteur natif et formats de lecture.
 - [Samsung, flux adaptatifs](https://developer.samsung.com/smarttv/develop/guides/multimedia/adaptive-streaming.html) : HLS/DASH et contraintes à vérifier sur le modèle.
+
+
+## Première lecture matérielle — 22 octobre 2026
+
+Le diagnostic video-probe.qml utilise MediaPlayer et VideoOutput (QtMultimedia
+5.0), avec muted=true et une sortie à proportions conservées. Il termine après
+24 secondes. Son média synthétique est une mire H264 Constrained Baseline,
+1280×720, yuv420p, 25 images/s, douze secondes, sans piste audio. ffprobe impose
+une seule piste H264 sans audio et au plus vingt secondes avant tout lancement.
+
+Deux essais ont parcouru 0 à 12000 ms, avec hasVideo=true et fin de média sans
+signal d'erreur. Walson a confirmé avoir vu l'image lors du second essai. Les
+positions seules n'étaient pas considérées comme une preuve du rendu à l'écran.
+Le serveur HTTP temporaire a été fermé après chaque essai. Aucun épisode, compte,
+source de streaming, son, sous-titre ou recherche temporelle n'a été testé.
+
+Pour reproduire avec ffmpeg et ffprobe installés, générer un fichier temporaire
+hors Git puis lancer explicitement le diagnostic :
+
+    ffmpeg -f lavfi -i testsrc2=size=1280x720:rate=25 -t 12 -an -c:v libx264 -profile:v baseline -level 3.1 -pix_fmt yuv420p -movflags +faststart .local/atlas-tv-test.mp4
+    python -B packages/lan/scripts/devialet-check.py --player <IPv4 Player> --bind <IPv4 PC> --video-file .local/atlas-tv-test.mp4 --launch
+
+Ce mode ne contacte pas la Samsung et ne sert que le média explicitement choisi
+au Player sélectionné. Il prend en charge les requêtes HTTP Range simples pour
+le lecteur ; les plages multiples ou impossibles sont refusées. Le diagnostic
+est une preuve de moteur vidéo, pas une interface Atlas TV validée visuellement.
+Le fichier généré est supprimable après le test et peut être régénéré avec cette commande.

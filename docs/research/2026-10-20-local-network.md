@@ -506,3 +506,49 @@ Deux tests Python du formulaire vérifient le refus des entrées non autorisées
 la confidentialité du code fictif, la conservation des autres réglages et le refus
 d'écraser une modification concurrente. Les fichiers et conteneur du test Linux
 ont été supprimés par le script ; aucun volume de production n'a été monté.
+
+
+## 22 octobre — service sans processus PC et première image vidéo
+
+La recherche de démarrage s'est limitée aux sources officielles publiées du SDK,
+aux exemples QML et aux préférences de libfbxqml ; les références exactes sont
+consignées dans devialet-relay.md. Aucun contrat de boot/autostart n'y a été
+établi. Le manifeste default=true ne signifie pas un lancement système. La piste
+screensaver nécessite une installation et n'est pas une preuve de persistance.
+Aucun reboot, root ou changement de firmware du Player n'a été effectué.
+
+Deux diagnostics de lecture ont servi une mire locale synthétique H264 Constrained
+Baseline 1280×720, 25 i/s, douze secondes, sans audio. MediaPlayer et VideoOutput
+ont signalé hasVideo=true, une progression jusqu'à 12000 ms et EndOfMedia sans
+signal d'erreur. Après le second essai, Walson a confirmé « j'ai vu ». Le rendu
+image est donc établi pour cette mire ; ni le son, ni les sources anime, ni les
+sous-titres ne le sont. Les deux serveurs temporaires ont été fermés.
+
+Le service trano-lan-gateway a ensuite été installé à part sur le serveur Linux,
+sous /home/trano/trano-lan-gateway, sans volume ni changement du conteneur Trano.
+Image dédiée sha256:4fe8fdf8d4e996a193b6472cc703eba190f9403d7f704e84a4bb9bd3db2a08ce.
+Secrets générés après build hors de son contexte ; source sans code télécommande.
+Funnel 8443 est publié vers le seul listener agent, avec DNS public et TLS testés ;
+le lecteur reste 127.0.0.1:3015 authentifié. Le proxy privé 443 et l'image Trano
+ont été comparés à leur état précédent et sont inchangés.
+
+Lancement SDK initial depuis le LAN, puis inventaire Freebox v7 reçu depuis le
+Player avec lifetimeMs=0. Redémarrage du seul conteneur passerelle : nouvel
+inventaire reçu sans relancement du SDK. Nouvelle commande Accueil acceptée,
+puis inventaires encore reçus après les observateurs. Statut Docker healthy,
+politique unless-stopped, services docker et tailscaled enabled. Le relais reste
+volontairement démarré. Le PC ne sert aucun fichier et n'héberge aucun processus
+relais dans ce parcours ; son extinction physique n'a pas été réalisée.
+
+La récupération après reboot/fermeture de l'application du Player reste non
+résolue. Le serveur distant n'a pas d'accès entrant au LAN étudiant pour lancer
+le SDK à sa place. La reprise automatique du conteneur serveur ne doit pas être
+présentée comme un hook de démarrage sur le Devialet. La configuration du lecteur
+LAN de Trano en production n'a pas été changée.
+
+Les nouveaux tests Python couvrent les plages HTTP de la mire et l'exclusion des
+secrets/appareils ambigus de l'installation (quatre tests). Les seize simulations
+existantes de panne ont d'abord échoué sur le nettoyage des fichiers temporaires
+dans l'environnement Windows restreint ; leur relance avec accès approprié au
+dossier temporaire a réussi : seize tests passent. Aucun code du diagnostic
+distant existant n’a été changé pour obtenir ce résultat.

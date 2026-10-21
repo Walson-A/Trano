@@ -2,8 +2,10 @@
 
 Le Player peut héberger le code qui lit les appareils du logement. La passerelle
 Node tourne sur un serveur permanent et reçoit une connexion sortante du Player.
-Le PC sert actuellement à lancer les essais ; il n'est pas l'hôte souhaité du
-relais. Ce parcours est expérimental et n'est pas déployé en production.
+Le PC sert encore au lancement initial du SDK, mais n'héberge plus les fichiers
+ni la passerelle du relais laissé en fonctionnement le 22 octobre. La passerelle
+est un service séparé sur le serveur permanent ; Trano en production reste inchangé.
+Le démarrage au boot du Player n'est pas configuré.
 
 ```text
 Samsung / identité Spotify du Player
@@ -198,8 +200,8 @@ La direction pour une application Atlas TV réutilisable, dont les animés,
 est documentée dans [atlas-tv-direction.md](atlas-tv-direction.md). La séparation
 est faite dans le code et a été retestée sur le vrai Player après correction
 de l’index qmldir. Les lectures ont traversé l’adaptateur Trano, puis l’arrêt
-et l’invalidation des états ont été vérifiés. L’interface TV et la lecture
-vidéo restent à vérifier.
+et l’invalidation des états ont été vérifiés. L’interface TV reste à construire ; une mire vidéo a ensuite été vérifiée le
+22 octobre, voir atlas-tv-direction.md.
 
 ## Administration temporaire de Funnel
 
@@ -242,8 +244,8 @@ Ce contrôle ne garantit pas le DNS ou le chemin réseau propre au Player.
 
 Le [guide de conditionnement et de mise en service](devialet-gateway-deployment.md)
 décrit le service Linux isolé, ses limites de ressources, la configuration privée
-et le contrôle de build reproductible. Aucun service permanent n’a été installé
-par les diagnostics. Pour les tests Linux et les essais publics, installer les
+et le contrôle de build reproductible. Les diagnostics du 21 octobre n’avaient
+pas installé de service permanent ; l’installation du 22 octobre est décrite ci-dessous. Pour les tests Linux et les essais publics, installer les
 dépendances verrouillées avec npm ci : les scripts montent une copie du runtime
 ws correspondant au lockfile dans leur conteneur temporaire, vérifient sa version
 et préservent les dépendances de l’image de production.
@@ -282,3 +284,53 @@ Cette variante ne contacte que le Player, vérifie son identité avant la touche
 n'active pas le contrôle dans la configuration sauvegardée. La passerelle reste
 en lecture seule. Cela prouve une continuité courte après Accueil, pas un service
 installé, un démarrage après reboot ni une autonomie vérifiée PC éteint.
+
+
+## Service laissé en fonctionnement — 22 octobre 2026
+
+Le service séparé trano-lan-gateway est installé sur le serveur permanent, sous
+/home/trano/trano-lan-gateway. Le QML et son manifeste sont servis par ce serveur
+via Funnel 8443 ; l'API de lecture reste sur 127.0.0.1:3015, avec son propre jeton.
+Seul le Devialet est configuré pour cet essai prolongé. Le bootstrap normal donne
+lifetimeMs=0 : aucune minuterie de diagnostic ne termine l'application.
+
+Après le lancement initial depuis le LAN, un inventaire Freebox v7 a été reçu.
+La passerelle a été redémarrée seule, puis le Player s'est reconnecté et a fourni
+un nouvel inventaire sans autre appel de lancement. Les observations ont continué
+après la commande Accueil et après la fin des observateurs temporaires. Aucun
+serveur HTTP, WebSocket ou processus relais du PC ne participe à cette chaîne.
+Le PC n'a pas été physiquement éteint durant cette vérification.
+
+Le conteneur est healthy, avec restart=unless-stopped ; Docker et tailscaled sont
+activés au démarrage du serveur. Ce réglage couvre le côté serveur, pas le Player.
+L'image du conteneur Trano et le proxy privé 443 sont restés identiques.
+Administration, installation reproductible et fichiers conservés :
+[service dédié](devialet-gateway-deployment.md).
+
+### Limite de démarrage du Player
+
+La recherche dans les clones officiels est bornée aux contrats publiés :
+
+- freebox-qtcreator-plugin, commit 18f4d2c9e4ef8d8351b6ffee3bd3f2699f92294f :
+  remote/remoteqml.cc transmet manifest_url, entry_point et wait à debug_qml_app ;
+  src/runcontrol.cc démarre le serveur HTTP puis lance explicitement l'application.
+  fileformat/manifest.cc gère file, uiFlavor, default et urlHandler. Aucun contrat
+  de boot/autostart n'y a été trouvé ; default désigne l'entrée principale.
+- qmlapps_examples, commit 1ccd9eeffca7d6d435bdfb1232a2380323abbbc6 : l'exemple
+  samples/screensaver comporte une entrée screensaver, mais quitte à l'interaction.
+  Cela ne prouve ni un lancement au boot ni un service permanent.
+- libfbxqml/fbx/application/settings.js conserve des préférences propres à
+  l'application ; cela ne configure pas le démarrage global du Player.
+
+Le [SDK officiel](https://dev.freebox.fr/sdk/player.html) décrit les tests locaux
+et la distribution FreeStore via FreeFactory. Une publication ou installation
+n'est pas une preuve d'autostart. Certaines pages détaillées ont expiré pendant
+la recherche ; l'absence de contrat trouvé n'est pas une preuve d'impossibilité
+absolue dans le firmware.
+
+Après reboot ou arrêt de l'application sur le Devialet, il faut encore un nouvel
+appel SDK depuis son LAN. Le serveur distant ne dispose pas d'une route entrante
+vers ce logement et ne peut donc pas relancer spontanément son adresse privée.
+Aucun hook firmware, root, flash ou reboot du Player n'a été réalisé. Le relais
+peut fonctionner sans processus sur le PC après lancement ; sa récupération après
+reboot reste non résolue.

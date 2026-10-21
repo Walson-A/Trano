@@ -1,10 +1,12 @@
-"""Explicit 16-second QML runtime probe on an owned Freebox Player; no media control."""
+"""Explicit temporary QML runtime or silent-video probe on an owned Freebox Player."""
 import argparse
 import http.server
 import ipaddress
 import json
 import pathlib
+import re
 import secrets
+import subprocess
 import threading
 import time
 import urllib.parse
@@ -27,20 +29,54 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
         return None
 
 
+def video_range(header, size):
+    """Only one bounded byte range; suffix and open-ended requests are supported."""
+    if header is None:
+        return 0, size - 1, 200
+    match = re.fullmatch(r'bytes=(\d*)-(\d*)', header)
+    if not match or not any(match.groups()):
+        raise ValueError('Invalid range')
+    first, last = match.groups()
+    if first:
+        start = int(first)
+        end = min(int(last), size - 1) if last else size - 1
+    else:
+        length = int(last)
+        if length == 0:
+            raise ValueError('Invalid range')
+        start, end = max(0, size - length), size - 1
+    if start > end or start >= size:
+        raise ValueError('Unsatisfiable range')
+    return start, end, 206
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--player', required=True, type=private_ipv4)
-    parser.add_argument('--samsung', required=True, type=private_ipv4)
+    parser.add_argument('--samsung', type=private_ipv4)
     parser.add_argument('--bind', required=True, type=private_ipv4)
     parser.add_argument('--server-url', default='')
     parser.add_argument('--port', type=int, default=3013)
-    parser.add_argument('--media', action='store_true', help='Probe QtMultimedia types without loading or playing a video.')
+    media = parser.add_mutually_exclusive_group()
+    media.add_argument('--media', action='store_true', help='Probe QtMultimedia types without loading or playing a video.')
+    media.add_argument('--video-file', type=pathlib.Path, help='Play one H264 MP4, at most 20 seconds, without audio. Requires ffprobe.')
     parser.add_argument('--launch', action='store_true', help='Required: may interrupt the Player display.')
     args = parser.parse_args()
     if not args.launch:
         parser.error('--launch is required; the QML application may interrupt the Player display.')
     if not 1024 <= args.port <= 65535:
         parser.error('--port must be between 1024 and 65535.')
+    if not args.video_file and not args.samsung:
+        parser.error('--samsung is required for the network probe; video mode only contacts the Player.')
+    video = None
+    if args.video_file:
+        if not args.video_file.is_file() or not 0 < args.video_file.stat().st_size <= 16 * 1024 * 1024:
+            parser.error('Video must be an explicit local file of at most 16 MiB.')
+        metadata = json.loads(subprocess.check_output(['ffprobe', '-v', 'error', '-show_streams', '-show_format', '-of', 'json', str(args.video_file)], timeout=15))
+        streams = metadata.get('streams', [])
+        if len(streams) != 1 or streams[0].get('codec_type') != 'video' or streams[0].get('codec_name') != 'h264' or not 0 < float(metadata['format']['duration']) <= 20:
+            parser.error('A single H264 video stream, no audio, and a duration of at most 20 seconds are required.')
+        video = args.video_file.read_bytes()
     if args.server_url:
         try:
             url = urllib.parse.urlsplit(args.server_url)
@@ -53,13 +89,14 @@ def main():
 
     nonce = secrets.token_urlsafe(24)
     base = f'http://{args.bind}:{args.port}/{nonce}'
-    config = {'reportUrl': base + '/report', 'samsungUrl': f'http://{args.samsung}:8001/api/v2/', 'serverUrl': args.server_url, 'mediaProbe': args.media}
-    source = pathlib.Path(__file__).resolve().parent.parent / 'devialet' / 'probe.qml'
+    config = {'reportUrl': base + '/report', 'samsungUrl': f'http://{args.samsung}:8001/api/v2/', 'serverUrl': args.server_url, 'mediaProbe': args.media, 'videoUrl': base + '/test.mp4'}
+    source = pathlib.Path(__file__).resolve().parent.parent / 'devialet' / ('video-probe.qml' if video else 'probe.qml')
     qml = source.read_text(encoding='utf-8').replace('__TRANO_PROBE_CONFIG__', json.dumps(config))
     manifest = {'name': 'Trano diagnostic reseau', 'identifier': 'fr.trano.runtimeprobe',
                 'description': 'Diagnostic temporaire en lecture seule', 'capabilities': {'net_wan': 'required'},
                 'entryPoints': {'main': {'file': 'probe.qml', 'default': True}}}
     reports = []
+    video_requests = []
 
     class Handler(http.server.BaseHTTPRequestHandler):
         def setup(self):
@@ -72,6 +109,28 @@ def main():
         def do_GET(self):
             if self.client_address[0] != args.player:
                 self.send_error(403)
+                return
+            if video and self.path == f'/{nonce}/test.mp4':
+                try:
+                    start, end, status = video_range(self.headers.get('Range'), len(video))
+                except ValueError:
+                    self.send_response(416)
+                    self.send_header('Content-Range', f'bytes */{len(video)}')
+                    self.end_headers()
+                    return
+                video_requests.append({'status': status, 'start': start, 'end': end})
+                self.send_response(status)
+                self.send_header('Content-Type', 'video/mp4')
+                self.send_header('Accept-Ranges', 'bytes')
+                self.send_header('Content-Length', str(end - start + 1))
+                self.send_header('Cache-Control', 'no-store')
+                if status == 206:
+                    self.send_header('Content-Range', f'bytes {start}-{end}/{len(video)}')
+                self.end_headers()
+                try:
+                    self.wfile.write(video[start:end + 1])
+                except (BrokenPipeError, ConnectionResetError):
+                    pass
                 return
             content = {f'/{nonce}/manifest.json': json.dumps(manifest).encode(),
                        f'/{nonce}/probe.qml': qml.encode()}.get(self.path)
@@ -122,11 +181,18 @@ def main():
         if 'error' in result:
             raise RuntimeError('Player rejected the diagnostic: ' + json.dumps(result['error']))
         print(json.dumps({'launchAccepted': 'result' in result}), flush=True)
-        deadline = time.monotonic() + 19
+        deadline = time.monotonic() + (28 if video else 19)
         while time.monotonic() < deadline:
             time.sleep(0.25)
         if not any(report.get('event') == 'started' for report in reports):
             raise RuntimeError('No startup report received; application execution is unverified.')
+        if video:
+            progress = [r.get('positionMs', 0) for r in reports if r.get('event') == 'video_tick']
+            result = {'videoRequested': bool(video_requests), 'positionAdvanced': max(progress, default=0) >= 2000,
+                      'maxPositionMs': max(progress, default=0), 'physicalPictureConfirmed': False}
+            print(json.dumps(result), flush=True)
+            if not result['videoRequested'] or not result['positionAdvanced']:
+                raise RuntimeError('Video playback is not established; inspect module/backend reports.')
     finally:
         server.shutdown()
         server.server_close()

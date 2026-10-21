@@ -2,8 +2,9 @@
 
 Le conditionnement dédié évite de compiler le frontend et d’embarquer le serveur
 Trano pour faire tourner la passerelle. Il ne lance pas le Player, ne publie pas
-Funnel et ne modifie pas le conteneur Trano existant. Le service permanent n’est
-pas encore mis en production ; le build et un démarrage isolé ont été vérifiés.
+Funnel et ne modifie pas le conteneur Trano existant. Une passerelle séparée est
+maintenant installée et laissée en service depuis le 22 octobre ; les instructions
+Compose restent une méthode alternative, à ne pas superposer à cette installation.
 
 ## Préparer la configuration privée
 
@@ -99,3 +100,64 @@ L’installation complète du dépôt signale 21 autres avis dans son environnem
 plus large ; ils doivent être traités dans leur périmètre avant une livraison
 globale. Aucun correctif automatique ou changement de version majeur n’a été
 appliqué aux autres dépendances.
+
+
+## Installation séparée réalisée le 22 octobre 2026
+
+La passerelle est désormais installée sur le serveur permanent, indépendamment
+du conteneur Trano :
+
+| Élément | État observé |
+| --- | --- |
+| Conteneur | trano-lan-gateway |
+| Image | trano-lan-gateway:standalone |
+| Identité d'image | sha256:4fe8fdf8d4e996a193b6472cc703eba190f9403d7f704e84a4bb9bd3db2a08ce |
+| Dossier privé | /home/trano/trano-lan-gateway, mode 700 |
+| Configuration | gateway.json, mode 400 ; trois secrets générés sur le serveur après le build |
+| Entrée publique | Funnel 8443 vers 127.0.0.1:3014 |
+| Lecture | 127.0.0.1:3015, jeton distinct |
+| Redémarrage | unless-stopped ; services docker et tailscaled enabled |
+| Player | Devialet seul, QML sans durée de vie artificielle |
+
+Le fichier deployment.json conserve l'identité du Trano préexistant et l'état du
+proxy 443 pour les contrôles. Le sous-dossier source est le contexte de build
+conservé ; il ne contient aucun code télécommande ni jeton. La configuration
+privée n'entre pas dans le build. Le service utilise les mêmes limites que Compose :
+96 Mio, 0,25 CPU, 32 PID, utilisateur du propriétaire, racine en lecture seule,
+capacités retirées et no-new-privileges. Le socket Tailscale n'est pas monté dans
+le service : seul le helper administratif éphémère de publication l'a utilisé.
+
+L'installation reproductible refuse de remplacer un dossier, conteneur, image
+ou port existant. Le premier appel affiche un plan ; --install effectue le build,
+les contrôles et la publication de la seule route 8443 :
+
+    python -B packages/lan/scripts/gateway-service-install.py .local/relay.json user@serveur nom.tailnet.ts.net
+    python -B packages/lan/scripts/gateway-service-install.py .local/relay.json user@serveur nom.tailnet.ts.net --install
+
+L'autorisation de publier ce point d'entrée et d'administrer Docker est requise ;
+elle a été donnée par Walson pour cette installation. En cas d'échec, le script
+retire uniquement ses propres ressources ; un nettoyage non confirmé est signalé.
+Il ne faut pas le relancer pour mettre à jour l'installation existante : réviser
+explicitement cette mise à jour et préserver les secrets.
+
+La configuration de lancement privée est conservée sur le PC dans
+.local/gateway-standalone.json, ignorée par Git. Elle permet le lancement SDK
+initial via launch-devialet-agent.mjs ; aucun fichier de ce PC n'est servi au
+Player. Le transfert de configuration n'a affiché aucun secret.
+
+Contrôles réels : inventaire Freebox v7, redémarrage du seul conteneur passerelle,
+reconnexion du Player sans relancement, nouveaux inventaires après Accueil et
+après les observateurs temporaires. Le service est healthy et reste démarré.
+L'image du Trano existant et sa route 443 n'ont pas changé. Aucun redémarrage du
+serveur ou du Player n'a été effectué ; unless-stopped n'est pas un hook de boot
+pour le Player. L'intégration de ce lecteur dans la configuration de production
+Trano n'a pas été effectuée.
+
+Pour arrêter ce service précis sans toucher à Trano :
+
+    docker stop trano-lan-gateway
+
+Conserver les fichiers privés et la branche pendant les travaux de démarrage du
+Player et d'Atlas TV. Une désinstallation doit aussi retirer spécifiquement la
+route Funnel 8443, après vérification de sa destination ; ne pas réinitialiser
+Serve/Funnel globalement.
