@@ -357,3 +357,56 @@ Settings décrit des données conservées entre sessions, pas un ordonnanceur.
 Ces interfaces ne fournissent donc pas, dans les contrats examinés, la pièce
 manquante du démarrage autonome. Aucun nouvel essai d'écran de veille, changement
 système ou accès administrateur n'est réalisé pendant cette reprise.
+
+## Suite du 23 octobre : métadonnées et séparation du runtime Freebox
+
+Deux diagnostics réels, chacun borné à quinze secondes, ont été exécutés sur le
+seul Player identifié. Le premier lit seulement les descripteurs JavaScript de
+`App.urlOpen` et `App.urlOpenWithCheckpoint`, sans appeler ces méthodes. Les deux
+renvoient une fonction native, `length=0`, nom vide et aucun nom propre ; la
+représentation est `function() { [native code] }`. Ces valeurs ne sont pas une
+signature C++ ni une preuve que la méthode accepte zéro argument.
+
+Le second lit le type de `App.context` : il s'agit d'une chaîne, dont le contenu
+n'est pas lu. Aucun membre du contexte n'est parcouru. `Qt.application.version`
+vaut `dev`, conformément au mode développeur. Aucun registre, réglage ou état de
+reprise n'est ainsi découvert. Les journaux et scripts sont conservés dans
+`.local/checkpoint-metadata-20261023/` et `.local/app-context-20261023/`.
+Les deux serveurs temporaires sont fermés. Le premier rétablissement du relais
+a échoué ; les relancements suivants sont acceptés et une vérification privée
+finale confirme HTTP 200, `devialet reachable=true`, `controlEnabled=false`.
+
+Une piste de source plus précise est trouvée dans les archives officielles de
+Qt livrées avec l'ancien Player Delta 1.0.7 :
+
+- [QtDeclarative vendor](https://floss.freebox.fr/packages/qtdeclarative-v5.9.7-46-gd425e7edb.tar.gz),
+  23 352 215 octets, SHA-256
+  `9c384d994afbf9aca86222c4c66268563cc9a6390ab9200e66a15d1de655bb90`.
+  L'inventaire et la recherche des 9 167 fichiers réguliers ne retrouvent pas
+  `urlOpenWithCheckpoint` ni le runtime natif App. Une comparaison au tag Qt
+  v5.9.7 constate notamment des changements de stockage WebSQL et de sauvegarde
+  Settings ; ces changements ne sont pas des mécanismes de lancement.
+- [QtWayland vendor](https://floss.freebox.fr/packages/qtwayland-v5.9.7-39-gdcb693e5.tar.gz),
+  477 489 octets, SHA-256
+  `6b2059658d5b9035921853a4269410e7d1a9d903a368b8bbff5b897e7bdb3a42`.
+  Le plugin `qwayland-fbx-egl` dépend de `qfbxapp-client`. Dans
+  `qfbxservices.cpp:17–34`, il transmet les ouvertures de documents et URL à
+  `QFbxAppClient::shellRequest` avec la méthode `url_open` et les champs `url`
+  et `media_type`. Son retour `true` est inconditionnel et ne prouve pas que
+  le shell a effectivement ouvert l'URL.
+
+Cette dépendance identifie un composant natif séparé à rechercher, mais son
+implémentation et son en-tête `QFbxAppClient.hh` manquent. L'index public
+`https://floss.freebox.fr/packages/`, lu intégralement dans la limite prévue,
+ne comporte aucun lien contenant `qfbx`, `app-client` ou `fbxapp`. Aucun nom de
+paquet n'est deviné ni aucune commande Shell inconnue envoyée au Player.
+Preuves : `.local/vendor-qt-20261023/` et
+`.local/vendor-wayland-20261023/`. Ces sources Qt 5.9 ne sont pas le binaire
+Qt 5.15.19 observé ; aucun contrat d'autostart actuel n'en est déduit.
+
+L'inventaire public des treize dépôts de l'organisation fbx permet aussi de
+vérifier le [lanceur officiel fbx-qml-run](https://github.com/fbx/freebox-dev-utils/blob/1f510a3f3179215aadea4e858d323f2b73c338ce/bin/fbx-qml-run).
+Il utilise lui aussi `debug_qml_app`, un serveur HTTP local et les trois
+paramètres connus. Aucune option d'installation persistante ne s'y trouve.
+Le code local QtCreator utilise directement `qmlscene`, sans simulateur natif
+Freebox distinct dans ce chemin. Aucun de ces scripts tiers n'a été exécuté.
