@@ -6,6 +6,7 @@ Application {
     id: app
     property var config: __TRANO_PROBE_CONFIG__
     property var pending: []
+    property var directoryModels: []
     function report(value) {
         var req = new XMLHttpRequest();
         req.open("POST", config.reportUrl);
@@ -49,6 +50,39 @@ Application {
         try { req.open("GET", "file://" + path); req.send(); }
         catch (error) { report({event: "boot_metadata", name: kind, readable: false}); }
     }
+    function inspectSystemDirectories() {
+        var targets = [
+            {name: "init_directory", url: "file:///etc/init.d", directories: false},
+            {name: "qt_plugin_directory", url: "file:///usr/lib/qt5/qml", directories: true}
+        ];
+        for (var i = 0; i < targets.length; i++) {
+            try {
+                var object = Qt.createQmlObject('import QtQuick 2.4; import Qt.labs.folderlistmodel 2.1; FolderListModel { showDotAndDotDot: false; showHidden: false }', app, "bootDirectoryMetadata");
+                object.showDirs = targets[i].directories;
+                object.showFiles = !targets[i].directories;
+                object.folder = targets[i].url;
+                directoryModels.push({name: targets[i].name, model: object});
+            } catch (error) {
+                report({event: "boot_directory", name: targets[i].name, moduleAvailable: false});
+                return;
+            }
+        }
+    }
+    Timer {
+        interval: 1800; running: true
+        onTriggered: {
+            for (var i = 0; i < app.directoryModels.length; i++) {
+                var entry = app.directoryModels[i];
+                var names = [];
+                for (var j = 0; j < entry.model.count && names.length < 32; j++) {
+                    var name = String(entry.model.get(j, "fileName"));
+                    if (/^[A-Za-z0-9_.+\-]{1,64}$/.test(name)) names.push(name);
+                }
+                app.report({event: "boot_directory", name: entry.name, moduleAvailable: true,
+                            status: entry.model.status, count: entry.model.count, names: names});
+            }
+        }
+    }
     Timer { interval: 3500; running: true; onTriggered: Qt.quit() }
     Component.onCompleted: {
         report({event: "started", mode: "fixed_boot_metadata"});
@@ -56,5 +90,6 @@ Application {
         readMetadata("/proc/version", "kernel");
         readMetadata("/etc/inittab", "init");
         readMetadata("/etc/os-release", "os");
+        inspectSystemDirectories();
     }
 }

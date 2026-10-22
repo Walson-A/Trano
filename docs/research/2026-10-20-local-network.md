@@ -598,3 +598,13 @@ Le démarrage automatique du relais de développement est donc réfuté pour cet
 essai réel. Aucun mécanisme alternatif de boot n'est encore établi avec les
 accès disponibles. Le nouveau mode refuse lui aussi le lancement sans --launch
 et les autres modes simultanés ; les trois tests du diagnostic passent.
+
+
+## 22 octobre — analyse REA des services et d'une archive distribuée
+
+La suite détaillée est dans le [relevé REA](2026-10-22-devialet-rea-startup.md) :
+contrôles du seul Player identifié, six transactions HTTP conservées et analysées
+hors ligne, archive officielle libfbxqml de 2016 analysée sans exécution avec
+couverture partielle. Les preuves sont exportées hors Git. Aucun hook de boot
+n'est encore démontré ; une relance par un routeur administrable du logement est
+une architecture alternative à vérifier, pas une fonction livrée.

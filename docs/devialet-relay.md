@@ -406,3 +406,13 @@ WSS et le redémarrage automatique du conteneur serveur ne résolvent pas l'abse
 de processus agent après le boot du Player. La suite utile exige une preuve sur
 le runtime natif exact ou un mécanisme d'installation/lancement système établi ;
 aucune impossibilité absolue du firmware n'est affirmée.
+
+
+### Recherche REA complémentaire
+
+Les réponses des services du Player et une archive QML officiellement distribuée
+ont été analysées avec REA. Les identifiants Evidence, la provenance, les refus
+observés et les limites de parsing sont dans le
+[relevé REA du 22 octobre](research/2026-10-22-devialet-rea-startup.md).
+Ce travail ne fournit pas encore de mécanisme de lancement après reboot. Les
+sondes sont terminées et le relais permanent a été rétabli.
