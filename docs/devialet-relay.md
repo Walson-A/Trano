@@ -463,3 +463,9 @@ identifie aussi les partitions fbxboot/fbxta par une table GPT à CRC valides et
 leurs métadonnées de protection Qualcomm UIE. Aucun de ces constats ne fournit
 encore les scripts de démarrage ni les clés de décodage. Voir le même relevé
 natif pour les preuves REA, les sources et les limites.
+
+Le [traçage du chargement de fbxboot/fbxta](research/2026-10-22-devialet-trustlets-load.md)
+retrouve ensuite l'appel au moniteur sécurisé, le traitement UIE et une routine
+de lecture de clé dans une plage cohérente avec QFPROM. Il ne récupère ni clé
+réelle ni code déchiffré. Les snapshots de diagnostic TrustZone restent
+illisibles depuis l'application QML ; aucun autostart n'en découle.

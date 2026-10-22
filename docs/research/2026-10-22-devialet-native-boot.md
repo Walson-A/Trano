@@ -349,3 +349,8 @@ le test. Le relais permanent a été relancé et observé par le lecteur serveur
 HTTP 200, Devialet accessible, controlEnabled=false. Aucune ressource serveur
 temporaire supplémentaire n'a été créée pour cette passe. Worktree et preuves
 sont conservés pour la recherche non résolue.
+
+La [passe suivante sur le chargement des trustlets](2026-10-22-devialet-trustlets-load.md)
+trace avec REA l'appel SMC, le traitement UIE et l'origine de la clé dans le
+code TrustZone. Elle distingue ces observations statiques de l'essai réel de
+lecture du diagnostic local et de la récupération encore non réalisée du code.
