@@ -476,3 +476,10 @@ XmlListModel, alors que XHR reste vide sur le même fichier. Cette preuve de
 lecture ciblée ne récupère ni les buffers déchiffrés ni les scripts de boot.
 Le relais permanent est rétabli et vérifié ; la relance après reboot reste
 non résolue.
+
+La suite de la piste XML ne trouve aucun registre de lancement sourcé. Les
+deux chemins de démarrage BusyBox identifiés en amont sont du texte et ne sont
+pas visibles par le lecteur natif dans le contexte QML testé. Le seul include
+lu dans fonts.conf concerne les polices. Les résultats et les limites de
+l'inventaire XML sont ajoutés au même relevé runtime ; aucun fichier de boot
+n'a été récupéré ou modifié et l'autostart n'est pas obtenu.

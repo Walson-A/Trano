@@ -177,3 +177,83 @@ ces chemins. Cela ne prouve pas une impossibilité absolue du firmware.
 Les serveurs temporaires sont fermés et le débogueur déconnecté. Le worktree et
 ses preuves sont conservés pour poursuivre ; les checkouts et processus des
 autres travaux sont préservés. Cette passe ne change aucun code livré.
+
+## Suite : recherche d'une configuration de lancement par la voie XML
+
+La lecture de fonts.conf ne permet pas de supposer que le lancement des apps
+est lui-même configuré en XML. La recherche supplémentaire dans les sources
+SDK, les exemples, le plugin QtCreator et les publications GPL Delta ne trouve
+aucun chemin XML de registre d'applications ou de démarrage. Les manifestes
+d'apps publiés sont en JSON ; leur présence ne vaut pas installation persistante.
+
+La [publication GPL Delta 1.5.3](https://floss.freebox.fr/freebox_player_delta/1.5.3/)
+référence BusyBox 1.21.0 et des patches de init/init.c. Le
+[source amont exact](https://github.com/mirror/busybox/blob/1_21_0/init/init.c)
+définit /etc/init.d/rcS comme script par défaut et ouvre /etc/inittab. Ce sont
+donc deux candidats précis, mais de format texte, avec une limite de version
+et de configuration : ils ne sont pas attestés sur le firmware installé 1.5.26.
+
+Le test sur le Player utilise Qt.createComponent pour demander la lecture de
+ces chemins fixes. Aucun composant n'est instancié. Les fichiers témoins connus
+provoquent des erreurs de syntaxe QML à la ligne 1, ce qui confirme leur lecture
+sans exécuter leur contenu. Les chemins de démarrage retournent, eux :
+
+| Chemin | Réponse du lecteur natif |
+| --- | --- |
+| /etc/inittab | No such file or directory |
+| /etc/init.d/rcS | No such file or directory |
+| /etc/fonts/fonts.conf | Expected token numeric literal, ligne 1 |
+| /usr/lib/qt5/qml/QtWebKit/qmldir | Expected token {, ligne 1 |
+
+Cela établit la visibilité de ces chemins dans le contexte du processus QML,
+pas la structure complète de la racine du Player. Une absence dans ce contexte
+ne prouve pas l'absence du fichier dans un autre espace de fichiers du système.
+
+Le rôle XML lit ensuite tous les éléments include de fonts.conf, avec leurs
+attributs : un seul élément, conf.d, prefix vide et ignore_missing=yes. Il s'agit
+d'un répertoire de configuration des polices, pas d'une référence au lanceur.
+Le premier essai comportait des points-virgules invalides entre les objets
+XmlRole ; cette lecture XML a échoué à la compilation. Le second essai corrige
+uniquement cette syntaxe et fournit le résultat ci-dessus. Les deux captures
+restent distinctes ; les tests de chemins natifs ont répondu dans les deux.
+
+L'étude du lecteur exclut aussi deux méthodes d'inventaire, sans les tester
+inutilement sur le Player :
+
+- [CollectionFN Qt 5.12](https://github.com/qt/qtxmlpatterns/blob/5.12/src/xmlpatterns/functions/qsequencegeneratingfns.cpp)
+  retourne une erreur pour une collection par défaut ou une URI explicite ;
+  collection() n'est pas un inventaire de répertoire.
+- [QNetworkReplyFileImpl](https://github.com/qt/qtbase/blob/5.12/src/network/access/qnetworkreplyfileimpl.cpp)
+  refuse les répertoires. doc(file:///dossier/) ne fournit pas leur contenu.
+  QResource::children existe en C++, sans exposition établie dans ces API QML.
+
+Deux patches officiels supplémentaires sont conservés : 28.ns.patch ajoute des
+outils nsenter/unshare et 29.tar_chroot.patch une option chroot à tar. Cela
+documente des possibilités de construction de namespaces, sans prouver que notre
+application est lancée de cette façon. Un contrôle supplémentaire, toujours sans
+instanciation, obtient File is empty pour /proc/version et /proc/self/mountinfo.
+Il ne récupère aucun contenu et ne prouve pas que ces fichiers virtuels sont
+réellement vides. Les trois chemins /proc/1/root/etc/inittab,
+/proc/1/root/etc/init.d/rcS et /proc/1/root/etc/fonts/fonts.conf retournent
+No such file or directory. Aucun accès à la racine de PID 1 n'en découle.
+
+Une recherche ASCII ciblée des noms terminant en .xml dans les trois images
+officielles déjà conservées ne trouve aucun candidat. Elle ne décode pas les
+zones protégées et ne prouve pas qu'aucun fichier XML n'existe après chargement.
+À titre de contrôle d'une autre voie possible sans PC permanent, ipconfig ne
+montre pas d'IPv6 globale sur le PC ; ce seul constat ne détermine ni l'adresse
+du Player ni sa joignabilité entrante. Aucune route distante nouvelle n'est créée.
+
+Les preuves de cette suite restent hors Git dans .local/xml-startup-pass-20261022/,
+.local/xml-startup-pass-20261022-corrected/ et .local/xml-startup-pass-20261022-proc/.
+L'index du dossier corrected conserve 20 fichiers avec taille et SHA-256 ;
+empreinte f07d7d5c864b81ec03d7ae48349dcf5002746bc51ab88b18b9f9cf219f114064.
+Ces résultats viennent des diagnostics directs et des sources, sans nouvelle
+inspection du HAR par REA et sans nouvel identifiant Evidence revendiqué.
+
+Le bilan de cette piste est donc négatif pour l'autostart : aucune configuration
+de lancement n'a été récupérée. Le lecteur XML ne remplace pas un accès général
+aux fichiers texte et ne fournit ni listing ni écriture de configuration. La
+suite réclame une autre capacité de lecture native ou une interface persistante
+de lancement identifiée ; aucun mécanisme de boot ne peut être déduit des seules
+références de polices. Aucun fichier système du Player n'a été modifié.
