@@ -256,3 +256,96 @@ supprimés après comparaison de l'export local et distant. Le worktree et les
 preuves locales sont conservés pour la recherche en cours. Le relais permanent
 a été vérifié après extraction : HTTP 200, Devialet accessible,
 controlEnabled=false. Aucun redémarrage du Player n'a été effectué.
+
+## Suite : accès en lecture et identification des composants protégés
+
+Une nouvelle sonde a levé une ambiguïté des essais QML précédents : ils
+masquaient la cause de l'échec de création de FolderListModel. Un composant
+minimal sans propriétés optionnelles a été essayé en versions 2.0 et 2.1.
+Dans les deux cas le runtime répond explicitement que le module
+Qt.labs.folderlistmodel n'est pas installé. Ce résultat concerne ce runtime,
+pas l'ensemble des possibilités d'accès du système.
+
+Le contrôle positif XHR lit notre propre source HTTP : statut 200, 2 847
+caractères. Les lectures fixes file:///etc/inittab et
+file:///proc/self/mountinfo retournent statut 0 et longueur 0. Cela ne permet
+pas de distinguer interdiction, absence du fichier, espace de noms isolé ou
+backend non disponible. Le contrôle HTTP n'est pas un contrôle positif du
+backend file. Aucun contenu système n'a été récupéré.
+
+Six rapports POST réellement reçus par le serveur de diagnostic ont été
+conservés dans runtime.har, puis inspectés hors ligne avec REA :
+ev_065cba6c15d61483bd59f70c83be29e93c77a03538ef498df268a4601197c3ff.
+Le HAR conserve uniquement ces rapports, pas les transactions file internes
+au Player. Les URL ne sont pas rejouées ; l'attribution d'exécution par REA
+reste inconnue. L'identité du test vient de notre lancement SDK et du serveur
+récepteur, limité à l'IP du Player. Aucun changement persistant n'a été demandé.
+
+### Table de partitions de boot1 et métadonnées UIE
+
+Une analyse structurée complémentaire du fichier boot1_42.20 retrouve une
+table GPT à l'offset 4 096 : révision 1, en-tête de 92 octets, 12 entrées de
+128 octets. Les CRC de l'en-tête et de la table sont valides. Les entrées à
+l'offset 8 192 utilisent des secteurs de 4 096 octets. Cette validation ajoute
+des noms établis aux candidats ELF auparavant découpés par simple signature :
+
+| Partition GPT | Offset dans boot1 | Candidat ELF déjà conservé |
+| --- | ---: | --- |
+| fbxboot | 0x619000 | component_00619000_arm64.elf |
+| fbxta | 0x629000 | component_00629000_arm64.elf |
+
+Ce sont les noms référencés par le chargeur ; cela identifie les artefacts
+présents dans cette image, sans prouver leurs octets sur le Player installé.
+Les CRC établissent la cohérence de la table, pas sa signature ou son origine
+cryptographique. Ce parsing est un diagnostic Python indépendant, pas une
+décompilation REA supplémentaire.
+
+Dans chacun des deux ELF, l'offset 10 760 contient un en-tête 0x514d5349 suivi
+à +16 d'un en-tête 0x51554945. Leurs champs correspondent aux structures
+Qualcomm UIE décrites dans le
+[code SecTools publié dans un miroir](https://github.com/David112x/android-firmware-qti-sdm660/blob/master/common/sectools/sectools/features/isc/encryption_service/unified/encryption_params_header.py)
+et son [en-tête de section](https://github.com/David112x/android-firmware-qti-sdm660/blob/master/common/sectools/sectools/features/isc/encryption_service/unified/encryption_params_section_hdr.py) :
+une section, version 1.0, taille 192 octets, algorithme 1, mode 1, type de clé
+racine 1 et identifiant 0. Les bornes, valeurs réservées et magics sont contrôlés.
+Les sources du miroir ont été lues, jamais exécutées ; leurs empreintes sont
+conservées. Leur provenance et leur plateforme ne sont pas attestées comme
+identiques au firmware Freebox.
+
+La présence de ces paramètres et les segments exécutables à forte entropie
+étayent l'identification de composants protégés au format UIE. Aucun segment
+n'a été déchiffré, aucune clé récupérée, aucune authentification cryptographique
+validée. Décompiler les octets opaques comme des instructions AArch64 ne
+donnerait pas leur code réel. Cette protection est distincte de SKRY et du
+rootfs brut : elle ne démontre pas leur propre algorithme de chiffrement.
+
+Une inspection des payloads SKRY 1.5.26 confirme par ailleurs leurs bornes à
+l'offset +600, version 3 et numéro de clé 0, pour le noyau et le DTB. Retirer
+simplement cet en-tête ne révèle pas un début gzip, XZ ou DTB standard ; ce
+n'est pas une méthode de décodage obtenue.
+
+### Recherche du déchiffreur dans d'autres sources officielles
+
+Deux patches supplémentaires ont été acquis avec une limite de 64 Mo chacun :
+[Delta 1.0.14, Linux 4.4.194](https://floss.freebox.fr/freebox_player_delta/1.0.14/linux/linux-4.4.194-fbx.patch)
+et [Révolution 1.3.34.1, Linux 6.4](https://floss.freebox.fr/freebox_player/1.3.34.1/linux/linux-6.4-fbx.patch).
+Ils référencent le déchiffreur mais ne contiennent pas son implémentation.
+Leurs configurations publiées désactivent CONFIG_FBX_DECRYPT_INITRD ; aucune
+clé utilisable n'a été obtenue. Le Kconfig Révolution propose RC4 ou ChaCha20,
+sans établir lequel, le cas échéant, serait utilisé sur le Devialet 1.5.26.
+Un droit gw_explorer des exemples SDK concerne le Freebox Server et ne fournit
+pas de lecture du système local du Player.
+
+### Résultat de cette passe
+
+Les composants sécurisés exacts sont maintenant identifiés dans l'image et
+leur enveloppe de protection est mieux caractérisée. Il manque encore un moyen
+de lecture du système installé ou les éléments permettant de décoder les
+composants requis. Ni les scripts de démarrage ni le lanceur d'applications
+ne sont récupérés ; aucun autostart n'est installé.
+
+Les preuves, sources et dérivations restent dans
+.local/read-access-pass-20261022/. Le serveur de diagnostic a été fermé après
+le test. Le relais permanent a été relancé et observé par le lecteur serveur :
+HTTP 200, Devialet accessible, controlEnabled=false. Aucune ressource serveur
+temporaire supplémentaire n'a été créée pour cette passe. Worktree et preuves
+sont conservés pour la recherche non résolue.

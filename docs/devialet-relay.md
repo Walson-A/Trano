@@ -456,3 +456,10 @@ aucun fichier. Les sources GPL officielles apportent des indices sur init, mais
 pas les scripts du Player 1.5.26 ni son lanceur d'applications. Les preuves et
 limites sont dans la section « tentative de récupération du userland » du même
 relevé ; l'autostart reste non résolu.
+
+La passe d'accès en lecture précise ensuite l'absence du module QML de listing
+et les échecs des lectures file locales avec un contrôle HTTP positif. Elle
+identifie aussi les partitions fbxboot/fbxta par une table GPT à CRC valides et
+leurs métadonnées de protection Qualcomm UIE. Aucun de ces constats ne fournit
+encore les scripts de démarrage ni les clés de décodage. Voir le même relevé
+natif pour les preuves REA, les sources et les limites.
