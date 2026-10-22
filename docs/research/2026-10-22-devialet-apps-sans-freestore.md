@@ -189,3 +189,11 @@ Vérifications : syntaxe Python des deux scripts temporaires, liens locaux des
 trois docs modifiées et git diff --check. Aucun code de production n'est modifié
 par cette passe ; la suite complète de tests applicatifs n'est pas relancée.
 L'installation persistante et l'autostart restent non résolus.
+
+## Suite : le navigateur classique fonctionne
+
+La [recherche sur les raccourcis et widgets](2026-10-22-devialet-raccourcis-widgets.md)
+établit ensuite que App.urlOpen avec text/html ouvre le navigateur, dont le
+JavaScript, les touches et les signets fonctionnent. Les échecs WebApp DEV Runtime
+et Mes téléchargements décrits ici ne doivent donc pas être généralisés à tous
+les moteurs. Aucun accès au signet après reboot sans lancement SDK n'est établi.

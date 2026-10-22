@@ -430,3 +430,13 @@ Le menu observé pour notre propre paquet .fbxqml propose Webapp dev runtime,
 Navigateur web et Mes téléchargements. La présence de ces choix ne prouve pas
 une installation. Détails, versions, preuves REA et limites :
 [applications sans FreeStore](research/2026-10-22-devialet-apps-sans-freestore.md).
+
+### Signets du navigateur et widgets hors abonnement
+
+Le navigateur classique a chargé notre page text/html et ses callbacks. Walson
+a pu y créer un signet ; celui-ci ne paraît pas dans l'accueil et pointe encore
+vers le serveur temporaire du test. Les widgets proposés sur son accueil sont
+uniquement Config audio ou Aucun, avec épinglage/position, sans ajout d'URL.
+Le lancement autonome après reboot reste non résolu. Contraintes de l'interface
+hors abonnement, preuves et limites :
+[raccourcis et widgets](research/2026-10-22-devialet-raccourcis-widgets.md).
