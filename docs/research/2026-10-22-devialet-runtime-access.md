@@ -1,5 +1,33 @@
 # Devialet : débogueur QML et lecture native ciblée
 
+## Version Qt mesurée, demande de version uniquement
+
+Le débogueur du Player annonce **Qt 5.15.19**. La réponse brute reçue est :
+
+    this is not V8, this is V4 in Qt 5.15.19
+
+Cette mesure remplace les suppositions de version issues des autres appareils
+ou des références de source. Les sources Qt 5.12 utilisées dans les analyses
+précédentes restent des références de protocole et d'implémentation ; elles ne
+sont pas une attestation du code exact livré sur ce Player. La version annoncée
+ne décrit pas les éventuelles modifications spécifiques de Free.
+
+L'application de diagnostic est temporaire. Seul le service V8Debugger est
+activé après le hello d'inventaire. Le décodage de tous les paquets sortants de
+ce service confirme exactement deux messages : connect avec objet vide, puis
+v8request contenant seq=1, type=request, command=version. Aucun autre ordre
+de débogage, évaluation de code, lecture de propriété ou breakpoint n'est envoyé.
+La réponse version porte success=true.
+
+Les quatre fichiers de preuve sont conservés sous
+.local/qt-version-pass-20261022/, avec leur index d'empreintes. SHA-256 de
+evidence-index.json :
+20317a8f55b97f3114f3ed2299401aa87c7d5e9a48f5574f0d2d2c3f0f08d5f4.
+Le débogueur et le serveur HTTP temporaire sont fermés. Le relais est relancé
+puis vérifié depuis le serveur : HTTP 200, devialet reachable=true,
+controlEnabled=false. Cette interrogation n'installe rien et ne démontre aucun
+mécanisme de démarrage automatique.
+
 ## Résultat et objectif restant
 
 Le Player possédé par Walson, fbx7hd-delta 1.5.26 hors abonnement, accepte une

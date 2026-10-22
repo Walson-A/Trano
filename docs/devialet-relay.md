@@ -483,3 +483,9 @@ pas visibles par le lecteur natif dans le contexte QML testé. Le seul include
 lu dans fonts.conf concerne les polices. Les résultats et les limites de
 l'inventaire XML sont ajoutés au même relevé runtime ; aucun fichier de boot
 n'a été récupéré ou modifié et l'autostart n'est pas obtenu.
+
+Une interrogation ultérieure limitée à la commande version du débogueur annonce
+Qt 5.15.19 sur ce Player. Aucun code n'est évalué et aucun breakpoint posé.
+La capture des commandes et le contrôle de reconnexion du relais sont décrits
+au début du relevé runtime. Cette version vérifiée ne fournit pas à elle seule
+un contrat de démarrage automatique.
