@@ -333,3 +333,27 @@ aux fichiers texte et ne fournit ni listing ni écriture de configuration. La
 suite réclame une autre capacité de lecture native ou une interface persistante
 de lancement identifiée ; aucun mécanisme de boot ne peut être déduit des seules
 références de polices. Aucun fichier système du Player n'a été modifié.
+
+## Reprise du 23 octobre : relais actif et contrat de reprise inconnu
+
+Une nouvelle interrogation du lecteur privé de la passerelle retourne HTTP 200,
+`devialet reachable=true`, `controlEnabled=false`, sans nouvel appel de lancement
+SDK. Cela confirme la disponibilité au moment de ce contrôle, pas une continuité
+sans interruption ni une restauration après reboot. Preuve locale :
+`.local/resume-20261023/gateway-health.txt`.
+
+La fonction `App.urlOpenWithCheckpoint` est présente dans l'inventaire natif
+antérieur (`.local/startup-api-evidence.json`). Une recherche ciblée dans les
+exemples officiels, la bibliothèque QML distribuée, le plugin QtCreator et le
+paquet ReDeFin déjà extrait ne trouve ni sa signature ni son implémentation.
+Les occurrences de checkpoint de lecture vidéo de ReDeFin sont des fonctions
+propres au lecteur, pas des appels à cette méthode native. Aucun appel à cette
+méthode inconnue n'est effectué et aucune restauration après reboot n'en est
+déduite.
+
+La documentation publique de Shell décrit des demandes d'autorisation au Server
+et la validation parentale, pas un registre de lancement. La documentation de
+Settings décrit des données conservées entre sessions, pas un ordonnanceur.
+Ces interfaces ne fournissent donc pas, dans les contrats examinés, la pièce
+manquante du démarrage autonome. Aucun nouvel essai d'écran de veille, changement
+système ou accès administrateur n'est réalisé pendant cette reprise.
