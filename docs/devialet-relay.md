@@ -469,3 +469,10 @@ retrouve ensuite l'appel au moniteur sécurisé, le traitement UIE et une routin
 de lecture de clé dans une plage cohérente avec QFPROM. Il ne récupère ni clé
 réelle ni code déchiffré. Les snapshots de diagnostic TrustZone restent
 illisibles depuis l'application QML ; aucun autostart n'en découle.
+
+Une [passe runtime supplémentaire](research/2026-10-22-devialet-runtime-access.md)
+connecte effectivement le débogueur QML et lit un fichier XML local via
+XmlListModel, alors que XHR reste vide sur le même fichier. Cette preuve de
+lecture ciblée ne récupère ni les buffers déchiffrés ni les scripts de boot.
+Le relais permanent est rétabli et vérifié ; la relance après reboot reste
+non résolue.
