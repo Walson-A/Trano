@@ -416,3 +416,17 @@ observés et les limites de parsing sont dans le
 [relevé REA du 22 octobre](research/2026-10-22-devialet-rea-startup.md).
 Ce travail ne fournit pas encore de mécanisme de lancement après reboot. Les
 sondes sont terminées et le relais permanent a été rétabli.
+
+### Applications hors FreeStore — recherche et tests directs, 22 octobre
+
+L'accès administrateur au routeur du logement n'est pas disponible. La recherche
+se concentre sur une installation lançable depuis le Player, sans abonnement,
+PC permanent ni nouvel appareil. Le paquet public ReDeFin a été inspecté hors
+ligne avec REA et les dépôts communautaires ont été vérifiés. Un chemin public
+vers le firmware 1.5.26 a été trouvé ; seul un en-tête et un échantillon borné
+ont été conservés, sans récupération du code natif d'installation.
+
+Le menu observé pour notre propre paquet .fbxqml propose Webapp dev runtime,
+Navigateur web et Mes téléchargements. La présence de ces choix ne prouve pas
+une installation. Détails, versions, preuves REA et limites :
+[applications sans FreeStore](research/2026-10-22-devialet-apps-sans-freestore.md).

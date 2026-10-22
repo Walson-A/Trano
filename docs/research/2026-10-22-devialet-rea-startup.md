@@ -136,3 +136,11 @@ le chemin de l'erreur. Le relais permanent est de nouveau observé en ligne,
 controlEnabled=false, avec une observation âgée de 0,2 seconde. Les captures,
 l'archive officielle et l'export REA sont conservés comme preuves ; aucun serveur
 de test du PC n'est laissé actif par ces diagnostics.
+
+## Suite : installation hors Store
+
+La [passe suivante](2026-10-22-devialet-apps-sans-freestore.md) vérifie les dépôts
+freebox-tool et ReDeFin, analyse un paquet distribué avec REA, identifie un
+chemin public du firmware 1.5.26 et teste les gestionnaires d'ouverture du
+Player avec notre propre archive. Elle distingue installation persistante,
+lancement manuel sans PC et démarrage automatique.
