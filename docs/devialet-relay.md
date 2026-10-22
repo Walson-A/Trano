@@ -440,3 +440,13 @@ uniquement Config audio ou Aucun, avec épinglage/position, sans ajout d'URL.
 Le lancement autonome après reboot reste non résolu. Contraintes de l'interface
 hors abonnement, preuves et limites :
 [raccourcis et widgets](research/2026-10-22-devialet-raccourcis-widgets.md).
+
+### Analyse native du démarrage
+
+Une nouvelle passe a récupéré les images complètes et décompilé le chargeur
+avec REA/Ghidra sous Linux. Elle retrouve le traitement des images, les échanges
+d'authentification avec une TA et le passage de l'initrd au noyau. Le système de
+fichiers et le lanceur d'applications restent inaccessibles à cette analyse ;
+aucun autostart ni Tailscale natif n'est installé. Artefacts, modèle d'analyse
+dérivé, Evidence et limites :
+[analyse native du boot](research/2026-10-22-devialet-native-boot.md).
