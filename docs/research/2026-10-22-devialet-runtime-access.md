@@ -28,6 +28,54 @@ puis vérifié depuis le serveur : HTTP 200, devialet reachable=true,
 controlEnabled=false. Cette interrogation n'installe rien et ne démontre aucun
 mécanisme de démarrage automatique.
 
+## Écran de veille : exécution et présence dans le menu
+
+Deux essais temporaires reprennent le contrat de l'exemple officiel Free :
+une entrée `settings` par défaut et une entrée `screensaver`. Le second reste
+observable jusqu'à trois minutes, avec arrêt anticipé contrôlé. Walson voit
+l'application en arrière-plan pendant qu'il vérifie le menu, mais aucun
+« Atlas test ecran de veille » : seuls AKTU, Freebox et le lien FreeStore sont
+visibles. Le FreeStore ouvert est vide et demande un redémarrage du Server.
+Ce message ne prouve aucune installation Atlas en attente.
+
+Les deux journaux reçoivent `started` pour `settings`, puis `home_requested`.
+Aucun lancement de l'entrée `screensaver` n'est observé. Le SDK accepte donc
+l'exécution, sans inscription constatée dans le sélecteur. Les serveurs HTTP
+temporaires sont fermés et le relais permanent est relancé après les essais.
+La vérification finale du lecteur serveur retourne HTTP 200,
+`devialet reachable=true`, `controlEnabled=false`.
+Preuves locales : `.local/lifecycle-pass-20261022/`, notamment
+`observation-2/reports.json` et `user-observation.json`.
+
+L'[exemple officiel](https://github.com/fbx/qmlapps_examples/tree/master/samples/screensaver)
+ne contient pas d'appel d'enregistrement : son manifeste expose les deux entrées,
+et ses réglages ne conservent que la couleur. Le
+[lanceur SDK](https://github.com/fbx/freebox-qtcreator-plugin/blob/master/remote/remoteqml.cc)
+transmet `manifest_url`, `entry_point` et `wait` à `debug_qml_app` sans opération
+d'installation. Déclarer `screensaver` et lancer `settings` ne suffit donc pas
+dans les conditions testées.
+
+Le code qui construit la liste système n'a pas été récupéré. La recherche dans
+`libfbxqml`, l'archive officielle 2016, les exemples et le plugin QtCreator ne
+trouve pas son modèle de catalogue. Le débogueur précédemment interrogé ne
+montre que le moteur de notre application, pas celui des réglages. REA confirme
+qu'aucune cible native n'est actuellement ouverte ; les anciennes extractions
+des deux rootfs n'avaient publié aucun fichier exploitable. Aucun de ces faits
+ne permet de prétendre inspecter en direct le menu système.
+
+L'hypothèse d'un catalogue d'applications installées reste plausible, mais les
+filtres exacts (profil, origine, identifiant, rafraîchissement) sont inconnus.
+Aucun enregistrement persistant ni lancement après reboot n'est établi. Un
+écran de veille lancé après inactivité ne garantirait d'ailleurs pas, à lui seul,
+un relais disponible dès le démarrage ou pendant toute utilisation de la TV.
+
+Les [sources publiques Qt 5.15](https://github.com/qt/qtbase/blob/5.15/src/gui/kernel/qsessionmanager.cpp)
+décrivent `QSessionManager` comme une interface
+vers le gestionnaire de session de la plateforme. Les préférences de relance
+sont des indications ; le backend générique ne crée pas d'inscription persistante.
+La version 5.15.19 annoncée par le Player ne constitue donc pas un mécanisme
+d'autostart. Il s'agit de sources de référence, pas du binaire Free attesté.
+
 ## Résultat et objectif restant
 
 Le Player possédé par Walson, fbx7hd-delta 1.5.26 hors abonnement, accepte une

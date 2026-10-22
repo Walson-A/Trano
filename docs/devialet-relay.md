@@ -309,6 +309,12 @@ Administration, installation reproductible et fichiers conservés :
 
 ### Limite de démarrage du Player
 
+Le test de manifeste avec entrée `screensaver` tourne sur le Player mais
+n’apparaît pas dans son sélecteur d’écran de veille, y compris pendant son
+exécution. Le modèle qui remplit ce menu reste inaccessible dans les sources
+récupérées ; aucun enregistrement persistant n’est démontré. Voir le
+[compte rendu des essais](research/2026-10-22-devialet-runtime-access.md#écran-de-veille--exécution-et-présence-dans-le-menu).
+
 La recherche dans les clones officiels est bornée aux contrats publiés :
 
 - freebox-qtcreator-plugin, commit 18f4d2c9e4ef8d8351b6ffee3bd3f2699f92294f :
