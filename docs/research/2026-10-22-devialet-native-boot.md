@@ -157,3 +157,102 @@ l'identité de l'image. Les images de base Docker que le moteur n'a pas accepté
 de retirer sans forcer sont conservées ; aucun nettoyage global n'a été lancé.
 Le worktree et ses preuves sont conservés pour poursuivre cette recherche
 encore non résolue.
+
+## Suite : tentative de récupération du userland
+
+À la demande de Walson, une passe distincte a visé les fichiers qui démarrent
+les services et les applications. Deux voies ont été vérifiées : extraction
+des zones rootfs officielles avec REA, et lecture des sources GPL publiées
+par Free. Aucun fichier du système installé n'a été récupéré par ces voies.
+
+### Extraction réelle avec REA et Unblob
+
+Les entrées rootfs ont été découpées sans transformation depuis les images
+précédentes. Les offsets restent ceux des images complètes, pas des adresses
+mémoire du Player :
+
+| Entrée | Offset source | Longueur | SHA-256 de l'entrée |
+| --- | ---: | ---: | --- |
+| bank1 1.5.26 | 6 029 312 | 131 276 800 | d7f0f135f417a1099f01a39e03188d2f08a14184f18e68b853b0b97d4a5642ef |
+| bank0 1.2, dans boot0+bank0 | 12 054 528 | 16 764 928 | b486db1d3913bb4d20b1d904352b44494a6bdd1ee07fc5c64979d8f49f026822 |
+
+L'image bank1 complète dépasse la limite d'entrée de 128 Mio de cette version
+de REA. Le découpage explicite de son entrée rootfs, inférieur à cette limite,
+préserve ses octets et son origine dans derivations.json.
+
+REA 6.4.0 a réellement appelé Unblob 26.6.4 sous Linux, avec une profondeur de
+3, une limite de 200 Mio de sortie et 1 000 entrées. Les deux appels ont terminé
+sans erreur ni diagnostic : zéro fichier, zéro chunk reconnu, zéro octet
+publié. Le champ coverage=complete signifie ici que la passe configurée a
+terminé ; il ne signifie pas que le firmware a été reconstruit ou décodé.
+Les formats non pris en charge et les règles de filtrage restent des limites.
+Le sandbox Unblob était actif ; aucun code du firmware n'a été exécuté.
+
+Evidence bank0 :
+ev_d6c37b62ba706cfe601083b23baa89f5e0baa2e9663b1d18634f46fa747666a4.
+Evidence bank1 :
+ev_526d25d80d16aa235dac796e0072c74d0666983f0cb642b1221cffcfcda4f079.
+
+Une recherche complémentaire sur l'intégralité des deux entrées n'a trouvé
+aucun magic ELF, SquashFS, cpio newc/crc, XZ, Zstandard, UBI ou UBIFS de la liste
+testée. Les huit candidats gzip (sept dans bank1, un dans bank0) échouent tous
+à la validation : six ont des bits réservés invalides, deux un CRC d'en-tête
+incorrect. Ces recherches sont des diagnostics bornés, pas une preuve que les
+zones sont chiffrées ni une identification de leur algorithme.
+
+### Sources officielles : indices sur init, sans scripts de lancement
+
+L'[index GPL Player Delta](https://floss.freebox.fr/freebox_player_delta/)
+consulté ne propose pas de paquet 1.5.26 ; la dernière version listée est
+[1.5.3](https://floss.freebox.fr/freebox_player_delta/1.5.3/). Ces sources sont
+une référence historique, pas une observation du firmware installé.
+
+Le [patch Linux 4.4.302 officiel](https://floss.freebox.fr/freebox_player_delta/1.5.3/linux/linux-4.4.302-fbx.patch)
+est conservé intégralement : 36 714 100 octets, SHA-256
+d8ea46a441f51020cacd347906643b7902871b69dc6bcc65614ed2d2f01ad27c.
+Dans init/initramfs.c, il ajoute un appel conditionnel à fbx_decrypt_initrd
+avant écriture de /initrd.image. Le Makefile mentionne fbx_decrypt_initrd.o et
+rc4.o, mais leurs implémentations ne figurent pas dans ce patch.
+
+La configuration livrée dans le même patch désactive CONFIG_FBX_DECRYPT_INITRD,
+laisse CONFIG_INITRAMFS_SOURCE vide et impose une ligne de boot NFS sur
+eth0.41. Cela suggère une configuration de développement. On ne peut donc
+déduire de ces noms ni RC4 actif sur le Player ni le schéma du rootfs 1.5.26.
+Le hook observé est dans init/initramfs.c, contrairement au chemin init/main.c
+mentionné dans certaines notes communautaires.
+
+Deux patches BusyBox 1.21.0 publiés par Free concernent
+[la transmission de POWER_ACTION aux scripts d'arrêt](https://floss.freebox.fr/freebox_player_delta/1.5.3/busybox/13.pass_power_action_to_init_handler.patch)
+et [ASKFIRST sur les terminaux](https://floss.freebox.fr/freebox_player_delta/1.5.3/busybox/22.init_ask_first_only_tty.patch).
+Ils établissent des modifications du code init distribué dans les sources,
+sans démontrer que BusyBox est le PID 1 du firmware 1.5.26. L'index et les
+patches consultés ne fournissent ni les scripts de démarrage du Player ni le
+lanceur propriétaire d'applications. Une analyse REA de ces sources disponibles
+n'ajouterait pas de preuve sur les binaires réellement installés.
+
+### État et conservation
+
+La troisième étape du boot reste non résolue : nous n'avons ni /etc/inittab,
+ni scripts init.d, ni binaire du lanceur provenant du Player. Les lectures QML
+de métadonnées déjà tentées restent infructueuses ; elles n'ont pas été répétées
+avec les mêmes paramètres. Cette passe n'a pas modifié le Player.
+
+Pour poursuivre, il manque une interface de lecture du système installé ou une
+image userland décodable avec sa transformation documentée. Une nouvelle
+extraction identique avec les mêmes outils ne résoudrait pas ce manque.
+Il n'y a toujours aucun autostart installé ni preuve d'impossibilité absolue.
+
+Les Evidence sont conservées sous
+.local/research/native-20261022/userland-inputs/rea-evidence/ ; l'export
+rootfs-evidence-bundle.json compte deux Evidence et son SHA-256 est
+9f19582f1dfd83d80383314d3cae530045e54f34fc4a81b9d1093a304f1ddf98.
+Les dérivations, diagnostics gzip et recette d'environnement sont conservés à
+côté. Les index, patches et provenances GPL sont sous
+.local/research/native-userland-sources-20261022/. Les copies rootfs restent
+disponibles pour une reprise avec une méthode différente.
+
+Le conteneur d'extraction, son image dédiée et son répertoire serveur ont été
+supprimés après comparaison de l'export local et distant. Le worktree et les
+preuves locales sont conservés pour la recherche en cours. Le relais permanent
+a été vérifié après extraction : HTTP 200, Devialet accessible,
+controlEnabled=false. Aucun redémarrage du Player n'a été effectué.

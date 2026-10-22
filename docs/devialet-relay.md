@@ -450,3 +450,9 @@ fichiers et le lanceur d'applications restent inaccessibles à cette analyse ;
 aucun autostart ni Tailscale natif n'est installé. Artefacts, modèle d'analyse
 dérivé, Evidence et limites :
 [analyse native du boot](research/2026-10-22-devialet-native-boot.md).
+
+La tentative suivante d'extraction des deux rootfs avec REA/Unblob n'a récupéré
+aucun fichier. Les sources GPL officielles apportent des indices sur init, mais
+pas les scripts du Player 1.5.26 ni son lanceur d'applications. Les preuves et
+limites sont dans la section « tentative de récupération du userland » du même
+relevé ; l'autostart reste non résolu.
