@@ -410,3 +410,53 @@ Il utilise lui aussi `debug_qml_app`, un serveur HTTP local et les trois
 paramètres connus. Aucune option d'installation persistante ne s'y trouve.
 Le code local QtCreator utilise directement `qmlscene`, sans simulateur natif
 Freebox distinct dans ce chemin. Aucun de ces scripts tiers n'a été exécuté.
+
+## Qfbxapp-client : vérification étendue et identité du runtime actuel
+
+Un diagnostic temporaire exécuté sur le Devialet actuel observe le nom de classe
+`fbx::QmlApp` en convertissant uniquement l'objet `App` de notre application en
+chaîne, puis en ne conservant que le nom de classe. L'adresse et l'éventuel nom
+d'objet ne sont ni transmis ni conservés. `Qt.application.version` vaut `dev`.
+Aucune commande Shell inconnue, lecture de préférences ou modification de
+configuration n'est effectuée. Le serveur temporaire est fermé. Le premier
+relancement du relais a échoué ; un relancement explicite suivant est accepté,
+puis le lecteur privé serveur confirme HTTP 200, `devialet reachable=true`,
+`controlEnabled=false`. Preuve :
+`.local/qfbxapp-followup-20261023/runtime/reports.json`.
+
+Ce nom est une observation directe du runtime courant. Son rattachement au
+`QFbxAppClient` des anciennes sources Wayland reste une inférence : aucun lien
+binaire entre ces deux classes n'est établi.
+
+Les recherches complémentaires de sources officielles donnent :
+
+| Artefact lu, sans exécution | Résultat utile et limite |
+| --- | --- |
+| [QtBase vendor 5.9.7-36](https://floss.freebox.fr/packages/qtbase-v5.9.7-36-geb9200542b.tar.gz), 58 986 940 octets | Les 20 881 fichiers réguliers ne contiennent pas le client recherché. Le gestionnaire de session générique ne crée pas d'inscription persistante. |
+| [QtWebKit vendor 5.5.1-231](https://floss.freebox.fr/packages/qtwebkit-v5.5.1-231-gd572e72ea42.tar.gz), 53 227 762 octets | Aucun des noms du client recherché. Le wrapper Qt utilise `wayland/freebox.h` pour importer des surfaces vidéo, sans contrat de lancement observé. |
+| [QtWayland vendor 5.9.9-42](https://floss.freebox.fr/packages/qtwayland-v5.9.9-42-gb6c7baac.tar.gz), 477 936 octets | Les six fichiers du plugin Freebox, sa configuration et ses protocoles sont identiques à la version 5.9.7-39 déjà examinée. Le client reste une dépendance externe sans implémentation publiée dans ce paquet. |
+| Index SDK Sphinx `searchindex.js` et `objects.inv` | 142 documents indexés et 790 entrées d'inventaire ; aucun contrat `qfbxapp`, `QmlApp`, `checkpoint`, `screensaver` ou `autostart` retrouvé dans ces index. Cela n'exclut pas une API native non documentée. |
+| Catalogues officiels Player Révolution 1.3.29.1 et 1.3.34.1 | Aucun lien vers un artefact nommé qfbx/fbxqml/qmlapp/rootfs/firmware. Aucun firmware d'autre modèle n'est téléchargé ni aucune URL de paquet devinée. |
+
+Les recherches de code GitHub n'apportent pas de définition pertinente pour
+`QFbxAppClient`, `qfbxapp`, `qfbxapp-client.pc`, `urlOpenWithCheckpoint` ou
+`fbx::QmlApp`. Elles portent sur les résultats indexés et accessibles des
+branches par défaut, pas sur tout code existant. Les archives Qt historiques
+ne sont pas une attestation du Qt 5.15.19 installé sur ce Player.
+
+Les archives, inventaires, extraits, comparaisons et empreintes sont conservés
+sous `.local/qfbxapp-followup-20261023/`. SHA-256 des trois archives ci-dessus,
+dans l'ordre :
+
+- `d76f0bbfd8fc308b99409dca9434d55353abe44ca1931016c5b306522fc162dd` ;
+- `b55456a48f6ed5acc742cede581db12a6e918bd8baad7926d83ab5dcd7a982d6` ;
+- `29bc69fc17109abd56a757e4dd8444e7c6b33d0307625246aabb282dbf9be46e`.
+
+La prochaine analyse native requiert toujours le client ou le runtime réel,
+son interface documentée, ou une procédure d'installation persistante attestée.
+Aucun binaire de ce composant n'a été obtenu à ouvrir dans REA. Ce manque
+n'établit pas une impossibilité absolue dans le firmware, mais aucun mécanisme
+d'autostart ne peut être présenté comme démontré à partir de ces éléments.
+La [question publique autorisée à ReDeFin](https://github.com/laborantine/ReDeFin/issues/92)
+distingue explicitement le test SDK, un lancement manuel persistant et le
+lancement automatique après reboot.
