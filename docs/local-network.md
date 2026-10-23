@@ -48,6 +48,9 @@ redémarrage de la passerelle temporaire. Le test du 23 octobre perd en revanche
 la liaison du relais juste après l'ouverture de Netflix ; Walson confirme ensuite
 la lecture avec image et son, sans reprise du relais pendant l'observation.
 Le retour à l'accueil ne garantit donc pas une coexistence avec une autre app.
+Les diagnostics suivants constatent la destruction du composant QML et la fin
+des deux flux du processus lors de l'ouverture de Netflix, y compris pour une
+variante sans fenêtre et lors d'une ouverture manuelle depuis son icône.
 Voir le [test Netflix](research/2026-10-23-devialet-netflix-background.md).
 Le reboot du Player a également montré l'absence de reprise automatique.
 La veille et l'installation persistante restent à vérifier.
