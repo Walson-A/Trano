@@ -60,6 +60,12 @@ minuterie de diagnostic. La reconnexion après redémarrage de la passerelle a
 Player reste non établi. La présence durable dans ses menus ou sa veille et
 le fonctionnement PC physiquement éteint restent à vérifier.
 
+La disponibilité du relais pendant une autre application ne doit pas être
+supposée : le [test Netflix du 23 octobre](research/2026-10-23-devialet-netflix-background.md)
+observe une perte de liaison juste après la commande d'ouverture, sans reprise
+pendant la lecture confirmée par Walson. Le conteneur serveur reste actif ; son
+état `healthy` ne remplace pas la réception d'observations fraîches du Player.
+
 Pour arrêter uniquement ce service :
 
     docker compose -f deploy/lan-gateway.compose.yaml down

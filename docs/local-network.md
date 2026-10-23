@@ -44,8 +44,13 @@ allumé pour observer les journaux ; le départ réel du PC n'a pas été testé
 
 Le passage WSS public vers le serveur permanent a ensuite été vérifié, avec
 les fichiers QML servis à distance. Le Player s’est aussi reconnecté seul après
-redémarrage de la passerelle temporaire. Maintien prolongé en arrière-plan,
-veille, redémarrage et installation persistante du Player restent à vérifier.
+redémarrage de la passerelle temporaire. Le test du 23 octobre perd en revanche
+la liaison du relais juste après l'ouverture de Netflix ; Walson confirme ensuite
+la lecture avec image et son, sans reprise du relais pendant l'observation.
+Le retour à l'accueil ne garantit donc pas une coexistence avec une autre app.
+Voir le [test Netflix](research/2026-10-23-devialet-netflix-background.md).
+Le reboot du Player a également montré l'absence de reprise automatique.
+La veille et l'installation persistante restent à vérifier.
 Le SDK public fournit QML ; Node et Tailscale sur le Player ne sont pas établis.
 Le service autonome permanent n’est pas encore livré.
 Sources et résultats : [relevé terrain](research/2026-10-20-local-network.md).
