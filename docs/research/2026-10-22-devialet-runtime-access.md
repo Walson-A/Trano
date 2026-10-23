@@ -490,12 +490,29 @@ V4 examinées ne fournissent pas de lecteur de fichiers natifs. Les ressources
 lecture du système. Sources et provenance :
 `.local/readonly-qt-contract-20261023/`. Aucun de ces mécanismes n'est détourné.
 
-Une autre voie ordinaire est préparée, sans lancement à ce stade : une page du
-navigateur natif proposant un sélecteur HTML de fichier, `FileReader`, puis un
-transfert vers le PC limité au fichier nommé `fbxqmlviewer`, avec en-tête ELF et
-une taille maximale de 32 Mio. Le récepteur n'accepte que le Player identifié,
-ne sert aucun répertoire et refuse d'écraser une capture existante. Ce test
-requiert une sélection explicite sur la TV ; il ne suppose pas que le sélecteur
-expose `/usr/bin` et ne contourne pas le refus du module WebView SDK.
-La disponibilité de Walson près de la TV est demandée avant de l'ouvrir.
-Préparation locale : `.local/player-file-picker-20261023/`.
+Trois essais ont ensuite ouvert une page dans le navigateur natif, via
+`App.urlOpen`, avec sélection HTML de fichier et transfert limité à un fichier
+nommé `fbxqmlviewer`, de taille inférieure à 32 Mio et commençant par le magic
+ELF. Le récepteur n'accepte que le Player identifié, ne sert aucun répertoire
+et refuse d'écraser une capture existante. Aucun fichier n'a été sélectionné
+ni transféré ; ces essais ne fournissent donc aucun nouvel artefact natif.
+
+Le premier essai ne produit aucune fenêtre observée. Le deuxième confirme la
+réception de la touche OK et la demande JavaScript d'ouverture du sélecteur,
+mais son indicateur visuel est défectueux : le nom global `status` entre en
+conflit avec `window.status`. Le troisième corrige ce nom, affiche le champ
+natif et confirme l'indicateur : Walson voit « OK reçu », sans fenêtre de
+sélection. Le clic synthétique est envoyé depuis une touche utilisateur ; cela
+ne démontre pas que le navigateur implémente un sélecteur ni que celui-ci
+donnerait accès aux fichiers système. On ne peut pas en déduire sa cause exacte.
+
+Dans « Mes fichiers », Walson observe seulement `WALSON-LAPTOP` et « Ajouter un
+partage Windows », puis confirme que seuls les partages réseau sont proposés.
+Cette vue ne donne pas accès aux fichiers système du Player. Elle ne prouve pas
+l'absence de tout stockage local dans toutes les configurations du produit.
+
+Les trois serveurs temporaires sont fermés, et le relais est relancé. La dernière
+vérification après ces essais retourne HTTP 200, `devialet reachable=true`,
+`controlEnabled=false`. Aucune nouvelle vérification en direct n'est déduite de
+cette mesure historique. Sources et rapports :
+`.local/player-file-picker-20261023/`, notamment `keyboard-2/` et `visible-3/`.
