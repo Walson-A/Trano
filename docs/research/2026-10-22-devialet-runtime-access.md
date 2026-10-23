@@ -460,3 +460,42 @@ d'autostart ne peut être présenté comme démontré à partir de ces élément
 La [question publique autorisée à ReDeFin](https://github.com/laborantine/ReDeFin/issues/92)
 distingue explicitement le test SDK, un lancement manuel persistant et le
 lancement automatique après reboot.
+
+## Lecture ciblée sur le Player : exécutable accessible, octets non exportés
+
+Une sonde réelle borne son accès à cinq chemins fixes, sans récursion et sans
+instancier de composant. `Qt.createComponent` reçoit du contenu pour le chemin
+d'exécutable précédemment mesuré `/usr/bin/fbxqmlviewer`, puis signale une erreur
+de syntaxe. Le témoin `/etc/fonts/fonts.conf` donne aussi une erreur de parsing,
+et le chemin témoin volontairement inexistant donne « not found ». Ce résultat
+est compatible avec l'ouverture du fichier par le chargeur, mais ne récupère
+pas ses octets et n'en mesure ni le format ni les dépendances.
+
+Les chemins `/usr/lib/libqfbxapp-client.so` et
+`/usr/lib/libqfbxapp-client.so.0` sont seulement deux candidats de nom, pas un
+SONAME déduit du pkg-config. Ils retournent « not found » dans le contexte de
+notre application. Cela n'exclut pas un autre nom, une liaison statique ou une
+autre arborescence. L'essai XHR avec `responseType=arraybuffer` sur
+`/usr/bin/fbxqmlviewer` retourne statut 0, longueur 0 et aucun octet d'en-tête.
+Aucun binaire n'est exporté. Preuves :
+`.local/player-file-access-20261023/reports.json` et les deux sources de la sonde.
+Le serveur temporaire est fermé ; le relais est relancé et le lecteur privé
+serveur confirme HTTP 200, `devialet reachable=true`, `controlEnabled=false`.
+
+Les contrats publics Qt 5.15 ont aussi été vérifiés : `Qt.include` compile et
+exécute un script, sans en retourner les octets ; QML Preview reçoit les fichiers
+du client vers le Player et ne fournit pas un export inverse ; les commandes
+V4 examinées ne fournissent pas de lecteur de fichiers natifs. Les ressources
+`qrc:` et `QResource::data()` C++ ne constituent pas une API QML générale de
+lecture du système. Sources et provenance :
+`.local/readonly-qt-contract-20261023/`. Aucun de ces mécanismes n'est détourné.
+
+Une autre voie ordinaire est préparée, sans lancement à ce stade : une page du
+navigateur natif proposant un sélecteur HTML de fichier, `FileReader`, puis un
+transfert vers le PC limité au fichier nommé `fbxqmlviewer`, avec en-tête ELF et
+une taille maximale de 32 Mio. Le récepteur n'accepte que le Player identifié,
+ne sert aucun répertoire et refuse d'écraser une capture existante. Ce test
+requiert une sélection explicite sur la TV ; il ne suppose pas que le sélecteur
+expose `/usr/bin` et ne contourne pas le refus du module WebView SDK.
+La disponibilité de Walson près de la TV est demandée avant de l'ouvrir.
+Préparation locale : `.local/player-file-picker-20261023/`.
