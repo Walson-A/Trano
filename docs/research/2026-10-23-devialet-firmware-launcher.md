@@ -92,3 +92,53 @@ ou un contrat d'installation persistant vérifié. Les deux résultats à démon
 restent distincts : un point de lancement manuel après reboot, puis une exécution
 automatique du relais. Leur faisabilité n'est pas démontrée, sans preuve
 d'impossibilité absolue non plus.
+
+## Recherche complémentaire : SDK et export de diagnostic
+
+La reprise suivante cible deux autres sources possibles d'une copie lisible :
+un sysroot/émulateur/symboles livrés avec le SDK, et un export de diagnostic
+accessible au propriétaire. Aucun nouvel artefact natif n'est obtenu ; aucune
+nouvelle décompilation du lanceur n'est donc revendiquée dans REA. Le Player
+n'est pas contacté pendant cette passe.
+
+Le lancement local du plugin QtCreator appelle `version->qmlsceneCommand()`
+dans `src/localrunconfiguration.cc:83` : il utilise le Qt du PC et ne livre pas
+une copie du système Player. La documentation SDK publique décrit QtCreator,
+le plugin et la bibliothèque QML, sans source de sysroot ou de symboles natifs
+identifiée dans les pages et liens examinés. Les recherches publiques ciblées
+sur `QFbxAppClient`, `qfbxapp-client` et `fbxqmlviewer` n'ont pas fourni de paquet
+supplémentaire ; cette absence de résultat n'exclut pas un SDK partenaire privé.
+
+Le script officiel
+[`fbx-qml-run`](https://github.com/fbx/freebox-dev-utils/blob/1f510a3f3179215aadea4e858d323f2b73c338ce/bin/fbx-qml-run)
+crée deux `SocketDumperThread` sur `stdout_port` et `stderr_port` après
+`debug_qml_app` (lignes 200–210). Cet export est celui des sorties de l'application
+SDK lancée, pas une copie du système ou du catalogue. Le code déjà conservé est
+lu directement ; il n'est pas nécessaire de décompiler sa source avec REA.
+
+Les commentaires de développeurs Free dans
+[FS32675](https://dev.freebox.fr/bugs/task/32675) et
+[FS38554](https://dev.freebox.fr/bugs/task/38554) mentionnent respectivement
+la lecture de journaux volatils et le téléchargement d'informations de debug.
+Ils ne donnent pas de protocole ni de procédure d'export utilisable ici et
+n'établissent pas sa disponibilité hors abonnement. L'accès interne de Free
+ne doit pas être présenté comme un accès dont nous disposons.
+
+Le ticket récent [FS41143](https://dev.freebox.fr/bugs/task/41143), août 2026,
+rapporte côté demandeur l'URI `app:fr.freebox.mediaplayer`, le choix des handlers
+et l'absence de global `Bus` malgré une capability `fbxbus`. Les commentaires
+examinés ne donnent ni nom de fichier de catalogue ni méthode d'installation
+ou d'autostart. Ces observations tierces ne sont pas des mesures sur notre Player.
+La documentation en ligne de certains tickets est obtenue par texte indexé après
+timeout de lecture directe ; aucune absence globale de pièce jointe n'en est déduite.
+
+Un contact SDK est publié dans
+[FS39900](https://dev.freebox.fr/bugs/task/39900), dans le contexte de tests
+Révolution/Devialet. Aucun message supplémentaire n'est envoyé. Les éléments
+de diagnostic et leurs limites sont conservés dans
+`.local/diagnostic-export-sources-20261023.json`.
+
+Le blocage restant est un manque d'entrée pour l'analyse : fichier natif du
+lanceur, export du registre ou contrat de lecture documenté. Les recherches
+SDK et diagnostic n'ont pas fourni cette entrée. Relancer les mêmes extractions
+ou décompiler de nouveau le bootloader ne permettrait pas, à lui seul, de la créer.
