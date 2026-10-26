@@ -64,6 +64,27 @@ if args.captures:
   title=hero.findChild(QObject,'heroTitle')
   assert not title.property('truncated'),'Title truncated'
   shot('04-titre-long')
+  QTest.keyClick(window,Qt.Key_Right);QTest.keyClick(window,Qt.Key_Right)
+  after(rail_end)
+ def rail_end():
+  rail=hero.findChild(QObject,'heroRail')
+  assert hero.property('selectedIndex')==len(snapshot['hero'])-1
+  shot('07-fin-liste')
+  for _ in range(len(snapshot['hero'])-1):QTest.keyClick(window,Qt.Key_Left)
+  after(rail_start)
+ def rail_start():
+  rail=hero.findChild(QObject,'heroRail')
+  assert hero.property('selectedIndex')==0
+  before=float(rail.property('contentX'))
+  origin=float(rail.property('originX'))
+  print(json.dumps({'railFirstContentX':before,'railOriginX':origin}),flush=True)
+  assert abs(before-origin)<0.5,'First selection did not restore the beginning of the rail'
+  shot('08-retour-debut')
+  QTest.keyClick(window,Qt.Key_Left)
+  after(lambda:rail_extra_left(before))
+ def rail_extra_left(before):
+  rail=hero.findChild(QObject,'heroRail')
+  assert abs(float(rail.property('contentX'))-before)<0.5,'An extra Left shifted the rail'
   window.resize(1920,1080);after(large)
  def large():
   shot('05-1080p')
@@ -73,7 +94,7 @@ if args.captures:
  def no_resume():
   shot('06-sans-reprise')
   bad=[m for m in messages if any(s in m for s in ('ReferenceError','TypeError','Binding loop','Cannot assign','is not a type','Failed to create'))]
-  result={'qt':QT_VERSION_STR,'captures':6,'source':'actual Hero.qml + explicit PC snapshot','playTarget':requests[0], 'errors':bad,'devialetValidated':False}
+  result={'qt':QT_VERSION_STR,'captures':8,'source':'actual Hero.qml + explicit PC snapshot','playTarget':requests[0], 'railReturn':'first selection aligns with origin; extra Left does not move the rail','errors':bad,'devialetValidated':False}
   (args.captures/'verification.json').write_text(json.dumps(result,indent=2),encoding='utf-8')
   print(json.dumps(result),flush=True);app.exit(1 if bad else 0)
  QTimer.singleShot(1800,initial)

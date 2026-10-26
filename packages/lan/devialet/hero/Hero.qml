@@ -17,6 +17,7 @@ FocusScope {
     property bool muted: true
     property bool previewEnabled: true
     property bool detailOpen: false
+    property string previewState: "image"
     property string notice: ""
     property var resumeItems: row("reprendre")
     property var items: mode === "resume" && resumeItems.length ? resumeItems : (homeData.hero || [])
@@ -58,15 +59,28 @@ FocusScope {
         mode=value; selectedIndex=0; tabIndex=value === 'resume' ? 0 : 1; detailOpen=false;
     }
     function choose(index) { selectedIndex=Math.max(0,Math.min(items.length-1,index)); }
+    function alignRail() {
+        if(!rail) return;
+        rail.currentIndex=selectedIndex;
+        if(selectedIndex===0) rail.positionViewAtBeginning();
+        else rail.positionViewAtIndex(selectedIndex,ListView.Contain);
+    }
     function restartPreview() {
-        if(preview.item) preview.item.stop(); delay.stop();
+        if(preview.item) preview.item.stop(); delay.stop(); previewTimeout.stop();
+        previewState='image';
         if (previewEnabled && trailerId && !detailOpen) delay.restart();
     }
     function startPreview() {
         if (!trailerId || !previewEnabled || detailOpen) return;
         var url=trailerSources[trailerId];
-        if (url && preview.item) preview.item.play(url);
-        else trailerRequested(trailerId);
+        if (url && preview.item) { previewState='loading'; previewTimeout.restart(); preview.item.play(url); }
+        else { previewState='unavailable'; trailerRequested(trailerId); }
+    }
+    function observePreview(observation) {
+        if(observation.event==='error') { previewState='error'; previewTimeout.stop(); }
+        else if(observation.event==='preview' && observation.positionMs>400) { previewState='playing'; previewTimeout.stop(); }
+        else if(observation.event==='status' && observation.status===7) { previewState='ended'; previewTimeout.stop(); }
+        previewObserved(observation);
     }
     function activate() {
         if(zone==='tabs') selectMode(tabIndex===0 ? 'resume' : 'featured');
@@ -76,6 +90,8 @@ FocusScope {
         else if(selected && target(selected)) { if(preview.item) preview.item.stop(); playRequested(selected,target(selected)); }
     }
     onSelectedChanged: { notice=""; restartPreview(); }
+    onSelectedIndexChanged: Qt.callLater(alignRail)
+    onItemsChanged: Qt.callLater(alignRail)
     onTrailerSourcesChanged: { if(!videoReady) startPreview(); }
     onPreviewEnabledChanged: restartPreview()
     onDetailOpenChanged: { if(!detailOpen) restartPreview(); }
@@ -103,13 +119,14 @@ FocusScope {
         } else return;
         event.accepted=true;
     }
-    Timer { id: delay; interval: 1800; onTriggered: scene.startPreview() }
+    Timer { id: delay; interval: 900; onTriggered: scene.startPreview() }
+    Timer { id: previewTimeout; interval: 10000; onTriggered: { if(preview.item) preview.item.stop(); scene.previewState='error'; } }
     Rectangle { anchors.fill: parent; color: "#090a0d" }
     Item {
         id: backdrop; anchors.fill: parent
         Image { id: banner; objectName: "heroBanner"; width: 1280; height: 620; source: scene.art(scene.selected,'banner'); fillMode: Image.PreserveAspectCrop; verticalAlignment: Image.AlignTop; asynchronous: true }
         Loader { id: preview; width: 1280; height: 620; source: scene.previewEnabled ? "Trailer.qml" : ""; visible: scene.videoReady
-            onLoaded: { item.silent=Qt.binding(function(){return scene.muted;}); item.observed.connect(scene.previewObserved); scene.restartPreview(); }
+            onLoaded: { item.silent=Qt.binding(function(){return scene.muted;}); item.observed.connect(scene.observePreview); scene.restartPreview(); }
         }
         Rectangle { width: 1280; height: 620; gradient: Gradient { orientation: Gradient.Horizontal
             GradientStop { position: 0; color: "#eb090a0d" }
@@ -144,10 +161,15 @@ FocusScope {
         }
     }
     HeroButton { x: 1164; y: 406; width: 52; label: scene.muted ? "♪ ×" : "♪"; family: scene.family; backdrop: backdrop; sampleRect: Qt.rect(x,y,width,height); focused: scene.zone==='sound'; onActivated: { scene.zone='sound'; scene.muted=!scene.muted; } }
+    Text { x: 870; y: 472; width: 346; horizontalAlignment: Text.AlignRight; color: '#b9bac3'; font.family: scene.family; font.pixelSize: 16
+        visible: scene.previewEnabled && !scene.detailOpen
+        text: scene.previewState==='loading' ? 'Chargement de la bande-annonce…' : scene.previewState==='unavailable' || scene.previewState==='error' ? 'Bande-annonce indisponible' : ''
+    }
     Text { x: 64; y: 505; text: scene.mode==='resume' ? 'À reprendre' : 'À la une'; color: "#f5f5f7"; font.family: scene.family; font.pixelSize: 24; font.weight: Font.DemiBold }
     ListView {
         id: rail; objectName: "heroRail"; x: 56; y: 545; width: 1224; height: 175; orientation: ListView.Horizontal; spacing: 18; clip: true
-        model: scene.items; currentIndex: scene.selectedIndex; highlightRangeMode: ListView.ApplyRange; preferredHighlightBegin: 8; preferredHighlightEnd: 960
+        model: scene.items; currentIndex: scene.selectedIndex; highlightRangeMode: ListView.NoHighlightRange
+        keyNavigationEnabled: false; boundsBehavior: Flickable.StopAtBounds
         delegate: Item {
             width: 222; height: 164
             Rectangle { x: 0; y: 0; width: 222; height: 127; radius: 12; color: "transparent"; border.width: scene.selectedIndex===index ? 2 : 0; border.color: scene.zone==='rail' ? 'white' : '#70ffffff' }

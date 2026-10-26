@@ -21,7 +21,7 @@ Le frontend n’invente ni classement ni nouvelle sélection aléatoire. Il n’
 pas de carrousel automatique qui déplace le choix pendant la navigation.
 
 Les previews sont des **bandes-annonces**, jamais des extraits d’épisode. Après
-1,8 seconde de sélection, le composant consomme une source correspondant à
+0,9 seconde de sélection (réduit après le retour du 27 octobre), le composant consomme une source correspondant à
 l’identifiant de bande-annonce du DTO. Le visuel reste jusqu’à ce que le lecteur
 annonce vidéo présente, lecture active et position supérieure à 400 ms. Changer
 d’animé arrête et vide la source précédente. Une absence de source, une erreur
@@ -60,6 +60,33 @@ assets explicitement fournis. Qt Windows 5.15.2 : six captures, modes reprise/
 absence de reprise. La cible de reprise 13/VF est vérifiée sans lancer un flux.
 Le contrôle QML ne relève ni erreur de référence/type ni boucle de bindings.
 Captures et mesures : dossier [`2026-10-26-atlas-tv-hero/`](2026-10-26-atlas-tv-hero/).
+
+### Corrections après revue TV du 27 octobre
+
+Walson trouve la base « belle » / « pas mal », avec de fortes améliorations
+visuelles encore attendues. Il signale les previews longues/absentes et le retour
+de droite à gauche nécessitant un appui supplémentaire pour recaler la liste.
+
+Le banc reproduit le second défaut : sélection 0 mais `contentX=198`,
+`originX=0`. La plage de suivi automatique du ListView est retirée ; le contrôle
+synchronise explicitement index et position, avec alignement au début pour la
+première carte et maintien en vue des suivantes. La navigation clavier propre
+au ListView est désactivée, puisque le FocusScope la possède. Le contrôle ajouté
+parcourt jusqu’à la dernière carte puis revient à la première : `contentX=0`,
+et un appui Gauche supplémentaire ne le modifie pas. Huit captures et les
+contrôles antérieurs passent ; revue des captures du retour au début effectuée.
+Cette correction n’est pas encore confirmée physiquement sur la TV.
+
+La preview de Re:ZERO était la seule source fournie au banc. Les autres œuvres
+signalaient `trailerRequested` sans résolution backend raccordée : l’absence de
+vidéo n’était pas seulement une lenteur. Le délai est réduit de 1,8 à 0,9 s,
+avec états « Chargement de la bande-annonce… » et « Bande-annonce indisponible ».
+Un chargement sans observation de lecture est borné à dix secondes, puis le
+visuel reste affiché. Les nouvelles branches de statut ne sont pas validées par
+une lecture vidéo dans le banc Windows, qui désactive toujours QtMultimedia.
+Le raccordement effectif de toutes les bandes-annonces reste du travail backend,
+et cette priorité lui a été transmise. La régression de défilement et ses mesures
+sont conservées dans `2026-10-27-atlas-tv-hero-fixes/`.
 
 Le plugin multimédia du runtime PyQt Windows manque de sa dépendance
 `Qt5MultimediaQuick.dll`. Le banc désactive donc explicitement le Loader vidéo :
