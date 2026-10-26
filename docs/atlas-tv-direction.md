@@ -28,10 +28,13 @@ utilisé sur PC : choisir, reprendre et lancer rapidement un épisode avec la
 télécommande. Le relais permanent reste prioritairement hébergé sur le Devialet,
 qui demeure au logement lorsque le PC est emporté.
 
-Une interface Atlas TV n'est pas encore livrée. Une mire H264 muette de douze
-secondes a été lue le 22 octobre et Walson a confirmé l'image. Cela ne valide
-pas encore le son, les flux des animés, les sous-titres ni la distribution
-permanente d'une application TV.
+Une interface Atlas TV n'est pas encore livrée. Après la mire H264 muette du
+22 octobre, un [vrai épisode de To Your Eternity en VOSTFR](research/2026-10-26-atlas-tv-real-anime-playback.md)
+a été résolu sur le serveur et lu directement sur le Devialet le 26 octobre.
+Walson confirme image, son, pause/reprise, avance et recul. Le diagnostic ne
+dessinait pas de barre de progression : elle reste à construire avec le lecteur.
+Cet essai ne valide ni tous les flux et pistes de sous-titres, ni le lancement
+complet PC éteint, ni la distribution permanente d'une application TV.
 
 ## Séparation mise en place
 
