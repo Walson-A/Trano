@@ -1,5 +1,19 @@
 # Atlas sur la télévision : base réutilisable et premier parcours
 
+## Cadrage du 26 octobre 2026
+
+Le produit s'appelle **Atlas TV**. Les animés ouvrent le premier parcours ;
+l'interface doit pouvoir accueillir ensuite films, séries, vidéos YouTube et
+musique. Avant de construire l'interface, Walson demande une étude de références :
+[captures, analyse et hypothèses de direction](research/2026-10-26-atlas-tv-streaming-references.md).
+Cette étude ne valide ni une interface finale ni le lancement depuis téléphone.
+
+Le relais permanent reste un objectif non résolu : les essais du 23 octobre
+montrent que Netflix détruit la session QML, y compris sans fenêtre et lors d'une
+ouverture depuis son icône. Voir [le diagnostic](research/2026-10-23-devialet-netflix-background.md).
+Une application Atlas TV au premier plan ne garantit donc pas un relais actif
+pendant l'utilisation des autres applications.
+
 ## Demande de Walson, 21 octobre 2026
 
 L'application du Player ne doit pas être un relais à usage unique. Elle doit
