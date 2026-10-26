@@ -1,0 +1,1092 @@
+{
+  "youtubeId": "0S0ty44JPao",
+  "title": "To Your Eternity",
+  "format": "18",
+  "height": 360,
+  "durationMs": 60000,
+  "humanConfirmation": {
+    "image": true,
+    "audio": true,
+    "scope": "direct CDN full-screen test"
+  },
+  "direct": [
+    {
+      "event": "started",
+      "mode": "silent_video"
+    },
+    {
+      "event": "video_status",
+      "status": 2
+    },
+    {
+      "event": "video_status",
+      "status": 4
+    },
+    {
+      "event": "video_status",
+      "status": 2
+    },
+    {
+      "event": "video_status",
+      "status": 6
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 480,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 1480,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 2479,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 3480,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 4480,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 5480,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 6480,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 7480,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 8480,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 9480,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 10481,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 11480,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 12481,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 13481,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 14480,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 15481,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 16481,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 17480,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 18481,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 19480,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 20481,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 21481,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 22481,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 23480,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 24481,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 25480,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 26481,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 27481,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 28481,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 29481,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 30481,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 31480,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 32481,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 33481,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 34481,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 35481,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 36480,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 37481,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 38481,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_error",
+      "code": 1
+    },
+    {
+      "event": "video_status",
+      "status": 8
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 0,
+      "durationMs": 0,
+      "playbackState": 0,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 0,
+      "durationMs": 0,
+      "playbackState": 0,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 0,
+      "durationMs": 0,
+      "playbackState": 0,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 0,
+      "durationMs": 0,
+      "playbackState": 0,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 0,
+      "durationMs": 0,
+      "playbackState": 0,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 0,
+      "durationMs": 0,
+      "playbackState": 0,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 0,
+      "durationMs": 0,
+      "playbackState": 0,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 0,
+      "durationMs": 0,
+      "playbackState": 0,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 0,
+      "durationMs": 0,
+      "playbackState": 0,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 0,
+      "durationMs": 0,
+      "playbackState": 0,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 0,
+      "durationMs": 0,
+      "playbackState": 0,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 0,
+      "durationMs": 0,
+      "playbackState": 0,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 0,
+      "durationMs": 0,
+      "playbackState": 0,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 0,
+      "durationMs": 0,
+      "playbackState": 0,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 0,
+      "durationMs": 0,
+      "playbackState": 0,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 0,
+      "durationMs": 0,
+      "playbackState": 0,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 0,
+      "durationMs": 0,
+      "playbackState": 0,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 0,
+      "durationMs": 0,
+      "playbackState": 0,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 0,
+      "durationMs": 0,
+      "playbackState": 0,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 0,
+      "durationMs": 0,
+      "playbackState": 0,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 0,
+      "durationMs": 0,
+      "playbackState": 0,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 0,
+      "durationMs": 0,
+      "playbackState": 0,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 0,
+      "durationMs": 0,
+      "playbackState": 0,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 0,
+      "durationMs": 0,
+      "playbackState": 0,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 0,
+      "durationMs": 0,
+      "playbackState": 0,
+      "hasVideo": true,
+      "hasAudio": true
+    }
+  ],
+  "cachedLanDiagnostic": [
+    {
+      "event": "started",
+      "mode": "silent_video"
+    },
+    {
+      "event": "video_status",
+      "status": 2
+    },
+    {
+      "event": "video_status",
+      "status": 4
+    },
+    {
+      "event": "video_status",
+      "status": 2
+    },
+    {
+      "event": "video_status",
+      "status": 6
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 888,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 1889,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 2888,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 3889,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 4888,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 5888,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 6888,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 7889,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 8889,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 9888,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 10888,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 11888,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 12889,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 13888,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 14888,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 15889,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 16889,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 17888,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 18888,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 19889,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 20888,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 21888,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 22888,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 23889,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 24888,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 26888,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 25888,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 27888,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 28888,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 29888,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 30888,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 31889,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 32888,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 33889,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 34889,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 35889,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 36888,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 37888,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 38888,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 39889,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 40889,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 41888,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 42888,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 43889,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 44888,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 45888,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 46889,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 47889,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 48888,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 49888,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 50889,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 51890,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 52889,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 53889,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 54890,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 55888,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 56890,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 57889,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 58889,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 59889,
+      "durationMs": 60000,
+      "playbackState": 1,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_status",
+      "status": 7
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 60000,
+      "durationMs": 60000,
+      "playbackState": 0,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 60000,
+      "durationMs": 60000,
+      "playbackState": 0,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 60000,
+      "durationMs": 60000,
+      "playbackState": 0,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "video_tick",
+      "positionMs": 60000,
+      "durationMs": 60000,
+      "playbackState": 0,
+      "hasVideo": true,
+      "hasAudio": true
+    }
+  ]
+}

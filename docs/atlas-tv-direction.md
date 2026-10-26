@@ -36,6 +36,12 @@ dessinait pas de barre de progression : elle reste à construire avec le lecteur
 Cet essai ne valide ni tous les flux et pistes de sous-titres, ni le lancement
 complet PC éteint, ni la distribution permanente d'une application TV.
 
+Une [vraie bande-annonce YouTube](research/2026-10-26-atlas-tv-trailer-playback.md)
+est également visible et audible sur le lecteur QML natif. Le fichier progressif
+360p a été lu intégralement depuis un serveur LAN de diagnostic ; la diffusion
+directe CDN a échoué en cours de lecture. Transport stable depuis le serveur
+permanent, HD et intégration au héros restent à vérifier.
+
 ## Séparation mise en place
 
 Le composant packages/lan/devialet/RelayAgent.qml est sans interface : il porte
