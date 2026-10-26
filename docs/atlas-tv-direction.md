@@ -8,6 +8,12 @@ musique. Avant de construire l'interface, Walson demande une étude de référen
 [captures, analyse et hypothèses de direction](research/2026-10-26-atlas-tv-streaming-references.md).
 Cette étude ne valide ni une interface finale ni le lancement depuis téléphone.
 
+Walson privilégie Apple TV pour le rendu et Netflix pour la sélection, puis demande
+un essai de carte dans l'esprit Red Bull TV. Une [scène QML et l'étude des
+composants de projets Freebox](research/2026-10-26-atlas-tv-qml-design-scene.md)
+permettent de comparer le verre translucide avec et sans flou. Ce banc n'est pas
+le catalogue Atlas TV ni une preuve d'installation permanente.
+
 Le relais permanent reste un objectif non résolu : les essais du 23 octobre
 montrent que Netflix détruit la session QML, y compris sans fenêtre et lors d'une
 ouverture depuis son icône. Voir [le diagnostic](research/2026-10-23-devialet-netflix-background.md).

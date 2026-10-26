@@ -1,5 +1,13 @@
 # UI/UX & Design System
 
+## Expérimentation Atlas TV — 26 octobre 2026
+
+Le design TV est étudié séparément du tableau de bord domotique décrit ci-dessous.
+La [scène QML](research/2026-10-26-atlas-tv-qml-design-scene.md) compare une carte
+paysage, un focus blanc et un panneau translucide avec flou optionnel. Elle suit
+la direction demandée Apple TV / Netflix, avec une étude Red Bull TV, sans
+constituer un design final validé ni imposer ces composants aux écrans existants.
+
 Interface premium, minimaliste, optimisée pour tablettes tactiles et écrans OLED.
 
 ## 1. Palette de Couleurs

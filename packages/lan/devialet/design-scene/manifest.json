@@ -1,0 +1,7 @@
+{
+  "name": "Atlas TV - scene visuelle",
+  "identifier": "fr.atlas.tv.designscene",
+  "description": "Scene QML de demonstration, sans lecture ni compte",
+  "capabilities": { "net_wan": "required" },
+  "entryPoints": { "main": { "file": "player.qml", "default": true } }
+}
