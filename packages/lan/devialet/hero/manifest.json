@@ -1,0 +1,1 @@
+{"name":"Atlas TV — héros","identifier":"fr.atlas.tv.hero","description":"Banc du héros Atlas PC adapté au Player","capabilities":{"net_wan":"required","net_lan":"required"},"entryPoints":{"main":{"file":"player.qml","default":true}}}

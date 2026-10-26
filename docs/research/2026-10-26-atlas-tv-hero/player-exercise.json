@@ -1,0 +1,221 @@
+{
+  "source": "explicit PC snapshot, not live catalogue",
+  "events": [
+    {
+      "event": "selection",
+      "anilist_id": 114535
+    },
+    {
+      "event": "trailer_requested",
+      "id": "0S0ty44JPao"
+    },
+    {
+      "event": "selection",
+      "anilist_id": 114535
+    },
+    {
+      "event": "trailer_requested",
+      "id": "0S0ty44JPao"
+    },
+    {
+      "event": "selection",
+      "anilist_id": 114535
+    },
+    {
+      "event": "selection",
+      "anilist_id": 21355
+    },
+    {
+      "event": "status",
+      "status": 2
+    },
+    {
+      "event": "status",
+      "status": 4
+    },
+    {
+      "event": "status",
+      "status": 2
+    },
+    {
+      "event": "status",
+      "status": 6
+    },
+    {
+      "event": "preview",
+      "positionMs": 1999,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "preview",
+      "positionMs": 3898,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "preview",
+      "positionMs": 5999,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "preview",
+      "positionMs": 7899,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "preview",
+      "positionMs": 9899,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "preview",
+      "positionMs": 11999,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "preview",
+      "positionMs": 13898,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "status",
+      "status": 1
+    },
+    {
+      "event": "selection",
+      "anilist_id": 114535
+    },
+    {
+      "event": "trailer_requested",
+      "id": "0S0ty44JPao"
+    },
+    {
+      "event": "selection",
+      "anilist_id": 21355
+    },
+    {
+      "event": "status",
+      "status": 2
+    },
+    {
+      "event": "status",
+      "status": 4
+    },
+    {
+      "event": "status",
+      "status": 2
+    },
+    {
+      "event": "status",
+      "status": 6
+    },
+    {
+      "event": "preview",
+      "positionMs": 2016,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "preview",
+      "positionMs": 4005,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "preview",
+      "positionMs": 6015,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "preview",
+      "positionMs": 8005,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "preview",
+      "positionMs": 10016,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "preview",
+      "positionMs": 12006,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "preview",
+      "positionMs": 14006,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "preview",
+      "positionMs": 16006,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "preview",
+      "positionMs": 18006,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "preview",
+      "positionMs": 20006,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "preview",
+      "positionMs": 22006,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "preview",
+      "positionMs": 24007,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "preview",
+      "positionMs": 26005,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "preview",
+      "positionMs": 28017,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "preview",
+      "positionMs": 30007,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "preview",
+      "positionMs": 32005,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "preview",
+      "positionMs": 34016,
+      "hasVideo": true,
+      "hasAudio": true
+    }
+  ]
+}

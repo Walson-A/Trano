@@ -2,6 +2,11 @@
 
 ## Cadrage du 26 octobre 2026
 
+Travail courant : [héros QML adapté de l’écran PC](research/2026-10-26-atlas-tv-hero.md),
+limité à cette composition et à sa sélection. Les premiers brouillons d’accueil
+ne sont pas la base retenue. Les captures et le test de cycle des previews
+ne constituent pas une validation esthétique de Walson.
+
 Le produit s'appelle **Atlas TV**. Les animés ouvrent le premier parcours ;
 l'interface doit pouvoir accueillir ensuite films, séries, vidéos YouTube et
 musique. Avant de construire l'interface, Walson demande une étude de références :

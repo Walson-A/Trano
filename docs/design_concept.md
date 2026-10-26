@@ -8,6 +8,12 @@ paysage, un focus blanc et un panneau translucide avec flou optionnel. Elle suit
 la direction demandée Apple TV / Netflix, avec une étude Red Bull TV, sans
 constituer un design final validé ni imposer ces composants aux écrans existants.
 
+Le [héros TV adapté du PC](research/2026-10-26-atlas-tv-hero.md) conserve ensuite
+la composition réelle de l’écran animés, avec la sélection d’une liste pilotant
+le grand visuel. Les modes À reprendre/À la une, le focus et la preview native
+sont séparés du transport backend. Ce prototype est en revue ; ses captures ne
+valident ni un catalogue vivant ni la direction finale de Walson.
+
 Interface premium, minimaliste, optimisée pour tablettes tactiles et écrans OLED.
 
 ## 1. Palette de Couleurs
