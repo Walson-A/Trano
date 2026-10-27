@@ -1,0 +1,181 @@
+{
+  "source": "explicit PC snapshot, not live catalogue",
+  "events": [
+    {
+      "event": "selection",
+      "anilist_id": 114535
+    },
+    {
+      "event": "trailer_requested",
+      "id": "0S0ty44JPao"
+    },
+    {
+      "event": "selection",
+      "anilist_id": 114535
+    },
+    {
+      "event": "selection",
+      "anilist_id": 114535
+    },
+    {
+      "event": "selection",
+      "anilist_id": 21355
+    },
+    {
+      "event": "status",
+      "status": 2
+    },
+    {
+      "event": "status",
+      "status": 4
+    },
+    {
+      "event": "status",
+      "status": 2
+    },
+    {
+      "event": "status",
+      "status": 6
+    },
+    {
+      "event": "preview",
+      "positionMs": 2007,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "preview",
+      "positionMs": 4006,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "preview",
+      "positionMs": 6006,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "preview",
+      "positionMs": 8007,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "preview",
+      "positionMs": 10007,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "preview",
+      "positionMs": 12007,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "preview",
+      "positionMs": 14007,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "preview",
+      "positionMs": 16007,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "preview",
+      "positionMs": 18007,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "preview",
+      "positionMs": 20007,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "preview",
+      "positionMs": 22007,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "preview",
+      "positionMs": 24007,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "preview",
+      "positionMs": 26006,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "preview",
+      "positionMs": 28107,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "preview",
+      "positionMs": 30007,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "preview",
+      "positionMs": 32006,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "preview",
+      "positionMs": 34107,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "preview",
+      "positionMs": 36007,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "preview",
+      "positionMs": 38007,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "preview",
+      "positionMs": 40007,
+      "hasVideo": true,
+      "hasAudio": true
+    },
+    {
+      "event": "status",
+      "status": 1
+    },
+    {
+      "event": "selection",
+      "anilist_id": 437
+    },
+    {
+      "event": "trailer_requested",
+      "id": "UXQraSkOOGs"
+    },
+    {
+      "event": "selection",
+      "anilist_id": 9756
+    },
+    {
+      "event": "trailer_requested",
+      "id": "6CTHwEZK2JA"
+    }
+  ]
+}

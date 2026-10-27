@@ -17,8 +17,12 @@ Application {
         Component.onCompleted: {
             var req=new XMLHttpRequest();
             req.onreadystatechange=function() { if(req.readyState===XMLHttpRequest.DONE && req.status===200) {
-                var data=JSON.parse(req.responseText); hero.reportUrl=data.reportUrl || ''; hero.homeData=data.home; hero.artworkMap=data.artwork || {}; hero.trailerSources=data.trailers || {};
+                var data=JSON.parse(req.responseText); hero.reportUrl=data.reportUrl || ''; hero.reducedMotion=!!data.reducedMotion; hero.homeData=data.home; hero.artworkMap=data.artwork || {}; hero.trailerSources=data.trailers || {};
                 hero.selectMode(hero.resumeItems.length ? 'resume' : 'featured');
+                if(data.initialAnime) {
+                    var cards=hero.homeData.hero || [];
+                    for(var i=0;i<cards.length;i++) if(cards[i].anilist_id===data.initialAnime) { hero.selectMode('featured'); hero.choose(i); break; }
+                }
             } };
             req.open('GET',Qt.resolvedUrl('session.json')); req.send();
         }

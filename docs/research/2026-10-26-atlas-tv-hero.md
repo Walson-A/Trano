@@ -2,6 +2,11 @@
 
 ## Contrat limité
 
+La [passe de composition et de mouvement du 27 octobre](2026-10-27-atlas-tv-focus-motion.md)
+complète ce socle : cartes avec élévation/agrandissement, fondu du héros,
+translation de rangée et contrôle des mouvements réduits. Elle conserve les
+contrats de données ci-dessous, sans validation esthétique automatique.
+
 Walson demande de repartir du héros animé d’Atlas PC, plutôt que de poursuivre
 les premiers accueils TV redessinés. La référence lue et examinée est le vrai
 `Hero.tsx` avec `BandeAnnonce.tsx`, `animes.css` et le banc `mainAnimes.tsx`.

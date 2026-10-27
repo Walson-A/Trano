@@ -4,6 +4,7 @@ Window {
     width: 1280; height: 720; visible: true; color: "#090a0d"; title: "Atlas TV — héros PC adapté"
     Hero { objectName: "atlasHero"; scale: Math.min(parent.width/1280,parent.height/720); transformOrigin: Item.TopLeft
         homeData: benchmarkHome; artworkMap: benchmarkArtwork; family: benchmarkFamily; trailerSources: benchmarkTrailers; previewEnabled: benchmarkPreview
+        reducedMotion: benchmarkReducedMotion
         onDismissed: Qt.quit()
     }
 }

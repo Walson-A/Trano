@@ -7,6 +7,11 @@ limité à cette composition et à sa sélection. Les premiers brouillons d’ac
 ne sont pas la base retenue. Les captures et le test de cycle des previews
 ne constituent pas une validation esthétique de Walson.
 
+Itération suivante : [composition et mouvement Apple TV / Netflix](research/2026-10-27-atlas-tv-focus-motion.md),
+sur le même héros, avec focus de carte, marges et transitions interrompables.
+L’aperçu animé du vrai QML complète les images fixes ; aucun niveau de fluidité
+TV ou qualité finale n’est déduit de sa seule existence.
+
 Le produit s'appelle **Atlas TV**. Les animés ouvrent le premier parcours ;
 l'interface doit pouvoir accueillir ensuite films, séries, vidéos YouTube et
 musique. Avant de construire l'interface, Walson demande une étude de références :

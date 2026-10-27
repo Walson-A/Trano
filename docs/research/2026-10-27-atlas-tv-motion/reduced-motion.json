@@ -1,0 +1,17 @@
+{
+  "qt": "5.15.2",
+  "captures": 8,
+  "source": "actual Hero.qml + explicit PC snapshot",
+  "playTarget": {
+    "episode": 13,
+    "franime_titre": "Fumetsu no Anata e",
+    "numero": 13,
+    "saison": 1,
+    "vf": true
+  },
+  "railReturn": "first selection aligns with origin; extra Left does not move the rail",
+  "reducedMotion": true,
+  "focusMotion": [],
+  "errors": [],
+  "devialetValidated": false
+}

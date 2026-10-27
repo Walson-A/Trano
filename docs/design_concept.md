@@ -14,6 +14,13 @@ le grand visuel. Les modes À reprendre/À la une, le focus et la preview native
 sont séparés du transport backend. Ce prototype est en revue ; ses captures ne
 valident ni un catalogue vivant ni la direction finale de Walson.
 
+La [passe de mouvement du 27 octobre](research/2026-10-27-atlas-tv-focus-motion.md)
+approfondit Apple TV/Netflix : carte ciblée agrandie et surélevée, translation
+interrompable de la rangée, fondu court du héros, marges pour le focus et icônes
+PC réutilisées. Les captures, un aperçu animé et les contrôles d’interruption/
+mouvements réduits sont conservés ; la fluidité perçue sur le Devialet reste
+à juger avec Walson. Les durées Atlas ne sont pas attribuées à Apple ou Netflix.
+
 Interface premium, minimaliste, optimisée pour tablettes tactiles et écrans OLED.
 
 ## 1. Palette de Couleurs

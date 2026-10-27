@@ -1,3 +1,6 @@
 Hero Hero.qml
 HeroButton HeroButton.qml
 Trailer Trailer.qml
+FocusCard FocusCard.qml
+HeroArtwork HeroArtwork.qml
+Icon Icon.qml

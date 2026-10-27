@@ -15,11 +15,13 @@ def main():
  p.add_argument('--evidence',type=pathlib.Path,required=True);p.add_argument('--launch',action='store_true')
  p.add_argument('--port',type=int,default=3013);p.add_argument('--seconds',type=int,default=180)
  p.add_argument('--exercise',action='store_true',help='Switch Re:ZERO -> first title -> Re:ZERO automatically to observe preview lifecycle')
+ p.add_argument('--initial-anime',type=int,help='Open an explicit anime from the benchmark hero list')
  args=p.parse_args()
  if not args.launch:p.error('--launch is required; this replaces the current Player application')
  if not 1024<=args.port<=65535 or not 30<=args.seconds<=300:p.error('Invalid port or trial duration')
  source=pathlib.Path(__file__).resolve().parent.parent/'devialet/hero'
- files={name:(source/name).read_bytes() for name in ('Hero.qml','HeroButton.qml','Trailer.qml','player.qml','manifest.json','qmldir')}
+ files={name:(source/name).read_bytes() for name in ('Hero.qml','HeroButton.qml','Trailer.qml','FocusCard.qml','HeroArtwork.qml','Icon.qml','Motion.js','player.qml','manifest.json','qmldir')}
+ for name in ('play','info','volume-2','volume-x'): files['icons/'+name+'.svg']=(source/'icons'/(name+'.svg')).read_bytes()
  files['regular.ttf']=args.regular.read_bytes();files['bold.ttf']=args.bold.read_bytes()
  snapshot=json.loads(args.snapshot.read_text(encoding='utf-8-sig'))
  nonce=secrets.token_urlsafe(24);base=f'http://{args.bind}:{args.port}/{nonce}/'
@@ -33,7 +35,7 @@ def main():
   path=pathlib.Path(file)
   if not 0<path.stat().st_size<=25*1024*1024:p.error('Trailer exceeds 25 MiB')
   name=identifier+'.mp4';files[name]=path.read_bytes();trailers[identifier]=base+name
- files['session.json']=json.dumps({'home':snapshot,'artwork':artwork,'trailers':trailers,'reportUrl':base+'report'}).encode()
+ files['session.json']=json.dumps({'home':snapshot,'artwork':artwork,'trailers':trailers,'reportUrl':base+'report','initialAnime':args.initial_anime}).encode()
  def save():
   args.evidence.parent.mkdir(parents=True,exist_ok=True)
   args.evidence.write_text(json.dumps({'source':'explicit PC snapshot, not live catalogue','events':events},indent=2),encoding='utf-8')
