@@ -1,0 +1,9 @@
+{
+  "events": [],
+  "sdkOutput": [
+    "QML debugging is enabled. Only use this in a safe environment.\n",
+    "\u001b[1;34m\u258a\u001b[0m [0.032] GET 200 <url> 205 \u001b[0m\n\u001b[1;34m\u258a\u001b[0m [0.041] GET 200 <url> 1575 \u001b[0m\n\u001b[1;34m\u258a\u001b[0m [0.043] Settings load done\u001b[0m\n\u001b[1;34m\u258a\u001b[0m [0.054] GET 404 <url> 330 \u001b[0m\n\u001b[1;33m\u258a\u001b[0m [0.054] Root component error\u001b[0m\n\u001b[1;33m\u258a\u001b[0m [0.054] <url> module \"fbx.media\" is not installed\u001b[0m\n",
+    "UnicodeEncodeError",
+    "EGL: Cannot guess display native platform, guessing wayland\n"
+  ]
+}

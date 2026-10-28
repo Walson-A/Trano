@@ -2,6 +2,12 @@
 
 ## Cadrage du 26 octobre 2026
 
+Direction actualisée le 28 octobre après essai : [plusieurs rangées sous le héros](research/2026-10-28-atlas-tv-rows-and-audio.md),
+avec les vraies catégories du catalogue et la mémorisation de chaque ligne.
+Les onglets « À reprendre / À la une » sont retirés de cette itération.
+Les images et bandes-annonces du service sont confirmées par Walson ;
+la sourdine native et les épisodes VF restent des défauts ouverts.
+
 Raccordement du 28 octobre : [hôte QML du contrat serveur](research/2026-10-28-atlas-tv-live-host.md),
 sessions limitées, catalogue, bandes-annonces et lecteur avec temps/barre.
 Le banc reste distinct. Le paquet est publié et Walson confirme le héros avec

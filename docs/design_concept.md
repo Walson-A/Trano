@@ -1,5 +1,15 @@
 # UI/UX & Design System
 
+## Atlas TV — rangées demandées après essai du 28 octobre
+
+L'[accueil à rangées](research/2026-10-28-atlas-tv-rows-and-audio.md) remplace
+les onglets supérieurs : reprise, sélection à la une et catégories réelles.
+Le héros suit la carte active ; la position de chaque ligne est mémorisée.
+La ligne suivante est perceptible dès l'accueil. Cartes, verre et courbes
+existants sont conservés ; captures et navigation sont revues dans le banc.
+Images/previews du service ont une confirmation humaine, la nouvelle disposition
+attend encore son essai natif. La sourdine reste non fiable malgré son libellé clair.
+
 ## Atlas TV — raccordement du 28 octobre 2026
 
 L'[hôte serveur](research/2026-10-28-atlas-tv-live-host.md) conserve la composition

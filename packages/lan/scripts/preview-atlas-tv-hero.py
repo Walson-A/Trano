@@ -55,9 +55,9 @@ if args.captures:
   shot('01-reprendre')
   QTest.keyClick(window,Qt.Key_Return)
   assert requests and requests[0]['numero']==13 and requests[0]['vf'] is True, 'Resume action failed: '+str(requests)
-  QTest.keyClick(window,Qt.Key_Up);QTest.keyClick(window,Qt.Key_Right);QTest.keyClick(window,Qt.Key_Return)
+  QTest.keyClick(window,Qt.Key_Down);QTest.keyClick(window,Qt.Key_Down)
   assert hero.property('mode')=='featured'
-  QTest.keyClick(window,Qt.Key_Down);QTest.keyClick(window,Qt.Key_Down);QTest.keyClick(window,Qt.Key_Right)
+  QTest.keyClick(window,Qt.Key_Right)
   after(selected)
  def selected():
   assert hero.property('selectedIndex')==1
@@ -96,7 +96,7 @@ if args.captures:
   assert abs(visual('heroCard1').property('surfaceScale')-1.07)<0.001
   shot('motion/04-settled');selected_detail()
  def selected_detail():
-  QTest.keyClick(window,Qt.Key_Up);QTest.keyClick(window,Qt.Key_Right);QTest.keyClick(window,Qt.Key_Return)
+  QTest.keyClick(window,Qt.Key_Escape);QTest.keyClick(window,Qt.Key_Right);QTest.keyClick(window,Qt.Key_Return)
   assert hero.property('detailOpen')
   after(detail)
  def detail():
@@ -112,13 +112,13 @@ if args.captures:
   QTest.keyClick(window,Qt.Key_Right);QTest.keyClick(window,Qt.Key_Right)
   after(rail_end)
  def rail_end():
-  rail=hero.findChild(QObject,'heroRail')
+  rail=visual('heroRail')
   assert hero.property('selectedIndex')==len(snapshot['hero'])-1
   shot('07-fin-liste')
   for _ in range(len(snapshot['hero'])-1):QTest.keyClick(window,Qt.Key_Left)
   after(rail_start)
  def rail_start():
-  rail=hero.findChild(QObject,'heroRail')
+  rail=visual('heroRail')
   assert hero.property('selectedIndex')==0
   before=float(rail.property('contentX'))
   origin=float(rail.property('originX'))
@@ -128,22 +128,44 @@ if args.captures:
   QTest.keyClick(window,Qt.Key_Left)
   after(lambda:rail_extra_left(before))
  def rail_extra_left(before):
-  rail=hero.findChild(QObject,'heroRail')
+  rail=visual('heroRail')
   assert abs(float(rail.property('contentX'))-before)<0.5,'An extra Left shifted the rail'
+  QTest.keyClick(window,Qt.Key_Down);after(next_row)
+ def next_row():
+  assert hero.property('selectedRow')==2
+  shot('09-plusieurs-lignes')
+  QTest.keyClick(window,Qt.Key_Down)
+  for _ in range(3):QTest.keyClick(window,Qt.Key_Right)
+  assert hero.property('selectedIndex')==3
+  QTest.keyClick(window,Qt.Key_Up);QTest.keyClick(window,Qt.Key_Up)
+  assert hero.property('selectedRow')==1 and hero.property('selectedIndex')==0
+  QTest.keyClick(window,Qt.Key_Down);QTest.keyClick(window,Qt.Key_Down)
+  assert hero.property('selectedRow')==3 and hero.property('selectedIndex')==3,'Each row must remember its position'
+  after(row_memory)
+ def row_memory():
+  shot('10-memoire-ligne')
+  rows=hero.property('rows').toVariant()
+  assert rows[0]['id']=='reprendre' and rows[1]['id']=='featured'
+  assert [r['id'] for r in rows[2:]]==[r['id'] for r in snapshot['rangees'] if r['id']!='reprendre' and r['cartes']]
+  for _ in range(len(rows)+1):QTest.keyClick(window,Qt.Key_Down)
+  assert hero.property('selectedRow')==len(rows)-1
+  for _ in range(len(rows)):QTest.keyClick(window,Qt.Key_Up)
+  assert hero.property('selectedRow')==0 and hero.property('zone')=='actions'
+  hero.selectMode('featured');hero.setProperty('zone','rail')
   window.resize(1920,1080);after(large)
  def large():
   shot('05-1080p')
   without_resume=json.loads(json.dumps(snapshot));without_resume['rangees']=[r for r in without_resume['rangees'] if r['id']!='reprendre']
   hero.setProperty('homeData',without_resume);hero.setProperty('selectedIndex',0)
-  hero.setProperty('mode','featured');after(no_resume)
+  hero.selectMode('featured');after(no_resume)
  def no_resume():
   shot('06-sans-reprise')
   bad=[m for m in messages if any(s in m for s in ('ReferenceError','TypeError','Binding loop','Cannot assign','Unable to assign','is not a type','Failed to create'))]
-  result={'qt':QT_VERSION_STR,'captures':8,'source':'actual Hero.qml + explicit PC snapshot','playTarget':requests[0], 'railReturn':'first selection aligns with origin; extra Left does not move the rail','reducedMotion':args.reduced_motion,'focusMotion':motion_samples,'errors':bad,'devialetValidated':False}
+  result={'qt':QT_VERSION_STR,'captures':10,'source':'actual Hero.qml + explicit PC snapshot','playTarget':requests[0], 'railReturn':'first selection aligns with origin; extra Left does not move the rail','rows':'real catalogue order, each row remembers horizontal position, vertical bounds and return to hero checked','reducedMotion':args.reduced_motion,'focusMotion':motion_samples,'errors':bad,'devialetValidated':False}
   (args.captures/'verification.json').write_text(json.dumps(result,indent=2),encoding='utf-8')
   print(json.dumps(result),flush=True)
   if args.motion_export and not bad:
-   window.resize(960,540);hero.setProperty('homeData',snapshot);hero.setProperty('mode','featured');hero.setProperty('selectedIndex',0);hero.setProperty('zone','rail')
+   window.resize(960,540);hero.setProperty('homeData',snapshot);hero.selectMode('featured');hero.setProperty('selectedIndex',0);hero.setProperty('zone','rail')
    QTimer.singleShot(600,record_motion)
   else:app.exit(1 if bad else 0)
  frames=[];frame_times=[];record_start=[0];next_event=[0]
