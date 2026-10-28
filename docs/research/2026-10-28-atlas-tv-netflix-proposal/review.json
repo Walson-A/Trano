@@ -1,0 +1,28 @@
+{
+  "states": [
+    "video",
+    "hud",
+    "focus",
+    "pause",
+    "timeline",
+    "quality",
+    "quality-original",
+    "language",
+    "source",
+    "episodes",
+    "seasons",
+    "loading",
+    "error"
+  ],
+  "resolution": [
+    1280,
+    720
+  ],
+  "qmlErrors": [],
+  "remoteJourney": true,
+  "staticFrame": true,
+  "fixtureChoices": true,
+  "nativeDecoder": false,
+  "apiCalls": false,
+  "sdkLaunched": false
+}

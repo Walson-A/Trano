@@ -1,5 +1,14 @@
 # UI/UX & Design System
 
+## Lecteur TV : proposition d'ensemble à partir de Netflix
+
+Le [nouveau carnet de revue](research/2026-10-28-atlas-tv-netflix-proposal.md)
+présente treize états d'une scène QML séparée : commandes compactes à icônes,
+légende au focus, progression plus présente et même grammaire pour les menus.
+Source, langue, qualité, épisodes, saisons et erreur sont montrés dans le même
+lecteur. Les exemples ne sont pas un catalogue vivant. La scène n'est pas
+intégrée ou lancée sur TV ; Walson doit d'abord juger cette composition complète.
+
 ## Lecteur TV : menus attachés à la barre
 
 **Rendu rejeté à son tour par Walson**, qui ne le juge pas au niveau Netflix.

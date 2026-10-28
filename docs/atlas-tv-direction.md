@@ -1,5 +1,9 @@
 # Atlas sur la télévision : base réutilisable et premier parcours
 
+Proposition courante : [lecteur complet à partir de Netflix](research/2026-10-28-atlas-tv-netflix-proposal.md),
+avec carnet des treize états. Travail de composition séparé ; aucune publication
+ou exécution TV avant la revue demandée par Walson.
+
 Direction corrigée après nouveau retour humain : [menus attachés à la barre](research/2026-10-28-atlas-tv-player-menus.md).
 Leur rendu est ensuite rejeté par Walson : la composition reste à reprendre.
 Le socle raccordé `0785838` n'est pas publié et ne constitue pas une référence

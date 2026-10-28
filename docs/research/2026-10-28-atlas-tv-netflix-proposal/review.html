@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="fr">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atlas TV — revue du lecteur</title>
+<style>
+  *{box-sizing:border-box}body{margin:0;background:#111114;color:#f5f5f7;font:15px/1.5 system-ui,sans-serif}main{max-width:1328px;margin:auto;padding:24px}header{display:flex;justify-content:space-between;align-items:baseline;gap:16px;flex-wrap:wrap}h1{margin:0;font-size:22px;font-weight:600}p{margin:6px 0;color:#b8b8c0}a{color:#d6d6dd;text-underline-offset:4px}nav{display:flex;gap:6px;flex-wrap:wrap;margin:20px 0 16px}button{font:inherit;min-height:40px;padding:7px 13px;border:1px solid #45454e;border-radius:5px;background:transparent;color:#dedee5}button[aria-selected=true]{background:#f5f5f7;color:#111114;border-color:#f5f5f7}button:focus-visible,a:focus-visible{outline:2px solid #b8c4ff;outline-offset:4px}.stage{display:flex;align-items:center;justify-content:center;background:black}.stage img{display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:contain}.stage:fullscreen img{max-height:100vh;max-width:100vw;object-fit:contain}.stage:fullscreen{width:100%;height:100%}footer{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:12px}#description{flex:1;min-width:240px;margin:0}#image-error{color:#ffb7b7}small{font-size:13px;color:#aaaab3}@media(max-width:600px){main{padding:16px}button{min-height:44px}h1{font-size:20px}}
+</style>
+<main>
+  <header><h1>Atlas TV · Le lecteur</h1><a href="https://www.whats-on-netflix.com/news/first-look-netflix-new-tv-video-player-redesign/" target="_blank" rel="noreferrer">Référence Netflix étudiée</a></header>
+  <p>Proposition QML sur image fixe · Aucun lancement sur la TV.</p>
+  <nav role="tablist" aria-label="États du lecteur">
+    <button id="tab-hud" type="button" role="tab" data-state="hud" aria-selected="true" aria-controls="screen">Lecture</button>
+    <button id="tab-focus" type="button" role="tab" data-state="focus" aria-selected="false" aria-controls="screen">Focus</button>
+    <button id="tab-pause" type="button" role="tab" data-state="pause" aria-selected="false" aria-controls="screen">Pause</button>
+    <button id="tab-timeline" type="button" role="tab" data-state="timeline" aria-selected="false" aria-controls="screen">Timeline</button>
+    <button id="tab-quality" type="button" role="tab" data-state="quality" aria-selected="false" aria-controls="screen">Qualité</button>
+    <button id="tab-quality-original" type="button" role="tab" data-state="quality-original" aria-selected="false" aria-controls="screen">Qualité unique</button>
+    <button id="tab-language" type="button" role="tab" data-state="language" aria-selected="false" aria-controls="screen">Langue</button>
+    <button id="tab-source" type="button" role="tab" data-state="source" aria-selected="false" aria-controls="screen">Source</button>
+    <button id="tab-episodes" type="button" role="tab" data-state="episodes" aria-selected="false" aria-controls="screen">Épisodes</button>
+    <button id="tab-seasons" type="button" role="tab" data-state="seasons" aria-selected="false" aria-controls="screen">Saisons</button>
+    <button id="tab-loading" type="button" role="tab" data-state="loading" aria-selected="false" aria-controls="screen">Chargement</button>
+    <button id="tab-error" type="button" role="tab" data-state="error" aria-selected="false" aria-controls="screen">Erreur</button>
+    <button id="tab-video" type="button" role="tab" data-state="video" aria-selected="false" aria-controls="screen">Vidéo seule</button>
+    <button id="tab-before" type="button" role="tab" data-state="before" aria-selected="false" aria-controls="screen">Version rejetée</button>
+  </nav>
+  <section id="screen" role="tabpanel" aria-labelledby="tab-hud">
+    <div class="stage" id="stage"><img id="capture" src="hud.png" alt="Proposition du lecteur Atlas TV en lecture avec commandes compactes et timeline large."></div>
+    <p id="image-error" role="alert" hidden>La capture n’a pas pu être chargée.</p>
+  </section>
+  <footer><p id="description" aria-live="polite">Titre, épisode, quatre commandes compactes et progression.</p><a id="full-image" href="hud.png" target="_blank">Image pleine taille</a><button id="fullscreen" type="button">Plein écran</button></footer>
+  <p><small>Options et temps d’étude. La coche indique le choix actif ; le blanc indique le focus. Ces images ne prouvent ni une lecture native ni la disponibilité d’une source.</small></p>
+</main>
+<script>
+  const states={
+    hud:['hud.png','Titre, épisode, quatre commandes compactes et progression.'],
+    focus:['focus.png','Le focus nomme une seule commande ; les autres restent discrètes.'],
+    pause:['pause.png','Retour de pause au centre ; commandes conservées dans le lecteur.'],
+    timeline:['timeline.png','9:25 est proposé ; la position jouée reste à 7:12 jusqu’à validation.'],
+    quality:['quality.png','1080p reste actif. Le focus est sur 360p : le choix ne change qu’après validation.'],
+    'quality-original':['quality-original.png','Quand un lecteur ne déclare qu’un fichier, une seule qualité « Originale » est proposée.'],
+    language:['language.png','VOSTFR et VF dans le même lecteur, sans panneau latéral ni sortie.'],
+    source:['source.png','Site et hébergeur identifiables dans une même liste.'],
+    episodes:['episodes.png','Saison, total, épisode en lecture et choix d’un autre épisode.'],
+    seasons:['seasons.png','Le choix de saison conserve la même zone de menu.'],
+    loading:['loading.png','La préparation reste locale au menu ; la timeline reste visible.'],
+    error:['error.png','Réessayer ou changer de source depuis le lecteur interrompu.'],
+    video:['video.png','Sans interaction, seule l’image reste visible.'],
+    before:['../2026-10-28-atlas-tv-player-menus/episode-controls.png','Version rejetée, conservée pour comparer la composition.']
+  };
+  const tabs=[...document.querySelectorAll('[data-state]')],image=document.getElementById('capture'),description=document.getElementById('description'),panel=document.getElementById('screen'),error=document.getElementById('image-error');
+  function show(name){
+    if(!Object.hasOwn(states,name))return;
+    tabs.forEach(tab=>tab.setAttribute('aria-selected',String(tab.dataset.state===name)));
+    panel.setAttribute('aria-labelledby','tab-'+name);error.hidden=true;
+    image.src=states[name][0];image.alt=states[name][1];description.textContent=states[name][1];document.getElementById('full-image').href=states[name][0];
+  }
+  tabs.forEach(tab=>tab.addEventListener('click',()=>show(tab.dataset.state)));
+  image.addEventListener('error',()=>error.hidden=false);
+  document.getElementById('fullscreen').addEventListener('click',()=>document.getElementById('stage').requestFullscreen?.().catch(()=>{}));
+  document.addEventListener('keydown',event=>{
+    if(event.key!=='ArrowLeft'&&event.key!=='ArrowRight')return;
+    const current=tabs.findIndex(tab=>tab.getAttribute('aria-selected')==='true'),next=(current+(event.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;
+    show(tabs[next].dataset.state);if(!document.fullscreenElement)tabs[next].focus();event.preventDefault();
+  });
+</script>
+</html>
