@@ -17,6 +17,7 @@ FocusScope {
     property int selectedIndex: 0
     property bool muted: true
     property bool previewEnabled: true
+    property bool keepPreviewLoaded: false
     property bool reducedMotion: false
     property var displayedMedia: null
     property bool contentVisible: true
@@ -43,7 +44,7 @@ FocusScope {
         if (!media) return null;
         if (media.a_lancer) return media.a_lancer;
         var f=media.franime;
-        return f ? {franime_titre:f.titre,saison:f.saison,episode:f.episode,numero:1,vf:f.vf} : null;
+        return f ? {franime_titre:f.titre,saison:f.saison,episode:f.episode,numero:1,vf:f.vf} : media.anilist_id>0 ? {numero:1,vf:false} : null;
     }
     function art(media,kind) {
         if (!media) return "";
@@ -143,7 +144,7 @@ FocusScope {
     Item {
         id: backdrop; anchors.fill: parent
         HeroArtwork { width: 1280; height: 620; requestedSource: scene.art(scene.displayedMedia,'banner'); reducedMotion: scene.reducedMotion; soften: !!scene.displayedMedia && !scene.displayedMedia.banniere }
-        Loader { id: preview; width: 1280; height: 620; source: scene.previewEnabled ? "Trailer.qml" : ""; opacity: scene.videoReady ? 1 : 0
+        Loader { id: preview; width: 1280; height: 620; source: scene.previewEnabled || scene.keepPreviewLoaded ? "Trailer.qml" : ""; opacity: scene.videoReady ? 1 : 0
             Behavior on opacity { enabled: !scene.reducedMotion; NumberAnimation { duration: Motion.ms('fade'); easing.type: Easing.Bezier; easing.bezierCurve: Motion.easeOut() } }
             onLoaded: { item.silent=Qt.binding(function(){return scene.muted;}); item.observed.connect(scene.observePreview); scene.restartPreview(); }
         }

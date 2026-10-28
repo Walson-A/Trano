@@ -2,6 +2,11 @@
 
 ## Cadrage du 26 octobre 2026
 
+Raccordement du 28 octobre : [hôte QML du contrat serveur](research/2026-10-28-atlas-tv-live-host.md),
+sessions limitées, catalogue, bandes-annonces et lecteur avec temps/barre.
+Le banc reste distinct ; les tests locaux ne certifient pas le lancement
+téléphone PC éteint ni la publication du paquet.
+
 Travail courant : [héros QML adapté de l’écran PC](research/2026-10-26-atlas-tv-hero.md),
 limité à cette composition et à sa sélection. Les premiers brouillons d’accueil
 ne sont pas la base retenue. Les captures et le test de cycle des previews

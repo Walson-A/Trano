@@ -1,0 +1,33 @@
+{
+  "passed": true,
+  "scope": "real QML host/UI with fake API and fake decoder; no native playback claim",
+  "canonicalEpisode": 13,
+  "lang": "vf",
+  "lateTrailerDoesNotChangeSelection": true,
+  "events": [
+    {
+      "duration_ms": 1500095,
+      "position_ms": 120000,
+      "seq": 1,
+      "state": "playing"
+    },
+    {
+      "duration_ms": 1500095,
+      "position_ms": 120000,
+      "seq": 2,
+      "state": "paused"
+    },
+    {
+      "duration_ms": 1500095,
+      "position_ms": 130000,
+      "seq": 3,
+      "state": "paused"
+    },
+    {
+      "duration_ms": 1500095,
+      "position_ms": 130000,
+      "seq": 4,
+      "state": "stopped"
+    }
+  ]
+}
