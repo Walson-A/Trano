@@ -1,0 +1,295 @@
+{
+  "title": "Frieren: Beyond Journey’s End",
+  "anilist_id": 154587,
+  "total": 28,
+  "episodes": [
+    {
+      "numero": 1,
+      "titre": "The Journey's End",
+      "duree": 24,
+      "vu": false,
+      "vignette": "assets/episode-01.jpg",
+      "origin": "https://media.kitsu.app/episode/353471/thumbnail/586ff8f159af3cefedfe7c48d454c982.png",
+      "original_sha256": "37e8879ffe4793775e17e768225f90d86e7f957dfd1e61eb8d45ca8892e4ff2f",
+      "asset_sha256": "9abeba66511a4afe5657b04a5581bddd9806e69230b57e81bf01e51dd8a1a967"
+    },
+    {
+      "numero": 2,
+      "titre": "It Didn't Have to Be Magic...",
+      "duree": 24,
+      "vu": false,
+      "vignette": "assets/episode-02.jpg",
+      "origin": "https://media.kitsu.app/episode/353472/thumbnail/4ea4ed39d5342b4f32e1c6b7f4a7183f.png",
+      "original_sha256": "96d1fb719569f958f2b3bec227f8344fd38e3ae21de956e3a3558aa3a23e1197",
+      "asset_sha256": "c8286f9879ceb07ccf30f34904abc949a34b65e7ff3cae9df2e1bdb66d1405ea"
+    },
+    {
+      "numero": 3,
+      "titre": "Killing Magic",
+      "duree": 24,
+      "vu": false,
+      "vignette": "assets/episode-03.jpg",
+      "origin": "https://media.kitsu.app/episode/356650/thumbnail/4747c5c35cf4f7c6ce781937beffbb14.png",
+      "original_sha256": "a04d80ef20c6ac01ee989b1eefd3ce2a259cd6afbe98a47356df871c13a50dce",
+      "asset_sha256": "7b668cdb478e0badf0b2d26ba631f10cba7297672f63b182af0e8526d55acd2c"
+    },
+    {
+      "numero": 4,
+      "titre": "The Land Where Souls Rest",
+      "duree": 24,
+      "vu": false,
+      "vignette": "assets/episode-04.jpg",
+      "origin": "https://media.kitsu.app/episode/356901/thumbnail/316546a9cde01b95320e8182c4446667.png",
+      "original_sha256": "2215e2539af645ec79fcc70c8ccc79c2ad6bbd7bb71edd0a61a5c2eb3f9fa4ae",
+      "asset_sha256": "98e9a56cb88ec344826d3f1d7273d9024a7bfc121d764220da3ecbd9749fa761"
+    },
+    {
+      "numero": 5,
+      "titre": "Phantoms of the Dead",
+      "duree": 24,
+      "vu": false,
+      "vignette": "assets/episode-05.jpg",
+      "origin": "https://media.kitsu.app/episode/356902/thumbnail/6c3fec0bf76e67911a32b80a222db9bd.jpg",
+      "original_sha256": "4aeef60ce7ea2ecc4010c106f57ad5e9f16c052f3d7d3c65ed6d91b221471d2a",
+      "asset_sha256": "e50b38deae0b6884663e8a6d6302a3eee819ac8e7e0110f9022ca0d5165a7001"
+    },
+    {
+      "numero": 6,
+      "titre": "The Hero of the Village",
+      "duree": 24,
+      "vu": false,
+      "vignette": "assets/episode-06.jpg",
+      "origin": "https://media.kitsu.app/episode/356903/thumbnail/cb3aa4f1368ecad34c72a8c5f098257b.jpg",
+      "original_sha256": "9c8278081441843eaa89988851b4cf53da0ea69608bf7fa1ba3750d9bd5d789c",
+      "asset_sha256": "e6fc840edd39668c6ce9490e1cb14db516e6d8aff12d53afa9131c9eae33a41a"
+    },
+    {
+      "numero": 7,
+      "titre": "Like a Fairy Tale",
+      "duree": 24,
+      "vu": false,
+      "vignette": "assets/episode-07.jpg",
+      "origin": "https://media.kitsu.app/episode/356904/thumbnail/4e15cec0bcf202ec3118183cb92ff002.jpg",
+      "original_sha256": "70875f8cfb0e84609f44819128afa4cafd0600e8f6ae98ecfeb11c7810e2867b",
+      "asset_sha256": "a6dc5839fcba7265e3f54a0127c9183401cca8b95e700f67d7b15a44e190bcfe"
+    },
+    {
+      "numero": 8,
+      "titre": "Frieren the Slayer",
+      "duree": 24,
+      "vu": false,
+      "vignette": "assets/episode-08.jpg",
+      "origin": "https://media.kitsu.app/episode/356905/thumbnail/95686f5614ee4c90d0602d229251631f.jpg",
+      "original_sha256": "0aa6bcbc32ab58674f12f632e9a0df754af1851a16a4c48e135a106ea7c7ec79",
+      "asset_sha256": "8e37524f7c22c46708436dd4614e99a96f5b7444a77451bc49cecdf268950f0e"
+    },
+    {
+      "numero": 9,
+      "titre": "Aura the Guillotine",
+      "duree": 24,
+      "vu": false,
+      "vignette": "assets/episode-09.jpg",
+      "origin": "https://media.kitsu.app/episode/356906/thumbnail/8787a8bc118242ace3fc69d170eec960.jpg",
+      "original_sha256": "6b444cc6049f932f429dbb947764404c10f48e0b3d01ab166e233e8ee1aea931",
+      "asset_sha256": "5a5e950414269e326992fee1a46af77577ac119c65ced3cdb084827720da2d39"
+    },
+    {
+      "numero": 10,
+      "titre": "A Powerful Mage",
+      "duree": 24,
+      "vu": false,
+      "vignette": "assets/episode-10.jpg",
+      "origin": "https://media.kitsu.app/episode/356907/thumbnail/1fbe3a517fa505fecd2724ce8d5fbaaf.jpg",
+      "original_sha256": "dba9bdacbd361697e9620b2ed52941f2f2951e26bfb7473f7113275e662e827d",
+      "asset_sha256": "d969dd037039bb3af1eff482411bf57e1b9d67da6ddcf2f50b52c97053ccbdd8"
+    },
+    {
+      "numero": 11,
+      "titre": "Winter in the Northern Lands",
+      "duree": 24,
+      "vu": false,
+      "vignette": "assets/episode-11.jpg",
+      "origin": "https://media.kitsu.app/episode/356908/thumbnail/84c7b1e6e866c3c517688ce0c3de9269.jpg",
+      "original_sha256": "374aca3a7c775b1e0abbd3887e3e9cac417ffa148783a93c96198f2d23f86edf",
+      "asset_sha256": "4e3b81856771344e0ba4668f7244e8222d7923b24a1aa3f93280e202c6bc714c"
+    },
+    {
+      "numero": 12,
+      "titre": "A Real Hero",
+      "duree": 24,
+      "vu": false,
+      "vignette": "assets/episode-12.jpg",
+      "origin": "https://media.kitsu.app/episode/356909/thumbnail/97302f2a07f2c27b9e86e843937be6ae.jpg",
+      "original_sha256": "19630c996741d8f1810d642c27cacc38437f6b48454595eff353930c9f64eee9",
+      "asset_sha256": "2d019864d7a28c2e49e46a7590decc706b10661e2a4de75e7b128dc83ff79569"
+    },
+    {
+      "numero": 13,
+      "titre": "Aversion to One's Own Kind",
+      "duree": 24,
+      "vu": false,
+      "vignette": "assets/episode-13.jpg",
+      "origin": "https://media.kitsu.app/episode/356910/thumbnail/7b71b9f177951cc5f6e738f8bd7b0ef1.png",
+      "original_sha256": "a5c7b631aeab041dd19f3b99bb86956eb5d3c337160d6de796ad27e397d042ac",
+      "asset_sha256": "f70bd147e18e97371066a2bef827a0b2ac07920d807ddaaafab231705eb26072"
+    },
+    {
+      "numero": 14,
+      "titre": "Privilege of the Young",
+      "duree": 24,
+      "vu": false,
+      "vignette": "assets/episode-14.jpg",
+      "origin": "https://media.kitsu.app/episode/356911/thumbnail/23baae6c771f026a004806f721bbcc08.jpg",
+      "original_sha256": "479e12a16e6e9ee9142383c92ec0ec9760e04dc0ebc8d8560a4300be69ecd56c",
+      "asset_sha256": "865c916f9501c5522e62d36f697a84eb77e9a99be6c23251ed2cc49d0a44382a"
+    },
+    {
+      "numero": 15,
+      "titre": "Smells Like Trouble",
+      "duree": 24,
+      "vu": false,
+      "vignette": "assets/episode-15.jpg",
+      "origin": "https://media.kitsu.app/episode/356912/thumbnail/a6dbf5f3f2ee96ffcd63aacff0dbb536.jpg",
+      "original_sha256": "abc2d7b1cda6de5b5aa852d7efe0f0c30bb8cf58ac0eabed3c7e32ae6b00cab2",
+      "asset_sha256": "b660e5df0fa532ca723a342336e930e5b17da7e69ce541863f027d99bc9821bb"
+    },
+    {
+      "numero": 16,
+      "titre": "Long-Lived Friends",
+      "duree": 24,
+      "vu": false,
+      "vignette": "assets/episode-16.jpg",
+      "origin": "https://media.kitsu.app/episode/356913/thumbnail/f5308b30a957fa02bf9f7f3aacf037a8.jpg",
+      "original_sha256": "547964631f83315c8843938ee3e0fa0f4c0fb49dfef3ea7af2083f79cb8392dd",
+      "asset_sha256": "eda486f9e715be7b152dfd03567b026be3214d9d6bc0c8d0d81554ddc676716f"
+    },
+    {
+      "numero": 17,
+      "titre": "Take Care",
+      "duree": 24,
+      "vu": false,
+      "vignette": "assets/episode-17.jpg",
+      "origin": "https://media.kitsu.app/episode/356914/thumbnail/6c93387eeab9429da0319c9a0b8e6715.jpg",
+      "original_sha256": "ba3273086d82587db30a4ad4c2f2074cb098d1859b812213607d8456cda90139",
+      "asset_sha256": "01b0ded559fbdee9282a0c32fb661005cdaad157e2675fcaeefc96fbe11a0fb7"
+    },
+    {
+      "numero": 18,
+      "titre": "First-Class Mage Exam",
+      "duree": 24,
+      "vu": false,
+      "vignette": "assets/episode-18.jpg",
+      "origin": "https://media.kitsu.app/episode/356915/thumbnail/3ce4b0da7fe88c4566e73b27a897b441.jpg",
+      "original_sha256": "bfa65b1147c8b2ebf60435860774b482ea578d31c255f4469e4cdc2b19951084",
+      "asset_sha256": "c1f0c4889d4cd9fdfbe8634b30264a427e96f3ede52e07d212f8603c08180235"
+    },
+    {
+      "numero": 19,
+      "titre": "Well-Laid Plans",
+      "duree": 24,
+      "vu": false,
+      "vignette": "assets/episode-19.jpg",
+      "origin": "https://media.kitsu.app/episode/356916/thumbnail/98b0a9783bb6971f33db0669286f304f.jpg",
+      "original_sha256": "88c770c474c6a7ab410b1803e9e0853c361ff3d9668dde5ecf96fd1b0012e149",
+      "asset_sha256": "2918a78e3543b29e9bd233914b9b060b93abeff81043216dd08014455fe87f2b"
+    },
+    {
+      "numero": 20,
+      "titre": "Necessary Killing",
+      "duree": 24,
+      "vu": false,
+      "vignette": "assets/episode-20.jpg",
+      "origin": "https://media.kitsu.app/episode/356917/thumbnail/7061a21caae5fafa4ef086a2ac4153ec.png",
+      "original_sha256": "9a0844d7cc3ba0358d452ece1b5776223b6c9cfa10d4d8380d7f7baae2b256f0",
+      "asset_sha256": "55383bb8bc0f2d3ff566c1c1bed4e7e6f03b68ee64af63dbef2eadad65b1d158"
+    },
+    {
+      "numero": 21,
+      "titre": "The World of Magic",
+      "duree": 24,
+      "vu": false,
+      "vignette": "assets/episode-21.jpg",
+      "origin": "https://media.kitsu.app/episode/356918/thumbnail/c8ee692af8f67d0473f093444d34aab6.png",
+      "original_sha256": "be97824903693b664e575d4593052bbe1dfa1ecdf509ac0de32328b268918eee",
+      "asset_sha256": "f822952fdd96ae7aad91d453e40f06fa7edb95a352b14d495dd99da1a1197c57"
+    },
+    {
+      "numero": 22,
+      "titre": "Future Enemies",
+      "duree": 24,
+      "vu": false,
+      "vignette": "assets/episode-22.jpg",
+      "origin": "https://media.kitsu.app/episode/356919/thumbnail/c72a07b836c2cac015585143e1e4ef40.png",
+      "original_sha256": "8237a66be7bbff96c9f49efac0dc582f48a23a962f7a2acdb23fe138f9959c01",
+      "asset_sha256": "26a6e202730ea6644a3ae3da231667da76e44a1bc5e13412f0fd0532ba4ad02a"
+    },
+    {
+      "numero": 23,
+      "titre": "Conquering the Labyrinth",
+      "duree": 24,
+      "vu": false,
+      "vignette": "assets/episode-23.jpg",
+      "origin": "https://media.kitsu.app/episode/356920/thumbnail/9d1d7442a9b1b11d6d5364d94b6cc141.jpg",
+      "original_sha256": "09de215e79f7eba5233d85bb5d85caa493823769265056d51be984c3970e7d18",
+      "asset_sha256": "a19f3496fc343ed30b02db95f0a7ef01d589f902aafaadefac9f869115c87487"
+    },
+    {
+      "numero": 24,
+      "titre": "Perfect Replicas",
+      "duree": 24,
+      "vu": false,
+      "vignette": "assets/episode-24.jpg",
+      "origin": "https://media.kitsu.app/episode/356921/thumbnail/23772a429016ecede3bb1a751443182b.jpg",
+      "original_sha256": "d2e792d60cd43d9716252b4d154f723d4492448adff0321973ed51facf83f606",
+      "asset_sha256": "b048b6898a33fac8189e1e82a63c22db320d59a8274294e3234ba3fa31de4cda"
+    },
+    {
+      "numero": 25,
+      "titre": "A Fatal Vulnerability",
+      "duree": 24,
+      "vu": false,
+      "vignette": "assets/episode-25.jpg",
+      "origin": "https://media.kitsu.app/episode/356922/thumbnail/98fa244a4ec8d1d5f2091f4cdd1fdae6.jpg",
+      "original_sha256": "93e26d7f4e716b080576330aec2526029eb07fe678947f214c3760aed375e29e",
+      "asset_sha256": "94ba9852c44794e8664c3beff6488928c4ece026772c6cc4bf9d769323a60fc2"
+    },
+    {
+      "numero": 26,
+      "titre": "The Height of Magic",
+      "duree": 24,
+      "vu": false,
+      "vignette": "assets/episode-26.jpg",
+      "origin": "https://media.kitsu.app/episode/356923/thumbnail/5ab22e5593da1aa62999ae7880f846ba.jpg",
+      "original_sha256": "ba70243b1c68b1560274ac306e90e62277229fadab79e5ef028f64fa6dd76740",
+      "asset_sha256": "ce8ef5aff8bf4ae9f5f3fa3d01d2d60166fa89bf54c7d292287a270eb3a02a4e"
+    },
+    {
+      "numero": 27,
+      "titre": "An Era of Humans",
+      "duree": 24,
+      "vu": false,
+      "vignette": "assets/episode-27.jpg",
+      "origin": "https://media.kitsu.app/episode/356924/thumbnail/25d1d464f059e64697c2735c1472aed8.jpg",
+      "original_sha256": "07902fec75d016a71a5f17656d0c311ff4bf9993105cd379de69bca3bb6e7010",
+      "asset_sha256": "da6daa168de445712326590b32272565a41a00d1f9f6c13142945fefdfc925c4"
+    },
+    {
+      "numero": 28,
+      "titre": "It Would Be Embarrassing When We Met Again",
+      "duree": 24,
+      "vu": false,
+      "vignette": "assets/episode-28.jpg",
+      "origin": "https://media.kitsu.app/episode/356925/thumbnail/62d6ca77133608b02c3e5f481da6a52b.jpg",
+      "original_sha256": "71e5c7c309dc125ad07ddb0d2762cd5428bb2c454a6379c1823dc1e7fed3f0bb",
+      "asset_sha256": "cc7a89b8580c6d3be7dd9ba8d6aaee0ef2d0014a1f2dcfae9fe53c3737b1ec30"
+    }
+  ],
+  "provenance": {
+    "fixture": "LifeOS/src/banc/animes/episodes-154587.json (Atlas PC repository)",
+    "fixture_sha256": "954935bcce91cfbce18918c23835a0633b02a73035be7deb203c2cae3a34660a",
+    "viewed": "2026-10-28",
+    "backdrop_url": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/154587-ivXNJ23SM1xB.jpg",
+    "backdrop_sha256": "338f2df3fa6007cd9f710c4cb5d77141f0374f9ad8e3fae4127f7ca48914f8f4",
+    "purpose": "design bench; public thumbnails; no playback capabilities"
+  }
+}

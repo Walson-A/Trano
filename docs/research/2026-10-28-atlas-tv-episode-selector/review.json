@@ -1,0 +1,49 @@
+{
+  "states": [
+    "episodes",
+    "episodes-current",
+    "episodes-far",
+    "episodes-missing",
+    "episode-loading",
+    "hud"
+  ],
+  "resolution": [
+    1280,
+    720
+  ],
+  "qtVersion": "5.15.2",
+  "checks": [
+    "quality is unchanged during preparation",
+    "Back cancels preparation into the same menu",
+    "failed preparation preserves position and selection",
+    "successful quality choice returns to its trigger",
+    "cancel seek preserves position and paused intention",
+    "confirm seek applies proposed position without pausing",
+    "leaving timeline cancels an unconfirmed seek",
+    "version preparation preserves position",
+    "single file does not manufacture quality alternatives",
+    "remote reaches last episode",
+    "shelf returns to first item without extra Left",
+    "opening shelf focuses the episode actually playing",
+    "browsing another episode does not start playback",
+    "jump to playing episode restores focus without restarting",
+    "Back closes shelf then HUD without changing episode or position",
+    "browsing seasons does not change playing content",
+    "close episodes returns to content trigger",
+    "cancel another episode leaves current episode intact",
+    "source remains reachable after playback failure",
+    "settings retain focused command across vertical navigation",
+    "QML loads without runtime errors: []"
+  ],
+  "qmlMessages": [],
+  "episodeMetadata": {
+    "anilist_id": 154587,
+    "count": 28,
+    "origin": "Atlas PC bench, Kitsu thumbnails"
+  },
+  "staticFrame": true,
+  "fixtureChoices": true,
+  "nativeDecoder": false,
+  "apiCalls": false,
+  "sdkLaunched": false
+}

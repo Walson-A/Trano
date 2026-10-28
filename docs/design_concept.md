@@ -1,5 +1,14 @@
 # UI/UX & Design System
 
+## Lecteur TV : sélecteur d'épisodes enrichi
+
+Walson apprécie la composition et demande une navigation des épisodes inspirée
+de Netflix. Le [sélecteur QML](research/2026-10-28-atlas-tv-episode-selector.md)
+réutilise les vraies métadonnées PC : vignettes, titres et durées. Ouverture sur
+l'épisode en cours, accès rapide à celui-ci et Retour sans perte de lecture.
+Six captures et 21 assertions sur banc isolé ; aucun raccordement natif ou
+lancement TV n'est déduit de cette revue.
+
 ## Lecteur TV : proposition après recherche
 
 Le [lecteur à zones distinctes](research/2026-10-28-atlas-tv-transport-proposal.md)

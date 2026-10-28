@@ -9,6 +9,7 @@ import traceback
 parser = argparse.ArgumentParser(description=__doc__)
 for name in ['qt-path', 'frame', 'regular', 'bold', 'captures']:
     parser.add_argument('--'+name, type=pathlib.Path, required=True)
+parser.add_argument('--episodes-fixture', type=pathlib.Path)
 args = parser.parse_args()
 sys.path.insert(0, str(args.qt_path.resolve()))
 dll = os.add_dll_directory(str(args.qt_path.resolve() / 'PyQt5/Qt5/bin')) if os.name == 'nt' else None
@@ -28,15 +29,24 @@ for path in [args.regular, args.bold]:
 family = QFontDatabase.applicationFontFamilies(index)[0]
 engine = QQmlApplicationEngine()
 source = pathlib.Path(__file__).resolve().parent.parent / 'devialet/design-player/transport'
+fixture = json.loads(args.episodes_fixture.read_text(encoding='utf-8')) if args.episodes_fixture else None
+episode_rows = fixture['episodes'] if fixture else []
+for row in episode_rows:
+    row['vignette'] = (args.episodes_fixture.resolve().parent / row['vignette']).as_uri()
 engine.rootContext().setContextProperty('studyFrame', args.frame.resolve().as_uri())
 engine.rootContext().setContextProperty('studyFamily', family)
-engine.loadData(('import QtQuick 2.15\nimport QtQuick.Window 2.2\nimport "'+source.as_uri()+'"\nWindow {width:1280;height:720;visible:true;PlayerPreview {frame:studyFrame;family:studyFamily}}').encode())
+engine.rootContext().setContextProperty('studyEpisodes', episode_rows)
+engine.rootContext().setContextProperty('studyTitle', fixture['title'] if fixture else 'To Your Eternity')
+engine.rootContext().setContextProperty('studyArtwork', bool(fixture))
+engine.loadData(('import QtQuick 2.15\nimport QtQuick.Window 2.2\nimport "'+source.as_uri()+'"\nWindow {width:1280;height:720;visible:true;PlayerPreview {frame:studyFrame;family:studyFamily;title:studyTitle;episodeRows:studyEpisodes;artworkFrame:studyArtwork}}').encode())
 assert engine.rootObjects(), messages
 window = engine.rootObjects()[0]
 study = window.findChild(QObject, 'transportStudy')
 assert study
 args.captures.mkdir(parents=True, exist_ok=False)
 states = ['hud', 'focus', 'pause', 'timeline', 'quality', 'quality-original', 'version', 'source', 'episodes', 'episodes-far', 'seasons', 'loading', 'change-error', 'error', 'error-source', 'episode-loading', 'bright', 'video']
+if fixture:
+    states = ['episodes', 'episodes-current', 'episodes-far', 'episodes-missing', 'episode-loading', 'hud']
 checks = []
 
 
@@ -89,14 +99,29 @@ def run():
         study.openSetting(2)
         expect(study.property('quality') == 'Originale' and len(study.property('options').toVariant()) == 1, 'single file does not manufacture quality alternatives')
         study.showState('episodes')
-        for _ in range(18):
+        count = study.property('episodeCount')
+        for _ in range(count-2):
             key(Qt.Key_Right)
-        expect(study.property('episodeIndex') == 19, 'remote reaches last episode')
-        for _ in range(19):
+        expect(study.property('episodeIndex') == count-1, 'remote reaches last episode')
+        for _ in range(count-1):
             key(Qt.Key_Left)
         QTest.qWait(150)
-        shelf = study.findChild(QObject, 'episodeShelf')
+        shelf = study.findChild(QObject, 'episodeShelf' if fixture else 'compactEpisodeShelf')
         expect(study.property('episodeIndex') == 0 and abs(shelf.property('contentX')) < 1, 'shelf returns to first item without extra Left')
+        if fixture:
+            study.showState('episodes-current')
+            expect(study.property('episodeIndex') == 2, 'opening shelf focuses the episode actually playing')
+            key(Qt.Key_Right)
+            expect(study.property('currentEpisode') == 3 and not study.property('pending'), 'browsing another episode does not start playback')
+            key(Qt.Key_Up)
+            key(Qt.Key_Right)
+            key(Qt.Key_Return)
+            expect(study.property('episodeIndex') == 2 and study.property('zone') == 'episodes' and study.property('positionMs') == 432000, 'jump to playing episode restores focus without restarting')
+            key(Qt.Key_Back)
+            key(Qt.Key_Back)
+            expect(not study.property('hud') and study.property('currentEpisode') == 3 and study.property('positionMs') == 432000, 'Back closes shelf then HUD without changing episode or position')
+            study.showState('episodes')
+            study.setProperty('episodeIndex', 0)
         key(Qt.Key_Up)
         key(Qt.Key_Return)
         key(Qt.Key_Down)
@@ -120,7 +145,7 @@ def run():
         expect(study.property('zone') == 'settings' and study.property('commandIndex') == 1, 'settings retain focused command across vertical navigation')
         bad = [m for m in messages if any(term in m for term in ['ReferenceError', 'TypeError', 'Cannot assign', 'Unable to assign', 'Cannot open:', 'Binding loop', 'failed'])]
         expect(not bad, 'QML loads without runtime errors: '+str(bad))
-        result = {'states': states, 'resolution': [1280, 720], 'qtVersion': QT_VERSION_STR, 'checks': checks, 'qmlMessages': messages, 'staticFrame': True, 'fixtureChoices': True, 'nativeDecoder': False, 'apiCalls': False, 'sdkLaunched': False}
+        result = {'states': states, 'resolution': [1280, 720], 'qtVersion': QT_VERSION_STR, 'checks': checks, 'qmlMessages': messages, 'episodeMetadata': {'anilist_id': fixture['anilist_id'], 'count': len(episode_rows), 'origin': 'Atlas PC bench, Kitsu thumbnails'} if fixture else None, 'staticFrame': True, 'fixtureChoices': True, 'nativeDecoder': False, 'apiCalls': False, 'sdkLaunched': False}
         (args.captures / 'review.json').write_text(json.dumps(result, indent=2, ensure_ascii=False), encoding='utf-8')
         app.quit()
     except Exception:

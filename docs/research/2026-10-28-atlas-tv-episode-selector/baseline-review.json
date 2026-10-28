@@ -1,0 +1,53 @@
+{
+  "states": [
+    "hud",
+    "focus",
+    "pause",
+    "timeline",
+    "quality",
+    "quality-original",
+    "version",
+    "source",
+    "episodes",
+    "episodes-far",
+    "seasons",
+    "loading",
+    "change-error",
+    "error",
+    "error-source",
+    "episode-loading",
+    "bright",
+    "video"
+  ],
+  "resolution": [
+    1280,
+    720
+  ],
+  "qtVersion": "5.15.2",
+  "checks": [
+    "quality is unchanged during preparation",
+    "Back cancels preparation into the same menu",
+    "failed preparation preserves position and selection",
+    "successful quality choice returns to its trigger",
+    "cancel seek preserves position and paused intention",
+    "confirm seek applies proposed position without pausing",
+    "leaving timeline cancels an unconfirmed seek",
+    "version preparation preserves position",
+    "single file does not manufacture quality alternatives",
+    "remote reaches last episode",
+    "shelf returns to first item without extra Left",
+    "browsing seasons does not change playing content",
+    "close episodes returns to content trigger",
+    "cancel another episode leaves current episode intact",
+    "source remains reachable after playback failure",
+    "settings retain focused command across vertical navigation",
+    "QML loads without runtime errors: []"
+  ],
+  "qmlMessages": [],
+  "episodeMetadata": null,
+  "staticFrame": true,
+  "fixtureChoices": true,
+  "nativeDecoder": false,
+  "apiCalls": false,
+  "sdkLaunched": false
+}

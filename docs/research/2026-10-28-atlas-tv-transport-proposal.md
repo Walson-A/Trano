@@ -1,5 +1,9 @@
 # Atlas TV : contenu, transport et réglages séparés
 
+Retour suivant : Walson apprécie cette composition et demande d'enrichir le
+[sélecteur d'épisodes](2026-10-28-atlas-tv-episode-selector.md). La géométrie du
+lecteur est conservée ; le nouveau carnet ajoute les vraies métadonnées du banc PC.
+
 Proposition suivant l'[étude des lecteurs](2026-10-28-premium-player-layouts.md).
 Walson autorise sa construction après cette recherche, en conservant sa demande
 de voir le lecteur complet et ses menus avant un essai sur la TV.

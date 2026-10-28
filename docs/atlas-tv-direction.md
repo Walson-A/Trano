@@ -1,5 +1,11 @@
 # Atlas sur la télévision : base réutilisable et premier parcours
 
+Après appréciation de la composition, Walson demande un [sélecteur d'épisodes
+plus reconnaissable](research/2026-10-28-atlas-tv-episode-selector.md). Vignettes,
+titres et durées viennent du banc PC. La liste conserve le contexte, s'ouvre sur
+l'épisode joué et propose un retour rapide à celui-ci. Travail limité au QML de
+proposition et à ses preuves ; pas d'intégration ni d'essai Devialet dans ce lot.
+
 Proposition en revue après la recherche : [contenu, transport et réglages](research/2026-10-28-atlas-tv-transport-proposal.md).
 Identité à gauche, réglages nommés à droite, Épisodes séparé et timeline stable.
 Dix-huit captures QML et dix-sept assertions de parcours sur banc desktop.
