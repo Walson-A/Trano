@@ -1,5 +1,34 @@
 # Lecteur Atlas TV — menus attachés à la barre
 
+## État après nouvelle revue humaine : rendu rejeté
+
+Walson répond à la capture corrigée : « tu trouve ça assez bien? netflix ne
+sortirais jamais ça ». Le socle raccordé `0785838` est testé au banc et poussé,
+mais **son rendu est rejeté et le paquet n'est pas publié**. Aucun nouvel essai
+SDK n'a été lancé. La présence de listes ancrées corrige une interaction,
+elle ne valide pas la composition ou le niveau esthétique demandé.
+
+Nouvelle comparaison des vraies captures du [test de lecteur Netflix de juillet
+2026](https://www.whats-on-netflix.com/news/first-look-netflix-new-tv-video-player-redesign/)
+avec notre QML complet : Netflix regroupe ses commandes en une rangée compacte,
+avec des silhouettes distinctes et une action textuelle saillante ; notre rangée
+étale quatre libellés dans des largeurs fixes. La progression Netflix est plus
+présente, avec une poignée plus lisible ; notre contrôle principal reste fin
+alors que les surfaces grises des réglages attirent le regard. Les menus rapides
+ont maintenant le bon ancrage, mais leur traitement générique et la concurrence
+de plusieurs surfaces n'établissent pas encore une hiérarchie de lecteur.
+
+Ces observations sont une critique visuelle de ces captures, pas une règle
+universelle attribuée à Netflix. Le titre-logo de Stranger Things dans la
+référence participe aussi à l'identité ; cela ne justifie pas de fabriquer des
+logos pour les animés. La prochaine étude doit comparer la composition complète
+lecture, focus, menu et timeline avec le même contenu, avant tout nouvel essai TV.
+
+Un parcours fonctionnel reste également ouvert avant livraison : depuis une
+erreur média, proposer un autre lecteur doit rester accessible. Le code courant
+limite encore ce panneau à Réessayer et conserve les choix stricts. Ne pas
+présenter les tests de retry comme la validation de ce parcours alternatif.
+
 ## Correction après la revue de Walson
 
 La [première proposition](2026-10-28-atlas-tv-player-proposal.md) séparait trop

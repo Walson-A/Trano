@@ -1,6 +1,9 @@
 # Atlas sur la télévision : base réutilisable et premier parcours
 
 Direction corrigée après nouveau retour humain : [menus attachés à la barre](research/2026-10-28-atlas-tv-player-menus.md).
+Leur rendu est ensuite rejeté par Walson : la composition reste à reprendre.
+Le socle raccordé `0785838` n'est pas publié et ne constitue pas une référence
+visuelle validée, même si le banc fonctionnel passe.
 Walson rejette la disparition du chrome au profit d'un grand panneau. La barre
 reste visible et les choix rapides s'ouvrent au-dessus de leur bouton. Le code
 est raccordé aux capacités réelles ; publication et validation TV restent séparées.

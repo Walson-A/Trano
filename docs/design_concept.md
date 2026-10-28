@@ -2,6 +2,11 @@
 
 ## Lecteur TV : menus attachés à la barre
 
+**Rendu rejeté à son tour par Walson**, qui ne le juge pas au niveau Netflix.
+Le socle fonctionnel `0785838` reste sur la branche ; il n'est pas publié.
+L'ancrage corrigé n'est pas une validation de l'esthétique. La revue détaillée
+ci-dessous conserve les preuves et les points à reprendre.
+
 Walson rejette les grands panneaux qui faisaient disparaître la barre. Le
 [lecteur raccordé](research/2026-10-28-atlas-tv-player-menus.md) conserve le
 chrome et ouvre de petites listes au-dessus de ses boutons. Source/lecteur,
