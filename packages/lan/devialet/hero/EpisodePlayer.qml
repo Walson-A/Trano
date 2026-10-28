@@ -2,99 +2,122 @@ import QtQuick 2.15
 import QtMultimedia 5.0
 
 FocusScope {
-    id: player
-    property string title: ""
-    property string family: "sans-serif"
-    property int resumeMs: 0
-    property bool resumed: false
-    property bool started: false
-    property bool ended: false
-    property bool controlsVisible: true
-    property string failure: ""
+    id:player
+    property string title:''
+    property string chapter:''
+    property string family:'sans-serif'
+    property var transport
+    property var current:null
+    property int resumeMs:0
+    property bool resumed:false
+    property bool started:false
+    property bool ended:false
+    property bool controlsVisible:true
+    property string failure:''
     property bool reducedMotion:false
     property string zone:'surface'
     property int controlIndex:0
     property bool wantsPlaying:false
     property bool restoreAfterSeek:false
     property bool retrying:false
+    property bool changing:false
     property int seekTarget:-1
-    property string seekFeedback:''
+    property int proposedMs:-1
     readonly property int positionMs:media.position
     readonly property int durationMs:media.duration
     readonly property bool playing:media.playbackState===MediaPlayer.PlayingState
-    readonly property bool audioMuted:media.muted || media.volume===0
-    readonly property real rate:media.playbackRate
-    readonly property var rates:[0.75,1,1.25,1.5,2]
-    property int rateIndex:1
+    readonly property bool menuOpened:menu.opened
+    readonly property string menuName:menu.kind
     signal progress(var value)
     signal closed()
-    signal episodesRequested()
     signal retryRequested()
-    function clock(ms) { var s=Math.floor(Math.max(0,ms)/1000); return Math.floor(s/60)+':'+('0'+s%60).slice(-2); }
-    function report(state) {
-        if(started && media.duration>0) progress({position_ms:media.position,duration_ms:media.duration,state:state});
+    signal changeRequested(var media,var target,var choice)
+    signal cancelChangeRequested()
+    function clock(ms){var s=Math.floor(Math.max(0,ms)/1000);return Math.floor(s/60)+':'+('0'+s%60).slice(-2);}
+    function report(state){if(started && media.duration>0)progress({position_ms:media.position,duration_ms:media.duration,state:state});}
+    function play(url,desiredPlaying){
+        resumed=false;started=false;ended=false;failure='';wantsPlaying=desiredPlaying!==false;restoreAfterSeek=false;zone='surface';seekTarget=-1;proposedMs=-1;menu.revision++;menu.kind='';menu.message='';media.source=url;media.play();reveal();forceActiveFocus();
     }
-    function play(url) { resumed=false; started=false; ended=false; failure='';wantsPlaying=true;restoreAfterSeek=false;zone='surface';seekTarget=-1;seekFeedback='';seekCommit.stop();media.source=url; media.play(); reveal(); forceActiveFocus(); }
-    function close() { seekCommit.stop();seekTarget=-1;restoreAfterSeek=false;retrying=false;report('stopped'); started=false;wantsPlaying=false;media.stop(); media.source=''; closed(); }
-    function toggle() {if(retrying)return;if(failure){retryRequested();return;}if(ended)return;wantsPlaying=!wantsPlaying;if(wantsPlaying)media.play();else media.pause();console.info('ATLAS_TV_PLAY_INTENT',wantsPlaying,media.playbackState);reveal();}
-    function toggleAudio(){var silent=!audioMuted;media.muted=silent;media.volume=silent ? 0 : 1;reveal();}
-    function openRates(){seekFeedback='';rateIndex=Math.max(0,rates.indexOf(rate));zone='rates';reveal();}
-    function chooseRate(){media.playbackRate=rates[rateIndex];console.info('ATLAS_TV_RATE',media.playbackRate);zone='toolbar';controlIndex=5;reveal();}
-    function activateControl(){if(controlIndex===0)toggle();else if(controlIndex===1)seek(-10000);else if(controlIndex===2)seek(10000);else if(controlIndex===3)episodesRequested();else if(controlIndex===4)toggleAudio();else openRates();}
-    function seek(delta) {
-        if(media.seekable && started && media.duration>0) {
-            seekTarget=Math.max(0,Math.min(media.duration-1000,(seekTarget>=0 ? seekTarget : media.position)+delta));
-            seekFeedback=clock(seekTarget);seekFeedbackTimer.restart();seekCommit.restart();
-            console.info('ATLAS_TV_EPISODE_SEEK_REQUEST',delta,seekTarget);
-        }
+    function retire(){
+        report('stopped');started=false;wantsPlaying=false;restoreAfterSeek=false;retrying=false;proposedMs=-1;seekTarget=-1;media.stop();media.source='';
+    }
+    function close(){menu.revision++;menu.kind='';cancelChangeRequested();retire();closed();}
+    function toggle(){
+        if(retrying || changing)return;
+        if(failure){retryRequested();return;}
+        if(ended)return;
+        wantsPlaying=!wantsPlaying;if(wantsPlaying)media.play();else media.pause();
+        console.info('ATLAS_TV_PLAY_INTENT',wantsPlaying,media.playbackState);reveal();
+    }
+    function openMenu(name){if(changing || failure)return;proposedMs=-1;zone='actions';controlIndex=Math.max(0,['episodes','source','version','quality'].indexOf(name));menu.open(name);reveal();}
+    function activateControl(){openMenu(['episodes','source','version','quality'][controlIndex]);}
+    function propose(delta){
+        if(media.seekable && started && media.duration>0){proposedMs=Math.max(0,Math.min(media.duration-1000,(proposedMs>=0 ? proposedMs : media.position)+delta));zone='seek';}
         reveal();
     }
-    function reveal() { controlsVisible=true; hide.restart(); }
-    Rectangle { anchors.fill: parent; color: 'black' }
+    function commitSeek(){
+        if(proposedMs<0){toggle();return;}
+        var target=proposedMs;proposedMs=-1;zone='surface';seekTarget=target;restoreAfterSeek=wantsPlaying;media.seek(target);
+        console.info('ATLAS_TV_EPISODE_SEEK_COMMIT',target);
+        if(Math.abs(media.position-target)<2000){seekTarget=-1;report(wantsPlaying ? 'playing' : 'paused');}reveal();
+    }
+    function reveal(){controlsVisible=true;hide.restart();}
+    Rectangle {anchors.fill:parent;color:'black'}
     MediaPlayer {
-        id: media;objectName:'episodeMedia'; volume: 1
-        onPlaybackStateChanged: {
+        id:media;objectName:'episodeMedia';volume:1
+        onPlaybackStateChanged:{
             console.info('ATLAS_TV_EPISODE_STATE',playbackState,status,position,duration);
-            if(playbackState===MediaPlayer.PausedState) { player.report('paused'); player.reveal(); }
+            if(playbackState===MediaPlayer.PausedState && player.started){player.report('paused');player.reveal();}
         }
-        onPositionChanged: {
-            if(playbackState===MediaPlayer.PlayingState && hasVideo && position>0) {
+        onPositionChanged:{
+            if(playbackState===MediaPlayer.PlayingState && hasVideo && position>0){
                 player.started=true;
-                if(!player.resumed && duration>0) { player.resumed=true;console.info('ATLAS_TV_EPISODE_READY',hasVideo,hasAudio,duration);if(player.resumeMs>0 && seekable){player.restoreAfterSeek=player.wantsPlaying;media.seek(Math.min(player.resumeMs,Math.max(0,duration-1000)));}player.report('playing'); }
+                if(!player.resumed && duration>0){
+                    player.resumed=true;console.info('ATLAS_TV_EPISODE_READY',hasVideo,hasAudio,duration);
+                    if(player.resumeMs>0 && seekable){player.restoreAfterSeek=player.wantsPlaying;media.seek(Math.min(player.resumeMs,Math.max(0,duration-1000)));}
+                    if(!player.wantsPlaying)media.pause();player.report(player.wantsPlaying ? 'playing' : 'paused');
+                }
             }
-            if(player.seekTarget>=0 && !seekCommit.running && Math.abs(position-player.seekTarget)<2000){player.seekTarget=-1;player.report(player.wantsPlaying ? 'playing' : 'paused');}
+            if(player.seekTarget>=0 && Math.abs(position-player.seekTarget)<2000){player.seekTarget=-1;player.report(player.wantsPlaying ? 'playing' : 'paused');}
         }
-        onStatusChanged: {console.info('ATLAS_TV_EPISODE_STATUS',status);if(status===MediaPlayer.EndOfMedia) { player.report('ended'); player.started=false;player.wantsPlaying=false; player.ended=true; player.controlsVisible=true; }}
-        onError: {console.info('ATLAS_TV_EPISODE_ERROR',error);player.report('error'); player.started=false;player.wantsPlaying=false; player.failure='La lecture a été interrompue.'; player.controlsVisible=true; }
+        onStatusChanged:{console.info('ATLAS_TV_EPISODE_STATUS',status);if(status===MediaPlayer.EndOfMedia){player.report('ended');player.started=false;player.wantsPlaying=false;player.ended=true;player.controlsVisible=true;}}
+        onError:{console.info('ATLAS_TV_EPISODE_ERROR',error);player.report('error');player.started=false;player.wantsPlaying=false;player.failure='La lecture a été interrompue.';player.controlsVisible=true;}
     }
     Loader {anchors.fill:parent;active:!!String(media.source);sourceComponent:Component {
         VideoOutput {objectName:'episodeVideoOutput';anchors.fill:parent;source:media;fillMode:VideoOutput.PreserveAspectFit}
     }}
-    PlayerControls {anchors.fill:parent;player:parent;family:player.family;reducedMotion:player.reducedMotion;visible:player.controlsVisible || !player.playing}
-    Rectangle {anchors.centerIn:parent;width:200;height:72;radius:18;color:'#cf181b22';visible:!!player.seekFeedback
-        Text {anchors.centerIn:parent;text:player.seekFeedback;color:'white';font.family:player.family;font.pixelSize:32;font.weight:Font.DemiBold}
+    PlayerControls {anchors.fill:parent;player:parent;family:player.family;reducedMotion:player.reducedMotion;visible:!player.failure && (menu.opened || player.controlsVisible || !player.playing)}
+    Item {anchors.centerIn:parent;width:88;height:88;visible:player.started && !player.playing && !player.failure && !menu.opened
+        Rectangle {anchors.fill:parent;radius:44;color:'#78000000'}
+        Icon {anchors.centerIn:parent;width:40;height:40;name:'play'}
     }
-    Text { anchors.centerIn:parent; width:1000; horizontalAlignment:Text.AlignHCenter; wrapMode:Text.WordWrap; text:player.failure || (player.ended ? 'Épisode terminé' : !player.started ? 'Chargement…' : ''); color:'white'; font.family:player.family; font.pixelSize:26 }
-    HeroButton {anchors.horizontalCenter:parent.horizontalCenter;y:parent.height/2+58;width:240;label:player.retrying ? 'Vérification…' : 'Réessayer';family:player.family;visible:!!player.failure;focused:true;onActivated:if(!player.retrying)player.retryRequested()}
-    Timer {id:seekCommit;interval:220;onTriggered:{var target=player.seekTarget;if(target<0)return;player.restoreAfterSeek=player.wantsPlaying;media.seek(target);console.info('ATLAS_TV_EPISODE_SEEK_COMMIT',target);if(player.seekTarget>=0 && Math.abs(media.position-target)<2000){player.seekTarget=-1;player.report(player.wantsPlaying ? 'playing' : 'paused');}}}
+    PlayerMenu {id:menu;anchors.fill:parent;current:player.current;transport:player.transport;family:player.family;busy:player.changing || player.retrying
+        onChangeRequested:player.changeRequested(media,target,choice)
+        onCancelRequested:player.cancelChangeRequested()
+        onDismissed:{player.zone='actions';player.reveal();player.forceActiveFocus();}
+    }
+    function changeFailed(message){retrying=false;menu.message=message;reveal();}
+    Text {anchors.centerIn:parent;width:1000;horizontalAlignment:Text.AlignHCenter;wrapMode:Text.WordWrap;text:player.failure || (player.ended ? 'Épisode terminé' : !player.started ? 'Chargement…' : '');color:'white';font.family:player.family;font.pixelSize:26}
+    HeroButton {anchors.horizontalCenter:parent.horizontalCenter;y:parent.height/2+58;width:240;label:player.retrying || player.changing ? 'Préparation…' : 'Réessayer';family:player.family;visible:!!player.failure;focused:true;onActivated:if(!player.retrying && !player.changing)player.retryRequested()}
     Timer {interval:250;running:player.restoreAfterSeek && player.wantsPlaying && media.playbackState===MediaPlayer.PausedState && media.status===MediaPlayer.Buffered;onTriggered:{player.restoreAfterSeek=false;media.play();}}
-    Timer {id:seekFeedbackTimer;interval:1400;onTriggered:player.seekFeedback=''}
-    Timer { interval:15000; repeat:true; running:player.started && media.playbackState===MediaPlayer.PlayingState; onTriggered:player.report('playing') }
-    Timer { id:hide; interval:2500; onTriggered:if(player.playing && player.zone==='surface') player.controlsVisible=false }
-    Keys.onPressed: {
-        if(event.key===Qt.Key_Back || event.key===Qt.Key_Escape) {if(zone==='rates'){zone='toolbar';reveal();}else close();}
-        else if(event.key===Qt.Key_Return || event.key===Qt.Key_Enter || event.key===Qt.Key_Select) {
-            if(zone==='rates')chooseRate();else if(zone==='toolbar')activateControl();else toggle();
-        } else if(event.key===Qt.Key_Right || event.key===Qt.Key_Left) {
+    Timer {interval:15000;repeat:true;running:player.started && media.playbackState===MediaPlayer.PlayingState;onTriggered:player.report('playing')}
+    Timer {id:hide;interval:2500;onTriggered:if(player.playing && player.zone==='surface' && !menu.opened)player.controlsVisible=false}
+    Keys.onPressed:{
+        if(menu.opened){menu.key(event.key);event.accepted=true;return;}
+        if(event.key===Qt.Key_Back || event.key===Qt.Key_Escape){
+            if(player.changing || player.retrying){cancelChangeRequested();retrying=false;}
+            else if(proposedMs>=0){proposedMs=-1;zone='surface';reveal();}
+            else if(zone!=='surface'){zone='surface';reveal();}else close();
+        }else if(event.key===Qt.Key_Return || event.key===Qt.Key_Enter || event.key===Qt.Key_Select){
+            if(failure)toggle();else if(zone==='actions')activateControl();else if(zone==='seek')commitSeek();else toggle();
+        }else if(event.key===Qt.Key_Right || event.key===Qt.Key_Left){
             var delta=event.key===Qt.Key_Right ? 1 : -1;
-            if(zone==='toolbar')controlIndex=Math.max(0,Math.min(5,controlIndex+delta));else if(zone!=='rates')seek(delta*10000);reveal();
-        } else if(event.key===Qt.Key_Up || event.key===Qt.Key_Down) {
+            if(zone==='actions')controlIndex=Math.max(0,Math.min(3,controlIndex+delta));else propose(delta*10000);reveal();
+        }else if(event.key===Qt.Key_Up || event.key===Qt.Key_Down){
             var up=event.key===Qt.Key_Up;
-            if(zone==='rates')rateIndex=Math.max(0,Math.min(rates.length-1,rateIndex+(up ? -1 : 1)));
-            else if(zone==='surface'){zone='toolbar';controlIndex=0;}
-            else if(zone==='toolbar')zone=up ? 'seek' : 'surface';else zone=up ? 'surface' : 'toolbar';reveal();
-        }
-        else return;
+            if(proposedMs>=0)proposedMs=-1;
+            if(zone==='surface')zone=up ? 'actions' : 'seek';else if(zone==='seek')zone=up ? 'actions' : 'surface';else zone='seek';reveal();
+        }else return;
         event.accepted=true;
     }
 }

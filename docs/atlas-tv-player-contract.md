@@ -19,6 +19,12 @@ Il s’agit du cadrage du prochain écran, pas de fonctionnalités déjà livré
 
 ## Grammaire du lecteur
 
+Après revue de la première proposition, Walson précise que **la barre ne doit
+pas disparaître à l'ouverture d'un réglage**. Qualité et Version sont de petites
+listes attachées à leur bouton ; Source/lecteur et Épisodes gardent ce contexte.
+Le [raccordement et ses captures](research/2026-10-28-atlas-tv-player-menus.md)
+remplacent les grandes surfaces de la première étude.
+
 En lecture sans interaction, seule la vidéo est visible. Le HUD donne le
 titre, le numéro/titre de l’épisode, une timeline large, le temps courant
 et le temps restant. Lecture/pause donne un retour centré. Le volume reste

@@ -8,6 +8,8 @@ Item {
     property string accessToken: ""
     property string refreshToken: ""
     property bool artworkEnabled: false
+    property bool readersEnabled: false
+    property bool variantsEnabled: false
     property double expiresAt: 0
     property bool refreshing: false
     property var waiters: []
@@ -60,6 +62,8 @@ Item {
                !runtime.activation || !/^tv_pair_[a-f0-9]{64}$/.test(runtime.activation.code || '')) { fail(); return; }
             apiOrigin=runtime.apiOrigin;
             artworkEnabled=!!(runtime.capabilities && runtime.capabilities.artwork);
+            readersEnabled=!!(runtime.capabilities && runtime.capabilities.readers===true);
+            variantsEnabled=!!(runtime.capabilities && runtime.capabilities.variants===true);
             request(apiOrigin+'/tv/v1/session/activate',{code:runtime.activation.code},'',12000,function(code,value) {
                 if(code!==200 || !credentials(value)) { fail(); return; }
                 loadHome();

@@ -13,3 +13,5 @@ ProfileView ProfileView.qml
 DetailView DetailView.qml
 TvNavigation TvNavigation.qml
 PlayerControls PlayerControls.qml
+PlayerMenu PlayerMenu.qml
+PlayerChoice PlayerChoice.qml

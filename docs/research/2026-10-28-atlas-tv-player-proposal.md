@@ -1,5 +1,10 @@
 # Lecteur TV — proposition après rejet de la barre PC
 
+**Proposition rejetée ensuite par Walson** : les grands panneaux et la
+disparition de la barre donnent l'impression d'une seconde fenêtre. Voir la
+[correction avec menus ancrés](2026-10-28-atlas-tv-player-menus.md). Ces captures
+restent l'historique de la proposition, pas la direction actuelle.
+
 Cette proposition QML est séparée du paquet publié. Elle permet à Walson de
 juger la composition avant raccordement aux flux réels. Le volume appartient
 au Devialet ; Source/lecteur et Qualité sont prioritaires. Le

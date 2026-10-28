@@ -1,5 +1,10 @@
 # Atlas sur la télévision : base réutilisable et premier parcours
 
+Direction corrigée après nouveau retour humain : [menus attachés à la barre](research/2026-10-28-atlas-tv-player-menus.md).
+Walson rejette la disparition du chrome au profit d'un grand panneau. La barre
+reste visible et les choix rapides s'ouvrent au-dessus de leur bouton. Le code
+est raccordé aux capacités réelles ; publication et validation TV restent séparées.
+
 Dernière passe : [proposition visuelle du lecteur TV](research/2026-10-28-atlas-tv-player-proposal.md),
 séparée de l'app publiée et en attente de revue humaine. La barre PC transposée
 est rejetée ; volume matériel, timeline et choix réels source/lecteur/qualité

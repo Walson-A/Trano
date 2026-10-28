@@ -1,5 +1,15 @@
 # UI/UX & Design System
 
+## Lecteur TV : menus attachés à la barre
+
+Walson rejette les grands panneaux qui faisaient disparaître la barre. Le
+[lecteur raccordé](research/2026-10-28-atlas-tv-player-menus.md) conserve le
+chrome et ouvre de petites listes au-dessus de ses boutons. Source/lecteur,
+Qualité réelle, Version et Épisodes partagent cette grammaire. Les changements
+préparent le flux sans quitter l'épisode et conservent position et intention.
+Revue de captures intégrées et banc fonctionnel distincts de la validation TV ;
+cette correction n'est pas encore publiée.
+
 ## Lecteur TV : proposition séparée en revue
 
 La [nouvelle étude QML](research/2026-10-28-atlas-tv-player-proposal.md)

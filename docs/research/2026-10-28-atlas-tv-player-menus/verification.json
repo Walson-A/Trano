@@ -1,0 +1,193 @@
+{
+  "passed": true,
+  "scope": "real QML host/UI with fake API and fake decoder; no native playback claim",
+  "canonicalEpisode": 13,
+  "tvPlayer": {
+    "anchoredMenusKeepChrome": true,
+    "proposedTimelineUntilConfirmed": true,
+    "cancelSeekKeepsPosition": true,
+    "cancelResolutionIgnoresLateResponse": true,
+    "strictSourceReaderVariant": true,
+    "strictRetry401And200KeepsChoice": true,
+    "failedChangeKeepsOldVideo": true,
+    "pausedQualityAndVersionKeepPositionAndIntent": true,
+    "episodesOverlayKeepsVideoAndSeasonBrowsing": true,
+    "missingCapabilityUnavailable": true,
+    "perSessionProgressSequence": true
+  },
+  "lang": "vf",
+  "defaultSoundOnAndLabelled": true,
+  "infoSelectionPreserved": true,
+  "search": {
+    "remoteKeyboard": true,
+    "staleIgnored": true,
+    "selectionAndBack": true
+  },
+  "profile": {
+    "publicProfileWithoutOAuth": true,
+    "statsScaleChecked": true,
+    "selectionAndBack": true
+  },
+  "lateTrailerDoesNotChangeSelection": true,
+  "silentGainZero": true,
+  "bannerErrorUsesPoster": true,
+  "artworkQueue": {
+    "maxConcurrent": 2,
+    "identityChecked": true,
+    "deduplicated": true,
+    "capabilityRequired": true,
+    "warmWithoutResume": true
+  },
+  "events": [
+    {
+      "duration_ms": 1500095,
+      "position_ms": 120000,
+      "seq": 1,
+      "state": "paused"
+    },
+    {
+      "duration_ms": 1500095,
+      "position_ms": 120000,
+      "seq": 2,
+      "state": "playing"
+    },
+    {
+      "duration_ms": 1500095,
+      "position_ms": 120000,
+      "seq": 3,
+      "state": "paused"
+    },
+    {
+      "duration_ms": 1500095,
+      "position_ms": 130000,
+      "seq": 4,
+      "state": "paused"
+    },
+    {
+      "duration_ms": 1500095,
+      "position_ms": 130000,
+      "seq": 5,
+      "state": "paused"
+    },
+    {
+      "duration_ms": 1500095,
+      "position_ms": 150000,
+      "seq": 6,
+      "state": "playing"
+    },
+    {
+      "duration_ms": 1500095,
+      "position_ms": 150000,
+      "seq": 7,
+      "state": "paused"
+    },
+    {
+      "duration_ms": 1500095,
+      "position_ms": 150000,
+      "seq": 8,
+      "state": "playing"
+    },
+    {
+      "duration_ms": 1500095,
+      "position_ms": 150000,
+      "seq": 9,
+      "state": "stopped"
+    },
+    {
+      "duration_ms": 1500095,
+      "position_ms": 150000,
+      "seq": 1,
+      "state": "paused"
+    },
+    {
+      "duration_ms": 1500095,
+      "position_ms": 150000,
+      "seq": 2,
+      "state": "playing"
+    },
+    {
+      "duration_ms": 1500095,
+      "position_ms": 150000,
+      "seq": 3,
+      "state": "paused"
+    },
+    {
+      "duration_ms": 1500095,
+      "position_ms": 150000,
+      "seq": 4,
+      "state": "stopped"
+    },
+    {
+      "duration_ms": 1500095,
+      "position_ms": 150000,
+      "seq": 1,
+      "state": "paused"
+    },
+    {
+      "duration_ms": 1500095,
+      "position_ms": 150000,
+      "seq": 2,
+      "state": "paused"
+    },
+    {
+      "duration_ms": 1500095,
+      "position_ms": 150000,
+      "seq": 3,
+      "state": "error"
+    },
+    {
+      "duration_ms": 1500095,
+      "position_ms": 150000,
+      "seq": 1,
+      "state": "paused"
+    },
+    {
+      "duration_ms": 1500095,
+      "position_ms": 150000,
+      "seq": 2,
+      "state": "playing"
+    },
+    {
+      "duration_ms": 1500095,
+      "position_ms": 150000,
+      "seq": 3,
+      "state": "error"
+    },
+    {
+      "duration_ms": 1500095,
+      "position_ms": 150000,
+      "seq": 1,
+      "state": "paused"
+    },
+    {
+      "duration_ms": 1500095,
+      "position_ms": 150000,
+      "seq": 2,
+      "state": "playing"
+    },
+    {
+      "duration_ms": 1500095,
+      "position_ms": 150000,
+      "seq": 3,
+      "state": "stopped"
+    },
+    {
+      "duration_ms": 1500095,
+      "position_ms": 150000,
+      "seq": 1,
+      "state": "paused"
+    },
+    {
+      "duration_ms": 1500095,
+      "position_ms": 150000,
+      "seq": 2,
+      "state": "playing"
+    },
+    {
+      "duration_ms": 1500095,
+      "position_ms": 150000,
+      "seq": 3,
+      "state": "stopped"
+    }
+  ]
+}

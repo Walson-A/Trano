@@ -120,47 +120,58 @@ Application {
             });
         }
         function launch(media,target,excluded,resumeOverride) {
-            if(resolving || playbackId) return;
-            if(episode.status===Loader.Error) { playbackError('Le lecteur n’a pas pu être chargé. Relance Atlas TV.'); return; }
-            if(!media || !(media.anilist_id>0) || !target || !(target.numero>0)) {
-                playbackError('Cet épisode ne dispose pas encore d’une identité de lecture compatible TV.'); hero.restartPreview(); return;
-            }
-            resolving=true; var turn=++generation;
+            if(playbackId)return;
+            resolvePlayback(media,target,{},excluded,resumeOverride,false,false);
+        }
+        function cancelChange(){generation++;resolving=false;retrySerial++;retryInspectBusy=false;if(episode.item)episode.item.retrying=false;}
+        function changeEpisode(media,target,choice){resolvePlayback(media,target,choice,[],undefined,true,false);}
+        function resolvePlayback(media,target,choice,excluded,resumeOverride,replacing,forceRefresh) {
+            if(resolving || (replacing && !playbackId))return;
+            if(episode.status===Loader.Error){playbackError('Le lecteur n’a pas pu être chargé. Relance Atlas TV.');return;}
+            if(!media || !(media.anilist_id>0) || !target || !(target.numero>0)){playbackError('Cet épisode ne dispose pas d’une identité de lecture compatible TV.');return;}
+            choice=choice || {};
+            if(choice.source && ['voiranime','anime-sama'].indexOf(choice.source)<0 || choice.readerId && !/^[a-f0-9]{64}$/.test(choice.readerId) || choice.variantId && (!/^[a-f0-9]{64}$/.test(choice.variantId) || !choice.readerId || !choice.source))return;
+            if((choice.readerId || choice.source) && !session.readersEnabled || choice.variantId && !session.variantsEnabled){if(replacing)episode.item.changeFailed('Ce choix n’est pas disponible sur cette connexion.');return;}
+            resolving=true;var turn=++generation,old=pendingPlayback,oldId=playbackId;
             var readers=[];
-            for(var i=0;excluded && i<excluded.length && readers.length<8;i++)if(/^[a-f0-9]{64}$/.test(excluded[i]) && readers.indexOf(excluded[i])<0)readers.push(excluded[i]);
-            hero.previewEnabled=false; waiting.forceActiveFocus();
-            session.api('/tv/v1/playbacks',{anilist_id:media.anilist_id,episode:target.numero,lang:target.vf ? 'vf' : 'vo',exclude_readers:readers},110000,function(status,value) {
-                if(turn!==generation) return;
+            for(var i=0;excluded && i<excluded.length;i++)if(/^[a-f0-9]{64}$/.test(excluded[i]) && excluded[i]!==choice.readerId && readers.indexOf(excluded[i])<0)readers.push(excluded[i]);
+            readers=readers.slice(-8);
+            var body={anilist_id:media.anilist_id,episode:target.numero,lang:target.vf ? 'vf' : 'vo',exclude_readers:readers};
+            if(choice.source)body.source=choice.source;if(choice.readerId)body.reader_id=choice.readerId;if(choice.variantId)body.variant_id=choice.variantId;if(forceRefresh)body.force_refresh=true;
+            hero.previewEnabled=false;if(!replacing)waiting.forceActiveFocus();
+            session.api('/tv/v1/playbacks',body,110000,function(status,value){
+                if(turn!==generation || replacing && playbackId!==oldId)return;
                 resolving=false;
                 var url=value && value.stream ? session.mediaUrl(value.stream.path,'episode') : '';
-                if(status!==200 || !value || !/^[a-f0-9-]{36}$/.test(value.id || '') || !url) {
+                if(status!==200 || !value || value.anilist_id!==body.anilist_id || value.episode!==body.episode || value.lang!==body.lang || !/^[a-f0-9-]{36}$/.test(value.id || '') || !url || choice.readerId && value.reader_id!==choice.readerId || choice.source && value.source!==choice.source || choice.variantId && value.variant_id!==choice.variantId){
                     logResolveFailure(status,value);
-                    playbackError(status===429 ? 'Une vidéo est en cours de préparation. Réessaie dans un instant.' : 'Cet épisode est indisponible pour le moment.');
-                    returnFromPlayback(); return;
+                    var message=status===429 ? 'Une vidéo est en cours de préparation. Réessaie dans un instant.' : 'Ce flux est indisponible pour le moment.';
+                    if(replacing)episode.item.changeFailed(message);else {playbackError(message);returnFromPlayback();}return;
                 }
-                playbackId=value.id; sequence=0;
-                pendingPlayback={url:url,path:value.stream.path,title:media.titre+' · Épisode '+target.numero+' · '+(target.vf ? 'VF' : 'VOSTFR'),resume:typeof resumeOverride==='number' && isFinite(resumeOverride) && resumeOverride>=0 ? resumeOverride : value.resume ? value.resume.position_ms || 0 : 0,media:media,target:target,readerId:/^[a-f0-9]{64}$/.test(value.reader_id || '') ? value.reader_id : '',excluded:readers};
-                if(episode.status===Loader.Ready) startEpisode();
+                var sameEpisode=replacing && old.media.anilist_id===media.anilist_id && old.target.numero===target.numero;
+                var resume=typeof resumeOverride==='number' && isFinite(resumeOverride) && resumeOverride>=0 ? resumeOverride : sameEpisode ? episode.item.positionMs : value.resume ? value.resume.position_ms || 0 : 0;
+                var intent=replacing ? episode.item.failure ? true : episode.item.wantsPlaying : true;
+                // This reports the old session before installing the new identity/sequence.
+                if(replacing)episode.item.retire();
+                playbackId=value.id;sequence=0;
+                pendingPlayback={url:url,path:value.stream.path,title:media.titre,chapter:'Épisode '+target.numero+' · '+(target.vf ? 'VF' : 'VOSTFR'),resume:resume,playingIntent:intent,media:media,target:{numero:target.numero,vf:!!target.vf},readerId:/^[a-f0-9]{64}$/.test(value.reader_id || '') ? value.reader_id : '',source:['voiranime','anime-sama'].indexOf(value.source)>=0 ? value.source : '',readerLabel:typeof value.reader==='string' ? value.reader.slice(0,160) : '',qualityLabel:value.quality && typeof value.quality.label==='string' ? value.quality.label.slice(0,80) : '',choice:{source:choice.source || '',readerId:choice.readerId || '',variantId:choice.variantId || ''},excluded:readers};
+                if(episode.status===Loader.Ready)startEpisode();
             });
         }
-        function startEpisode() {
-            episode.item.title=pendingPlayback.title;
-            episode.item.resumeMs=pendingPlayback.resume;
-            episode.item.play(pendingPlayback.url);
+        function startEpisode(){
+            episode.item.title=pendingPlayback.title;episode.item.chapter=pendingPlayback.chapter;
+            episode.item.resumeMs=pendingPlayback.resume;episode.item.play(pendingPlayback.url,pendingPlayback.playingIntent);
         }
-        function browsePlayingEpisodes(){var current=pendingPlayback ? pendingPlayback.media : null;if(playbackId && episode.item)episode.item.close();if(panel!=='detail' && current)openDetail(current);}
         function retryEpisode(){
-            var current=pendingPlayback,id=playbackId;if(!current || !id || retryInspectBusy)return;
+            var current=pendingPlayback,id=playbackId;if(!current || !id || retryInspectBusy || resolving)return;
             var position=episode.item ? episode.item.positionMs : 0,turn=++retrySerial;retryInspectBusy=true;episode.item.retrying=true;
             session.inspectEpisode(current.path,function(status,value){
                 if(screen.playbackId!==id || turn!==screen.retrySerial)return;
                 screen.retryInspectBusy=false;episode.item.retrying=false;
-                var excluded=(current.excluded || []).slice();
-                if((status>=200 && status<300 || status===502 || status===503 || status===504) && current.readerId){
-                    excluded=excluded.filter(function(reader){return reader!==current.readerId;});excluded.push(current.readerId);excluded=excluded.slice(-8);
-                }
-                // A 401 is a lost/expired ticket, not evidence against this provider.
-                episode.item.close();screen.launch(current.media,current.target,excluded,position);
+                var excluded=(current.excluded || []).slice(),choice=current.choice || {};
+                if(!choice.readerId && (status>=200 && status<300 || status===502 || status===503 || status===504) && current.readerId){excluded=excluded.filter(function(reader){return reader!==current.readerId;});excluded.push(current.readerId);excluded=excluded.slice(-8);}
+                // A 401 renews the ticket without blaming the host. Strict choices stay strict.
+                screen.resolvePlayback(current.media,current.target,choice,excluded,position,true,true);
             });
         }
         function progress(value) {
@@ -196,9 +207,9 @@ Application {
             id:episode; objectName:'episodeLoader'; anchors.fill:parent; source:'EpisodePlayer.qml'; visible:!!screen.playbackId
             onLoaded: {
                 item.family=regular.name || 'sans-serif';
-                item.progress.connect(screen.progress);
-                item.episodesRequested.connect(screen.browsePlayingEpisodes);item.retryRequested.connect(screen.retryEpisode);
-                item.closed.connect(function() { screen.playbackId='';screen.retrySerial++;screen.retryInspectBusy=false;screen.returnFromPlayback(); });
+                item.transport=session;item.current=Qt.binding(function(){return screen.pendingPlayback;});item.changing=Qt.binding(function(){return screen.resolving;});
+                item.progress.connect(screen.progress);item.changeRequested.connect(screen.changeEpisode);item.cancelChangeRequested.connect(screen.cancelChange);item.retryRequested.connect(screen.retryEpisode);
+                item.closed.connect(function() { screen.playbackId='';screen.pendingPlayback=null;screen.cancelChange();screen.returnFromPlayback(); });
                 if(screen.pendingPlayback && screen.playbackId) screen.startEpisode();
             }
         }
@@ -214,7 +225,7 @@ Application {
             onLoaded:{item.transport=session;item.artworks=artworks;item.family=regular.name || 'sans-serif';item.closed.connect(screen.closeDetail);item.playRequested.connect(screen.launch);}
         }
         FocusScope {
-            id:waiting; anchors.fill:parent; visible:session.state!=='ready' || screen.resolving || (screen.panel==='search' && searchPanel.status!==Loader.Ready) || (screen.panel==='profile' && profilePanel.status!==Loader.Ready)
+            id:waiting; anchors.fill:parent; visible:session.state!=='ready' || screen.resolving && !screen.playbackId || (screen.panel==='search' && searchPanel.status!==Loader.Ready) || (screen.panel==='profile' && profilePanel.status!==Loader.Ready)
             Rectangle { anchors.fill:parent; color:'#f2090a0d' }
             Text { anchors.centerIn:parent; width:1000; horizontalAlignment:Text.AlignHCenter; wrapMode:Text.WordWrap; text:session.state!=='ready' ? session.message : screen.resolving ? 'Préparation de l’épisode…\nRetour pour annuler' : 'Ouverture…'; color:'white'; font.family:regular.name || 'sans-serif'; font.pixelSize:26 }
             Keys.onPressed: {
