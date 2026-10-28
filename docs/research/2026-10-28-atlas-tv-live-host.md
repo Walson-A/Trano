@@ -45,6 +45,14 @@ tous les refus CDN. Pas de contournement natif ou d'accès administrateur.
 Le correctif `0481187` est ensuite publié (`hero-0481187`, vingt fichiers) et
 relancé via le service permanent. Le résultat sonore humain reste attendu.
 
+Walson signale ensuite un bouton perçu comme un carré ambigu. Il affiche
+désormais « Son coupé » / « Son activé ». Les quatre icônes Lucide existantes
+sont rasterisées en PNG transparents 48×48 via QtSvg (SVG et licence conservés),
+pour utiliser le transport `image/png` reconnu par le gateway et éviter une
+dépendance au décodage SVG distant. Cela ne prouve pas que SVG était la cause
+native : le défaut de lisibilité est confirmé, sa cause technique ne l'est pas.
+Le banc et sa capture ont été revus avec ce libellé.
+
 ## Transport d'illustrations préparé
 
 `ArtworkCache.qml` consomme le contrat backend `POST /tv/v1/artworks` avec
@@ -104,7 +112,7 @@ de secondes ; un refus YouTube ou hébergeur reste possible.
 
 `package-atlas-tv-hero.py` fabrique un dossier neuf, sans réseau ni secret.
 Les deux polices sont des entrées explicites ; leurs licences sont incluses.
-Les quatre SVG existants sont aplatis en `icon-*.svg`, avec adaptation de leur
+Les quatre PNG issus des SVG existants sont aplatis en `icon-*.png`, avec adaptation de leur
 seule référence dans la copie de `Icon.qml`. Le manifeste de sortie vise
 `live.qml`, avec `qmldir` et tous les composants. Pas de snapshot ni vidéo du
 banc. Le gateway conserve son allowlist plate.

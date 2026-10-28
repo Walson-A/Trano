@@ -21,7 +21,7 @@ def main():
  if not 1024<=args.port<=65535 or not 30<=args.seconds<=300:p.error('Invalid port or trial duration')
  source=pathlib.Path(__file__).resolve().parent.parent/'devialet/hero'
  files={name:(source/name).read_bytes() for name in ('Hero.qml','HeroButton.qml','Trailer.qml','FocusCard.qml','HeroArtwork.qml','Icon.qml','Motion.js','player.qml','manifest.json','qmldir')}
- for name in ('play','info','volume-2','volume-x'): files['icons/'+name+'.svg']=(source/'icons'/(name+'.svg')).read_bytes()
+ for name in ('play','info','volume-2','volume-x'): files['icons/'+name+'.png']=(source/'icons'/(name+'.png')).read_bytes()
  files['regular.ttf']=args.regular.read_bytes();files['bold.ttf']=args.bold.read_bytes()
  snapshot=json.loads(args.snapshot.read_text(encoding='utf-8-sig'))
  nonce=secrets.token_urlsafe(24);base=f'http://{args.bind}:{args.port}/{nonce}/'

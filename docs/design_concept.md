@@ -11,6 +11,8 @@ absentes et une sourdine incohérente. Le repli bannière vers affiche et le gai
 nul sont ajoutés ; le transport serveur des illustrations reste à raccorder.
 Le chargeur d'illustrations est désormais préparé, avec une capacité serveur
 explicite et une file à deux requêtes. Son affichage natif attend le backend.
+Le bouton son porte « Son coupé » / « Son activé » après le retour de Walson
+sur son carré ambigu. Les icônes existantes sont servies en PNG transparents.
 
 ## Expérimentation Atlas TV — 26 octobre 2026
 

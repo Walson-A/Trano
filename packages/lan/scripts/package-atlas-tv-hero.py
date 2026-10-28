@@ -24,7 +24,7 @@ def build(destination, regular, bold):
     icon = destination / 'Icon.qml'
     icon.write_text(icon.read_text(encoding='utf-8').replace("'icons/'", "'icon-'"), encoding='utf-8')
     for name in ['play', 'info', 'volume-2', 'volume-x']:
-        shutil.copyfile(source / 'icons' / (name+'.svg'), destination / ('icon-'+name+'.svg'))
+        shutil.copyfile(source / 'icons' / (name+'.png'), destination / ('icon-'+name+'.png'))
     shutil.copyfile(source / 'icons/LICENSE', destination / 'ICON-LICENSE.txt')
     shutil.copyfile(source / 'FONT-LICENSE.txt', destination / 'FONT-LICENSE.txt')
     for name, data in fonts.items():
