@@ -6,7 +6,7 @@ Application {
     id: app
     FontLoader { id: regular; source: "regular.ttf" }
     FontLoader { source: "bold.ttf" }
-    TvSession { id: session; objectName:'tvSession'; onHomeLoaded: hero.selectMode(hero.resumeItems.length ? 'resume' : 'featured') }
+    TvSession { id: session; objectName:'tvSession'; onHomeLoaded: { hero.selectMode(hero.resumeItems.length ? 'resume' : 'featured'); Qt.callLater(screen.warmArtwork); } }
     ArtworkCache { id:artworks; objectName:'artworkCache'; transport:session }
     Item {
         id: screen; objectName:'tvScreen'
@@ -20,6 +20,7 @@ Application {
         property var previewCache: ({})
         property var previewFailures: ({})
         function warmArtwork() {
+            if(playbackId || resolving) return;
             artworks.request(hero.selected,'banner',true);
             artworks.request(hero.selected,'poster',true);
             for(var i=0;i<Math.min(6,hero.items.length);i++) artworks.request(hero.items[i],'banner',false);

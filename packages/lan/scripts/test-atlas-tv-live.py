@@ -98,6 +98,7 @@ Item {
  function mediaUrl(path,kind) { return apiOrigin+path; }
  function finishPreview(id,key) { var done=pendingPreview; pendingPreview=null; done(200,{kind:'trailer',anilist_id:id,youtube_id:key,path:'/tv/v1/preview-media/'+'b'.repeat(64),expires_at:Date.now()/1000+900}); }
  function finishArtwork(index,id,kind) { pendingArtworks[index](200,{anilist_id:id,kind:kind,path:'/tv/v1/artwork-media/'+'c'.repeat(64),expires_at:Date.now()/1000+900}); }
+ function featuredOnly() { state='connecting'; artworkEnabled=false; var value=JSON.parse(JSON.stringify(benchmarkHome)); value.rangees=[]; home=value; artworkEnabled=true; state='ready'; homeLoaded(); }
 }''')
     engine=QQmlApplicationEngine();engine.addImportPath(str(root))
     engine.rootContext().setContextProperty('benchmarkHome',snapshot)
@@ -171,7 +172,11 @@ Item {
             session.setProperty('artworkEnabled',False);cache.request({'anilist_id':1004},'banner',False)
             assert len([c for c in calls if c[0]=='/tv/v1/artworks'])==3
             assert '1002' in cache.property('sources').toVariant()
-            (args.evidence/'verification.json').write_text(json.dumps({'passed':True,'scope':'real QML host/UI with fake API and fake decoder; no native playback claim','canonicalEpisode':13,'lang':'vf','lateTrailerDoesNotChangeSelection':True,'silentGainZero':True,'bannerErrorUsesPoster':True,'artworkQueue':{'maxConcurrent':2,'identityChecked':True,'deduplicated':True,'capabilityRequired':True},'events':events},indent=2),encoding='utf-8')
+            hero.choose(0);session.featuredOnly();QTest.qWait(80)
+            warmed=[body for path,body in calls if path=='/tv/v1/artworks'][3:]
+            assert len(warmed)==2 and {v['kind'] for v in warmed}=={'banner','poster'}
+            assert all(v['anilist_id']==snapshot['hero'][0]['anilist_id'] for v in warmed)
+            (args.evidence/'verification.json').write_text(json.dumps({'passed':True,'scope':'real QML host/UI with fake API and fake decoder; no native playback claim','canonicalEpisode':13,'lang':'vf','lateTrailerDoesNotChangeSelection':True,'silentGainZero':True,'bannerErrorUsesPoster':True,'artworkQueue':{'maxConcurrent':2,'identityChecked':True,'deduplicated':True,'capabilityRequired':True,'warmWithoutResume':True},'events':events},indent=2),encoding='utf-8')
             app.quit()
         except Exception as error: messages.append(str(error));app.exit(1)
     QTimer.singleShot(600,check);QTimer.singleShot(10000,lambda:app.exit(2))

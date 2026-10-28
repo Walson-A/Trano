@@ -64,6 +64,8 @@ un ancien gateway conserve donc le parcours précédent.
 
 Le client prépare deux images simultanément, donne la priorité au titre
 sélectionné et chauffe les six premières cartes de la rangée. Requêtes dédupliquées,
+Le préchargement commence aussi explicitement après l'accueil sans reprises,
+sans attendre un changement de sélection ou le minuteur de maintenance.
 file limitée à 64, map à 64 titres, métadonnées à 128 entrées. Cache de ticket
 jusqu'à trente secondes avant expiration ; en cas de refus, aucune boucle
 (dix secondes de pause sur 429, sinon une minute). Image native/affiche restent

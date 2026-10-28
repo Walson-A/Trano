@@ -10,7 +10,8 @@
     "maxConcurrent": 2,
     "identityChecked": true,
     "deduplicated": true,
-    "capabilityRequired": true
+    "capabilityRequired": true,
+    "warmWithoutResume": true
   },
   "events": [
     {
