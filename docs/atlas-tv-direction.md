@@ -2,6 +2,11 @@
 
 ## Cadrage du 26 octobre 2026
 
+Passe suivante du 28 octobre : [Recherche et Profil adaptés du PC](research/2026-10-28-atlas-tv-search-profile.md),
+clavier télécommande, vrais DTO et retours mémorisés. Le paquet embarque ses
+icônes pour leur disponibilité au-delà du bootstrap. La récidive de l'état
+sonore affiché reste suivie lors de l'essai natif.
+
 Direction actualisée le 28 octobre après essai : [plusieurs rangées sous le héros](research/2026-10-28-atlas-tv-rows-and-audio.md),
 avec les vraies catégories du catalogue et la mémorisation de chaque ligne.
 Les onglets « À reprendre / À la une » sont retirés de cette itération.

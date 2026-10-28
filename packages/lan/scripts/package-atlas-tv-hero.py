@@ -4,6 +4,7 @@ import hashlib
 import json
 import pathlib
 import shutil
+import base64
 
 
 def build(destination, regular, bold):
@@ -18,13 +19,21 @@ def build(destination, regular, bold):
         fonts[name] = data
     destination.mkdir(parents=True)
     for name in ['Hero.qml', 'HeroButton.qml', 'FocusCard.qml', 'HeroArtwork.qml', 'Icon.qml',
-                 'Motion.js', 'Trailer.qml', 'TvSession.qml', 'EpisodePlayer.qml', 'ArtworkCache.qml', 'MediaRow.qml', 'live.qml', 'qmldir']:
+                 'Motion.js', 'Trailer.qml', 'TvSession.qml', 'EpisodePlayer.qml', 'ArtworkCache.qml', 'MediaRow.qml', 'SearchView.qml', 'ProfileView.qml', 'live.qml', 'qmldir']:
         shutil.copyfile(source / name, destination / name)
-    # The gateway deliberately accepts flat, allowlisted filenames only.
+    # Icons remain usable after the ten-minute bootstrap ticket expires.
+    embedded = {}
+    for name in ['play', 'info', 'volume-2', 'volume-x', 'search', 'user-round', 'arrow-left']:
+        data = (source / 'icons' / (name+'.png')).read_bytes()
+        if not data.startswith(b'\x89PNG\r\n\x1a\n') or len(data)>65536:
+            raise ValueError('A bounded PNG icon is required')
+        embedded[name] = 'data:image/png;base64,'+base64.b64encode(data).decode('ascii')
     icon = destination / 'Icon.qml'
-    icon.write_text(icon.read_text(encoding='utf-8').replace("'icons/'", "'icon-'"), encoding='utf-8')
-    for name in ['play', 'info', 'volume-2', 'volume-x']:
-        shutil.copyfile(source / 'icons' / (name+'.png'), destination / ('icon-'+name+'.png'))
+    icon_text=icon.read_text(encoding='utf-8')
+    marker='property var embeddedSources: ({})'
+    if marker not in icon_text:
+        raise ValueError('Icon embedding marker missing')
+    icon.write_text(icon_text.replace(marker,'property var embeddedSources: ('+json.dumps(embedded)+')'), encoding='utf-8')
     shutil.copyfile(source / 'icons/LICENSE', destination / 'ICON-LICENSE.txt')
     shutil.copyfile(source / 'FONT-LICENSE.txt', destination / 'FONT-LICENSE.txt')
     for name, data in fonts.items():

@@ -7,6 +7,8 @@ import pathlib
 import shutil
 import sys
 import tempfile
+import traceback
+import time
 
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--qt-path',type=pathlib.Path,required=True)
@@ -15,6 +17,7 @@ parser.add_argument('--assets',type=pathlib.Path,required=True)
 parser.add_argument('--regular',type=pathlib.Path,required=True)
 parser.add_argument('--bold',type=pathlib.Path,required=True)
 parser.add_argument('--evidence',type=pathlib.Path,required=True)
+parser.add_argument('--history',type=pathlib.Path,help='Explicit PC history fixture for profile/navigation checks')
 args=parser.parse_args()
 sys.path.insert(0,str(args.qt_path.resolve()))
 dll=os.add_dll_directory(str(args.qt_path.resolve()/'PyQt5/Qt5/bin')) if os.name=='nt' else None
@@ -28,6 +31,14 @@ from PyQt5 import sip
 spec=importlib.util.spec_from_file_location('pack',pathlib.Path(__file__).with_name('package-atlas-tv-hero.py'))
 pack=importlib.util.module_from_spec(spec);spec.loader.exec_module(pack)
 snapshot=json.loads(args.snapshot.read_text(encoding='utf-8-sig'))
+history_path=args.history or args.snapshot.parent/'historique.json'
+history=json.loads(history_path.read_text(encoding='utf-8-sig'))
+for event in history.get('activite',[]):
+    card=event.get('carte')
+    if not card:continue
+    image=args.assets/(str(card['anilist_id'])+'-banner.jpg')
+    card['banniere']=image.resolve().as_uri() if image.exists() else ''
+    card['affiche']=card['banniere']
 for card in snapshot['hero']+[c for r in snapshot['rangees'] for c in r['cartes']]:
     path=args.assets/(str(card['anilist_id'])+'-banner.jpg')
     card['banniere']=path.resolve().as_uri() if path.exists() else ''
@@ -66,7 +77,7 @@ Item {
  property int duration:1500095
  property int position:0
  signal error(int error)
- function play() { playbackState=1; position=1000; }
+ function play() { duration=0;playbackState=1;position=1;Qt.callLater(function(){duration=1500095;position=1000;}); }
  function pause() { playbackState=2; }
  function stop() { playbackState=0; }
  function seek(value) { position=value; }
@@ -84,6 +95,7 @@ Item {
  property string apiOrigin:"https://test.invalid"
  property var pendingPreview:null
  property var pendingArtworks:[]
+ property var pendingSearches:[]
  signal homeLoaded()
  signal unavailable()
  signal apiCalled(string path,var body)
@@ -92,6 +104,8 @@ Item {
   apiCalled(path,body);
   if(path==='/tv/v1/previews') { pendingPreview=done; return; }
   if(path==='/tv/v1/artworks') { pendingArtworks=pendingArtworks.concat([done]); return; }
+  if(path==='/tv/v1/catalog/search') { pendingSearches=pendingSearches.concat([done]); return; }
+  if(path==='/tv/v1/catalog/history') { Qt.callLater(function(){done(200,benchmarkHistory);});return; }
   if(path==='/tv/v1/playbacks') Qt.callLater(function(){done(200,{id:'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',stream:{path:'/tv/v1/episode-media/'+'a'.repeat(64)},resume:{position_ms:120000}});});
   else Qt.callLater(function(){done(200,{});});
  }
@@ -99,19 +113,28 @@ Item {
  function finishPreview(id,key) { var done=pendingPreview; pendingPreview=null; done(200,{kind:'trailer',anilist_id:id,youtube_id:key,path:'/tv/v1/preview-media/'+'b'.repeat(64),expires_at:Date.now()/1000+900}); }
  function finishArtwork(index,id,kind) { pendingArtworks[index](200,{anilist_id:id,kind:kind,path:'/tv/v1/artwork-media/'+'c'.repeat(64),expires_at:Date.now()/1000+900}); }
  function featuredOnly() { state='connecting'; artworkEnabled=false; var value=JSON.parse(JSON.stringify(benchmarkHome)); value.rangees=[]; home=value; artworkEnabled=true; state='ready'; homeLoaded(); }
+ function finishSearch(index) {pendingSearches[index](200,{resultats:benchmarkHome.hero.slice(index,index+4)});}
 }''')
     engine=QQmlApplicationEngine();engine.addImportPath(str(root))
     engine.rootContext().setContextProperty('benchmarkHome',snapshot)
+    engine.rootContext().setContextProperty('benchmarkHistory',history)
     engine.load(QUrl.fromLocalFile(str(bundle/'live.qml')))
     assert engine.rootObjects(),messages
     window=engine.rootObjects()[0]
     hero=window.findChild(QObject,'atlasHero');session=window.findChild(QObject,'tvSession');screen=window.findChild(QObject,'tvScreen')
     calls=[];session.apiCalled.connect(lambda path,body:calls.append((path,body.toVariant())))
+    def spin(predicate):
+        deadline=time.monotonic()+3
+        while not predicate() and time.monotonic()<deadline:QTest.qWait(25)
+        assert predicate(),'Expected UI/API state did not settle'
     args.evidence.mkdir(parents=True,exist_ok=False)
     def check():
         try:
             window.requestActivate();hero.forceActiveFocus(Qt.OtherFocusReason);hero.setProperty('previewEnabled',False)
             assert hero.property('muted') is False and window.findChild(QObject,'heroSound').property('label')=='Son activé'
+            icons=window.findChildren(QObject,'iconPixels')
+            assert len(icons)>=7 and not list(bundle.glob('icon-*.png'))
+            assert all(str(icon.property('source').toString()).startswith('data:image/png;base64,') and icon.property('status')==1 for icon in icons),'An icon still depends on a bootstrap request'
             QTest.keyClick(window,Qt.Key_Right);QTest.keyClick(window,Qt.Key_Down)
             assert hero.property('actionIndex')==1 and window.findChild(QObject,'heroInfo').property('selected') is True
             assert window.findChild(QObject,'heroPlay').property('whiteSurface') is False
@@ -121,7 +144,7 @@ Item {
             assert hero.property('selected').toVariant()['a_lancer']['numero']==13
             QTest.keyClick(window,Qt.Key_Return)
             QTimer.singleShot(400,playing)
-        except Exception as error: messages.append(str(error));app.exit(1)
+        except Exception as error: messages.append(traceback.format_exc());app.exit(1)
     def playing():
         try:
             targets=[body for path,body in calls if path=='/tv/v1/playbacks']
@@ -132,7 +155,7 @@ Item {
             QTest.keyClick(window,Qt.Key_Right) # seek +10s
             QTest.keyClick(window,Qt.Key_Back) # return to hero, not quit
             QTimer.singleShot(400,returned)
-        except Exception as error: messages.append(str(error));app.exit(1)
+        except Exception as error: messages.append(traceback.format_exc());app.exit(1)
     def returned():
         try:
             assert screen.property('playbackId')==''
@@ -183,10 +206,54 @@ Item {
             warmed=[body for path,body in calls if path=='/tv/v1/artworks'][3:]
             assert len(warmed)==2 and {v['kind'] for v in warmed}=={'banner','poster'}
             assert all(v['anilist_id']==snapshot['hero'][0]['anilist_id'] for v in warmed)
-            (args.evidence/'verification.json').write_text(json.dumps({'passed':True,'scope':'real QML host/UI with fake API and fake decoder; no native playback claim','canonicalEpisode':13,'lang':'vf','defaultSoundOnAndLabelled':True,'infoSelectionPreserved':True,'lateTrailerDoesNotChangeSelection':True,'silentGainZero':True,'bannerErrorUsesPoster':True,'artworkQueue':{'maxConcurrent':2,'identityChecked':True,'deduplicated':True,'capabilityRequired':True,'warmWithoutResume':True},'events':events},indent=2),encoding='utf-8')
+            # Drive search with the same directional keys as the TV remote.
+            session.setProperty('artworkEnabled',False);hero.setProperty('zone','actions');hero.forceActiveFocus(Qt.OtherFocusReason)
+            QTest.keyClick(window,Qt.Key_Up);QTest.keyClick(window,Qt.Key_Return)
+            search=window.findChild(QObject,'atlasSearch')
+            assert screen.property('panel')=='search' and search.property('activeFocus')
+            for _ in range(5):QTest.keyClick(window,Qt.Key_Right)
+            QTest.keyClick(window,Qt.Key_Return) # F
+            QTest.keyClick(window,Qt.Key_Down);QTest.keyClick(window,Qt.Key_Down);QTest.keyClick(window,Qt.Key_Return) # R
+            spin(lambda:len([c for c in calls if c[0]=='/tv/v1/catalog/search'])==1)
+            assert search.property('query')=='FR'
+            QTest.keyClick(window,Qt.Key_A)
+            spin(lambda:len([c for c in calls if c[0]=='/tv/v1/catalog/search'])==2)
+            assert search.property('query')=='FRa'
+            session.finishSearch(0)
+            assert search.property('results').toVariant()==[], 'Stale search response was shown'
+            session.finishSearch(1);QTest.qWait(80)
+            assert search.property('results').toVariant()[0]['anilist_id']==snapshot['hero'][1]['anilist_id']
+            QTest.keyClick(window,Qt.Key_Right)
+            assert search.property('zone')=='results'
+            QTest.qWait(200)
+            assert window.grabWindow().save(str(args.evidence/'search.png'))
+            QTest.keyClick(window,Qt.Key_Return);QTest.qWait(80)
+            assert screen.property('panel')=='' and hero.property('currentRow').toVariant()['id']=='context_selection'
+            assert hero.property('selected').toVariant()['anilist_id']==snapshot['hero'][1]['anilist_id']
+            QTest.keyClick(window,Qt.Key_Escape)
+            assert screen.property('panel')=='search' and search.property('query')=='FRa'
+            QTest.keyClick(window,Qt.Key_Escape);QTest.qWait(80)
+            context_value=hero.property('contextRow')
+            assert screen.property('panel')=='' and (context_value is None or context_value.toVariant() is None)
+            QTest.keyClick(window,Qt.Key_Right);QTest.keyClick(window,Qt.Key_Return);QTest.qWait(80)
+            profile=window.findChild(QObject,'atlasProfile')
+            assert screen.property('panel')=='profile' and profile.property('state')=='ready', {'panel':screen.property('panel'),'profileState':profile.property('state'),'heroZone':hero.property('zone'),'nav':hero.property('navIndex')}
+            assert profile.property('pseudo')==history['profil']['pseudo']
+            assert profile.metric('moyenne')==(str(round(history['chiffres']['moyenne'])/10).replace('.',',')+' / 10')
+            QTest.qWait(400)
+            assert window.grabWindow().save(str(args.evidence/'profile.png'))
+            QTest.keyClick(window,Qt.Key_Down);QTest.keyClick(window,Qt.Key_Return);QTest.qWait(80)
+            assert screen.property('panel')=='' and hero.property('currentRow').toVariant()['titre']=='Activité récente'
+            QTest.keyClick(window,Qt.Key_Escape);QTest.qWait(80)
+            assert screen.property('panel')=='profile'
+            QTest.keyClick(window,Qt.Key_Escape);QTest.qWait(80)
+            assert screen.property('panel')=='' and hero.property('navIndex')==1
+            later_bad=[m for m in messages if any(s in m for s in ['ReferenceError','TypeError','Unable to assign','Cannot assign'])]
+            assert not later_bad,later_bad
+            (args.evidence/'verification.json').write_text(json.dumps({'passed':True,'scope':'real QML host/UI with fake API and fake decoder; no native playback claim','canonicalEpisode':13,'lang':'vf','defaultSoundOnAndLabelled':True,'infoSelectionPreserved':True,'search':{'remoteKeyboard':True,'staleIgnored':True,'selectionAndBack':True},'profile':{'publicProfileWithoutOAuth':True,'statsScaleChecked':True,'selectionAndBack':True},'lateTrailerDoesNotChangeSelection':True,'silentGainZero':True,'bannerErrorUsesPoster':True,'artworkQueue':{'maxConcurrent':2,'identityChecked':True,'deduplicated':True,'capabilityRequired':True,'warmWithoutResume':True},'events':events},indent=2),encoding='utf-8')
             app.quit()
-        except Exception as error: messages.append(str(error));app.exit(1)
-    QTimer.singleShot(600,check);QTimer.singleShot(10000,lambda:app.exit(2))
+        except Exception as error: messages.append(traceback.format_exc());app.exit(1)
+    QTimer.singleShot(600,check);QTimer.singleShot(15000,lambda:app.exit(2))
     code=app.exec_()
     window.close();sip.delete(engine)
     if code: raise AssertionError(messages)

@@ -13,6 +13,8 @@ FocusScope {
     property string mode: currentRow && currentRow.id==='reprendre' ? 'resume' : currentRow && currentRow.id==='featured' ? 'featured' : currentRow ? currentRow.id : ''
     property string zone: "actions"
     property int actionIndex: 0
+    property int navIndex: 0
+    property var contextRow: null
     property int selectedRow: 0
     property string selectedRowId: ""
     property var rowPositions: ({})
@@ -40,6 +42,9 @@ FocusScope {
     signal trailerRequested(string trailerKey)
     signal previewObserved(var observation)
     signal artworkFailed(var media,string kind)
+    signal searchRequested()
+    signal profileRequested()
+    signal contextBackRequested()
     function row(id) {
         var rows=homeData.rangees || [];
         for(var i=0;i<rows.length;i++) if(rows[i].id===id) return rows[i].cartes || [];
@@ -47,6 +52,7 @@ FocusScope {
     }
     function buildRows() {
         var result=[],resume=row('reprendre'),featured=homeData.hero || [],provided=homeData.rangees || [];
+        if(contextRow && contextRow.cartes && contextRow.cartes.length) result.push(contextRow);
         if(resume.length) result.push({id:'reprendre',titre:'À reprendre',cartes:resume});
         if(featured.length) result.push({id:'featured',titre:'À la une',cartes:featured});
         for(var i=0;i<provided.length;i++) if(provided[i].id!=='reprendre' && provided[i].cartes && provided[i].cartes.length) result.push(provided[i]);
@@ -124,7 +130,8 @@ FocusScope {
         previewObserved(observation);
     }
     function activate() {
-        if(zone==='rail') { zone='actions'; actionIndex=0; }
+        if(zone==='nav') { if(navIndex===0) searchRequested();else profileRequested(); }
+        else if(zone==='rail') { zone='actions'; }
         else if(zone==='sound') muted=!muted;
         else if(actionIndex===1) { if(preview.item) preview.item.pause(); detailOpen=true; detailsRequested(selected); }
         else if(selected && target(selected)) { if(preview.item) preview.item.stop(); playRequested(selected,target(selected)); }
@@ -139,6 +146,7 @@ FocusScope {
     }
     onTrailerSourcesChanged: { if(!videoReady) startPreview(); }
     onPreviewEnabledChanged: restartPreview()
+    onMutedChanged:console.info('ATLAS_TV_SOUND_STATE',muted,zone)
     onReducedMotionChanged: { heroSwap.stop(); displayedMedia=selected; contentVisible=true; alignRail(); }
     onDetailOpenChanged: { if(!detailOpen) restartPreview(); }
     Component.onCompleted: { selectRow(0); forceActiveFocus(); restartPreview(); }
@@ -146,16 +154,18 @@ FocusScope {
         if(event.key===Qt.Key_Back || event.key===Qt.Key_Escape) {
             if(detailOpen) { detailOpen=false; restartPreview(); }
             else if(zone==='rail') zone='actions';
+            else if(currentRow && currentRow.id==='context_selection') contextBackRequested();
             else { if(preview.item) preview.item.stop(); dismissed(); }
         } else if(event.key===Qt.Key_Return || event.key===Qt.Key_Enter || event.key===Qt.Key_Select) {
             if(detailOpen) detailOpen=false; else activate();
         } else if(!detailOpen && event.key===Qt.Key_Down) {
-            if(zone==='rail') selectRow(selectedRow+1); else zone='rail';
+            if(zone==='nav') zone='actions';else if(zone==='rail') selectRow(selectedRow+1); else zone='rail';
         } else if(!detailOpen && event.key===Qt.Key_Up) {
-            if(zone==='rail' && selectedRow>0) selectRow(selectedRow-1); else zone='actions';
+            if(zone==='rail' && selectedRow>0) selectRow(selectedRow-1);else if(zone==='rail')zone='actions';else if(zone==='actions' || zone==='sound')zone='nav';
         } else if(!detailOpen && (event.key===Qt.Key_Right || event.key===Qt.Key_Left)) {
             var right=event.key===Qt.Key_Right;
             if(zone==='rail') choose(selectedIndex+(right ? 1 : -1));
+            else if(zone==='nav')navIndex=right ? 1 : 0;
             else if(zone==='sound' && !right) { zone='actions'; actionIndex=1; }
             else if(zone==='actions') {
                 if(right && actionIndex===1) zone='sound';
@@ -205,6 +215,10 @@ FocusScope {
                 HeroButton { objectName:'heroInfo'; width: 180; iconKey: 'info'; reducedMotion: scene.reducedMotion; label: "Plus d’infos"; family: scene.family; selected:scene.zone==='rail' && scene.actionIndex===1; backdrop: backdrop; sampleRect: Qt.rect(scene.selected && scene.selected.a_lancer ? 322 : 252,298,width,height); focused: scene.zone==='actions' && scene.actionIndex===1; onActivated: { scene.zone='actions'; scene.actionIndex=1; scene.activate(); } }
             }
         }
+    }
+    Row {x:868;y:28;spacing:16
+        HeroButton {objectName:'searchEntry';width:170;iconKey:'search';label:'Recherche';family:scene.family;backdrop:backdrop;sampleRect:Qt.rect(868,28,width,height);focused:scene.zone==='nav' && scene.navIndex===0;onActivated:{scene.zone='nav';scene.navIndex=0;scene.searchRequested();}}
+        HeroButton {objectName:'profileEntry';width:162;iconKey:'user-round';label:'Profil';family:scene.family;backdrop:backdrop;sampleRect:Qt.rect(1054,28,width,height);focused:scene.zone==='nav' && scene.navIndex===1;onActivated:{scene.zone='nav';scene.navIndex=1;scene.profileRequested();}}
     }
     HeroButton { objectName:'heroSound'; x: 1036; y: 298; width: 180; iconKey: scene.muted ? 'volume-x' : 'volume-2'; label:scene.muted ? 'Son coupé' : 'Son activé'; reducedMotion: scene.reducedMotion; family: scene.family; backdrop: backdrop; sampleRect: Qt.rect(x,y,width,height); focused: scene.zone==='sound'; onActivated: { scene.zone='sound'; scene.muted=!scene.muted; } }
     Text { x: 870; y: 355; width: 346; horizontalAlignment: Text.AlignRight; color: '#b9bac3'; font.family: scene.family; font.pixelSize: 16

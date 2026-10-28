@@ -8,3 +8,5 @@ TvSession TvSession.qml
 EpisodePlayer EpisodePlayer.qml
 ArtworkCache ArtworkCache.qml
 MediaRow MediaRow.qml
+SearchView SearchView.qml
+ProfileView ProfileView.qml

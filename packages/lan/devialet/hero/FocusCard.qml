@@ -37,8 +37,8 @@ Item {
                     if(card.fallbackArtwork && source!==card.fallbackArtwork) source=card.fallbackArtwork;
                 }
             }
-            Text { anchors.centerIn:parent; visible:cardImage.status===Image.Error || !cardImage.source; text:'Visuel indisponible'; color:'#92939c'; font.family:card.family; font.pixelSize:15 }
             OpacityMask { anchors.fill: parent; source: cardImage; maskSource: Rectangle { width: picture.width; height: picture.height; radius: 11 } }
+            Text { anchors.centerIn:parent; visible:cardImage.status===Image.Error || cardImage.status===Image.Null; text:'Visuel indisponible'; color:'#92939c'; font.family:card.family; font.pixelSize:15 }
             Rectangle { anchors.fill: parent; radius: 11; color: '#30000000'; opacity: card.focused || card.selected ? 0 : 1
                 Behavior on opacity { enabled: !card.reducedMotion; NumberAnimation { duration: Motion.ms('focus') } }
             }

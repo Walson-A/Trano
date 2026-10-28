@@ -1,5 +1,15 @@
 # UI/UX & Design System
 
+## Atlas TV — Recherche et Profil
+
+Les [accès Recherche et Profil](research/2026-10-28-atlas-tv-search-profile.md)
+complètent l'en-tête du héros à droite. Clavier à la télécommande, résultats
+latéraux et profil AniList réutilisent les cartes et contrôles existants.
+Chaque Retour conserve son contexte. Les captures du vrai banc ont été revues ;
+le son activé est réappliqué au premier catalogue, avec diagnostic natif limité.
+Les icônes du paquet sont intégrées au composant et ne dépendent plus d'un
+chargement de PNG après expiration du ticket.
+
 ## Atlas TV — rangées demandées après essai du 28 octobre
 
 L'[accueil à rangées](research/2026-10-28-atlas-tv-rows-and-audio.md) remplace

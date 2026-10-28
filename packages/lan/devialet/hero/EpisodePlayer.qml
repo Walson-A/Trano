@@ -33,7 +33,7 @@ FocusScope {
         onPositionChanged: {
             if(playbackState===MediaPlayer.PlayingState && hasVideo && position>0) {
                 player.started=true;
-                if(!player.resumed) { player.resumed=true; if(player.resumeMs>0 && seekable) seek(Math.min(player.resumeMs,Math.max(0,duration-1000))); player.report('playing'); }
+                if(!player.resumed && duration>0) { player.resumed=true; if(player.resumeMs>0 && seekable) seek(Math.min(player.resumeMs,Math.max(0,duration-1000))); player.report('playing'); }
             }
         }
         onStatusChanged: if(status===MediaPlayer.EndOfMedia) { player.report('ended'); player.started=false; player.ended=true; player.controlsVisible=true; }
