@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="fr">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atlas TV — étude des lecteurs</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#111114;color:#ededf0;font:17px/1.65 system-ui,sans-serif}main{max-width:1120px;padding:32px 24px 64px;margin:auto}header{border-bottom:1px solid #35353e;padding-bottom:24px}h1{font-size:32px;line-height:1.2;margin:12px 0 18px}h2{font-size:25px;line-height:1.3;margin:40px 0 16px}h3{font-size:19px;margin:24px 0 8px}p{max-width:78ch;margin:12px 0}a{color:#d5d8ff;text-underline-offset:4px}a:focus-visible{outline:2px solid #b8c4ff;outline-offset:4px}figure{margin:22px 0 28px}img{display:block;width:100%;height:auto;background:#000}figcaption,.muted{font-size:14px;color:#b6b6c0}figcaption{margin-top:8px}.columns{display:grid;grid-template-columns:1fr 1fr;gap:32px}.columns p{margin-top:0}ol,ul{padding-left:24px}li{margin:10px 0}.data-table{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:16px}th,td{text-align:left;vertical-align:top;border-bottom:1px solid #35353e;padding:14px 12px 14px 0}th{font-weight:600}details{margin:28px 0;padding-top:16px;border-top:1px solid #35353e}summary{font-weight:600}footer{margin-top:40px;border-top:1px solid #35353e;padding-top:20px}strong{font-weight:600}@media(max-width:700px){main{padding:24px 18px}.columns{grid-template-columns:1fr;gap:8px}h1{font-size:27px}}
+</style>
+<main>
+<header>
+  <a href="../2026-10-28-atlas-tv-netflix-proposal/review.html">Retour à la proposition Atlas TV</a>
+  <h1>Comment les lecteurs organisent l’attention</h1>
+  <p>Layouts observés, recommandations et psychologie : trois niveaux à distinguer avant de poursuivre Atlas TV.</p>
+  <p class="muted">Étude du 28 octobre 2026 · Captures publiées et sources officielles · Aucun lancement sur la TV.</p>
+</header>
+
+<h2>Apple TV : contenu et réglages ont leurs places</h2>
+<figure><a href="apple-tv-controls.png" target="_blank"><img src="apple-tv-controls.png" alt="Bandeau officiel Apple TV : identité à gauche, réglages à droite, timeline sur la largeur et onglets de contenu dessous."></a><figcaption>Apple Support, <a href="https://support.apple.com/en-gb/guide/tv/atvb7944597f/tvos" target="_blank" rel="noreferrer">guide Apple TV 4K</a>. Extrait annoté du bandeau, pas un écran complet.</figcaption></figure>
+<p>Le titre identifie le programme ; la progression indique la position ; les réglages ajustent la lecture ; les onglets donnent accès au contenu. Apple décrit cette séparation dans sa <a href="https://developer.apple.com/videos/play/wwdc2021/10191/" target="_blank" rel="noreferrer">présentation tvOS</a>.</p>
+<p><strong>Pour Atlas :</strong> distinguer Épisodes de Version, Source et Qualité, plutôt que traiter les quatre comme des fonctions identiques.</p>
+
+<h2>Netflix : un groupe compact et des actions contextuelles</h2>
+<figure><a href="netflix-controls.png" target="_blank"><img src="netflix-controls.png" alt="Capture du test Netflix TV : titre et commandes groupés à gauche, puis progression étendue."></a><figcaption>What's on Netflix, <a href="https://www.whats-on-netflix.com/news/first-look-netflix-new-tv-video-player-redesign/" target="_blank" rel="noreferrer">test TV du 29 juillet 2026</a>. Cette variante ne représente pas tous les appareils.</figcaption></figure>
+<p>Une action textuelle ressort ; les commandes secondaires occupent moins d'espace. L'image reste dominante. Le menu de langues ci-dessous conserve aussi une partie du contexte vidéo.</p>
+<figure><a href="netflix-audio.png" target="_blank"><img src="netflix-audio.png" alt="Menu de langues du même test Netflix, avec groupes nommés et option active identifiable."></a><figcaption>Même source ; <a href="https://help.netflix.com/en/node/372" target="_blank" rel="noreferrer">l'aide Netflix</a> confirme l'accès aux langues pendant la lecture.</figcaption></figure>
+
+<h2>Les mécanismes à retenir</h2>
+<div class="columns">
+  <section><h3>Reconnaître, plutôt que deviner</h3><p>Une forme familière ne garantit pas que sa fonction soit comprise. « Source » est spécifique à Atlas : son nom doit rester visible dans les contrôles. <a href="https://www.nngroup.com/articles/icon-usability/" target="_blank" rel="noreferrer">NN/g sur les icônes</a>.</p></section>
+  <section><h3>Voir ce qui compte maintenant</h3><p>Reporter les options spécialisées peut alléger les décisions. Mais les fonctions fréquentes doivent rester accessibles : pour Walson, Source et Qualité comptent. <a href="https://www.nngroup.com/articles/progressive-disclosure/" target="_blank" rel="noreferrer">Divulgation progressive</a>.</p></section>
+  <section><h3>Garder son repère</h3><p>Le focus ne doit pas changer sans raison visible. Fermer un menu doit retrouver sa commande ; une coche signale le choix confirmé. <a href="https://developer.apple.com/design/human-interface-guidelines/focus-and-selection" target="_blank" rel="noreferrer">Consignes Apple</a>.</p></section>
+  <section><h3>Pouvoir essayer et annuler</h3><p>Déplacer un curseur ou préparer une source doit permettre un retour sans perdre sa place. C'est une application du <a href="https://www.nngroup.com/articles/user-control-and-freedom/" target="_blank" rel="noreferrer">contrôle utilisateur</a>, à vérifier sur notre parcours.</p></section>
+</div>
+<p>Ce sont des recommandations et des hypothèses pour Atlas, pas des mesures d'un effet psychologique de notre interface.</p>
+
+<h2>Ce que la finition change — et ce qu'elle ne prouve pas</h2>
+<p>Une <a href="https://cris.bgu.ac.il/en/publications/what-is-beautiful-is-usable-2/" target="_blank" rel="noreferrer">expérience sur un simulateur de distributeur bancaire</a> relie esthétique et facilité perçue. Elle ne valide pas un lecteur TV : il faut juger séparément la finition et la réussite des gestes.</p>
+
+<details><summary>Infuse : un exemple à ne pas transposer sans vérifier la plateforme</summary>
+<figure><img src="infuse-unqualified-platform.jpg" alt="Visuel officiel Infuse avec barre flottante, volume et commandes de fenêtre ; plateforme non identifiée."><figcaption><a href="https://firecore.com/infuse" target="_blank" rel="noreferrer">Visuel Firecore officiel</a>. Écarté comme preuve de layout TV.</figcaption></figure>
+<p>Le <a href="https://support.firecore.com/hc/en-us/articles/215090987-Playback-Controls" target="_blank" rel="noreferrer">guide Infuse Apple TV</a> documente les gestes et l'accès aux options. Cela ne permet pas d'attribuer cette barre à la TV. Son volume logiciel ne doit pas être copié sur notre Devialet.</p>
+</details>
+
+<h2>La direction proposée pour Atlas</h2>
+<ol>
+  <li>Identifier le contenu et la position sans effort.</li>
+  <li>Séparer la navigation des épisodes des réglages de lecture.</li>
+  <li>Nommer les fonctions ambiguës ; garder Source et Qualité faciles d'accès.</li>
+  <li>Distinguer le flux demandé du flux effectivement joué.</li>
+  <li>Garantir des retours cohérents, l'annulation et une autre source après erreur.</li>
+</ol>
+<p>Je privilégie la séparation fonctionnelle d'Apple pour la prochaine étude. C'est une décision de design à comparer sur les mêmes tâches, pas un layout déclaré optimal.</p>
+<footer><a href="../2026-10-28-premium-player-layouts.md">Étude détaillée, sources, limites et protocole d'essai</a><p class="muted">Les droits des captures restent ceux de leurs auteurs. Le carnet distingue les références des propositions Atlas.</p></footer>
+</main>
+</html>

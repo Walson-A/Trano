@@ -1,5 +1,16 @@
 # UI/UX & Design System
 
+## Lecteur TV : recherche sur les layouts et la cognition
+
+L'[étude du 28 octobre](research/2026-10-28-premium-player-layouts.md) compare
+Apple TV et la variante Netflix observée, distingue les parcours documentés
+d'Infuse/Disney+/HBO des géométries réellement vues, et conserve les sources.
+Les recommandations de reconnaissance, focus, priorisation et annulation sont
+séparées des preuves expérimentales et des hypothèses pour Atlas. La prochaine
+composition doit distinguer Épisodes des réglages, nommer Source et garder
+Source/Qualité accessibles. Aucun nouveau rendu ou essai TV n'est validé par
+cette recherche.
+
 ## Lecteur TV : proposition d'ensemble à partir de Netflix
 
 Le [nouveau carnet de revue](research/2026-10-28-atlas-tv-netflix-proposal.md)

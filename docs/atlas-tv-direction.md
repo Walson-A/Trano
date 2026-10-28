@@ -1,5 +1,11 @@
 # Atlas sur la télévision : base réutilisable et premier parcours
 
+Recherche suivante : [layouts réels et raisons ergonomiques](research/2026-10-28-premium-player-layouts.md).
+Apple et Netflix n'imposent pas une géométrie unique. La décision de travail
+privilégie la séparation contenu/réglages d'Apple, des fonctions nommées et les
+priorités Source/Qualité de Walson. Ce lot est documentaire ; le lecteur n'a
+pas été modifié ou lancé.
+
 Proposition courante : [lecteur complet à partir de Netflix](research/2026-10-28-atlas-tv-netflix-proposal.md),
 avec carnet des treize états. Travail de composition séparé ; aucune publication
 ou exécution TV avant la revue demandée par Walson.

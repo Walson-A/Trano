@@ -1,0 +1,40 @@
+[
+  {
+    "file": "apple-tv-controls.png",
+    "page": "https://support.apple.com/en-gb/guide/tv/atvb7944597f/tvos",
+    "context": "Apple Support, bandeau annoté du lecteur Apple TV 4K",
+    "bytes": 41674,
+    "sha256": "b9e1c6a7faad74bb6ff629382870312d4efe530de6d3eb4b9f7059b15ea18905",
+    "observed": "2026-10-28",
+    "liveAccountSession": false,
+    "download_url": "https://help.apple.com/assets/6A0B92AC55AFD81B2E01CA2A/6A0B92B055AFD81B2E01CA30/en_GB/e976f059f4c612f91ea6947408abcbee.png"
+  },
+  {
+    "file": "netflix-controls.png",
+    "page": "https://www.whats-on-netflix.com/news/first-look-netflix-new-tv-video-player-redesign/",
+    "context": "What’s on Netflix, capture du test TV du 29 juillet 2026",
+    "bytes": 1205147,
+    "sha256": "df39d6b027621a06cc8600233375b1206e5d0f2912f396716344d185d509f76e",
+    "observed": "2026-10-28",
+    "liveAccountSession": false
+  },
+  {
+    "file": "netflix-audio.png",
+    "page": "https://www.whats-on-netflix.com/news/first-look-netflix-new-tv-video-player-redesign/",
+    "context": "What’s on Netflix, capture du menu audio du même test",
+    "bytes": 165878,
+    "sha256": "e5a940ccca8fc7ff1f367b48a202dbe6ed9986aed4ea928641cef7441d893d3e",
+    "observed": "2026-10-28",
+    "liveAccountSession": false
+  },
+  {
+    "file": "infuse-unqualified-platform.jpg",
+    "page": "https://firecore.com/infuse",
+    "context": "Visuel officiel Firecore ; plateforme non identifiée, non retenu comme preuve de layout TV",
+    "bytes": 166145,
+    "sha256": "4c9c856a4f0f850149ce7368b1704712d11d3f5c3cc95526762e5aa4273c8224",
+    "observed": "2026-10-28",
+    "liveAccountSession": false,
+    "download_url": "https://firecore.com/themes/main/images/feature-playback.jpg"
+  }
+]
