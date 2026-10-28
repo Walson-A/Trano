@@ -78,6 +78,7 @@
     "coalescesBurstSeek": true,
     "rateSelection1_5": true,
     "sharedNavigation": true,
-    "realSeasonSelectionAndBack": true
+    "realSeasonSelectionAndBack": true,
+    "failedReaderExcludedOnlyOnMediaRetry": true
   }
 }

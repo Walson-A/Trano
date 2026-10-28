@@ -54,6 +54,15 @@ Application {
             hero.notice=message;
             if(panel==='detail' && detailPanel.item)detailPanel.item.extrasError=message;
         }
+        function logResolveFailure(status,value) {
+            var error=value && value.error || {},code=/^[a-z_0-9]{1,64}$/.test(error.code || '') ? error.code : 'unknown';
+            var request=/^[A-Za-z0-9_.:-]{1,96}$/.test(error.request_id || '') ? error.request_id : '';
+            console.info('ATLAS_TV_RESOLVE_FAILURE',status,code,request);
+            var attempts=error.details && error.details.attempts || [];
+            for(var i=0;i<Math.min(8,attempts.length);i++){
+                var a=attempts[i];console.info('ATLAS_TV_RESOLVE_ATTEMPT',/^[a-z_]{1,32}$/.test(a.source || '') ? a.source : '',/^[A-Za-z0-9+_. -]{1,48}$/.test(a.reader || '') ? a.reader : '',/^[a-z_0-9]{1,64}$/.test(a.code || '') ? a.code : '',/^[a-z_0-9]{1,64}$/.test(a.cause || '') ? a.cause : '');
+            }
+        }
         function openPanel(name) {
             if(hero.currentRow && hero.currentRow.id!=='context_selection')homeRowId=hero.currentRow.id;
             panel=name;returnPanel=name;hero.previewEnabled=false;
@@ -108,24 +117,27 @@ Application {
                 if(hero.trailerId!==key) preview();
             });
         }
-        function launch(media,target) {
+        function launch(media,target,excluded,resumeOverride) {
             if(resolving || playbackId) return;
             if(episode.status===Loader.Error) { playbackError('Le lecteur n’a pas pu être chargé. Relance Atlas TV.'); return; }
             if(!media || !(media.anilist_id>0) || !target || !(target.numero>0)) {
                 playbackError('Cet épisode ne dispose pas encore d’une identité de lecture compatible TV.'); hero.restartPreview(); return;
             }
             resolving=true; var turn=++generation;
+            var readers=[];
+            for(var i=0;excluded && i<excluded.length && readers.length<8;i++)if(/^[a-f0-9]{64}$/.test(excluded[i]) && readers.indexOf(excluded[i])<0)readers.push(excluded[i]);
             hero.previewEnabled=false; waiting.forceActiveFocus();
-            session.api('/tv/v1/playbacks',{anilist_id:media.anilist_id,episode:target.numero,lang:target.vf ? 'vf' : 'vo',exclude_readers:[]},110000,function(status,value) {
+            session.api('/tv/v1/playbacks',{anilist_id:media.anilist_id,episode:target.numero,lang:target.vf ? 'vf' : 'vo',exclude_readers:readers},110000,function(status,value) {
                 if(turn!==generation) return;
                 resolving=false;
                 var url=value && value.stream ? session.mediaUrl(value.stream.path,'episode') : '';
                 if(status!==200 || !value || !/^[a-f0-9-]{36}$/.test(value.id || '') || !url) {
+                    logResolveFailure(status,value);
                     playbackError(status===429 ? 'Une vidéo est en cours de préparation. Réessaie dans un instant.' : 'Cet épisode est indisponible pour le moment.');
                     returnFromPlayback(); return;
                 }
                 playbackId=value.id; sequence=0;
-                pendingPlayback={url:url,title:media.titre+' · Épisode '+target.numero+' · '+(target.vf ? 'VF' : 'VOSTFR'),resume:value.resume ? value.resume.position_ms || 0 : 0,media:media,target:target};
+                pendingPlayback={url:url,title:media.titre+' · Épisode '+target.numero+' · '+(target.vf ? 'VF' : 'VOSTFR'),resume:resumeOverride>0 ? resumeOverride : value.resume ? value.resume.position_ms || 0 : 0,media:media,target:target,readerId:/^[a-f0-9]{64}$/.test(value.reader_id || '') ? value.reader_id : '',excluded:readers};
                 if(episode.status===Loader.Ready) startEpisode();
             });
         }
@@ -135,7 +147,7 @@ Application {
             episode.item.play(pendingPlayback.url);
         }
         function browsePlayingEpisodes(){var current=pendingPlayback ? pendingPlayback.media : null;if(playbackId && episode.item)episode.item.close();if(panel!=='detail' && current)openDetail(current);}
-        function retryEpisode(){var current=pendingPlayback;if(!current)return;if(playbackId && episode.item)episode.item.close();launch(current.media,current.target);}
+        function retryEpisode(){var current=pendingPlayback;if(!current)return;var excluded=(current.excluded || []).slice(),position=episode.item ? episode.item.positionMs : 0;if(current.readerId && excluded.indexOf(current.readerId)<0 && excluded.length<8)excluded.push(current.readerId);if(playbackId && episode.item)episode.item.close();launch(current.media,current.target,excluded,position);}
         function progress(value) {
             if(!playbackId) return;
             value.seq=++sequence;

@@ -70,6 +70,23 @@ pas exposées par le contrat TV courant. Pas de menu factice. Le suivant/
 précédent entre saisons et l’enchaînement restent aussi à raccorder proprement.
 La TV est déjà plein écran ; l’incrustation desktop n’est pas portée.
 
+## Relance après une erreur du média
+
+`reader_id` est lu à la racine de la réponse de résolution et validé comme
+identifiant opaque SHA-256. Réessayer après une erreur du décodeur conserve
+la position native, ferme le lecteur et appelle à nouveau `POST /playbacks`
+avec ce lecteur dans `exclude_readers` (liste dédupliquée, huit au maximum).
+L’ancien ticket/URL n’est pas rejoué. Une ouverture normale, une pause ou un
+seek n’ajoute aucune exclusion. Si le POST échoue sans donner d’identifiant,
+aucun lecteur n’est inventé ou exclu. Les traces de résolution ne gardent que
+HTTP, code fermé, request_id borné et champs source/reader/code/cause validés
+des attempts ; jamais message brut, URL ou jeton. Le banc provoque une erreur
+réelle du faux MediaPlayer et contrôle la nouvelle demande et son exclusion.
+
+Le cache canonique serveur de 120 s et ses nouveaux diagnostics sont préparés
+dans la conversation backend ; cette mention ne signifie pas qu’ils sont déjà
+déployés. L’essai natif en cours utilise encore le paquet `hero-e976d79`.
+
 ## Retours de navigation pris en compte
 
 L’en-tête `TvNavigation.qml` est désormais **le même composant** sur Accueil,

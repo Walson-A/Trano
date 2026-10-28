@@ -135,7 +135,7 @@ Item {
   if(path==='/tv/v1/catalog/history') { Qt.callLater(function(){done(200,benchmarkHistory);});return; }
   if(path==='/tv/v1/catalog/detail') { if(delayDetails){pendingDetails=pendingDetails.concat([done]);return;}Qt.callLater(function(){var value=benchmarkDetails[String(body.anilist_id)];done(value ? 200 : 404,value || {});});return; }
   if(path==='/tv/v1/catalog/episodes') { Qt.callLater(function(){var value=benchmarkEpisodes[String(body.anilist_id)];done(value ? 200 : 404,value || {});});return; }
-  if(path==='/tv/v1/playbacks') {if(failNextPlayback){failNextPlayback=false;Qt.callLater(function(){done(503,{});});return;}Qt.callLater(function(){done(200,{id:'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',stream:{path:'/tv/v1/episode-media/'+'a'.repeat(64)},resume:{position_ms:120000}});});}
+  if(path==='/tv/v1/playbacks') {if(failNextPlayback){failNextPlayback=false;Qt.callLater(function(){done(503,{});});return;}Qt.callLater(function(){done(200,{id:'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',reader_id:'e'.repeat(64),stream:{path:'/tv/v1/episode-media/'+'a'.repeat(64)},resume:{position_ms:120000}});});}
   else Qt.callLater(function(){done(200,{});});
  }
  function mediaUrl(path,kind) { return apiOrigin+path; }
@@ -337,6 +337,12 @@ Item {
             QTest.keyClick(window,Qt.Key_Return);QTest.qWait(200)
             launches=[body for path,body in calls if path=='/tv/v1/playbacks']
             assert len(launches)==before+1 and launches[-1]['anilist_id']==154587 and launches[-1]['episode']==3 and launches[-1]['lang']=='vf',launches
+            episode_player=window.findChild(QObject,'episodeLoader').property('item')
+            spin(lambda:episode_player.property('playing') is True)
+            window.findChild(QObject,'episodeMedia').error.emit(1)
+            assert episode_player.property('failure')
+            QTest.keyClick(window,Qt.Key_Return);QTest.qWait(200)
+            assert [body for path,body in calls if path=='/tv/v1/playbacks'][-1]['exclude_readers']==['e'*64], 'Retry excludes only the failed canonical reader'
             QTest.keyClick(window,Qt.Key_Back);QTest.qWait(100)
             assert screen.property('panel')=='detail' and detail.property('activeFocus') and detail.property('episodeIndex')==2
             session.setProperty('failNextPlayback',True)
