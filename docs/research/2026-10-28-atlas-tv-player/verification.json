@@ -79,6 +79,11 @@
     "rateSelection1_5": true,
     "sharedNavigation": true,
     "realSeasonSelectionAndBack": true,
-    "failedReaderExcludedOnlyOnMediaRetry": true
+    "failedReaderExcludedOnlyOnMediaRetry": true,
+    "absoluteResumeVerifiedFromNonzeroPosition": true,
+    "zeroOverridesOldBackendResume": true,
+    "eightMostRecentFailedReaders": true,
+    "expiredTicketDoesNotExcludeProvider": true,
+    "headClosedPathWithoutBearer": true
   }
 }

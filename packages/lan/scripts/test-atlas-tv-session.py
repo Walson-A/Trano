@@ -31,6 +31,10 @@ class Handler(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
         calls.append(('GET', self.path, None))
         self.answer({'protocol':1,'apiOrigin':origin,'activation':{'code':'tv_pair_'+'1'*64}})
+    def do_HEAD(self):
+        calls.append(('HEAD',self.path,self.headers.get('Authorization')))
+        self.send_response(401 if self.path.endswith('a'*64) else 200)
+        self.send_header('Content-Length','0');self.end_headers()
     def do_POST(self):
         body=json.loads(self.rfile.read(int(self.headers['Content-Length'])))
         calls.append(('POST',self.path,self.headers.get('Authorization')))
@@ -70,8 +74,15 @@ Item {
         check(s.mediaUrl('/tv/v1/episode-media/'+'a'.repeat(64),'episode')===testOrigin+'/tv/v1/episode-media/'+'a'.repeat(64),'Episode path rejected');
         check(s.mediaUrl('https://untrusted.example/video','episode')==='','External media accepted');
         check(s.mediaUrl('/tv/v1/preview-media/'+'a'.repeat(64)+'?x=1','trailer')==='','Query accepted');
-        // HTTP runtime must fail closed before any activation POST.
-        s.start(testOrigin+'/runtime.json');
+        s.inspectEpisode('https://untrusted.example/video',function(status){check(status===0,'External HEAD accepted');});
+        s.inspectEpisode('/tv/v1/episode-media/'+'a'.repeat(64),function(status){
+            check(status===401 && !!s.accessToken,'Expired media ticket invalidated device credentials');
+            s.inspectEpisode('/tv/v1/episode-media/'+'b'.repeat(64),function(code){
+                check(code===200,'Valid media HEAD failed');
+                // HTTP runtime must fail closed before any activation POST.
+                s.start(testOrigin+'/runtime.json');
+            });
+        });
     }
     Connections { target:s; function onUnavailable() { root.finished=true; Qt.quit(); } }
     Component.onCompleted: {
@@ -86,6 +97,7 @@ try:
     assert code==0 and engine.rootObjects() and engine.rootObjects()[0].property('finished'), {'messages':messages,'calls':calls,'state':engine.rootObjects()[0].findChild(QObject,'session').property('state') if engine.rootObjects() else None}
     assert sum(c[1].endswith('/refresh') for c in calls)==1, 'Concurrent requests rotated twice'
     assert not any(c[1].endswith('/activate') for c in calls), 'Untrusted runtime activated'
+    assert len([c for c in calls if c[0]=='HEAD'])==2 and all(c[2] is None for c in calls if c[0]=='HEAD'), 'HEAD must use only the opaque media path, never the device credential'
     assert not any('Error' in m or 'failed' in m or 'accepted' in m or 'rejected' in m for m in messages),messages
     print(json.dumps({'passed':True,'httpRequests':len(calls),'singleRotationForConcurrentCalls':True,'untrustedRuntimeRejected':True,'closedMediaPaths':True}))
 finally:

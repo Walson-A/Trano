@@ -16,6 +16,7 @@ FocusScope {
     property int controlIndex:0
     property bool wantsPlaying:false
     property bool restoreAfterSeek:false
+    property bool retrying:false
     property int seekTarget:-1
     property string seekFeedback:''
     readonly property int positionMs:media.position
@@ -34,8 +35,8 @@ FocusScope {
         if(started && media.duration>0) progress({position_ms:media.position,duration_ms:media.duration,state:state});
     }
     function play(url) { resumed=false; started=false; ended=false; failure='';wantsPlaying=true;restoreAfterSeek=false;zone='surface';seekTarget=-1;seekFeedback='';seekCommit.stop();media.source=url; media.play(); reveal(); forceActiveFocus(); }
-    function close() { seekCommit.stop();seekTarget=-1;restoreAfterSeek=false;report('stopped'); started=false;wantsPlaying=false;media.stop(); media.source=''; closed(); }
-    function toggle() {if(failure){retryRequested();return;}if(ended)return;wantsPlaying=!wantsPlaying;if(wantsPlaying)media.play();else media.pause();console.info('ATLAS_TV_PLAY_INTENT',wantsPlaying,media.playbackState);reveal();}
+    function close() { seekCommit.stop();seekTarget=-1;restoreAfterSeek=false;retrying=false;report('stopped'); started=false;wantsPlaying=false;media.stop(); media.source=''; closed(); }
+    function toggle() {if(retrying)return;if(failure){retryRequested();return;}if(ended)return;wantsPlaying=!wantsPlaying;if(wantsPlaying)media.play();else media.pause();console.info('ATLAS_TV_PLAY_INTENT',wantsPlaying,media.playbackState);reveal();}
     function toggleAudio(){var silent=!audioMuted;media.muted=silent;media.volume=silent ? 0 : 1;reveal();}
     function openRates(){seekFeedback='';rateIndex=Math.max(0,rates.indexOf(rate));zone='rates';reveal();}
     function chooseRate(){media.playbackRate=rates[rateIndex];console.info('ATLAS_TV_RATE',media.playbackRate);zone='toolbar';controlIndex=5;reveal();}
@@ -59,7 +60,7 @@ FocusScope {
         onPositionChanged: {
             if(playbackState===MediaPlayer.PlayingState && hasVideo && position>0) {
                 player.started=true;
-                if(!player.resumed && duration>0) { player.resumed=true;console.info('ATLAS_TV_EPISODE_READY',hasVideo,hasAudio,duration);if(player.resumeMs>0 && seekable){player.restoreAfterSeek=player.wantsPlaying;seek(Math.min(player.resumeMs,Math.max(0,duration-1000)));}player.report('playing'); }
+                if(!player.resumed && duration>0) { player.resumed=true;console.info('ATLAS_TV_EPISODE_READY',hasVideo,hasAudio,duration);if(player.resumeMs>0 && seekable){player.restoreAfterSeek=player.wantsPlaying;media.seek(Math.min(player.resumeMs,Math.max(0,duration-1000)));}player.report('playing'); }
             }
             if(player.seekTarget>=0 && !seekCommit.running && Math.abs(position-player.seekTarget)<2000){player.seekTarget=-1;player.report(player.wantsPlaying ? 'playing' : 'paused');}
         }
@@ -74,7 +75,7 @@ FocusScope {
         Text {anchors.centerIn:parent;text:player.seekFeedback;color:'white';font.family:player.family;font.pixelSize:32;font.weight:Font.DemiBold}
     }
     Text { anchors.centerIn:parent; width:1000; horizontalAlignment:Text.AlignHCenter; wrapMode:Text.WordWrap; text:player.failure || (player.ended ? 'Épisode terminé' : !player.started ? 'Chargement…' : ''); color:'white'; font.family:player.family; font.pixelSize:26 }
-    HeroButton {anchors.horizontalCenter:parent.horizontalCenter;y:parent.height/2+58;width:190;label:'Réessayer';family:player.family;visible:!!player.failure;focused:true;onActivated:player.retryRequested()}
+    HeroButton {anchors.horizontalCenter:parent.horizontalCenter;y:parent.height/2+58;width:240;label:player.retrying ? 'Vérification…' : 'Réessayer';family:player.family;visible:!!player.failure;focused:true;onActivated:if(!player.retrying)player.retryRequested()}
     Timer {id:seekCommit;interval:220;onTriggered:{var target=player.seekTarget;if(target<0)return;player.restoreAfterSeek=player.wantsPlaying;media.seek(target);console.info('ATLAS_TV_EPISODE_SEEK_COMMIT',target);if(player.seekTarget>=0 && Math.abs(media.position-target)<2000){player.seekTarget=-1;player.report(player.wantsPlaying ? 'playing' : 'paused');}}}
     Timer {interval:250;running:player.restoreAfterSeek && player.wantsPlaying && media.playbackState===MediaPlayer.PausedState && media.status===MediaPlayer.Buffered;onTriggered:{player.restoreAfterSeek=false;media.play();}}
     Timer {id:seekFeedbackTimer;interval:1400;onTriggered:player.seekFeedback=''}

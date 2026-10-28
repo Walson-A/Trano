@@ -1,5 +1,21 @@
 # Atlas TV — lecture native et contrôles adaptés du PC
 
+## Réception de l’hôte complet : fonctionnel, interface rejetée
+
+Walson confirme **image et son dans l’app complète `hero-e976d79`**. La lecture
+récente relevée côté serveur est 21507/3 VF ; cela ne remplace pas une
+confirmation séparée de pause/reprise ou du seek. Il rejette explicitement
+le chrome proposé : boutons ±10/volume inadaptés à la TV, pause mal placée,
+accès Épisodes qui quitte la lecture, absence de choix source/lecteur/langue
+et qualité. Les captures ci-dessous restent la preuve d’une version rejetée,
+pas une référence esthétique validée.
+
+Le volume appartient au Devialet et à sa télécommande. Le prochain contrat
+doit séparer source (Voiranime…), lecteur/hébergeur, qualité réelle et VF/VO.
+Ces choix et les épisodes resteront en surimpression sur la vidéo, avec
+conservation de position et choix confirmé avant changement de média.
+Leur refonte est cadrée dans [le contrat TV](../atlas-tv-player-contract.md).
+
 ## Symptôme et expérience discriminante
 
 Dans `hero-c85c2ae`, Walson entend Mob Psycho 100 et Eden of the East sans
@@ -73,9 +89,13 @@ La TV est déjà plein écran ; l’incrustation desktop n’est pas portée.
 ## Relance après une erreur du média
 
 `reader_id` est lu à la racine de la réponse de résolution et validé comme
-identifiant opaque SHA-256. Réessayer après une erreur du décodeur conserve
-la position native, ferme le lecteur et appelle à nouveau `POST /playbacks`
-avec ce lecteur dans `exclude_readers` (liste dédupliquée, huit au maximum).
+identifiant opaque SHA-256. Réessayer après une erreur vérifie d’abord en HEAD
+le seul chemin média relatif validé, sans Bearer. Un ticket 401 perdu/expiré
+n’accuse pas le fournisseur ; une erreur réseau locale indéterminée non plus.
+Après ticket valide ou échec upstream 502/503/504, le lecteur est exclu.
+La position native, **zéro compris**, remplace une ancienne reprise serveur.
+Le lecteur est fermé puis `POST /playbacks` prépare un nouveau flux. La liste
+conserve les huit exclusions les plus récentes, y compris le dernier refus.
 L’ancien ticket/URL n’est pas rejoué. Une ouverture normale, une pause ou un
 seek n’ajoute aucune exclusion. Si le POST échoue sans donner d’identifiant,
 aucun lecteur n’est inventé ou exclu. Les traces de résolution ne gardent que

@@ -1,0 +1,12 @@
+{
+  "releaseId": "hero-e976d79",
+  "sdkAccepted": true,
+  "renderConfirmed": false,
+  "humanConfirmation": {
+    "image": true,
+    "audio": true,
+    "pauseResumeSeparatelyConfirmed": false,
+    "seekSeparatelyConfirmed": false,
+    "visualDesign": "rejected"
+  }
+}

@@ -23,7 +23,7 @@ Item {
         state="error"; message="Relance Atlas TV depuis ton téléphone pour te reconnecter.";
         unavailable();
     }
-    function request(url, body, token, timeout, done) {
+    function request(url, body, token, timeout, done, method) {
         var xhr=new XMLHttpRequest(), completed=false;
         var pending={xhr:xhr, deadline:Date.now()+timeout, finish:function(code,value) {
             if(completed) return;
@@ -39,7 +39,7 @@ Item {
             try { value=JSON.parse(xhr.responseText); } catch(e) {}
             pending.finish(xhr.status,value);
         };
-        xhr.open(body===null ? 'GET' : 'POST',url);
+        xhr.open(method || (body===null ? 'GET' : 'POST'),url);
         if(token) xhr.setRequestHeader('Authorization','Bearer '+token);
         if(body!==null) xhr.setRequestHeader('Content-Type','application/json');
         requests=requests.concat([pending]);
@@ -104,6 +104,11 @@ Item {
     function mediaUrl(path,kind) {
         var pattern=kind==='trailer' ? /^\/tv\/v1\/preview-media\/[a-f0-9]{64}$/ : kind==='artwork' ? /^\/tv\/v1\/artwork-media\/[a-f0-9]{64}$/ : /^\/tv\/v1\/episode-media\/[a-f0-9]{64}$/;
         return pattern.test(path || '') ? apiOrigin+path : '';
+    }
+    function inspectEpisode(path,done) {
+        var url=mediaUrl(path,'episode');
+        if(!url){done(0,null);return;}
+        request(url,null,'',8000,done,'HEAD');
     }
     Timer { interval: 1000; repeat: true; running: true; onTriggered: {
         var active=session.requests.slice();

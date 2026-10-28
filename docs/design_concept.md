@@ -1,5 +1,14 @@
 # UI/UX & Design System
 
+## Lecteur TV : barre actuelle rejetée
+
+Image/son sont confirmés dans l’hôte complet, mais Walson rejette la transposition
+du chrome PC. Le [contrat de parcours TV](atlas-tv-player-contract.md) fixe les
+priorités avant recodage : timeline à la télécommande, retour lecture/pause
+centré, pas de volume logiciel/±10, épisodes et réglages en surimpression,
+choix réels source/lecteur, VF/VOSTFR et qualité. Les captures de la première
+barre restent historiques ; elles ne doivent pas être propagées comme référence.
+
 ## Atlas TV — lecteur et navigation commune
 
 Le [lecteur adapté du PC](research/2026-10-28-atlas-tv-player.md) reprend son

@@ -23,6 +23,8 @@ Application {
         property var pendingPlayback: null
         property int sequence: 0
         property bool previewBusy: false
+        property bool retryInspectBusy:false
+        property int retrySerial:0
         property var previewCache: ({})
         property var previewFailures: ({})
         property string panel: ''
@@ -137,7 +139,7 @@ Application {
                     returnFromPlayback(); return;
                 }
                 playbackId=value.id; sequence=0;
-                pendingPlayback={url:url,title:media.titre+' · Épisode '+target.numero+' · '+(target.vf ? 'VF' : 'VOSTFR'),resume:resumeOverride>0 ? resumeOverride : value.resume ? value.resume.position_ms || 0 : 0,media:media,target:target,readerId:/^[a-f0-9]{64}$/.test(value.reader_id || '') ? value.reader_id : '',excluded:readers};
+                pendingPlayback={url:url,path:value.stream.path,title:media.titre+' · Épisode '+target.numero+' · '+(target.vf ? 'VF' : 'VOSTFR'),resume:typeof resumeOverride==='number' && isFinite(resumeOverride) && resumeOverride>=0 ? resumeOverride : value.resume ? value.resume.position_ms || 0 : 0,media:media,target:target,readerId:/^[a-f0-9]{64}$/.test(value.reader_id || '') ? value.reader_id : '',excluded:readers};
                 if(episode.status===Loader.Ready) startEpisode();
             });
         }
@@ -147,7 +149,20 @@ Application {
             episode.item.play(pendingPlayback.url);
         }
         function browsePlayingEpisodes(){var current=pendingPlayback ? pendingPlayback.media : null;if(playbackId && episode.item)episode.item.close();if(panel!=='detail' && current)openDetail(current);}
-        function retryEpisode(){var current=pendingPlayback;if(!current)return;var excluded=(current.excluded || []).slice(),position=episode.item ? episode.item.positionMs : 0;if(current.readerId && excluded.indexOf(current.readerId)<0 && excluded.length<8)excluded.push(current.readerId);if(playbackId && episode.item)episode.item.close();launch(current.media,current.target,excluded,position);}
+        function retryEpisode(){
+            var current=pendingPlayback,id=playbackId;if(!current || !id || retryInspectBusy)return;
+            var position=episode.item ? episode.item.positionMs : 0,turn=++retrySerial;retryInspectBusy=true;episode.item.retrying=true;
+            session.inspectEpisode(current.path,function(status,value){
+                if(screen.playbackId!==id || turn!==screen.retrySerial)return;
+                screen.retryInspectBusy=false;episode.item.retrying=false;
+                var excluded=(current.excluded || []).slice();
+                if((status>=200 && status<300 || status===502 || status===503 || status===504) && current.readerId){
+                    excluded=excluded.filter(function(reader){return reader!==current.readerId;});excluded.push(current.readerId);excluded=excluded.slice(-8);
+                }
+                // A 401 is a lost/expired ticket, not evidence against this provider.
+                episode.item.close();screen.launch(current.media,current.target,excluded,position);
+            });
+        }
         function progress(value) {
             if(!playbackId) return;
             value.seq=++sequence;
@@ -183,7 +198,7 @@ Application {
                 item.family=regular.name || 'sans-serif';
                 item.progress.connect(screen.progress);
                 item.episodesRequested.connect(screen.browsePlayingEpisodes);item.retryRequested.connect(screen.retryEpisode);
-                item.closed.connect(function() { screen.playbackId=''; screen.returnFromPlayback(); });
+                item.closed.connect(function() { screen.playbackId='';screen.retrySerial++;screen.retryInspectBusy=false;screen.returnFromPlayback(); });
                 if(screen.pendingPlayback && screen.playbackId) screen.startEpisode();
             }
         }

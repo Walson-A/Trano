@@ -123,6 +123,7 @@ Item {
  property bool delayDetails:false
  property var pendingDetails:[]
  property bool failNextPlayback:false
+ property int mediaHeadStatus:200
  signal homeLoaded()
  signal unavailable()
  signal apiCalled(string path,var body)
@@ -139,6 +140,7 @@ Item {
   else Qt.callLater(function(){done(200,{});});
  }
  function mediaUrl(path,kind) { return apiOrigin+path; }
+ function inspectEpisode(path,done) {var status=mediaHeadStatus;Qt.callLater(function(){done(status,null);});}
  function finishPreview(id,key) { var done=pendingPreview; pendingPreview=null; done(200,{kind:'trailer',anilist_id:id,youtube_id:key,path:'/tv/v1/preview-media/'+'b'.repeat(64),expires_at:Date.now()/1000+900}); }
  function finishArtwork(index,id,kind) { pendingArtworks[index](200,{anilist_id:id,kind:kind,path:'/tv/v1/artwork-media/'+'c'.repeat(64),expires_at:Date.now()/1000+900}); }
  function featuredOnly() { state='connecting'; artworkEnabled=false; var value=JSON.parse(JSON.stringify(benchmarkHome)); value.rangees=[]; home=value; artworkEnabled=true; state='ready'; homeLoaded(); }
@@ -189,6 +191,7 @@ Item {
             assert screen.property('playbackId')=='aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
             player=window.findChild(QObject,'episodeLoader').property('item')
             spin(lambda:player.property('playing') is True)
+            assert player.property('positionMs')==120000, 'Absolute resume must not add the first native position'
             assert len(window.findChildren(QObject,'episodeVideoOutput'))==1 and not window.findChildren(QObject,'trailerVideoOutput'), 'Only the episode owns a video output'
             assert window.grabWindow().save(str(args.evidence/'episode-controls.png'))
             QTest.keyClick(window,Qt.Key_Return) # pause
@@ -339,10 +342,22 @@ Item {
             assert len(launches)==before+1 and launches[-1]['anilist_id']==154587 and launches[-1]['episode']==3 and launches[-1]['lang']=='vf',launches
             episode_player=window.findChild(QObject,'episodeLoader').property('item')
             spin(lambda:episode_player.property('playing') is True)
+            window.findChild(QObject,'episodeMedia').setProperty('position',0)
             window.findChild(QObject,'episodeMedia').error.emit(1)
             assert episode_player.property('failure')
             QTest.keyClick(window,Qt.Key_Return);QTest.qWait(200)
             assert [body for path,body in calls if path=='/tv/v1/playbacks'][-1]['exclude_readers']==['e'*64], 'Retry excludes only the failed canonical reader'
+            spin(lambda:episode_player.property('playing') is True)
+            assert episode_player.property('resumeMs')==0 and episode_player.property('positionMs')<2000, 'Explicit position zero must override an older backend resume'
+            previous=[format(i,'064x') for i in range(1,9)]
+            pending=screen.property('pendingPlayback').toVariant();pending['excluded']=previous;screen.setProperty('pendingPlayback',pending)
+            window.findChild(QObject,'episodeMedia').error.emit(1);QTest.keyClick(window,Qt.Key_Return);QTest.qWait(200)
+            assert [body for path,body in calls if path=='/tv/v1/playbacks'][-1]['exclude_readers']==previous[1:]+['e'*64], 'Keep the eight most recent failed readers'
+            spin(lambda:episode_player.property('playing') is True)
+            session.setProperty('mediaHeadStatus',401)
+            window.findChild(QObject,'episodeMedia').error.emit(1);QTest.keyClick(window,Qt.Key_Return);QTest.qWait(200)
+            assert [body for path,body in calls if path=='/tv/v1/playbacks'][-1]['exclude_readers']==previous[1:]+['e'*64], 'An expired ticket must not add exclusions'
+            session.setProperty('mediaHeadStatus',200)
             QTest.keyClick(window,Qt.Key_Back);QTest.qWait(100)
             assert screen.property('panel')=='detail' and detail.property('activeFocus') and detail.property('episodeIndex')==2
             session.setProperty('failNextPlayback',True)
