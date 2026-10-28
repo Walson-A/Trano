@@ -79,6 +79,13 @@ progressifs et HLS, leur transport TV et un contrat de choix de variante fermé.
 Ce point demandé comme prioritaire reste à réaliser, pas à masquer derrière
 une fausse liste ou à déclarer impossible sans examiner les extracteurs.
 
+Le backend a depuis relevé deux variantes MP4 pour certaines cibles Mail.ru
+(360p/1080p pour 114535/1 VO, 360p/720p pour 5630/2 VF) et un seul fichier sans
+définition pour YourUpload 21507/3 VF. Le contrat `/tv/v1/variants` prépare
+un `variant_id` opaque lié à l'identité, langue, source et lecteur ; sa livraison
+reste en préflight au dernier échange. Ces exemples ne deviennent jamais un
+fallback codé dans le menu. Voir la [proposition QML et ses limites](research/2026-10-28-atlas-tv-player-proposal.md).
+
 ## Critères de revue avant nouvel essai TV
 
 Comparer les vrais composants QML dans leurs états lecture, pause, timeline,

@@ -1,7 +1,13 @@
 # Atlas sur la télévision : base réutilisable et premier parcours
 
-Dernière passe : [lecteur et sorties vidéo exclusives](research/2026-10-28-atlas-tv-player.md).
-L’essai isolé Eden valide image/son ; l’hôte complet reste à retester. Navigation
+Dernière passe : [proposition visuelle du lecteur TV](research/2026-10-28-atlas-tv-player-proposal.md),
+séparée de l'app publiée et en attente de revue humaine. La barre PC transposée
+est rejetée ; volume matériel, timeline et choix réels source/lecteur/qualité
+définissent la nouvelle direction.
+
+La passe [lecteur et sorties vidéo exclusives](research/2026-10-28-atlas-tv-player.md)
+a reçu la confirmation humaine image/son dans l'hôte complet. Pause/reprise et
+seek restent à confirmer visuellement après refonte. Navigation
 commune Accueil/Recherche/Profil et total d’épisodes visible ; Retour suit la
 fiche précédente. Les mentions historiques ci-dessous ne valident pas ce lot.
 

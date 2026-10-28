@@ -1,5 +1,14 @@
 # UI/UX & Design System
 
+## Lecteur TV : proposition séparée en revue
+
+La [nouvelle étude QML](research/2026-10-28-atlas-tv-player-proposal.md)
+présente une timeline dominante, le retour pause centré et des panneaux
+Épisodes, Source/lecteur, Version et Qualité. Huit captures sont revues sur
+image fixe ; aucune intégration ou validation native n'est déduite de ce banc.
+Le volume reste exclusivement géré par le Devialet. Les choix de qualité
+seront ceux des variantes réelles du backend ; la proposition n'est pas publiée.
+
 ## Lecteur TV : barre actuelle rejetée
 
 Image/son sont confirmés dans l’hôte complet, mais Walson rejette la transposition
@@ -15,7 +24,9 @@ Le [lecteur adapté du PC](research/2026-10-28-atlas-tv-player.md) reprend son
 chrome et ses icônes, avec position demandée distincte de la position rapportée,
 barre et menus utilisables à la télécommande. Les instructions permanentes
 sont retirées. Les sorties vidéo preview/épisode sont instanciées exclusivement ;
-image/son ont été confirmés sur un lecteur isolé, l’hôte complet reste à vérifier.
+image/son ont été confirmés sur un lecteur isolé puis dans l’hôte complet.
+La barre de cette passe est rejetée ; pause/reprise et seek restent à confirmer
+visuellement sur le Player après la refonte.
 L’en-tête est partagé entre Accueil, Recherche et Profil. Le total d’épisodes
 est visible et Retour suit réellement les fiches/saisons précédentes.
 
