@@ -132,6 +132,16 @@ Item {
             assert window.grabWindow().save(str(args.evidence/'hero-return.png'))
             bad=[m for m in messages if any(s in m for s in ['Error','is not defined','Unable to assign','Cannot assign','failed'])]
             assert not bad,bad
+            audio=window.findChild(QObject,'trailerMedia')
+            assert audio.property('muted') is True and audio.property('volume')==0
+            hero.setProperty('muted',False)
+            assert audio.property('muted') is False and abs(audio.property('volume')-.35)<.001
+            hero.setProperty('muted',True)
+            # An unavailable banner must show this title's poster, not retain the preceding title.
+            front=window.findChild(QObject,'heroBanner');art=front.parent().parent()
+            art.setProperty('requestedSource',QUrl.fromLocalFile(str(root/'missing-banner.jpg')))
+            QTest.qWait(150)
+            assert art.property('usingFallback') is True and front.property('status')==1
             # Late trailer A must never replace the selected trailer B.
             hero.setProperty('previewEnabled',False)
             hero.selectMode('featured');hero.choose(0)
@@ -145,7 +155,7 @@ Item {
             assert first['bande_annonce'] not in hero.property('trailerSources').toVariant()
             session.finishPreview(selected['anilist_id'],selected['bande_annonce'])
             assert selected['bande_annonce'] in hero.property('trailerSources').toVariant()
-            (args.evidence/'verification.json').write_text(json.dumps({'passed':True,'scope':'real QML host/UI with fake API and fake decoder; no native playback claim','canonicalEpisode':13,'lang':'vf','lateTrailerDoesNotChangeSelection':True,'events':events},indent=2),encoding='utf-8')
+            (args.evidence/'verification.json').write_text(json.dumps({'passed':True,'scope':'real QML host/UI with fake API and fake decoder; no native playback claim','canonicalEpisode':13,'lang':'vf','lateTrailerDoesNotChangeSelection':True,'silentGainZero':True,'bannerErrorUsesPoster':True,'events':events},indent=2),encoding='utf-8')
             app.quit()
         except Exception as error: messages.append(str(error));app.exit(1)
     QTimer.singleShot(600,check);QTimer.singleShot(10000,lambda:app.exit(2))

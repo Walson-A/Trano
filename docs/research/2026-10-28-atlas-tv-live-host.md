@@ -4,9 +4,43 @@
 
 `hero/live.qml` consomme le contrat média préparé par la conversation backend
 Atlas. `player.qml` reste le banc visuel, avec entrées explicites. Les tests
-locaux Qt 5.15.2 passent ; ils ne certifient ni la lecture native Qt 5.15.19,
-ni le lancement iPhone PC éteint, ni la publication de ce paquet. La livraison
-serveur et sa validation matérielle doivent être relevées séparément.
+locaux Qt 5.15.2 passent. Le paquet `0f61f46` a ensuite été publié et lancé
+sur le Devialet depuis le service permanent ; Walson confirme le héros et les
+animés réels. Le lancement iPhone PC éteint reste à tester : le bouton manque
+encore sur son build installé, et le build natif est prévu avec Carte.
+
+Publication vérifiée : service `atlas-tv-launch`, release `hero-0f61f46`,
+vingt fichiers et quatre capacités actives, même listener 3016 et origine
+`https://tranoserver.taila81674.ts.net:10000`. `server.mjs` et les autres ports
+n'ont pas été changés par ce déploiement de bundle. Le paquet est dans
+`/home/trano/.local/share/atlas-tv/scene-b77800f/hero-0f61f46`, avec sauvegarde
+privée `config-before-hero-0f61f46.json` et ancien bundle conservés pour retour
+arrière. SDK accepté puis dix-sept fichiers demandés, dont lecteurs, polices
+et SVG ; les téléchargements seuls n'étaient pas présentés comme du rendu.
+La confirmation de Walson constitue la preuve de l'affichage.
+
+Le backend signale encore `no_verified_source` pour l'épisode de référence
+(DNS Voiranime serveur local, refus conservé). Aucune nouvelle lecture
+d'épisode native n'est certifiée par ce lot. La bande-annonce de référence
+a été transportée par le backend, sans nouvelle confirmation audio/vidéo de
+Walson dans le héros pour ce lancement.
+
+Retour humain : sourdine affichée mais son audible, plusieurs images absentes,
+beaucoup de previews indisponibles ; design encore à améliorer. Correctif QML :
+volume nul en plus de `muted`, bannière en erreur repliée sur l'affiche du même
+animé, suppression de l'ancien visuel si les deux échouent. Les essais locaux
+injectent une bannière absente et vérifient le gain 0/0,35 selon l'icône.
+Le résultat sonore natif reste à confirmer après relance.
+
+Deux illustrations exactes (AniList 21507 et 5114) répondent 403 avec le
+User-Agent Python et 200 JPEG avec `AtlasTV/1.0`, sur le serveur ; le même
+GET AtlasTV fonctionne sur PC. Les neuf cartes observées ont leurs identifiants
+de trailer et leurs deux URL d'illustration : les absences ne sont donc pas
+simplement des champs vides. Qt interdit l'en-tête User-Agent dans son XHR
+QML (source publique locale `qqmlxmlhttprequest.cpp`, méthode
+`method_setRequestHeader`). Un transport artwork fermé côté backend est demandé
+à la conversation propriétaire ; le fallback seul ne garantit pas de résoudre
+tous les refus CDN. Pas de contournement natif ou d'accès administrateur.
 
 ## Parcours et droits
 
@@ -63,6 +97,8 @@ la destruction du runtime par Netflix et ne promet aucun relais permanent.
 - `test-atlas-tv-live.py` : vrais composants/hôte/lecteur, API et décodeur
   explicitement simulés ; épisode canonique 13/VF, reprise 2:00, pause,
   avance 2:10, retour au héros, séquences et réponse tardive de bande-annonce.
+  Vérification supplémentaire : mute impose le gain nul et une bannière absente
+  charge l'affiche du même titre.
 - Banc historique : huit captures, reprise, mouvement interrompable et retour
   à la première carte sans appui supplémentaire. `git diff --check`.
 

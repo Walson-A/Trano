@@ -8,7 +8,8 @@ Item {
     function play(url) { media.stop(); media.source=url; media.play(); }
     function stop() { media.stop(); media.source=""; }
     function pause() { media.pause(); }
-    MediaPlayer { id: media; muted: preview.silent; volume: 0.35
+    // Some Player backends leave muted ineffective: enforce silence at gain too.
+    MediaPlayer { id: media; objectName:'trailerMedia'; muted: preview.silent; volume: preview.silent ? 0 : 0.35
         onError: preview.observed({event:'error',code:error})
         onStatusChanged: preview.observed({event:'status',status:status})
     }

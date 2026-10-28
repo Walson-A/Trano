@@ -4,8 +4,9 @@
 
 Raccordement du 28 octobre : [hôte QML du contrat serveur](research/2026-10-28-atlas-tv-live-host.md),
 sessions limitées, catalogue, bandes-annonces et lecteur avec temps/barre.
-Le banc reste distinct ; les tests locaux ne certifient pas le lancement
-téléphone PC éteint ni la publication du paquet.
+Le banc reste distinct. Le paquet est publié et Walson confirme le héros avec
+le catalogue réel sur le Player ; le lancement téléphone PC éteint et la
+nouvelle lecture native d'épisode restent à valider.
 
 Travail courant : [héros QML adapté de l’écran PC](research/2026-10-26-atlas-tv-hero.md),
 limité à cette composition et à sa sélection. Les premiers brouillons d’accueil

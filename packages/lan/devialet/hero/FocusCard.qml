@@ -5,6 +5,8 @@ Item {
     id: card
     property string title: ""
     property url artwork: ""
+    property url fallbackArtwork: ""
+    onArtworkChanged: cardImage.source=artwork
     property string family: "Segoe UI"
     property bool selected: false
     property bool focused: false
@@ -27,7 +29,10 @@ Item {
         Item {
             id: picture; anchors.fill: parent
             Rectangle { anchors.fill: parent; radius: 11; color: '#1a1c22' }
-            Image { id: cardImage; objectName: "heroArtwork"; anchors.fill: parent; source: card.artwork; fillMode: Image.PreserveAspectCrop; asynchronous: true; visible: false; clip: true }
+            Image { id: cardImage; objectName: "heroArtwork"; anchors.fill: parent; source: card.artwork; fillMode: Image.PreserveAspectCrop; asynchronous: true; visible: false; clip: true
+                onStatusChanged: if(status===Image.Error && card.fallbackArtwork && source!==card.fallbackArtwork) source=card.fallbackArtwork
+            }
+            Text { anchors.centerIn:parent; visible:cardImage.status===Image.Error || !cardImage.source; text:'Visuel indisponible'; color:'#92939c'; font.family:card.family; font.pixelSize:15 }
             OpacityMask { anchors.fill: parent; source: cardImage; maskSource: Rectangle { width: picture.width; height: picture.height; radius: 11 } }
             Rectangle { anchors.fill: parent; radius: 11; color: '#30000000'; opacity: card.focused || card.selected ? 0 : 1
                 Behavior on opacity { enabled: !card.reducedMotion; NumberAnimation { duration: Motion.ms('focus') } }

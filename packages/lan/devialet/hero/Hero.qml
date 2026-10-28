@@ -49,6 +49,7 @@ FocusScope {
     function art(media,kind) {
         if (!media) return "";
         var local=artworkMap[String(media.anilist_id)];
+        if(kind==='poster') return local && local.card ? local.card : (media.affiche || '');
         return local && local[kind] ? local[kind] : kind === "banner" ? (media.banniere || media.affiche || "") : (media.banniere || media.affiche || "");
     }
     function meta(media) {
@@ -143,7 +144,7 @@ FocusScope {
     Rectangle { anchors.fill: parent; color: "#090a0d" }
     Item {
         id: backdrop; anchors.fill: parent
-        HeroArtwork { width: 1280; height: 620; requestedSource: scene.art(scene.displayedMedia,'banner'); reducedMotion: scene.reducedMotion; soften: !!scene.displayedMedia && !scene.displayedMedia.banniere }
+        HeroArtwork { width: 1280; height: 620; requestedSource: scene.art(scene.displayedMedia,'banner'); fallbackSource:scene.art(scene.displayedMedia,'poster'); reducedMotion: scene.reducedMotion; soften: !!scene.displayedMedia && !scene.displayedMedia.banniere }
         Loader { id: preview; width: 1280; height: 620; source: scene.previewEnabled || scene.keepPreviewLoaded ? "Trailer.qml" : ""; opacity: scene.videoReady ? 1 : 0
             Behavior on opacity { enabled: !scene.reducedMotion; NumberAnimation { duration: Motion.ms('fade'); easing.type: Easing.Bezier; easing.bezierCurve: Motion.easeOut() } }
             onLoaded: { item.silent=Qt.binding(function(){return scene.muted;}); item.observed.connect(scene.observePreview); scene.restartPreview(); }
@@ -197,7 +198,7 @@ FocusScope {
         Behavior on contentX { enabled: !scene.reducedMotion; NumberAnimation { duration: Motion.ms('scroll'); easing.type: Easing.Bezier; easing.bezierCurve: Motion.easeOut() } }
         delegate: FocusCard {
             objectName: 'heroCard'+index
-            title: modelData.titre; artwork: scene.art(modelData,'card'); family: scene.family
+            title: modelData.titre; artwork: scene.art(modelData,'card'); fallbackArtwork:scene.art(modelData,'poster'); family: scene.family
             selected: scene.selectedIndex===index; focused: selected && scene.zone==='rail'; reducedMotion: scene.reducedMotion
             progress: modelData.moi && modelData.episodes ? modelData.moi.progression/Math.max(1,modelData.episodes) : -1
             onActivated: { scene.zone='rail'; scene.choose(index); }

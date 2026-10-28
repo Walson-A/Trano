@@ -4,6 +4,8 @@
   "canonicalEpisode": 13,
   "lang": "vf",
   "lateTrailerDoesNotChangeSelection": true,
+  "silentGainZero": true,
+  "bannerErrorUsesPoster": true,
   "events": [
     {
       "duration_ms": 1500095,
