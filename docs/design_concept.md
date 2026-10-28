@@ -1,5 +1,15 @@
 # UI/UX & Design System
 
+## Lecteur TV : proposition après recherche
+
+Le [lecteur à zones distinctes](research/2026-10-28-atlas-tv-transport-proposal.md)
+sépare identité, réglages nommés et épisodes, avec une timeline stable. Le carnet
+montre dix-huit états du QML isolé, dont préparation, annulation, erreur et
+contraste sur blanc. Dix-sept assertions de parcours passent sur le banc ;
+aucun décodeur, serveur ou SDK n'est appelé. La composition attend la revue de
+Walson avant intégration et essai natif ; aucune qualité finale n'est déduite
+du succès technique du banc.
+
 ## Lecteur TV : recherche sur les layouts et la cognition
 
 L'[étude du 28 octobre](research/2026-10-28-premium-player-layouts.md) compare

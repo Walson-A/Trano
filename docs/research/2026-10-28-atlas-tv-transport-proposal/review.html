@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="fr">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Atlas TV · Proposition du lecteur</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#111114;color:#f5f5f7;font:15px/1.5 system-ui,sans-serif}main{max-width:1328px;margin:auto;padding:20px 24px}header,footer,.toolbar{display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap}h1{font-size:22px;font-weight:600;margin:0}p{color:#bfbfc8;margin:7px 0}a{color:#e0e0e6;text-underline-offset:4px}.links{display:flex;gap:20px}nav{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0}button,select{font:inherit;min-height:40px;padding:7px 13px;background:transparent;color:#e0e0e6;border:1px solid #50505a;border-radius:8px}button[aria-selected=true]{background:#f5f5f7;color:#151519;border-color:#f5f5f7}button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid white;outline-offset:3px}select{background:#1b1b20;max-width:100%}.stage{display:flex;align-items:center;justify-content:center;background:black}.stage img{display:block;width:100%;height:auto;max-height:calc(100dvh - 230px);aspect-ratio:16/9;object-fit:contain}.stage:fullscreen{width:100%;height:100%;background:black}.stage:fullscreen img{max-height:100dvh;height:100%;object-fit:contain}footer{margin-top:12px;align-items:flex-start}#description{max-width:850px;margin:0}small{font-size:13px;color:#a9a9b3}.toolbar label{color:#bfbfc8}#load-error{color:#ffb5b5}.subtle{font-size:13px}.toolbar{margin-top:14px}@media(max-width:700px){main{padding:16px}h1{font-size:20px}.stage img{max-height:none}.links{gap:12px}button{min-height:44px}}
+</style>
+<main>
+<header><h1>Atlas TV · Le lecteur</h1><div class="links"><a href="../2026-10-28-premium-player-layouts/research.html">Références étudiées</a><a href="../2026-10-28-atlas-tv-transport-proposal.md">Choix et limites</a></div></header>
+<p>Contenu à gauche, réglages à droite, épisodes à part. Captures du vrai QML sur image fixe, avant essai TV.</p>
+<nav role="tablist" aria-label="États principaux du lecteur" id="tabs"></nav>
+<section role="tabpanel" id="screen" aria-label="Capture du lecteur">
+<div class="stage" id="stage"><img id="capture" src="hud.png" alt="Lecteur Atlas TV avec le titre à gauche, les réglages nommés à droite et une timeline large."></div>
+<p id="load-error" role="alert" hidden>La capture n’a pas pu être chargée. Utilise le lien vers l’image.</p>
+</section>
+<footer><p id="description" aria-live="polite">Les trois réglages affichent leur valeur actuelle. Épisodes reste distinct sous la progression.</p><button type="button" id="fullscreen">Plein écran</button></footer>
+<div class="toolbar"><label for="more">Autres états <select id="more"><option value="">Choisir un état</option></select></label><a id="full-image" href="hud.png" target="_blank">Image pleine taille</a></div>
+<p class="subtle">Exemples de saison, de sources et de qualités pour étudier les interactions. Le blanc indique le focus, la coche le choix actif. Aucun flux réel, lancement TV ou changement du serveur.</p>
+</main>
+<script>
+const primary=[
+ ['hud','Lecture','Les trois réglages affichent leur valeur actuelle. Épisodes reste distinct sous la progression.'],
+ ['focus','Focus','La commande Source garde un nom visible et affiche le lecteur actuel.'],
+ ['pause','Pause','La reprise est centrée. Le reste du lecteur conserve sa position.'],
+ ['timeline','Timeline','9:25 est une proposition. La position jouée reste à 7:12 jusqu’à OK ; Retour annule.'],
+ ['version','Version','VF est ciblée, VOSTFR est encore active. Les voix et les sous-titres sont décrits ensemble.'],
+ ['source','Source','Le lecteur et le site sont visibles dans chaque choix, sans quitter l’épisode.'],
+ ['quality','Qualité','1080p reste actif, 360p est ciblé. La sélection et le focus ont deux signes différents.'],
+ ['episodes','Épisodes','Navigation de contenu séparée des réglages : saison, total, épisode joué et choix d’un autre épisode.'],
+ ['error','Erreur','Réessayer ou changer de source. Le temps conservé reste visible.']
+];
+const secondary=[
+ ['quality-original','Qualité unique','Un seul fichier est représenté par Originale. Aucun format supplémentaire n’est inventé.'],
+ ['episodes-far','Épisode éloigné','Le compteur conserve le total. Le banc vérifie aussi le retour au début sans appui supplémentaire.'],
+ ['seasons','Saisons','La saison parcourue reste indépendante de celle de l’épisode en lecture.'],
+ ['loading','Préparation de qualité','La valeur actuelle reste affichée pendant la préparation ; Annuler revient aux choix.'],
+ ['change-error','Échec du changement','Un changement qui échoue ne publie pas la nouvelle valeur.'],
+ ['error-source','Autre source après erreur','Les réglages restent visibles après l’ouverture de Source depuis une erreur.'],
+ ['episode-loading','Préparation d’épisode','Préparer un autre épisode ne change ni le titre ni la position de l’épisode actuel.'],
+ ['bright','Contraste sur blanc','Fond blanc de contrôle, pour juger la lisibilité indépendamment de notre image de test.'],
+ ['video','Vidéo seule','Sans commandes affichées, l’image reste seule.'],
+ ['before','Proposition précédente','Comparaison avec la composition précédente à quatre icônes et légende au focus.']
+];
+const all=[...primary,...secondary],tabs=document.getElementById('tabs'),select=document.getElementById('more'),image=document.getElementById('capture'),panel=document.getElementById('screen');
+function show(name){
+ const item=all.find(x=>x[0]===name);if(!item)return;
+ const path=name==='before'?'../2026-10-28-atlas-tv-netflix-proposal/hud.png':name+'.png';
+ [...tabs.children].forEach(button=>{const active=button.dataset.state===name;button.setAttribute('aria-selected',String(active));button.tabIndex=active?0:-1;});
+ if(!primary.some(x=>x[0]===name))tabs.firstElementChild.tabIndex=0;
+ if(primary.some(x=>x[0]===name)){select.value='';panel.setAttribute('aria-labelledby','tab-'+name);}else {panel.removeAttribute('aria-labelledby');panel.setAttribute('aria-label',item[1]);}
+ image.src=path;image.alt=item[2];document.getElementById('description').textContent=item[2];document.getElementById('full-image').href=path;document.getElementById('load-error').hidden=true;
+}
+primary.forEach((item,index)=>{
+ const button=document.createElement('button');button.type='button';button.id='tab-'+item[0];button.dataset.state=item[0];button.textContent=item[1];button.setAttribute('role','tab');button.setAttribute('aria-controls','screen');button.setAttribute('aria-selected',String(index===0));button.tabIndex=index===0?0:-1;
+ button.addEventListener('click',()=>show(item[0]));tabs.appendChild(button);
+});
+secondary.forEach(item=>{const option=document.createElement('option');option.value=item[0];option.textContent=item[1];select.appendChild(option);});
+select.addEventListener('change',()=>show(select.value));
+tabs.addEventListener('keydown',event=>{
+ if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
+ const current=[...tabs.children].indexOf(document.activeElement);if(current<0)return;
+ const next=event.key==='Home'?0:event.key==='End'?primary.length-1:(current+(event.key==='ArrowRight'?1:-1)+primary.length)%primary.length;
+ show(primary[next][0]);tabs.children[next].focus();event.preventDefault();
+});
+image.addEventListener('error',()=>document.getElementById('load-error').hidden=false);
+document.getElementById('fullscreen').addEventListener('click',()=>document.getElementById('stage').requestFullscreen?.().catch(()=>{}));
+show('hud');
+</script>
+</html>
