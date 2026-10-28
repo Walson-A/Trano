@@ -7,6 +7,7 @@ Item {
     property string apiOrigin: ""
     property string accessToken: ""
     property string refreshToken: ""
+    property bool artworkEnabled: false
     property double expiresAt: 0
     property bool refreshing: false
     property var waiters: []
@@ -58,6 +59,7 @@ Item {
             if(status!==200 || !runtime || runtime.protocol!==1 || !origin || runtime.apiOrigin!==origin[1] ||
                !runtime.activation || !/^tv_pair_[a-f0-9]{64}$/.test(runtime.activation.code || '')) { fail(); return; }
             apiOrigin=runtime.apiOrigin;
+            artworkEnabled=!!(runtime.capabilities && runtime.capabilities.artwork);
             request(apiOrigin+'/tv/v1/session/activate',{code:runtime.activation.code},'',12000,function(code,value) {
                 if(code!==200 || !credentials(value)) { fail(); return; }
                 loadHome();
@@ -100,7 +102,7 @@ Item {
         });
     }
     function mediaUrl(path,kind) {
-        var pattern=kind==='trailer' ? /^\/tv\/v1\/preview-media\/[a-f0-9]{64}$/ : /^\/tv\/v1\/episode-media\/[a-f0-9]{64}$/;
+        var pattern=kind==='trailer' ? /^\/tv\/v1\/preview-media\/[a-f0-9]{64}$/ : kind==='artwork' ? /^\/tv\/v1\/artwork-media\/[a-f0-9]{64}$/ : /^\/tv\/v1\/episode-media\/[a-f0-9]{64}$/;
         return pattern.test(path || '') ? apiOrigin+path : '';
     }
     Timer { interval: 1000; repeat: true; running: true; onTriggered: {

@@ -42,6 +42,31 @@ QML (source publique locale `qqmlxmlhttprequest.cpp`, méthode
 à la conversation propriétaire ; le fallback seul ne garantit pas de résoudre
 tous les refus CDN. Pas de contournement natif ou d'accès administrateur.
 
+Le correctif `0481187` est ensuite publié (`hero-0481187`, vingt fichiers) et
+relancé via le service permanent. Le résultat sonore humain reste attendu.
+
+## Transport d'illustrations préparé
+
+`ArtworkCache.qml` consomme le contrat backend `POST /tv/v1/artworks` avec
+`{anilist_id,kind:banner|poster}`. Le résultat doit correspondre aux deux
+identifiants et fournir un chemin fermé `/tv/v1/artwork-media/:ticket`, résolu
+sur la seule origine du service. Il n'envoie pas d'URL de CDN arbitraire.
+La route ne sera appelée que si `runtime.json.capabilities.artwork` est vrai ;
+un ancien gateway conserve donc le parcours précédent.
+
+Le client prépare deux images simultanément, donne la priorité au titre
+sélectionné et chauffe les six premières cartes de la rangée. Requêtes dédupliquées,
+file limitée à 64, map à 64 titres, métadonnées à 128 entrées. Cache de ticket
+jusqu'à trente secondes avant expiration ; en cas de refus, aucune boucle
+(dix secondes de pause sur 429, sinon une minute). Image native/affiche restent
+des replis. Un retour tardif ne change que l'image de sa propre identité.
+Le serveur reste propriétaire des URL canoniques, du cache et des contrôles CDN.
+
+Les tests du vrai hôte QML couvrent aussi la file, la capacité obligatoire,
+la déduplication et le refus d'une identité de réponse différente. Le transport
+artwork est préparé côté frontend ; son déploiement backend et son rendu TV
+ne sont pas encore certifiés par cette preuve locale.
+
 ## Parcours et droits
 
 Le téléphone prépare `/tv/v1/app/launches` et transmet la commande SDK au Player.

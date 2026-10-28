@@ -7,6 +7,7 @@ Application {
     FontLoader { id: regular; source: "regular.ttf" }
     FontLoader { source: "bold.ttf" }
     TvSession { id: session; objectName:'tvSession'; onHomeLoaded: hero.selectMode(hero.resumeItems.length ? 'resume' : 'featured') }
+    ArtworkCache { id:artworks; objectName:'artworkCache'; transport:session }
     Item {
         id: screen; objectName:'tvScreen'
         width:1280; height:720; scale:Math.min(parent.width/1280,parent.height/720); transformOrigin:Item.TopLeft
@@ -18,8 +19,14 @@ Application {
         property bool previewBusy: false
         property var previewCache: ({})
         property var previewFailures: ({})
+        function warmArtwork() {
+            artworks.request(hero.selected,'banner',true);
+            artworks.request(hero.selected,'poster',true);
+            for(var i=0;i<Math.min(6,hero.items.length);i++) artworks.request(hero.items[i],'banner',false);
+        }
         function preview() {
-            if(previewBusy || resolving || playbackId || !hero.selected || !hero.trailerId || session.state!=='ready') return;
+            if(resolving || playbackId || !hero.selected || !hero.trailerId || session.state!=='ready') return;
+            if(previewBusy) { hero.previewState='loading'; return; }
             var id=hero.selected.anilist_id, key=hero.trailerId, cached=previewCache[key];
             if(!(id>0)) return;
             if(cached && cached.expires>Date.now()+30000) { var available={}; available[key]=cached.url; hero.trailerSources=available; return; }
@@ -75,17 +82,21 @@ Application {
             });
         }
         Timer { interval:30000; repeat:true; running:session.state==='ready' && !screen.playbackId && !screen.resolving; onTriggered: {
+            screen.warmArtwork();
             var key=hero.trailerId, cached=screen.previewCache[key];
             if(cached && cached.expires<=Date.now()+30000 && hero.trailerSources[key]) hero.trailerSources={};
         } }
         Hero {
             id:hero; objectName:'atlasHero'; family:regular.name || 'sans-serif'; homeData:session.home; keepPreviewLoaded:true
+            artworkMap:artworks.sources
             visible:session.state==='ready' && !screen.playbackId
             enabled:!screen.resolving
             onTrailerRequested: screen.preview()
             onPlayRequested: screen.launch(media,target)
             onDismissed: Qt.quit()
+            onArtworkFailed:artworks.request(media,kind,true)
         }
+        Connections { target:hero; function onSelectedChanged() { screen.warmArtwork(); } function onItemsChanged() { screen.warmArtwork(); } }
         Loader {
             // Load once during bootstrap: the asset ticket expires in ten minutes.
             id:episode; objectName:'episodeLoader'; anchors.fill:parent; source:'EpisodePlayer.qml'; visible:!!screen.playbackId

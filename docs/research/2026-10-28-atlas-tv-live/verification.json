@@ -6,6 +6,12 @@
   "lateTrailerDoesNotChangeSelection": true,
   "silentGainZero": true,
   "bannerErrorUsesPoster": true,
+  "artworkQueue": {
+    "maxConcurrent": 2,
+    "identityChecked": true,
+    "deduplicated": true,
+    "capabilityRequired": true
+  },
   "events": [
     {
       "duration_ms": 1500095,

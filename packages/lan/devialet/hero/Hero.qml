@@ -35,6 +35,7 @@ FocusScope {
     signal detailsRequested(var media)
     signal trailerRequested(string trailerKey)
     signal previewObserved(var observation)
+    signal artworkFailed(var media,string kind)
     function row(id) {
         var rows=homeData.rangees || [];
         for(var i=0;i<rows.length;i++) if(rows[i].id===id) return rows[i].cartes || [];
@@ -49,7 +50,7 @@ FocusScope {
     function art(media,kind) {
         if (!media) return "";
         var local=artworkMap[String(media.anilist_id)];
-        if(kind==='poster') return local && local.card ? local.card : (media.affiche || '');
+        if(kind==='poster') return local && (local.poster || local.card) ? local.poster || local.card : (media.affiche || '');
         return local && local[kind] ? local[kind] : kind === "banner" ? (media.banniere || media.affiche || "") : (media.banniere || media.affiche || "");
     }
     function meta(media) {
@@ -144,7 +145,9 @@ FocusScope {
     Rectangle { anchors.fill: parent; color: "#090a0d" }
     Item {
         id: backdrop; anchors.fill: parent
-        HeroArtwork { width: 1280; height: 620; requestedSource: scene.art(scene.displayedMedia,'banner'); fallbackSource:scene.art(scene.displayedMedia,'poster'); reducedMotion: scene.reducedMotion; soften: !!scene.displayedMedia && !scene.displayedMedia.banniere }
+        HeroArtwork { width: 1280; height: 620; requestedSource: scene.art(scene.displayedMedia,'banner'); fallbackSource:scene.art(scene.displayedMedia,'poster'); reducedMotion: scene.reducedMotion; soften: !!scene.displayedMedia && !scene.displayedMedia.banniere
+            onFailed:scene.artworkFailed(scene.displayedMedia,poster ? 'poster' : 'banner')
+        }
         Loader { id: preview; width: 1280; height: 620; source: scene.previewEnabled || scene.keepPreviewLoaded ? "Trailer.qml" : ""; opacity: scene.videoReady ? 1 : 0
             Behavior on opacity { enabled: !scene.reducedMotion; NumberAnimation { duration: Motion.ms('fade'); easing.type: Easing.Bezier; easing.bezierCurve: Motion.easeOut() } }
             onLoaded: { item.silent=Qt.binding(function(){return scene.muted;}); item.observed.connect(scene.observePreview); scene.restartPreview(); }
@@ -202,6 +205,7 @@ FocusScope {
             selected: scene.selectedIndex===index; focused: selected && scene.zone==='rail'; reducedMotion: scene.reducedMotion
             progress: modelData.moi && modelData.episodes ? modelData.moi.progression/Math.max(1,modelData.episodes) : -1
             onActivated: { scene.zone='rail'; scene.choose(index); }
+            onArtworkFailed:scene.artworkFailed(modelData,poster ? 'poster' : 'banner')
         }
     }
     Rectangle {

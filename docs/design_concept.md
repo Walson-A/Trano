@@ -9,6 +9,8 @@ décodeur simulés : elles ne valident pas la vidéo native ni un design final.
 Après publication, Walson confirme l'affichage sur TV mais relève des images
 absentes et une sourdine incohérente. Le repli bannière vers affiche et le gain
 nul sont ajoutés ; le transport serveur des illustrations reste à raccorder.
+Le chargeur d'illustrations est désormais préparé, avec une capacité serveur
+explicite et une file à deux requêtes. Son affichage natif attend le backend.
 
 ## Expérimentation Atlas TV — 26 octobre 2026
 

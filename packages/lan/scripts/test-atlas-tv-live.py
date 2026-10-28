@@ -79,9 +79,11 @@ Item {
  property string state:"connecting"
  property string message:""
  property string accessToken:"test"
+ property bool artworkEnabled:false
  property var home:({})
  property string apiOrigin:"https://test.invalid"
  property var pendingPreview:null
+ property var pendingArtworks:[]
  signal homeLoaded()
  signal unavailable()
  signal apiCalled(string path,var body)
@@ -89,11 +91,13 @@ Item {
  function api(path,body,timeout,done) {
   apiCalled(path,body);
   if(path==='/tv/v1/previews') { pendingPreview=done; return; }
+  if(path==='/tv/v1/artworks') { pendingArtworks=pendingArtworks.concat([done]); return; }
   if(path==='/tv/v1/playbacks') Qt.callLater(function(){done(200,{id:'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',stream:{path:'/tv/v1/episode-media/'+'a'.repeat(64)},resume:{position_ms:120000}});});
   else Qt.callLater(function(){done(200,{});});
  }
  function mediaUrl(path,kind) { return apiOrigin+path; }
  function finishPreview(id,key) { var done=pendingPreview; pendingPreview=null; done(200,{kind:'trailer',anilist_id:id,youtube_id:key,path:'/tv/v1/preview-media/'+'b'.repeat(64),expires_at:Date.now()/1000+900}); }
+ function finishArtwork(index,id,kind) { pendingArtworks[index](200,{anilist_id:id,kind:kind,path:'/tv/v1/artwork-media/'+'c'.repeat(64),expires_at:Date.now()/1000+900}); }
 }''')
     engine=QQmlApplicationEngine();engine.addImportPath(str(root))
     engine.rootContext().setContextProperty('benchmarkHome',snapshot)
@@ -155,7 +159,19 @@ Item {
             assert first['bande_annonce'] not in hero.property('trailerSources').toVariant()
             session.finishPreview(selected['anilist_id'],selected['bande_annonce'])
             assert selected['bande_annonce'] in hero.property('trailerSources').toVariant()
-            (args.evidence/'verification.json').write_text(json.dumps({'passed':True,'scope':'real QML host/UI with fake API and fake decoder; no native playback claim','canonicalEpisode':13,'lang':'vf','lateTrailerDoesNotChangeSelection':True,'silentGainZero':True,'bannerErrorUsesPoster':True,'events':events},indent=2),encoding='utf-8')
+            cache=window.findChild(QObject,'artworkCache');session.setProperty('artworkEnabled',True)
+            for identity in [1001,1002,1003,1001]: cache.request({'anilist_id':identity},'banner',False)
+            assert cache.property('active')==2 and len([c for c in calls if c[0]=='/tv/v1/artworks'])==2
+            session.finishArtwork(0,9999,'banner') # reject mismatched identity
+            assert '1001' not in cache.property('sources').toVariant()
+            session.finishArtwork(1,1002,'banner');session.finishArtwork(2,1003,'banner')
+            assert cache.property('active')==0
+            cache.request({'anilist_id':1002},'banner',False) # cache hit
+            cache.request({'anilist_id':1001},'banner',False) # failure backoff
+            session.setProperty('artworkEnabled',False);cache.request({'anilist_id':1004},'banner',False)
+            assert len([c for c in calls if c[0]=='/tv/v1/artworks'])==3
+            assert '1002' in cache.property('sources').toVariant()
+            (args.evidence/'verification.json').write_text(json.dumps({'passed':True,'scope':'real QML host/UI with fake API and fake decoder; no native playback claim','canonicalEpisode':13,'lang':'vf','lateTrailerDoesNotChangeSelection':True,'silentGainZero':True,'bannerErrorUsesPoster':True,'artworkQueue':{'maxConcurrent':2,'identityChecked':True,'deduplicated':True,'capabilityRequired':True},'events':events},indent=2),encoding='utf-8')
             app.quit()
         except Exception as error: messages.append(str(error));app.exit(1)
     QTimer.singleShot(600,check);QTimer.singleShot(10000,lambda:app.exit(2))

@@ -18,7 +18,7 @@ def build(destination, regular, bold):
         fonts[name] = data
     destination.mkdir(parents=True)
     for name in ['Hero.qml', 'HeroButton.qml', 'FocusCard.qml', 'HeroArtwork.qml', 'Icon.qml',
-                 'Motion.js', 'Trailer.qml', 'TvSession.qml', 'EpisodePlayer.qml', 'live.qml', 'qmldir']:
+                 'Motion.js', 'Trailer.qml', 'TvSession.qml', 'EpisodePlayer.qml', 'ArtworkCache.qml', 'live.qml', 'qmldir']:
         shutil.copyfile(source / name, destination / name)
     # The gateway deliberately accepts flat, allowlisted filenames only.
     icon = destination / 'Icon.qml'

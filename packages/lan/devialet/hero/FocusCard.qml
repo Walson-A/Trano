@@ -7,6 +7,7 @@ Item {
     property url artwork: ""
     property url fallbackArtwork: ""
     onArtworkChanged: cardImage.source=artwork
+    onFallbackArtworkChanged: if(cardImage.status===Image.Error && fallbackArtwork) cardImage.source=fallbackArtwork
     property string family: "Segoe UI"
     property bool selected: false
     property bool focused: false
@@ -14,6 +15,7 @@ Item {
     property real progress: -1
     property real surfaceScale: surface.scale
     signal activated()
+    signal artworkFailed(bool poster)
     width: 266; height: 205; z: focused ? 10 : 0
     Accessible.role: Accessible.Button
     Accessible.name: title
@@ -30,7 +32,10 @@ Item {
             id: picture; anchors.fill: parent
             Rectangle { anchors.fill: parent; radius: 11; color: '#1a1c22' }
             Image { id: cardImage; objectName: "heroArtwork"; anchors.fill: parent; source: card.artwork; fillMode: Image.PreserveAspectCrop; asynchronous: true; visible: false; clip: true
-                onStatusChanged: if(status===Image.Error && card.fallbackArtwork && source!==card.fallbackArtwork) source=card.fallbackArtwork
+                onStatusChanged: if(status===Image.Error) {
+                    card.artworkFailed(source===card.fallbackArtwork);
+                    if(card.fallbackArtwork && source!==card.fallbackArtwork) source=card.fallbackArtwork;
+                }
             }
             Text { anchors.centerIn:parent; visible:cardImage.status===Image.Error || !cardImage.source; text:'Visuel indisponible'; color:'#92939c'; font.family:card.family; font.pixelSize:15 }
             OpacityMask { anchors.fill: parent; source: cardImage; maskSource: Rectangle { width: picture.width; height: picture.height; radius: 11 } }
