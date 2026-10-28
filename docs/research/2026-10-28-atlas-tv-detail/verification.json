@@ -57,6 +57,9 @@
     "playerReturnsToFiche": true,
     "seasonBackRestoresSelection": true,
     "staleAndWrongIdentityRejected": true,
-    "resolutionErrorVisible": true
+    "resolutionErrorVisible": true,
+    "explicitLanguageChoice": true,
+    "backReturnsToFicheTop": true,
+    "exitRequiresExplicitQuit": true
   }
 }

@@ -1,5 +1,31 @@
 # Atlas TV — fiche animé et navigation
 
+## Correction après la première réception native
+
+Le paquet `hero-e0f033c` a été publié (21 fichiers, gateway inchangé). Le Player
+confirme fiche 21507 et ses 12 épisodes. Walson confirme le fonctionnement mais
+rejette la clarté du parcours : deux Retour ferment l’app, langue ambiguë,
+fiche trop proche du héros, espace inutile devant le pseudo, navigation confuse.
+Ce retour n’est donc pas une validation esthétique ni une validation VF.
+
+La correction distingue la fiche par une affiche à gauche et « Épisodes et
+détails ». Les épisodes apparaissent davantage dès l’ouverture. L’en-tête
+d’accueil utilise des entrées simples, Accueil souligné comme page active,
+et un profil dont la largeur suit son contenu. Le focus reste distinct de
+cette page active. Captures comparées :
+[accueil précédent](2026-10-28-atlas-tv-detail/home-before-feedback.png),
+[fiche précédente](2026-10-28-atlas-tv-detail/detail-top-before-feedback.png).
+
+La langue active est soulignée, indiquée par une phrase et rappelée dans le
+bouton Lecture. Gauche/Droite déplacent le focus ; OK choisit cette langue
+sans la rebascule au second appui. Retour depuis une section remonte d’abord
+en haut de fiche, puis à l’accueil. Depuis une fiche liée, il restitue d’abord
+la fiche précédente. À l’accueil, une [sortie explicite](2026-10-28-atlas-tv-detail/exit-dialog.png)
+sélectionne Rester par défaut ; deux Retour ne ferment plus le programme.
+Les bancs vérifient ces gestes, y compris la conservation des réponses en cours
+lorsqu’on remonte seulement dans la même fiche. Réception de cette correction
+et lecture VF natives restent à confirmer.
+
 ## Parcours et références
 
 Walson demande la fiche Atlas PC : saisons/épisodes, personnages/doubleurs,

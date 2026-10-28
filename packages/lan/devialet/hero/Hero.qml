@@ -217,25 +217,22 @@ FocusScope {
             }
         }
     }
-    Item {x:64;y:24;width:338;height:60
-        Item {anchors.fill:parent;layer.enabled:true;layer.effect:OpacityMask {maskSource:Rectangle {width:338;height:60;radius:30}}
-            ShaderEffectSource {id:navSample;sourceItem:backdrop;sourceRect:Qt.rect(64,24,338,60);live:true;visible:false}
-            FastBlur {anchors.fill:parent;source:navSample;radius:24}
+    Rectangle {x:0;y:0;width:1280;height:102;gradient:Gradient {GradientStop {position:0;color:'#d9090a0d'} GradientStop {position:1;color:'#00090a0d'}}}
+    Row {x:64;y:24;spacing:12
+        HeroButton {objectName:'homeEntry';width:140;flat:true;label:'Accueil';family:scene.family;reducedMotion:scene.reducedMotion;focused:scene.zone==='nav' && scene.navIndex===2;onActivated:{scene.zone='actions';scene.navIndex=2;scene.forceActiveFocus();}
+            Rectangle {x:44;y:48;width:52;height:3;radius:1.5;color:parent.focused ? '#15171c' : 'white'}
         }
-        Rectangle {anchors.fill:parent;radius:30;color:'#8c13161c';border.color:'#24ffffff'}
-        Row {x:6;y:4;spacing:4
-            HeroButton {objectName:'homeEntry';width:140;pill:true;flat:true;label:'Accueil';family:scene.family;reducedMotion:scene.reducedMotion;focused:scene.zone==='nav' && scene.navIndex===2;onActivated:{scene.zone='actions';scene.navIndex=2;scene.forceActiveFocus();}}
-            HeroButton {objectName:'searchEntry';width:180;pill:true;flat:true;iconKey:'search';label:'Recherche';family:scene.family;reducedMotion:scene.reducedMotion;focused:scene.zone==='nav' && scene.navIndex===0;onActivated:{scene.zone='nav';scene.navIndex=0;scene.searchRequested();}}
-        }
+        HeroButton {objectName:'searchEntry';width:180;flat:true;iconKey:'search';label:'Recherche';family:scene.family;reducedMotion:scene.reducedMotion;focused:scene.zone==='nav' && scene.navIndex===0;onActivated:{scene.zone='nav';scene.navIndex=0;scene.searchRequested();}}
     }
-    Item {objectName:'profileEntry';x:1000;y:28;width:216;height:52
+    Item {id:profileControl;objectName:'profileEntry';x:1216-width;y:24;width:Math.max(130,Math.min(260,profileName.implicitWidth+78));height:52
+        property bool focused:scene.zone==='nav' && scene.navIndex===1
         Accessible.role:Accessible.Button;Accessible.name:'Profil'
-        Rectangle {x:-12;y:-4;width:240;height:60;radius:30;color:'#cc13161c';border.color:scene.zone==='nav' && scene.navIndex===1 ? 'white' : '#24ffffff';border.width:scene.zone==='nav' && scene.navIndex===1 ? 2 : 1}
-        Text {x:0;width:148;anchors.verticalCenter:parent.verticalCenter;text:scene.homeData.compte ? scene.homeData.compte.pseudo || 'Profil' : 'Profil';textFormat:Text.PlainText;elide:Text.ElideRight;horizontalAlignment:Text.AlignRight;color:scene.zone==='nav' && scene.navIndex===1 ? 'white' : '#d0d1d8';font.family:scene.family;font.pixelSize:19}
-        Rectangle {x:164;width:52;height:52;radius:26;color:'#b32c3039';border.color:scene.zone==='nav' && scene.navIndex===1 ? 'white' : '#50ffffff';border.width:scene.zone==='nav' && scene.navIndex===1 ? 3 : 1
-            Image {id:navAvatar;anchors.fill:parent;anchors.margins:4;source:scene.avatar;sourceSize.width:104;fillMode:Image.PreserveAspectCrop;asynchronous:true;visible:false}
-            OpacityMask {anchors.fill:navAvatar;source:navAvatar;maskSource:Rectangle {width:44;height:44;radius:22}}
-            Icon {anchors.centerIn:parent;width:24;height:24;name:'user-round';visible:navAvatar.status!==Image.Ready}
+        Rectangle {anchors.fill:parent;radius:12;color:profileControl.focused ? '#f6f6f7' : '#7513161c';border.color:profileControl.focused ? 'white' : '#30ffffff'}
+        Text {id:profileName;x:18;width:parent.width-78;anchors.verticalCenter:parent.verticalCenter;text:scene.homeData.compte ? scene.homeData.compte.pseudo || 'Profil' : 'Profil';textFormat:Text.PlainText;elide:Text.ElideRight;color:profileControl.focused ? '#121316' : 'white';font.family:scene.family;font.pixelSize:19;font.weight:Font.DemiBold}
+        Rectangle {x:parent.width-50;y:6;width:40;height:40;radius:20;color:'#b32c3039'
+            Image {id:navAvatar;anchors.fill:parent;anchors.margins:2;source:scene.avatar;sourceSize.width:80;fillMode:Image.PreserveAspectCrop;asynchronous:true;visible:false}
+            OpacityMask {anchors.fill:navAvatar;source:navAvatar;maskSource:Rectangle {width:36;height:36;radius:18}}
+            Icon {anchors.centerIn:parent;width:22;height:22;name:'user-round';visible:navAvatar.status!==Image.Ready}
         }
         MouseArea {anchors.fill:parent;onClicked:{scene.zone='nav';scene.navIndex=1;scene.profileRequested();}}
     }

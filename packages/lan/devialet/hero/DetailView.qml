@@ -28,6 +28,7 @@ FocusScope {
     property int pageIndex: 0
     property int pageStart: 1
     property bool french: false
+    property int languageIndex: 0
     property var stack: []
     readonly property var card: detail && detail.carte ? detail.carte : media
     readonly property var episodes: episodeData && episodeData.episodes ? episodeData.episodes : []
@@ -46,7 +47,7 @@ FocusScope {
     function open(c) {stack=[];opened=true;load(c);forceActiveFocus();}
     function load(c) {
         var key=identity(c),turn=++generation;episodeGeneration++;media=c;detail=null;episodeData=null;extrasError='';state='loading';episodeState='loading';zone='actions';actionIndex=0;episodeIndex=0;relationIndex=0;castIndex=0;recommendationIndex=0;pageIndex=0;pageStart=1;
-        french=!!(c && (c.a_lancer ? c.a_lancer.vf : c.franime && c.franime.vf));viewport.contentY=0;
+        french=!!(c && (c.a_lancer ? c.a_lancer.vf : c.franime && c.franime.vf));languageIndex=french ? 1 : 0;viewport.contentY=0;
         if(!key || !transport){state='error';return;}
         artworks.request(c,'banner',true);
         transport.api('/tv/v1/catalog/detail',key,45000,function(status,value) {
@@ -83,11 +84,12 @@ FocusScope {
             });
         });
     }
-    function remember() {return {media:media,detail:detail,episodeData:episodeData,zone:zone,actionIndex:actionIndex,episodeIndex:episodeIndex,seasonIndex:seasonIndex,relationIndex:relationIndex,castIndex:castIndex,recommendationIndex:recommendationIndex,pageStart:pageStart,french:french,scroll:viewport.contentY};}
+    function remember() {return {media:media,detail:detail,episodeData:episodeData,zone:zone,actionIndex:actionIndex,episodeIndex:episodeIndex,seasonIndex:seasonIndex,relationIndex:relationIndex,castIndex:castIndex,recommendationIndex:recommendationIndex,pageStart:pageStart,french:french,languageIndex:languageIndex,scroll:viewport.contentY};}
     function visit(c) {if(!identity(c))return;stack=stack.slice(-11).concat([remember()]);load(c);}
     function back() {
+        if(!stack.length && zone!=='actions' && zone!=='back'){zone='actions';actionIndex=0;viewport.contentY=0;return;}
         generation++;episodeGeneration++;
-        if(stack.length){var saved=stack[stack.length-1];stack=stack.slice(0,-1);media=saved.media;detail=saved.detail;episodeData=saved.episodeData;state=detail ? 'ready' : 'error';episodeState=episodeData ? 'ready' : 'error';zone=saved.zone;actionIndex=saved.actionIndex;episodeIndex=saved.episodeIndex;seasonIndex=saved.seasonIndex;relationIndex=saved.relationIndex;castIndex=saved.castIndex;recommendationIndex=saved.recommendationIndex;pageStart=saved.pageStart;french=saved.french;Qt.callLater(function(){viewport.contentY=saved.scroll;});}
+        if(stack.length){var saved=stack[stack.length-1];stack=stack.slice(0,-1);media=saved.media;detail=saved.detail;episodeData=saved.episodeData;state=detail ? 'ready' : 'error';episodeState=episodeData ? 'ready' : 'error';zone=saved.zone;actionIndex=saved.actionIndex;episodeIndex=saved.episodeIndex;seasonIndex=saved.seasonIndex;relationIndex=saved.relationIndex;castIndex=saved.castIndex;recommendationIndex=saved.recommendationIndex;pageStart=saved.pageStart;french=saved.french;languageIndex=saved.languageIndex;Qt.callLater(function(){viewport.contentY=saved.scroll;});}
         else {opened=false;closed();}
     }
     function launch(e) {
@@ -110,11 +112,11 @@ FocusScope {
         viewport.contentY=item ? Math.min(item.y-28,Math.max(0,viewport.contentHeight-viewport.height)) : 0;
         if(zone==='episodes')episodeRail.positionViewAtIndex(episodeIndex,ListView.Contain);
     }
-    function move(direction) {var list=zones(),at=list.indexOf(zone);zone=list[Math.max(0,Math.min(list.length-1,at+direction))];scrollToZone();}
+    function move(direction) {var list=zones(),at=list.indexOf(zone);zone=list[Math.max(0,Math.min(list.length-1,at+direction))];if(zone==='language')languageIndex=french ? 1 : 0;scrollToZone();}
     function activate() {
         if(zone==='back')back();else if(zone==='actions'){if(actionIndex===1){zone=episodes.length ? 'episodes' : 'language';scrollToZone();}else primary();}
         else if(zone==='seasons') {var c=seasons[seasonIndex];if(c && (!card || c.anilist_id!==card.anilist_id))visit(c);}
-        else if(zone==='language'){if(hasFrench)french=!french;else if(episodeState==='error')loadEpisodes(pageStart,0);}
+        else if(zone==='language'){if(languageIndex===0 || hasFrench){french=languageIndex===1;extrasError='';}else extrasError='La VF n’est pas disponible pour cette saison.';}
         else if(zone==='episodes')launch(currentEpisode);
         else if(zone==='pages'){if(pageIndex===0 && canPrevious)loadEpisodes(Math.max(1,pageStart-40),0);else if(pageIndex===1 && canNext)loadEpisodes(pageStart+episodes.length,0);}
         else if(zone==='relations')visit(relations[relationIndex].carte);
@@ -122,7 +124,7 @@ FocusScope {
     }
     function horizontal(delta) {
         if(zone==='actions')actionIndex=Math.max(0,Math.min(1,actionIndex+delta));
-        else if(zone==='language' && hasFrench)french=delta>0;
+        else if(zone==='language')languageIndex=delta>0 ? 1 : 0;
         else if(zone==='seasons')seasonIndex=Math.max(0,Math.min(seasons.length-1,seasonIndex+delta));
         else if(zone==='episodes'){episodeIndex=Math.max(0,Math.min(episodes.length-1,episodeIndex+delta));episodeRail.positionViewAtIndex(episodeIndex,ListView.Contain);}
         else if(zone==='pages')pageIndex=delta>0 ? 1 : 0;
@@ -134,25 +136,29 @@ FocusScope {
     Flickable {
         id:viewport;objectName:'detailViewport';anchors.fill:parent;contentWidth:1280;contentHeight:content.height;interactive:false;clip:true;boundsBehavior:Flickable.StopAtBounds
         Behavior on contentY {enabled:!view.reducedMotion;NumberAnimation {duration:Motion.ms('scroll');easing.type:Easing.Bezier;easing.bezierCurve:Motion.easeOut()}}
-        Column {id:content;width:1280;spacing:28
-            Item {id:header;width:1280;height:Math.max(368,headerText.height+140)
-                HeroArtwork {x:460;y:0;width:820;height:header.height;retainPrevious:false;requestedSource:view.art(view.card);fallbackSource:view.card ? view.card.affiche || '' : '';onFailed:view.artworks.request(view.card,poster ? 'poster' : 'banner',true)}
+        Column {id:content;width:1280;spacing:20
+            Item {id:header;width:1280;height:Math.max(308,headerText.height+108)
+                HeroArtwork {x:620;y:0;width:660;height:header.height;retainPrevious:false;requestedSource:view.art(view.card);fallbackSource:view.card ? view.card.affiche || '' : '';onFailed:view.artworks.request(view.card,poster ? 'poster' : 'banner',true)}
                 Rectangle {anchors.fill:parent;gradient:Gradient {orientation:Gradient.Horizontal;GradientStop {position:0;color:'#ff090a0d'} GradientStop {position:.45;color:'#dc090a0d'} GradientStop {position:1;color:'#20090a0d'}}}
                 Rectangle {anchors.fill:parent;gradient:Gradient {GradientStop {position:.4;color:'#00090a0d'} GradientStop {position:1;color:'#ff090a0d'}}}
                 HeroButton {x:64;y:28;width:138;iconKey:'arrow-left';label:'Retour';family:view.family;focused:view.zone==='back';onActivated:view.back()}
-                Column {id:headerText;x:64;y:110;width:760;spacing:14
-                    Text {width:760;text:view.card ? view.card.titre || '' : '';textFormat:Text.PlainText;color:'white';font.family:view.family;font.pixelSize:40;font.weight:Font.Bold;maximumLineCount:2;wrapMode:Text.WordWrap;elide:Text.ElideRight}
+                Text {x:236;y:43;text:'Épisodes et détails';color:'#c6c9d3';font.family:view.family;font.pixelSize:19}
+                Rectangle {x:64;y:100;width:140;height:196;radius:10;color:'#242731'
+                    Image {id:poster;anchors.fill:parent;source:{var local=view.artworks && view.card ? view.artworks.sources[String(view.card.anilist_id)] : null;return local && local.poster || (view.card ? view.card.affiche || '' : '');}asynchronous:true;fillMode:Image.PreserveAspectCrop;sourceSize.width:280;visible:false;onStatusChanged:if(status===Image.Error)view.artworks.request(view.card,'poster',true)}
+                    OpacityMask {anchors.fill:parent;source:poster;maskSource:Rectangle {width:140;height:196;radius:10}}
+                }
+                Column {id:headerText;x:236;y:100;width:820;spacing:10
+                    Text {width:820;text:view.card ? view.card.titre || '' : '';textFormat:Text.PlainText;color:'white';font.family:view.family;font.pixelSize:34;font.weight:Font.Bold;maximumLineCount:2;wrapMode:Text.WordWrap;elide:Text.ElideRight}
                     Text {text:view.card ? [view.card.annee,view.card.format==='MOVIE' ? 'Film' : 'Série',view.card.episodes ? view.card.episodes+' épisodes' : '',view.card.score ? (view.card.score/10).toFixed(1).replace('.',',')+' / 10' : ''].filter(function(v){return !!v;}).join('   ·   ') : '';color:'#d0d1d8';font.family:view.family;font.pixelSize:18}
-                    Text {width:700;text:view.detail ? view.detail.resume_complet || '' : view.state==='error' ? 'La fiche est indisponible pour le moment.' : 'Chargement de la fiche…';textFormat:Text.PlainText;color:'#d0d1d8';font.family:view.family;font.pixelSize:19;lineHeight:1.25;maximumLineCount:2;wrapMode:Text.WordWrap;elide:Text.ElideRight}
+                    Text {width:790;text:view.detail ? view.detail.resume_complet || '' : view.state==='error' ? 'La fiche est indisponible pour le moment.' : 'Chargement de la fiche…';textFormat:Text.PlainText;color:'#d0d1d8';font.family:view.family;font.pixelSize:18;lineHeight:1.25;maximumLineCount:2;wrapMode:Text.WordWrap;elide:Text.ElideRight}
                     Row {spacing:14
-                        HeroButton {objectName:'detailPlay';width:260;iconKey:'play';label:view.state==='error' || view.episodeState==='error' ? 'Réessayer' : view.card && view.card.a_lancer ? 'Reprendre · Ép. '+view.card.a_lancer.numero : 'Lecture';family:view.family;primary:true;groupHasFocus:true;focused:view.zone==='actions' && view.actionIndex===0;onActivated:view.primary()}
+                        HeroButton {objectName:'detailPlay';width:320;iconKey:'play';label:view.state==='error' || view.episodeState==='error' ? 'Réessayer' : (view.card && view.card.a_lancer ? 'Reprendre · Ép. '+view.card.a_lancer.numero : 'Lecture')+' · '+(view.french ? 'VF' : 'VOSTFR');family:view.family;primary:true;groupHasFocus:true;focused:view.zone==='actions' && view.actionIndex===0;onActivated:view.primary()}
                         HeroButton {width:160;label:'Épisodes';family:view.family;focused:view.zone==='actions' && view.actionIndex===1;onActivated:{view.zone='actions';view.actionIndex=1;view.activate();}}
                     }
                 }
             }
             Column {id:seasonSection;x:64;width:1152;spacing:14;visible:view.seasons.length>1
-                Text {text:'Saisons';color:'white';font.family:view.family;font.pixelSize:24;font.weight:Font.DemiBold}
-                ListView {id:seasonRail;width:1152;height:64;orientation:ListView.Horizontal;spacing:12;clip:true;interactive:false;model:view.seasons;currentIndex:view.seasonIndex;onCurrentIndexChanged:positionViewAtIndex(currentIndex,ListView.Contain)
+                ListView {id:seasonRail;width:1152;height:58;orientation:ListView.Horizontal;spacing:12;clip:true;interactive:false;model:view.seasons;currentIndex:view.seasonIndex;onCurrentIndexChanged:positionViewAtIndex(currentIndex,ListView.Contain)
                     delegate:HeroButton {width:Math.min(420,Math.max(210,seasonLabel.implicitWidth+42));label:modelData.titre || '';family:view.family;focused:view.zone==='seasons' && view.seasonIndex===index;selected:view.card && modelData.anilist_id===view.card.anilist_id;onActivated:{view.seasonIndex=index;view.zone='seasons';view.activate();}
                         Text {id:seasonLabel;text:modelData.titre || '';font.family:view.family;font.pixelSize:19;visible:false}
                     }
@@ -162,10 +168,15 @@ FocusScope {
                 Row {width:1152;spacing:24
                     Text {width:760;anchors.verticalCenter:parent.verticalCenter;text:'Épisodes';color:'white';font.family:view.family;font.pixelSize:26;font.weight:Font.DemiBold}
                     Row {spacing:10
-                        HeroButton {objectName:'episodeLanguage';width:160;label:'VOSTFR';family:view.family;selected:!view.french;focused:view.zone==='language' && !view.french;onActivated:{view.zone='language';view.french=false;}}
-                        HeroButton {width:160;label:'VF';family:view.family;selected:view.french;opacity:view.hasFrench ? 1 : .35;focused:view.zone==='language' && view.french;onActivated:{view.zone='language';if(view.hasFrench)view.french=true;}}
+                        HeroButton {objectName:'episodeLanguage';width:160;label:'VOSTFR';family:view.family;selected:!view.french;focused:view.zone==='language' && view.languageIndex===0;onActivated:{view.zone='language';view.languageIndex=0;view.activate();}
+                            Rectangle {x:20;y:parent.height-5;width:parent.width-40;height:3;radius:1.5;color:view.zone==='language' && view.languageIndex===0 ? '#16181d' : 'white';visible:!view.french}
+                        }
+                        HeroButton {width:160;label:'VF';family:view.family;selected:view.french;opacity:view.hasFrench ? 1 : .35;focused:view.zone==='language' && view.languageIndex===1;onActivated:{view.zone='language';view.languageIndex=1;view.activate();}
+                            Rectangle {x:20;y:parent.height-5;width:parent.width-40;height:3;radius:1.5;color:view.zone==='language' && view.languageIndex===1 ? '#16181d' : 'white';visible:view.french}
+                        }
                     }
                 }
+                Text {width:1152;text:view.french ? 'Version française sélectionnée pour la lecture' : 'Version originale sous-titrée en français sélectionnée';color:'#c1c5d0';font.family:view.family;font.pixelSize:17}
                 Text {height:visible ? implicitHeight : 0;visible:view.episodeState!=='ready' || !view.episodes.length; text:view.episodeState==='loading' ? 'Chargement des épisodes…' : view.episodeState==='error' ? 'Épisodes indisponibles. Choisis Réessayer en haut de la fiche.' : 'Aucun épisode disponible.';color:'#b6b8c3';font.family:view.family;font.pixelSize:19}
                 ListView {id:episodeRail;objectName:'detailEpisodes';width:1152;height:view.episodes.length ? 232 : 0;orientation:ListView.Horizontal;spacing:20;clip:true;interactive:false;model:view.episodes;cacheBuffer:0
                     delegate:Item {width:366;height:230

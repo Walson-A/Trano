@@ -29,6 +29,10 @@ Application {
         property string returnPanel: 'search'
         property string homeRowId: ''
         property string detailOrigin: ''
+        property bool exitVisible:false
+        property bool exitChosen:false
+        function askExit(){exitVisible=true;exitChosen=false;hero.previewEnabled=false;exitDialog.forceActiveFocus();}
+        function cancelExit(){exitVisible=false;hero.previewEnabled=true;hero.forceActiveFocus();}
         function openDetail(media) {
             if(detailPanel.status!==Loader.Ready){hero.notice='La fiche n’a pas pu être chargée. Relance Atlas TV.';return;}
             detailOrigin=panel;
@@ -144,7 +148,7 @@ Application {
             onTrailerRequested: screen.preview()
             onPlayRequested: screen.launch(media,target)
             onDetailsRequested:screen.openDetail(media)
-            onDismissed: Qt.quit()
+            onDismissed: screen.askExit()
             onArtworkFailed:artworks.request(media,kind,true)
             onSearchRequested:screen.openPanel('search')
             onProfileRequested:screen.openPanel('profile')
@@ -181,6 +185,23 @@ Application {
                     if(screen.resolving) { screen.generation++; screen.resolving=false; screen.returnFromPlayback(); }else if(screen.panel==='detail')detailPanel.item.back();else if(screen.panel)screen.closePanel();else Qt.quit();
                 } else if((event.key===Qt.Key_Return || event.key===Qt.Key_Select || event.key===Qt.Key_Enter) && session.state==='error' && session.accessToken) session.loadHome();
                 else return;
+                event.accepted=true;
+            }
+        }
+        FocusScope {id:exitDialog;objectName:'exitDialog';anchors.fill:parent;visible:screen.exitVisible
+            Rectangle {anchors.fill:parent;color:'#df090a0d'}
+            Rectangle {x:350;y:230;width:580;height:260;radius:24;color:'#242730';border.color:'#45ffffff'
+                Text {x:36;y:34;width:508;text:'Quitter Atlas TV ?';color:'white';font.family:regular.name || 'sans-serif';font.pixelSize:32;font.weight:Font.Bold}
+                Text {x:36;y:90;width:508;text:'Tu reviendras à l’écran du Devialet.';color:'#c7cad4';font.family:regular.name || 'sans-serif';font.pixelSize:19}
+                Row {x:36;y:162;spacing:16
+                    HeroButton {width:246;label:'Rester';family:regular.name || 'sans-serif';focused:!screen.exitChosen;onActivated:screen.cancelExit()}
+                    HeroButton {width:246;label:'Quitter';family:regular.name || 'sans-serif';focused:screen.exitChosen;onActivated:Qt.quit()}
+                }
+            }
+            Keys.onPressed:{
+                if(event.key===Qt.Key_Back || event.key===Qt.Key_Escape)screen.cancelExit();
+                else if(event.key===Qt.Key_Left)screen.exitChosen=false;else if(event.key===Qt.Key_Right)screen.exitChosen=true;
+                else if(event.key===Qt.Key_Return || event.key===Qt.Key_Enter || event.key===Qt.Key_Select){if(screen.exitChosen)Qt.quit();else screen.cancelExit();}else return;
                 event.accepted=true;
             }
         }

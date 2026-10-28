@@ -285,6 +285,16 @@ Item {
             spin(lambda:detail.property('episodeState')=='ready')
             assert detail.property('detail').toVariant()['carte']['anilist_id']==154587
             assert detail.property('episodes').toVariant()[0]['numero']==1
+            detail.setProperty('zone','language');detail.setProperty('languageIndex',1);detail.setProperty('french',True)
+            QTest.keyClick(window,Qt.Key_Left)
+            assert detail.property('french') is True, 'Focus must not change the chosen language'
+            QTest.keyClick(window,Qt.Key_Return);QTest.keyClick(window,Qt.Key_Return)
+            assert detail.property('french') is False, 'OK selects VOSTFR; pressing twice must not toggle it'
+            QTest.keyClick(window,Qt.Key_Right)
+            assert detail.property('french') is False
+            QTest.keyClick(window,Qt.Key_Return)
+            assert detail.property('french') is True and 'VF' in window.findChild(QObject,'detailPlay').property('label')
+            detail.setProperty('zone','actions')
             spin(lambda:any(i.property('status')==1 and str(i.property('source').toString())==details['154587']['carte']['banniere'] for i in detail.findChildren(QObject,'heroBanner')))
             QTest.qWait(300)
             assert window.grabWindow().save(str(args.evidence/'detail-top.png'))
@@ -310,7 +320,16 @@ Item {
             QTest.keyClick(window,Qt.Key_Back);QTest.qWait(100)
             assert detail.property('card').toVariant()['anilist_id']==154587 and detail.property('episodeIndex')==2 and detail.property('zone')=='recommendations'
             QTest.keyClick(window,Qt.Key_Back);QTest.qWait(80)
+            assert screen.property('panel')=='detail' and detail.property('zone')=='actions'
+            QTest.keyClick(window,Qt.Key_Back);QTest.qWait(80)
             assert screen.property('panel')=='' and hero.property('actionIndex')==1
+            QTest.keyClick(window,Qt.Key_Back)
+            assert screen.property('exitVisible') is True and screen.property('exitChosen') is False
+            assert window.grabWindow().save(str(args.evidence/'exit-dialog.png'))
+            QTest.keyClick(window,Qt.Key_Back)
+            assert screen.property('exitVisible') is False
+            QTest.keyClick(window,Qt.Key_Back);QTest.keyClick(window,Qt.Key_Return)
+            assert screen.property('exitVisible') is False and window.isVisible()
             session.setProperty('delayDetails',True)
             screen.openDetail(details['154587']['carte'])
             detail.visit(details['182255']['carte'])

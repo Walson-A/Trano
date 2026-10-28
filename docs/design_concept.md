@@ -2,6 +2,13 @@
 
 ## Atlas TV — fiche et navigation
 
+Après réception native, Walson signale une confusion fiche/accueil et de langue,
+ainsi qu’une fermeture accidentelle. La fiche prend une affiche distincte,
+les langues séparent focus et choix confirmé, Accueil porte son état de page,
+le profil suit la largeur du pseudo. Retour remonte la fiche et la sortie est
+explicite avec Rester par défaut. Cette passe est contrôlée sur banc et reste
+en revue native ; le premier affichage fonctionnel n’est pas une validation UX.
+
 La [fiche animé](research/2026-10-28-atlas-tv-detail.md) reprend le parcours PC :
 saisons/épisodes, personnages et doubleurs, relations et recommandations.
 Les retours conservent le contexte. Accueil/Recherche partagent l’en-tête ;
