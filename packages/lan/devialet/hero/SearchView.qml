@@ -16,8 +16,11 @@ FocusScope {
     property int keyIndex: 0
     property int toolIndex: 0
     property int resultIndex: 0
+    property int navIndex:0
+    property string avatar:''
     readonly property var letters: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.split('')
     signal closed()
+    signal navigateRequested(string destination)
     signal chosen(var cards,int index,string title)
     function open() { opened=true;forceActiveFocus();if(query.trim().length>=2 && state==='hint') debounce.restart(); }
     function close() { opened=false;generation++;debounce.stop();closed(); }
@@ -35,7 +38,7 @@ FocusScope {
         });
     }
     function activate() {
-        if(zone==='back') close();
+        if(zone==='nav')navigateRequested(navIndex===2 ? 'home' : navIndex===1 ? 'profile' : 'search');
         else if(zone==='keys') append(letters[keyIndex]);
         else if(zone==='tools') {
             if(toolIndex===0) append(' ');else if(toolIndex===1) query=query.slice(0,-1);else search(true);
@@ -52,7 +55,7 @@ FocusScope {
     onOpenedChanged: if(!opened) {generation++;debounce.stop();}
     Timer { id:debounce; interval:550; onTriggered:view.search() }
     Rectangle {anchors.fill:parent;color:'#090a0d'}
-    HeroButton {x:64;y:32;width:148;iconKey:'arrow-left';label:'Retour';family:view.family;focused:view.zone==='back';onActivated:view.close()}
+    TvNavigation {id:navigation;page:'search';family:view.family;focused:view.zone==='nav';selectedIndex:view.navIndex;avatar:view.avatar;pseudo:view.transport && view.transport.home.compte ? view.transport.home.compte.pseudo || 'Profil' : 'Profil';onDestinationRequested:view.navigateRequested(destination)}
     Text {x:64;y:102;text:'Recherche';color:'#fafafa';font.family:view.family;font.pixelSize:40;font.weight:Font.Bold}
     Rectangle {x:494;y:112;width:722;height:64;radius:12;color:'#1b1d23';border.color:'#4b4d56'
         Text {x:20;anchors.verticalCenter:parent.verticalCenter;width:682;text:view.query || 'Un titre, en français, anglais ou japonais';textFormat:Text.PlainText;elide:Text.ElideLeft;color:view.query ? 'white' : '#8e909b';font.family:view.family;font.pixelSize:view.query ? 26 : 20}
@@ -87,21 +90,22 @@ FocusScope {
         else if(key===Qt.Key_Return || key===Qt.Key_Enter || key===Qt.Key_Select) activate();
         else if(key===Qt.Key_Backspace) query=query.slice(0,-1);
         else if(key===Qt.Key_Left) {
-            if(zone==='keys') keyIndex=Math.max(Math.floor(keyIndex/6)*6,keyIndex-1);
+            if(zone==='nav')navIndex=navigation.step(navIndex,-1);
+            else if(zone==='keys') keyIndex=Math.max(Math.floor(keyIndex/6)*6,keyIndex-1);
             else if(zone==='tools') toolIndex=Math.max(0,toolIndex-1);
             else if(zone==='results') {if(resultIndex%3===0)zone='keys';else resultIndex--;}
         } else if(key===Qt.Key_Right) {
-            if(zone==='keys') {if(keyIndex%6===5 && cards.length)zone='results';else keyIndex=Math.min(Math.floor(keyIndex/6)*6+5,keyIndex+1);}
+            if(zone==='nav')navIndex=navigation.step(navIndex,1);
+            else if(zone==='keys') {if(keyIndex%6===5 && cards.length)zone='results';else keyIndex=Math.min(Math.floor(keyIndex/6)*6+5,keyIndex+1);}
             else if(zone==='tools') {if(toolIndex===2 && cards.length)zone='results';else toolIndex=Math.min(2,toolIndex+1);}
             else if(zone==='results' && resultIndex%3<2) resultIndex=Math.min(cards.length-1,resultIndex+1);
-            else if(zone==='back') zone='keys';
         } else if(key===Qt.Key_Down) {
-            if(zone==='back')zone='keys';else if(zone==='keys'){if(keyIndex>=30)zone='tools';else keyIndex+=6;}
+            if(zone==='nav')zone='keys';else if(zone==='keys'){if(keyIndex>=30)zone='tools';else keyIndex+=6;}
             else if(zone==='tools' && cards.length)zone='results';else if(zone==='results')resultIndex=Math.min(cards.length-1,resultIndex+3);
         } else if(key===Qt.Key_Up) {
-            if(zone==='keys'){if(keyIndex<6)zone='back';else keyIndex-=6;}
+            if(zone==='keys'){if(keyIndex<6)zone='nav';else keyIndex-=6;}
             else if(zone==='tools'){zone='keys';keyIndex=30+toolIndex*2;}
-            else if(zone==='results'){if(resultIndex<3)zone='back';else resultIndex-=3;}
+            else if(zone==='results'){if(resultIndex<3)zone='nav';else resultIndex-=3;}
         } else if(event.text && event.text.length===1 && event.text.charCodeAt(0)>=32) append(event.text);
         else return;
         event.accepted=true;

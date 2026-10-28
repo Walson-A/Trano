@@ -61,11 +61,18 @@ Application {
             if(loader.status===Loader.Error){panel='';hero.previewEnabled=true;hero.notice='Cet écran est indisponible. Relance Atlas TV.';hero.forceActiveFocus();}
             else if(loader.status===Loader.Ready)loader.item.open();else waiting.forceActiveFocus();
         }
-        function closePanel() {
+        function navigate(destination) {
+            if(destination==='home'){closePanel('home');return;}
+            if(destination===panel){var same=panel==='search' ? searchPanel : profilePanel;same.item.zone=panel==='search' ? 'keys' : same.item.cards.length ? 'cards' : 'nav';same.item.forceActiveFocus();return;}
+            if(panel==='search')searchPanel.item.opened=false;
+            if(panel==='profile')profilePanel.item.opened=false;
+            openPanel(destination);
+        }
+        function closePanel(destination) {
             var name=panel;panel='';hero.contextRow=null;
             Qt.callLater(function(){
                 for(var i=0;i<hero.rows.length;i++)if(hero.rows[i].id===homeRowId){hero.selectRow(i);break;}
-                hero.zone='nav';hero.navIndex=name==='profile' ? 1 : 0;hero.previewEnabled=true;hero.forceActiveFocus();
+                hero.zone='nav';hero.navIndex=destination==='home' ? 2 : name==='profile' ? 1 : 0;hero.previewEnabled=true;hero.forceActiveFocus();
             });
         }
         function selectPanelResult(cards,index,title) {
@@ -118,7 +125,7 @@ Application {
                     returnFromPlayback(); return;
                 }
                 playbackId=value.id; sequence=0;
-                pendingPlayback={url:url,title:media.titre+' · Épisode '+target.numero,resume:value.resume ? value.resume.position_ms || 0 : 0};
+                pendingPlayback={url:url,title:media.titre+' · Épisode '+target.numero+' · '+(target.vf ? 'VF' : 'VOSTFR'),resume:value.resume ? value.resume.position_ms || 0 : 0,media:media,target:target};
                 if(episode.status===Loader.Ready) startEpisode();
             });
         }
@@ -127,6 +134,8 @@ Application {
             episode.item.resumeMs=pendingPlayback.resume;
             episode.item.play(pendingPlayback.url);
         }
+        function browsePlayingEpisodes(){var current=pendingPlayback ? pendingPlayback.media : null;if(playbackId && episode.item)episode.item.close();if(panel!=='detail' && current)openDetail(current);}
+        function retryEpisode(){var current=pendingPlayback;if(!current)return;if(playbackId && episode.item)episode.item.close();launch(current.media,current.target);}
         function progress(value) {
             if(!playbackId) return;
             value.seq=++sequence;
@@ -161,16 +170,17 @@ Application {
             onLoaded: {
                 item.family=regular.name || 'sans-serif';
                 item.progress.connect(screen.progress);
+                item.episodesRequested.connect(screen.browsePlayingEpisodes);item.retryRequested.connect(screen.retryEpisode);
                 item.closed.connect(function() { screen.playbackId=''; screen.returnFromPlayback(); });
                 if(screen.pendingPlayback && screen.playbackId) screen.startEpisode();
             }
         }
         Loader {id:searchPanel;objectName:'searchPanel';anchors.fill:parent;source:'SearchView.qml';visible:screen.panel==='search'
-            onLoaded:{item.transport=session;item.artworks=artworks;item.family=regular.name || 'sans-serif';item.closed.connect(screen.closePanel);item.chosen.connect(screen.selectPanelResult);if(screen.panel==='search')item.open();}
+            onLoaded:{item.transport=session;item.artworks=artworks;item.family=regular.name || 'sans-serif';item.avatar=Qt.binding(function(){return hero.avatar;});item.closed.connect(screen.closePanel);item.chosen.connect(screen.selectPanelResult);item.navigateRequested.connect(screen.navigate);if(screen.panel==='search')item.open();}
             onStatusChanged:if(status===Loader.Error && screen.panel==='search'){screen.closePanel();hero.notice='La recherche n’a pas pu être ouverte. Relance Atlas TV.';}
         }
         Loader {id:profilePanel;objectName:'profilePanel';anchors.fill:parent;source:'ProfileView.qml';visible:screen.panel==='profile'
-            onLoaded:{item.transport=session;item.artworks=artworks;item.family=regular.name || 'sans-serif';item.closed.connect(screen.closePanel);item.chosen.connect(screen.selectPanelResult);if(screen.panel==='profile')item.open();}
+            onLoaded:{item.transport=session;item.artworks=artworks;item.family=regular.name || 'sans-serif';item.closed.connect(screen.closePanel);item.chosen.connect(screen.selectPanelResult);item.navigateRequested.connect(screen.navigate);if(screen.panel==='profile')item.open();}
             onStatusChanged:if(status===Loader.Error && screen.panel==='profile'){screen.closePanel();hero.notice='Le profil n’a pas pu être ouvert. Relance Atlas TV.';}
         }
         Loader {id:detailPanel;objectName:'detailPanel';anchors.fill:parent;source:'DetailView.qml';visible:screen.panel==='detail' && !screen.playbackId

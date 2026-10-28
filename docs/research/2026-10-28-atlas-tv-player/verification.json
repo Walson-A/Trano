@@ -1,0 +1,83 @@
+{
+  "passed": true,
+  "scope": "real QML host/UI with fake API and fake decoder; no native playback claim",
+  "canonicalEpisode": 13,
+  "lang": "vf",
+  "defaultSoundOnAndLabelled": true,
+  "infoSelectionPreserved": true,
+  "search": {
+    "remoteKeyboard": true,
+    "staleIgnored": true,
+    "selectionAndBack": true
+  },
+  "profile": {
+    "publicProfileWithoutOAuth": true,
+    "statsScaleChecked": true,
+    "selectionAndBack": true
+  },
+  "lateTrailerDoesNotChangeSelection": true,
+  "silentGainZero": true,
+  "bannerErrorUsesPoster": true,
+  "artworkQueue": {
+    "maxConcurrent": 2,
+    "identityChecked": true,
+    "deduplicated": true,
+    "capabilityRequired": true,
+    "warmWithoutResume": true
+  },
+  "events": [
+    {
+      "duration_ms": 1500095,
+      "position_ms": 120000,
+      "seq": 1,
+      "state": "paused"
+    },
+    {
+      "duration_ms": 1500095,
+      "position_ms": 120000,
+      "seq": 2,
+      "state": "playing"
+    },
+    {
+      "duration_ms": 1500095,
+      "position_ms": 120000,
+      "seq": 3,
+      "state": "paused"
+    },
+    {
+      "duration_ms": 1500095,
+      "position_ms": 130000,
+      "seq": 4,
+      "state": "paused"
+    },
+    {
+      "duration_ms": 1500095,
+      "position_ms": 150000,
+      "seq": 5,
+      "state": "playing"
+    },
+    {
+      "duration_ms": 1500095,
+      "position_ms": 150000,
+      "seq": 6,
+      "state": "paused"
+    },
+    {
+      "duration_ms": 1500095,
+      "position_ms": 150000,
+      "seq": 7,
+      "state": "stopped"
+    }
+  ],
+  "player": {
+    "decoderMocked": true,
+    "singleVideoOutputOwnership": true,
+    "releasesOutputOnClose": true,
+    "resumeAfterSeekStall": true,
+    "explicitPausePreserved": true,
+    "coalescesBurstSeek": true,
+    "rateSelection1_5": true,
+    "sharedNavigation": true,
+    "realSeasonSelectionAndBack": true
+  }
+}

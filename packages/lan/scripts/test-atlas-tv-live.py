@@ -19,6 +19,7 @@ parser.add_argument('--bold',type=pathlib.Path,required=True)
 parser.add_argument('--evidence',type=pathlib.Path,required=True)
 parser.add_argument('--history',type=pathlib.Path,help='Explicit PC history fixture for profile/navigation checks')
 parser.add_argument('--detail-assets',type=pathlib.Path,help='Exact canonical image downloads with sources.json; never distributed')
+parser.add_argument('--video-frame',type=pathlib.Path,help='Explicit still used behind the mock decoder for contrast review')
 args=parser.parse_args()
 sys.path.insert(0,str(args.qt_path.resolve()))
 dll=os.add_dll_directory(str(args.qt_path.resolve()/'PyQt5/Qt5/bin')) if os.name=='nt' else None
@@ -83,15 +84,16 @@ with tempfile.TemporaryDirectory(prefix='atlas-tv-live-',dir=args.evidence.paren
     # This suite checks host focus/identity/UI, not hardware decoding or upstream resolution.
     media=root/'TestMedia';media.mkdir()
     (media/'qmldir').write_text('module TestMedia\nMediaPlayer 5.0 MediaPlayer.qml\nVideoOutput 5.0 VideoOutput.qml\n')
-    (media/'VideoOutput.qml').write_text('import QtQuick 2.15\nItem { enum Mode { PreserveAspectFit, PreserveAspectCrop } property var source; property int fillMode }')
+    (media/'VideoOutput.qml').write_text('import QtQuick 2.15\nItem { enum Mode { PreserveAspectFit, PreserveAspectCrop } property var source; property int fillMode;Image {anchors.fill:parent;source:benchmarkVideoFrame;fillMode:Image.PreserveAspectFit} }')
     (media/'MediaPlayer.qml').write_text('''import QtQuick 2.15
 Item {
  enum State { StoppedState, PlayingState, PausedState }
- enum Status { NoMedia, LoadedMedia, EndOfMedia }
+ enum Status { NoMedia=1, LoadedMedia=3, Buffered=6, EndOfMedia=7 }
  property int playbackState:0
  property int status:1
  property url source
  property real volume:1
+ property real playbackRate:1
  property bool muted:false
  property bool hasVideo:true
  property bool hasAudio:true
@@ -99,10 +101,10 @@ Item {
  property int duration:1500095
  property int position:0
  signal error(int error)
- function play() { duration=0;playbackState=1;position=1;Qt.callLater(function(){duration=1500095;position=1000;}); }
+ function play() {status=6;if(playbackState===2){playbackState=1;return;}duration=0;playbackState=1;position=1;Qt.callLater(function(){duration=1500095;position=1000;}); }
  function pause() { playbackState=2; }
  function stop() { playbackState=0; }
- function seek(value) { position=value; }
+ function seek(value) {position=value;if(playbackState===1){playbackState=2;status=4;Qt.callLater(function(){status=6;});}}
 }''')
     for name in ['EpisodePlayer.qml','Trailer.qml']:
         path=bundle/name
@@ -148,6 +150,7 @@ Item {
     engine.rootContext().setContextProperty('benchmarkHistory',history)
     engine.rootContext().setContextProperty('benchmarkDetails',details)
     engine.rootContext().setContextProperty('benchmarkEpisodes',episode_sets)
+    engine.rootContext().setContextProperty('benchmarkVideoFrame',args.video_frame.resolve().as_uri() if args.video_frame else '')
     engine.load(QUrl.fromLocalFile(str(bundle/'live.qml')))
     assert engine.rootObjects(),messages
     window=engine.rootObjects()[0]
@@ -166,6 +169,9 @@ Item {
             assert len(icons)>=7 and not list(bundle.glob('icon-*.png'))
             assert all(str(icon.property('source').toString()).startswith('data:image/png;base64,') for icon in icons),'An icon still depends on a bootstrap request'
             spin(lambda:all(icon.property('status')==1 for icon in icons))
+            key=hero.property('selected').toVariant()['bande_annonce']
+            hero.setProperty('trailerSources',{key:'https://test.invalid/preview.mp4'});hero.setProperty('previewEnabled',True);hero.startPreview();QTest.qWait(80)
+            assert len(window.findChildren(QObject,'trailerVideoOutput'))==1, 'The preview owns the output before an episode opens'
             QTest.keyClick(window,Qt.Key_Right);QTest.keyClick(window,Qt.Key_Down)
             assert hero.property('actionIndex')==1 and window.findChild(QObject,'heroInfo').property('selected') is True
             assert window.findChild(QObject,'heroPlay').property('whiteSurface') is False
@@ -181,15 +187,32 @@ Item {
             targets=[body for path,body in calls if path=='/tv/v1/playbacks']
             assert targets==[{'anilist_id':hero.property('selected').toVariant()['anilist_id'],'episode':13,'lang':'vf','exclude_readers':[]}],targets
             assert screen.property('playbackId')=='aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
+            player=window.findChild(QObject,'episodeLoader').property('item')
+            spin(lambda:player.property('playing') is True)
+            assert len(window.findChildren(QObject,'episodeVideoOutput'))==1 and not window.findChildren(QObject,'trailerVideoOutput'), 'Only the episode owns a video output'
             assert window.grabWindow().save(str(args.evidence/'episode-controls.png'))
             QTest.keyClick(window,Qt.Key_Return) # pause
             QTest.keyClick(window,Qt.Key_Right) # seek +10s
+            QTest.qWait(300) # coalesced seek commits after a burst of remote keys
+            assert player.property('playing') is False
+            QTest.keyClick(window,Qt.Key_Return);spin(lambda:player.property('playing') is True)
+            QTest.keyClick(window,Qt.Key_Right);QTest.keyClick(window,Qt.Key_Right)
+            spin(lambda:player.property('positionMs')==150000 and player.property('playing') is True)
+            QTest.keyClick(window,Qt.Key_Up)
+            assert window.grabWindow().save(str(args.evidence/'player-focus.png'))
+            for _ in range(5):QTest.keyClick(window,Qt.Key_Right)
+            QTest.keyClick(window,Qt.Key_Return)
+            assert player.property('zone')=='rates'
+            assert window.grabWindow().save(str(args.evidence/'player-speed.png'))
+            QTest.keyClick(window,Qt.Key_Down);QTest.keyClick(window,Qt.Key_Down);QTest.keyClick(window,Qt.Key_Return)
+            assert player.property('rate')==1.5 and player.property('zone')=='toolbar'
             QTest.keyClick(window,Qt.Key_Back) # return to hero, not quit
             QTimer.singleShot(400,returned)
         except Exception as error: messages.append(traceback.format_exc());app.exit(1)
     def returned():
         try:
             assert screen.property('playbackId')==''
+            assert not window.findChildren(QObject,'episodeVideoOutput'), 'Closing the episode must release its video output'
             assert hero.property('activeFocus')
             events=[body for path,body in calls if path.endswith('/progress')]
             assert [e['seq'] for e in events]==list(range(1,len(events)+1))
@@ -210,6 +233,7 @@ Item {
             assert art.property('usingFallback') is True and front.property('status')==1
             # Late trailer A must never replace the selected trailer B.
             hero.setProperty('previewEnabled',False)
+            hero.setProperty('trailerSources',{}) # remove the explicit video-ownership setup
             hero.selectMode('featured');hero.choose(0)
             first=hero.property('selected').toVariant()
             screen.preview()
@@ -280,6 +304,14 @@ Item {
             assert screen.property('panel')=='profile'
             QTest.keyClick(window,Qt.Key_Escape);QTest.qWait(80)
             assert screen.property('panel')=='' and hero.property('navIndex')==1
+            QTest.keyClick(window,Qt.Key_Left);QTest.keyClick(window,Qt.Key_Return)
+            assert screen.property('panel')=='search'
+            search.setProperty('zone','nav');search.setProperty('navIndex',0)
+            QTest.keyClick(window,Qt.Key_Right);QTest.keyClick(window,Qt.Key_Return)
+            assert screen.property('panel')=='profile'
+            profile.setProperty('zone','nav');profile.setProperty('navIndex',1)
+            QTest.keyClick(window,Qt.Key_Left);QTest.keyClick(window,Qt.Key_Left);QTest.keyClick(window,Qt.Key_Return);QTest.qWait(80)
+            assert screen.property('panel')=='' and hero.property('navIndex')==2
             # Real PC fiche/episode DTOs, exact identities, season stack and remote playback.
             screen.openDetail(details['154587']['carte'])
             spin(lambda:detail.property('episodeState')=='ready')
@@ -318,9 +350,12 @@ Item {
             detail.visit(details['182255']['carte']);spin(lambda:detail.property('episodeState')=='ready')
             assert detail.property('card').toVariant()['anilist_id']==182255
             QTest.keyClick(window,Qt.Key_Back);QTest.qWait(100)
-            assert detail.property('card').toVariant()['anilist_id']==154587 and detail.property('episodeIndex')==2 and detail.property('zone')=='recommendations'
+            assert detail.property('card').toVariant()['anilist_id']==154587 and detail.property('episodeIndex')==2 and detail.property('zone')=='recommendations', {'id':detail.property('card').toVariant()['anilist_id'],'episodeIndex':detail.property('episodeIndex'),'zone':detail.property('zone'),'focus':detail.property('activeFocus'),'panel':screen.property('panel'),'stack':detail.property('stack').toVariant()}
+            detail.setProperty('zone','seasons');detail.setProperty('seasonIndex',1);QTest.keyClick(window,Qt.Key_Return)
+            spin(lambda:detail.property('episodeState')=='ready')
+            assert detail.property('card').toVariant()['anilist_id']==182255
             QTest.keyClick(window,Qt.Key_Back);QTest.qWait(80)
-            assert screen.property('panel')=='detail' and detail.property('zone')=='actions'
+            assert detail.property('card').toVariant()['anilist_id']==154587, 'Back after a real season selection must restore the preceding season'
             QTest.keyClick(window,Qt.Key_Back);QTest.qWait(80)
             assert screen.property('panel')=='' and hero.property('actionIndex')==1
             QTest.keyClick(window,Qt.Key_Back)

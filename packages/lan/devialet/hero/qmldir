@@ -11,3 +11,5 @@ MediaRow MediaRow.qml
 SearchView SearchView.qml
 ProfileView ProfileView.qml
 DetailView DetailView.qml
+TvNavigation TvNavigation.qml
+PlayerControls PlayerControls.qml

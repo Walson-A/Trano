@@ -1,0 +1,42 @@
+{
+  "releaseId": "hero-single-video-eden",
+  "sdkAccepted": true,
+  "renderConfirmed": false,
+  "sdkTrace": [
+    "\u258a [20.677]  qml: live: ATLAS_TV_SINGLE_RESOLVE 200 true",
+    "\u258a [20.682]  qml: EpisodePlayer: ATLAS_TV_SINGLE_STATUS 2",
+    "\u258a [24.448]  qml: EpisodePlayer: ATLAS_TV_SINGLE_STATUS 4",
+    "\u258a [25.755]  qml: EpisodePlayer: ATLAS_TV_SINGLE_STATUS 6",
+    "\u258a [25.756]  qml: EpisodePlayer: ATLAS_TV_SINGLE_STATE 1 6 0 1352351 true true",
+    "\u258a [26.807]  qml: EpisodePlayer: ATLAS_TV_EPISODE_READY true true 1352351",
+    "\u258a [29.809]  qml: EpisodePlayer: ATLAS_TV_SINGLE_TICK 1 6 4037 1352351 true true",
+    "\u258a [32.807]  qml: EpisodePlayer: ATLAS_TV_SINGLE_TICK 1 6 7036 1352351 true true",
+    "\u258a [35.808]  qml: EpisodePlayer: ATLAS_TV_SINGLE_TICK 1 6 10036 1352351 true true",
+    "\u258a [38.809]  qml: EpisodePlayer: ATLAS_TV_SINGLE_TICK 1 6 13037 1352351 true true",
+    "\u258a [41.809]  qml: EpisodePlayer: ATLAS_TV_SINGLE_TICK 1 6 16038 1352351 true true",
+    "\u258a [44.809]  qml: EpisodePlayer: ATLAS_TV_SINGLE_TICK 1 6 19037 1352351 true true",
+    "\u258a [47.808]  qml: EpisodePlayer: ATLAS_TV_SINGLE_TICK 1 6 22036 1352351 true true",
+    "\u258a [50.809]  qml: EpisodePlayer: ATLAS_TV_SINGLE_TICK 1 6 25037 1352351 true true",
+    "\u258a [53.809]  qml: EpisodePlayer: ATLAS_TV_SINGLE_TICK 1 6 28037 1352351 true true",
+    "\u258a [56.069]  qml: EpisodePlayer: ATLAS_TV_EPISODE_SEEK 10000",
+    "\u258a [56.583]  qml: EpisodePlayer: ATLAS_TV_EPISODE_SEEK 10000",
+    "\u258a [56.808]  qml: EpisodePlayer: ATLAS_TV_SINGLE_TICK 1 6 50259 1352351 true true",
+    "\u258a [57.015]  qml: EpisodePlayer: ATLAS_TV_SINGLE_STATUS 4",
+    "\u258a [57.822]  qml: EpisodePlayer: ATLAS_TV_SINGLE_STATE 2 4 50259 1352351 true true",
+    "\u258a [59.531]  qml: EpisodePlayer: ATLAS_TV_SINGLE_STATUS 6",
+    "\u258a [59.808]  qml: EpisodePlayer: ATLAS_TV_SINGLE_TICK 2 6 41458 1352351 true true",
+    "\u258a [62.808]  qml: EpisodePlayer: ATLAS_TV_SINGLE_TICK 2 6 41458 1352351 true true",
+    "\u258a [65.808]  qml: EpisodePlayer: ATLAS_TV_SINGLE_TICK 2 6 41458 1352351 true true",
+    "\u258a [68.808]  qml: EpisodePlayer: ATLAS_TV_SINGLE_TICK 2 6 41458 1352351 true true",
+    "\u258a [71.829]  qml: EpisodePlayer: ATLAS_TV_SINGLE_STATE 0 6 0 1352351 true true",
+    "\u258a [71.830]  qml: EpisodePlayer: ATLAS_TV_SINGLE_STATUS 1"
+  ],
+  "humanConfirmation": {
+    "image": true,
+    "audio": true,
+    "frenchLanguageSeparatelyConfirmed": false,
+    "seekVisuallyConfirmed": false,
+    "resumeVisuallyConfirmed": false
+  },
+  "progressConnected": false
+}

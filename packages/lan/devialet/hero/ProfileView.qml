@@ -11,13 +11,15 @@ FocusScope {
     property string state:'loading'
     property var history:null
     property int generation:0
-    property string zone:'back'
+    property string zone:'nav'
+    property int navIndex:1
     property int index:0
     property var cards:recentCards()
     property var account:transport && transport.home.compte ? transport.home.compte : ({})
     property string pseudo:history && history.profil ? history.profil.pseudo || account.pseudo || '' : account.pseudo || ''
     property string avatar:history && history.profil ? history.profil.avatar || account.avatar || '' : account.avatar || ''
     signal closed()
+    signal navigateRequested(string destination)
     signal chosen(var cards,int index,string title)
     function recentCards() {
         var activity=history && history.activite ? history.activite : [],seen={},result=[];
@@ -49,9 +51,9 @@ FocusScope {
         return String(n);
     }
     function art(media) {var local=artworks && artworks.sources[String(media.anilist_id)];return local && (local.card || local.poster) || media.banniere || media.affiche || '';}
-    function activate() {if(zone==='back')close();else if(zone==='retry')load();else if(cards.length)chosen(cards,index,'Activité récente');}
+    function activate() {if(zone==='nav')navigateRequested(navIndex===2 ? 'home' : navIndex===0 ? 'search' : 'profile');else if(zone==='retry')load();else if(cards.length)chosen(cards,index,'Activité récente');}
     Rectangle {anchors.fill:parent;color:'#090a0d'}
-    HeroButton {x:64;y:32;width:148;iconKey:'arrow-left';label:'Retour';family:view.family;focused:view.zone==='back';onActivated:view.close()}
+    TvNavigation {id:navigation;page:'profile';family:view.family;focused:view.zone==='nav';selectedIndex:view.navIndex;avatar:view.avatar;pseudo:view.pseudo || 'Profil';onDestinationRequested:view.navigateRequested(destination)}
     Rectangle {x:64;y:122;width:72;height:72;radius:36;color:'#323641'
         Image {id:avatarImage;objectName:'profileAvatar';anchors.fill:parent;source:view.avatar;sourceSize.width:144;asynchronous:true;fillMode:Image.PreserveAspectCrop;visible:false}
         OpacityMask {anchors.fill:parent;source:avatarImage;maskSource:Rectangle {width:72;height:72;radius:36}}
@@ -84,7 +86,9 @@ FocusScope {
         if(key===Qt.Key_Back || key===Qt.Key_Escape)close();
         else if(key===Qt.Key_Return || key===Qt.Key_Enter || key===Qt.Key_Select)activate();
         else if(key===Qt.Key_Down){if(cards.length)zone='cards';else if(state==='error')zone='retry';}
-        else if(key===Qt.Key_Up)zone='back';
+        else if(key===Qt.Key_Up)zone='nav';
+        else if(zone==='nav' && key===Qt.Key_Right)navIndex=navigation.step(navIndex,1);
+        else if(zone==='nav' && key===Qt.Key_Left)navIndex=navigation.step(navIndex,-1);
         else if(zone==='cards' && key===Qt.Key_Right)index=Math.min(cards.length-1,index+1);
         else if(zone==='cards' && key===Qt.Key_Left)index=Math.max(0,index-1);
         else return;

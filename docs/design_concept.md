@@ -1,5 +1,15 @@
 # UI/UX & Design System
 
+## Atlas TV — lecteur et navigation commune
+
+Le [lecteur adapté du PC](research/2026-10-28-atlas-tv-player.md) reprend son
+chrome et ses icônes, avec position demandée distincte de la position rapportée,
+barre et menus utilisables à la télécommande. Les instructions permanentes
+sont retirées. Les sorties vidéo preview/épisode sont instanciées exclusivement ;
+image/son ont été confirmés sur un lecteur isolé, l’hôte complet reste à vérifier.
+L’en-tête est partagé entre Accueil, Recherche et Profil. Le total d’épisodes
+est visible et Retour suit réellement les fiches/saisons précédentes.
+
 ## Atlas TV — fiche et navigation
 
 Après réception native, Walson signale une confusion fiche/accueil et de langue,

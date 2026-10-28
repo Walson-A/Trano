@@ -1,5 +1,10 @@
 # Atlas sur la télévision : base réutilisable et premier parcours
 
+Dernière passe : [lecteur et sorties vidéo exclusives](research/2026-10-28-atlas-tv-player.md).
+L’essai isolé Eden valide image/son ; l’hôte complet reste à retester. Navigation
+commune Accueil/Recherche/Profil et total d’épisodes visible ; Retour suit la
+fiche précédente. Les mentions historiques ci-dessous ne valident pas ce lot.
+
 Passe courante : [vraie fiche animé et navigation](research/2026-10-28-atlas-tv-detail.md),
 adaptées du PC, avec saisons/épisodes, personnages/doubleurs et recommandations.
 Recherche et historique rejoignent cette fiche ; les retours gardent leur

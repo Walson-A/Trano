@@ -13,7 +13,9 @@ Item {
         onError: preview.observed({event:'error',code:error})
         onStatusChanged: preview.observed({event:'status',status:status})
     }
-    VideoOutput { anchors.fill: parent; source: media; fillMode: VideoOutput.PreserveAspectCrop }
+    Loader {anchors.fill:parent;active:!!String(media.source);sourceComponent:Component {
+        VideoOutput {objectName:'trailerVideoOutput';anchors.fill:parent;source:media;fillMode:VideoOutput.PreserveAspectCrop}
+    }}
     Timer { interval: 2000; running: media.playbackState===MediaPlayer.PlayingState; repeat: true
         onTriggered: preview.observed({event:'preview',positionMs:media.position,hasVideo:media.hasVideo,hasAudio:media.hasAudio}) }
 }

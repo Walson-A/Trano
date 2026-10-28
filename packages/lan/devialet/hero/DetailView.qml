@@ -85,11 +85,11 @@ FocusScope {
         });
     }
     function remember() {return {media:media,detail:detail,episodeData:episodeData,zone:zone,actionIndex:actionIndex,episodeIndex:episodeIndex,seasonIndex:seasonIndex,relationIndex:relationIndex,castIndex:castIndex,recommendationIndex:recommendationIndex,pageStart:pageStart,french:french,languageIndex:languageIndex,scroll:viewport.contentY};}
-    function visit(c) {if(!identity(c))return;stack=stack.slice(-11).concat([remember()]);load(c);}
+    function visit(c) {if(!identity(c))return;stack=stack.slice(-11).concat([remember()]);load(c);forceActiveFocus();}
     function back() {
-        if(!stack.length && zone!=='actions' && zone!=='back'){zone='actions';actionIndex=0;viewport.contentY=0;return;}
+        console.info('ATLAS_TV_DETAIL_BACK',card && card.anilist_id || 0,stack.length,zone);
         generation++;episodeGeneration++;
-        if(stack.length){var saved=stack[stack.length-1];stack=stack.slice(0,-1);media=saved.media;detail=saved.detail;episodeData=saved.episodeData;state=detail ? 'ready' : 'error';episodeState=episodeData ? 'ready' : 'error';zone=saved.zone;actionIndex=saved.actionIndex;episodeIndex=saved.episodeIndex;seasonIndex=saved.seasonIndex;relationIndex=saved.relationIndex;castIndex=saved.castIndex;recommendationIndex=saved.recommendationIndex;pageStart=saved.pageStart;french=saved.french;languageIndex=saved.languageIndex;Qt.callLater(function(){viewport.contentY=saved.scroll;});}
+        if(stack.length){var saved=stack[stack.length-1],turn=generation;stack=stack.slice(0,-1);media=saved.media;detail=saved.detail;episodeData=saved.episodeData;state=detail ? 'ready' : 'error';episodeState=episodeData ? 'ready' : 'error';zone=saved.zone;actionIndex=saved.actionIndex;episodeIndex=saved.episodeIndex;seasonIndex=saved.seasonIndex;relationIndex=saved.relationIndex;castIndex=saved.castIndex;recommendationIndex=saved.recommendationIndex;pageStart=saved.pageStart;french=saved.french;languageIndex=saved.languageIndex;forceActiveFocus();Qt.callLater(function(){if(view.opened && turn===view.generation)viewport.contentY=saved.scroll;});}
         else {opened=false;closed();}
     }
     function launch(e) {
@@ -166,7 +166,7 @@ FocusScope {
             }
             Column {id:episodeSection;x:64;width:1152;spacing:12
                 Row {width:1152;spacing:24
-                    Text {width:760;anchors.verticalCenter:parent.verticalCenter;text:'Épisodes';color:'white';font.family:view.family;font.pixelSize:26;font.weight:Font.DemiBold}
+                    Text {width:760;anchors.verticalCenter:parent.verticalCenter;text:'Épisodes'+(view.episodeData && view.episodeData.total ? ' · '+view.episodeData.total+' au total' : '');color:'white';font.family:view.family;font.pixelSize:26;font.weight:Font.DemiBold}
                     Row {spacing:10
                         HeroButton {objectName:'episodeLanguage';width:160;label:'VOSTFR';family:view.family;selected:!view.french;focused:view.zone==='language' && view.languageIndex===0;onActivated:{view.zone='language';view.languageIndex=0;view.activate();}
                             Rectangle {x:20;y:parent.height-5;width:parent.width-40;height:3;radius:1.5;color:view.zone==='language' && view.languageIndex===0 ? '#16181d' : 'white';visible:!view.french}

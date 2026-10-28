@@ -1,0 +1,8 @@
+{
+  "releaseId": "hero-single-video-probe",
+  "sdkAccepted": true,
+  "renderConfirmed": false,
+  "sdkTrace": [
+    "\u258a [37.685]  qml: live: ATLAS_TV_SINGLE_RESOLVE 502 false"
+  ]
+}

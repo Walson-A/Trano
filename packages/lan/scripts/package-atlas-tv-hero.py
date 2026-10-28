@@ -19,11 +19,11 @@ def build(destination, regular, bold):
         fonts[name] = data
     destination.mkdir(parents=True)
     for name in ['Hero.qml', 'HeroButton.qml', 'FocusCard.qml', 'HeroArtwork.qml', 'Icon.qml',
-                 'Motion.js', 'Trailer.qml', 'TvSession.qml', 'EpisodePlayer.qml', 'ArtworkCache.qml', 'MediaRow.qml', 'SearchView.qml', 'ProfileView.qml', 'DetailView.qml', 'live.qml', 'qmldir']:
+                 'Motion.js', 'Trailer.qml', 'TvSession.qml', 'EpisodePlayer.qml', 'ArtworkCache.qml', 'MediaRow.qml', 'SearchView.qml', 'ProfileView.qml', 'DetailView.qml', 'TvNavigation.qml', 'PlayerControls.qml', 'live.qml', 'qmldir']:
         shutil.copyfile(source / name, destination / name)
     # Icons remain usable after the ten-minute bootstrap ticket expires.
     embedded = {}
-    for name in ['play', 'info', 'volume-2', 'volume-x', 'search', 'user-round', 'arrow-left']:
+    for name in ['play', 'pause', 'rotate-ccw', 'rotate-cw', 'list-video', 'info', 'volume-2', 'volume-x', 'search', 'user-round', 'arrow-left']:
         data = (source / 'icons' / (name+'.png')).read_bytes()
         if not data.startswith(b'\x89PNG\r\n\x1a\n') or len(data)>65536:
             raise ValueError('A bounded PNG icon is required')
