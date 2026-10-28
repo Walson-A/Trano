@@ -18,6 +18,7 @@ parser.add_argument('--regular',type=pathlib.Path,required=True)
 parser.add_argument('--bold',type=pathlib.Path,required=True)
 parser.add_argument('--evidence',type=pathlib.Path,required=True)
 parser.add_argument('--history',type=pathlib.Path,help='Explicit PC history fixture for profile/navigation checks')
+parser.add_argument('--detail-assets',type=pathlib.Path,help='Exact canonical image downloads with sources.json; never distributed')
 args=parser.parse_args()
 sys.path.insert(0,str(args.qt_path.resolve()))
 dll=os.add_dll_directory(str(args.qt_path.resolve()/'PyQt5/Qt5/bin')) if os.name=='nt' else None
@@ -33,6 +34,27 @@ pack=importlib.util.module_from_spec(spec);spec.loader.exec_module(pack)
 snapshot=json.loads(args.snapshot.read_text(encoding='utf-8-sig'))
 history_path=args.history or args.snapshot.parent/'historique.json'
 history=json.loads(history_path.read_text(encoding='utf-8-sig'))
+details={}
+episode_sets={}
+detail_images=json.loads((args.detail_assets/'sources.json').read_text(encoding='utf-8')) if args.detail_assets else {}
+for identity in [154587,182255]:
+    details[str(identity)]=json.loads((args.snapshot.parent/('fiche-'+str(identity)+'.json')).read_text(encoding='utf-8-sig'))
+    episode_sets[str(identity)]=json.loads((args.snapshot.parent/('episodes-'+str(identity)+'.json')).read_text(encoding='utf-8-sig'))
+def localize(value):
+    if isinstance(value,dict):
+        if value.get('anilist_id') and value.get('titre'):
+            exact=detail_images.get(value.get('banniere',''))
+            poster=detail_images.get(value.get('affiche',''))
+            value['banniere']=(args.detail_assets/exact).resolve().as_uri() if exact else ''
+            value['affiche']=(args.detail_assets/poster).resolve().as_uri() if poster else value['banniere']
+        for key,item in list(value.items()):
+            if key in ('image','vignette','avatar') and isinstance(item,str) and item.startswith('https:'):
+                exact=detail_images.get(item)
+                value[key]=(args.detail_assets/exact).resolve().as_uri() if exact else ''
+            else:localize(item)
+    elif isinstance(value,list):
+        for item in value:localize(item)
+localize(details);localize(episode_sets);localize(history)
 for event in history.get('activite',[]):
     card=event.get('carte')
     if not card:continue
@@ -96,6 +118,9 @@ Item {
  property var pendingPreview:null
  property var pendingArtworks:[]
  property var pendingSearches:[]
+ property bool delayDetails:false
+ property var pendingDetails:[]
+ property bool failNextPlayback:false
  signal homeLoaded()
  signal unavailable()
  signal apiCalled(string path,var body)
@@ -106,7 +131,9 @@ Item {
   if(path==='/tv/v1/artworks') { pendingArtworks=pendingArtworks.concat([done]); return; }
   if(path==='/tv/v1/catalog/search') { pendingSearches=pendingSearches.concat([done]); return; }
   if(path==='/tv/v1/catalog/history') { Qt.callLater(function(){done(200,benchmarkHistory);});return; }
-  if(path==='/tv/v1/playbacks') Qt.callLater(function(){done(200,{id:'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',stream:{path:'/tv/v1/episode-media/'+'a'.repeat(64)},resume:{position_ms:120000}});});
+  if(path==='/tv/v1/catalog/detail') { if(delayDetails){pendingDetails=pendingDetails.concat([done]);return;}Qt.callLater(function(){var value=benchmarkDetails[String(body.anilist_id)];done(value ? 200 : 404,value || {});});return; }
+  if(path==='/tv/v1/catalog/episodes') { Qt.callLater(function(){var value=benchmarkEpisodes[String(body.anilist_id)];done(value ? 200 : 404,value || {});});return; }
+  if(path==='/tv/v1/playbacks') {if(failNextPlayback){failNextPlayback=false;Qt.callLater(function(){done(503,{});});return;}Qt.callLater(function(){done(200,{id:'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',stream:{path:'/tv/v1/episode-media/'+'a'.repeat(64)},resume:{position_ms:120000}});});}
   else Qt.callLater(function(){done(200,{});});
  }
  function mediaUrl(path,kind) { return apiOrigin+path; }
@@ -114,10 +141,13 @@ Item {
  function finishArtwork(index,id,kind) { pendingArtworks[index](200,{anilist_id:id,kind:kind,path:'/tv/v1/artwork-media/'+'c'.repeat(64),expires_at:Date.now()/1000+900}); }
  function featuredOnly() { state='connecting'; artworkEnabled=false; var value=JSON.parse(JSON.stringify(benchmarkHome)); value.rangees=[]; home=value; artworkEnabled=true; state='ready'; homeLoaded(); }
  function finishSearch(index) {pendingSearches[index](200,{resultats:benchmarkHome.hero.slice(index,index+4)});}
+ function finishDetail(index,identity) {pendingDetails[index](200,benchmarkDetails[String(identity)]);}
 }''')
     engine=QQmlApplicationEngine();engine.addImportPath(str(root))
     engine.rootContext().setContextProperty('benchmarkHome',snapshot)
     engine.rootContext().setContextProperty('benchmarkHistory',history)
+    engine.rootContext().setContextProperty('benchmarkDetails',details)
+    engine.rootContext().setContextProperty('benchmarkEpisodes',episode_sets)
     engine.load(QUrl.fromLocalFile(str(bundle/'live.qml')))
     assert engine.rootObjects(),messages
     window=engine.rootObjects()[0]
@@ -134,7 +164,8 @@ Item {
             assert hero.property('muted') is False and window.findChild(QObject,'heroSound').property('label')=='Son activé'
             icons=window.findChildren(QObject,'iconPixels')
             assert len(icons)>=7 and not list(bundle.glob('icon-*.png'))
-            assert all(str(icon.property('source').toString()).startswith('data:image/png;base64,') and icon.property('status')==1 for icon in icons),'An icon still depends on a bootstrap request'
+            assert all(str(icon.property('source').toString()).startswith('data:image/png;base64,') for icon in icons),'An icon still depends on a bootstrap request'
+            spin(lambda:all(icon.property('status')==1 for icon in icons))
             QTest.keyClick(window,Qt.Key_Right);QTest.keyClick(window,Qt.Key_Down)
             assert hero.property('actionIndex')==1 and window.findChild(QObject,'heroInfo').property('selected') is True
             assert window.findChild(QObject,'heroPlay').property('whiteSurface') is False
@@ -228,8 +259,9 @@ Item {
             QTest.qWait(200)
             assert window.grabWindow().save(str(args.evidence/'search.png'))
             QTest.keyClick(window,Qt.Key_Return);QTest.qWait(80)
-            assert screen.property('panel')=='' and hero.property('currentRow').toVariant()['id']=='context_selection'
-            assert hero.property('selected').toVariant()['anilist_id']==snapshot['hero'][1]['anilist_id']
+            assert screen.property('panel')=='detail'
+            detail=window.findChild(QObject,'atlasDetail')
+            assert detail.property('media').toVariant()['anilist_id']==snapshot['hero'][1]['anilist_id']
             QTest.keyClick(window,Qt.Key_Escape)
             assert screen.property('panel')=='search' and search.property('query')=='FRa'
             QTest.keyClick(window,Qt.Key_Escape);QTest.qWait(80)
@@ -243,17 +275,56 @@ Item {
             QTest.qWait(400)
             assert window.grabWindow().save(str(args.evidence/'profile.png'))
             QTest.keyClick(window,Qt.Key_Down);QTest.keyClick(window,Qt.Key_Return);QTest.qWait(80)
-            assert screen.property('panel')=='' and hero.property('currentRow').toVariant()['titre']=='Activité récente'
+            assert screen.property('panel')=='detail'
             QTest.keyClick(window,Qt.Key_Escape);QTest.qWait(80)
             assert screen.property('panel')=='profile'
             QTest.keyClick(window,Qt.Key_Escape);QTest.qWait(80)
             assert screen.property('panel')=='' and hero.property('navIndex')==1
+            # Real PC fiche/episode DTOs, exact identities, season stack and remote playback.
+            screen.openDetail(details['154587']['carte'])
+            spin(lambda:detail.property('episodeState')=='ready')
+            assert detail.property('detail').toVariant()['carte']['anilist_id']==154587
+            assert detail.property('episodes').toVariant()[0]['numero']==1
+            spin(lambda:any(i.property('status')==1 and str(i.property('source').toString())==details['154587']['carte']['banniere'] for i in detail.findChildren(QObject,'heroBanner')))
+            QTest.qWait(300)
+            assert window.grabWindow().save(str(args.evidence/'detail-top.png'))
+            detail.setProperty('zone','episodes');detail.setProperty('episodeIndex',2);detail.scrollToZone();QTest.qWait(300)
+            assert window.grabWindow().save(str(args.evidence/'detail-episodes.png'))
+            detail.setProperty('french',True)
+            before=len([body for path,body in calls if path=='/tv/v1/playbacks'])
+            QTest.keyClick(window,Qt.Key_Return);QTest.qWait(200)
+            launches=[body for path,body in calls if path=='/tv/v1/playbacks']
+            assert len(launches)==before+1 and launches[-1]['anilist_id']==154587 and launches[-1]['episode']==3 and launches[-1]['lang']=='vf',launches
+            QTest.keyClick(window,Qt.Key_Back);QTest.qWait(100)
+            assert screen.property('panel')=='detail' and detail.property('activeFocus') and detail.property('episodeIndex')==2
+            session.setProperty('failNextPlayback',True)
+            QTest.keyClick(window,Qt.Key_Return);QTest.qWait(100)
+            assert screen.property('playbackId')=='' and not screen.property('resolving') and detail.property('activeFocus')
+            assert detail.property('extrasError')=='Cet épisode est indisponible pour le moment.'
+            detail.setProperty('zone','cast');detail.scrollToZone();QTest.qWait(300)
+            assert window.grabWindow().save(str(args.evidence/'detail-cast.png'))
+            detail.setProperty('zone','recommendations');detail.scrollToZone();QTest.qWait(300)
+            assert window.grabWindow().save(str(args.evidence/'detail-recommendations.png'))
+            detail.visit(details['182255']['carte']);spin(lambda:detail.property('episodeState')=='ready')
+            assert detail.property('card').toVariant()['anilist_id']==182255
+            QTest.keyClick(window,Qt.Key_Back);QTest.qWait(100)
+            assert detail.property('card').toVariant()['anilist_id']==154587 and detail.property('episodeIndex')==2 and detail.property('zone')=='recommendations'
+            QTest.keyClick(window,Qt.Key_Back);QTest.qWait(80)
+            assert screen.property('panel')=='' and hero.property('actionIndex')==1
+            session.setProperty('delayDetails',True)
+            screen.openDetail(details['154587']['carte'])
+            detail.visit(details['182255']['carte'])
+            session.finishDetail(0,154587)
+            assert detail.property('state')=='loading' and detail.property('media').toVariant()['anilist_id']==182255
+            session.finishDetail(1,154587) # wrong identity must not become the second season
+            assert detail.property('state')=='error'
+            QTest.keyClick(window,Qt.Key_Back);QTest.keyClick(window,Qt.Key_Back);QTest.qWait(80)
             later_bad=[m for m in messages if any(s in m for s in ['ReferenceError','TypeError','Unable to assign','Cannot assign'])]
             assert not later_bad,later_bad
             (args.evidence/'verification.json').write_text(json.dumps({'passed':True,'scope':'real QML host/UI with fake API and fake decoder; no native playback claim','canonicalEpisode':13,'lang':'vf','defaultSoundOnAndLabelled':True,'infoSelectionPreserved':True,'search':{'remoteKeyboard':True,'staleIgnored':True,'selectionAndBack':True},'profile':{'publicProfileWithoutOAuth':True,'statsScaleChecked':True,'selectionAndBack':True},'lateTrailerDoesNotChangeSelection':True,'silentGainZero':True,'bannerErrorUsesPoster':True,'artworkQueue':{'maxConcurrent':2,'identityChecked':True,'deduplicated':True,'capabilityRequired':True,'warmWithoutResume':True},'events':events},indent=2),encoding='utf-8')
             app.quit()
         except Exception as error: messages.append(traceback.format_exc());app.exit(1)
-    QTimer.singleShot(600,check);QTimer.singleShot(15000,lambda:app.exit(2))
+    QTimer.singleShot(600,check);QTimer.singleShot(25000,lambda:app.exit(2))
     code=app.exec_()
     window.close();sip.delete(engine)
     if code: raise AssertionError(messages)

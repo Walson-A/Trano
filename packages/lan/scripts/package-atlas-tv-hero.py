@@ -19,7 +19,7 @@ def build(destination, regular, bold):
         fonts[name] = data
     destination.mkdir(parents=True)
     for name in ['Hero.qml', 'HeroButton.qml', 'FocusCard.qml', 'HeroArtwork.qml', 'Icon.qml',
-                 'Motion.js', 'Trailer.qml', 'TvSession.qml', 'EpisodePlayer.qml', 'ArtworkCache.qml', 'MediaRow.qml', 'SearchView.qml', 'ProfileView.qml', 'live.qml', 'qmldir']:
+                 'Motion.js', 'Trailer.qml', 'TvSession.qml', 'EpisodePlayer.qml', 'ArtworkCache.qml', 'MediaRow.qml', 'SearchView.qml', 'ProfileView.qml', 'DetailView.qml', 'live.qml', 'qmldir']:
         shutil.copyfile(source / name, destination / name)
     # Icons remain usable after the ten-minute bootstrap ticket expires.
     embedded = {}

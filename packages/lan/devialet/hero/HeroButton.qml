@@ -13,6 +13,7 @@ Item {
     property bool whiteSurface: focused || primary && !groupHasFocus
     property bool reducedMotion: false
     property bool pill: false
+    property bool flat: false
     property string iconKey: ""
     property Item backdrop: null
     property rect sampleRect: Qt.rect(x,y,width,height)
@@ -31,13 +32,13 @@ Item {
     }
     Rectangle {
         anchors.fill: parent; radius: control.pill ? height/2 : 12
-        color: control.whiteSurface ? "#f6f6f7" : control.selected ? "#42ffffff" : "#7513161c"
-        border.color: control.focused ? "#f6f6f7" : "#30ffffff"; border.width: 1
+        color: control.whiteSurface ? "#f6f6f7" : control.selected ? "#42ffffff" : control.flat ? 'transparent' : "#7513161c"
+        border.color: control.focused ? "#f6f6f7" : control.flat ? 'transparent' : "#30ffffff"; border.width: 1
         Behavior on color { enabled: !control.reducedMotion; ColorAnimation { duration: Motion.ms('press') } }
     }
     Row { anchors.centerIn: parent; spacing: control.iconKey && control.label ? 11 : 0
         Icon { name: control.iconKey || 'play'; visible: !!control.iconKey; width: visible ? 21 : 0; height: 21; anchors.verticalCenter: parent.verticalCenter; ink: control.whiteSurface ? '#121316' : '#f8f8fa' }
-        Text { text: control.label; color: control.whiteSurface ? "#121316" : "#f8f8fa"; font.family: control.family; font.pixelSize: 19; font.weight: Font.DemiBold }
+        Text { text: control.label; width:Math.min(implicitWidth,control.width-(control.iconKey ? 66 : 32));elide:Text.ElideRight;color: control.whiteSurface ? "#121316" : "#f8f8fa"; font.family: control.family; font.pixelSize: 19; font.weight: Font.DemiBold }
     }
     MouseArea { anchors.fill: parent; onClicked: control.activated() }
 }

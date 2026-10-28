@@ -1,5 +1,15 @@
 # UI/UX & Design System
 
+## Atlas TV — fiche et navigation
+
+La [fiche animé](research/2026-10-28-atlas-tv-detail.md) reprend le parcours PC :
+saisons/épisodes, personnages et doubleurs, relations et recommandations.
+Les retours conservent le contexte. Accueil/Recherche partagent l’en-tête ;
+identité et avatar sont à droite. Trois résultats par ligne en recherche.
+Captures de vrais composants revues avec API/décodeur simulés ; réception
+native et validation esthétique restent distinctes. Le profil reste pour ce
+lot une consultation historique/statistiques, avec photo et repli explicite.
+
 ## Atlas TV — Recherche et Profil
 
 Les [accès Recherche et Profil](research/2026-10-28-atlas-tv-search-profile.md)

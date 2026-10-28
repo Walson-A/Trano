@@ -14,6 +14,7 @@ FocusScope {
     property string zone: "actions"
     property int actionIndex: 0
     property int navIndex: 0
+    property string avatar: ''
     property var contextRow: null
     property int selectedRow: 0
     property string selectedRowId: ""
@@ -130,7 +131,7 @@ FocusScope {
         previewObserved(observation);
     }
     function activate() {
-        if(zone==='nav') { if(navIndex===0) searchRequested();else profileRequested(); }
+        if(zone==='nav') { if(navIndex===0) searchRequested();else if(navIndex===1) profileRequested();else zone='actions'; }
         else if(zone==='rail') { zone='actions'; }
         else if(zone==='sound') muted=!muted;
         else if(actionIndex===1) { if(preview.item) preview.item.pause(); detailOpen=true; detailsRequested(selected); }
@@ -165,7 +166,7 @@ FocusScope {
         } else if(!detailOpen && (event.key===Qt.Key_Right || event.key===Qt.Key_Left)) {
             var right=event.key===Qt.Key_Right;
             if(zone==='rail') choose(selectedIndex+(right ? 1 : -1));
-            else if(zone==='nav')navIndex=right ? 1 : 0;
+            else if(zone==='nav'){var order=[2,0,1];navIndex=order[Math.max(0,Math.min(2,order.indexOf(navIndex)+(right ? 1 : -1)))];}
             else if(zone==='sound' && !right) { zone='actions'; actionIndex=1; }
             else if(zone==='actions') {
                 if(right && actionIndex===1) zone='sound';
@@ -216,9 +217,27 @@ FocusScope {
             }
         }
     }
-    Row {x:868;y:28;spacing:16
-        HeroButton {objectName:'searchEntry';width:170;iconKey:'search';label:'Recherche';family:scene.family;backdrop:backdrop;sampleRect:Qt.rect(868,28,width,height);focused:scene.zone==='nav' && scene.navIndex===0;onActivated:{scene.zone='nav';scene.navIndex=0;scene.searchRequested();}}
-        HeroButton {objectName:'profileEntry';width:162;iconKey:'user-round';label:'Profil';family:scene.family;backdrop:backdrop;sampleRect:Qt.rect(1054,28,width,height);focused:scene.zone==='nav' && scene.navIndex===1;onActivated:{scene.zone='nav';scene.navIndex=1;scene.profileRequested();}}
+    Item {x:64;y:24;width:338;height:60
+        Item {anchors.fill:parent;layer.enabled:true;layer.effect:OpacityMask {maskSource:Rectangle {width:338;height:60;radius:30}}
+            ShaderEffectSource {id:navSample;sourceItem:backdrop;sourceRect:Qt.rect(64,24,338,60);live:true;visible:false}
+            FastBlur {anchors.fill:parent;source:navSample;radius:24}
+        }
+        Rectangle {anchors.fill:parent;radius:30;color:'#8c13161c';border.color:'#24ffffff'}
+        Row {x:6;y:4;spacing:4
+            HeroButton {objectName:'homeEntry';width:140;pill:true;flat:true;label:'Accueil';family:scene.family;reducedMotion:scene.reducedMotion;focused:scene.zone==='nav' && scene.navIndex===2;onActivated:{scene.zone='actions';scene.navIndex=2;scene.forceActiveFocus();}}
+            HeroButton {objectName:'searchEntry';width:180;pill:true;flat:true;iconKey:'search';label:'Recherche';family:scene.family;reducedMotion:scene.reducedMotion;focused:scene.zone==='nav' && scene.navIndex===0;onActivated:{scene.zone='nav';scene.navIndex=0;scene.searchRequested();}}
+        }
+    }
+    Item {objectName:'profileEntry';x:1000;y:28;width:216;height:52
+        Accessible.role:Accessible.Button;Accessible.name:'Profil'
+        Rectangle {x:-12;y:-4;width:240;height:60;radius:30;color:'#cc13161c';border.color:scene.zone==='nav' && scene.navIndex===1 ? 'white' : '#24ffffff';border.width:scene.zone==='nav' && scene.navIndex===1 ? 2 : 1}
+        Text {x:0;width:148;anchors.verticalCenter:parent.verticalCenter;text:scene.homeData.compte ? scene.homeData.compte.pseudo || 'Profil' : 'Profil';textFormat:Text.PlainText;elide:Text.ElideRight;horizontalAlignment:Text.AlignRight;color:scene.zone==='nav' && scene.navIndex===1 ? 'white' : '#d0d1d8';font.family:scene.family;font.pixelSize:19}
+        Rectangle {x:164;width:52;height:52;radius:26;color:'#b32c3039';border.color:scene.zone==='nav' && scene.navIndex===1 ? 'white' : '#50ffffff';border.width:scene.zone==='nav' && scene.navIndex===1 ? 3 : 1
+            Image {id:navAvatar;anchors.fill:parent;anchors.margins:4;source:scene.avatar;sourceSize.width:104;fillMode:Image.PreserveAspectCrop;asynchronous:true;visible:false}
+            OpacityMask {anchors.fill:navAvatar;source:navAvatar;maskSource:Rectangle {width:44;height:44;radius:22}}
+            Icon {anchors.centerIn:parent;width:24;height:24;name:'user-round';visible:navAvatar.status!==Image.Ready}
+        }
+        MouseArea {anchors.fill:parent;onClicked:{scene.zone='nav';scene.navIndex=1;scene.profileRequested();}}
     }
     HeroButton { objectName:'heroSound'; x: 1036; y: 298; width: 180; iconKey: scene.muted ? 'volume-x' : 'volume-2'; label:scene.muted ? 'Son coupé' : 'Son activé'; reducedMotion: scene.reducedMotion; family: scene.family; backdrop: backdrop; sampleRect: Qt.rect(x,y,width,height); focused: scene.zone==='sound'; onActivated: { scene.zone='sound'; scene.muted=!scene.muted; } }
     Text { x: 870; y: 355; width: 346; horizontalAlignment: Text.AlignRight; color: '#b9bac3'; font.family: scene.family; font.pixelSize: 16

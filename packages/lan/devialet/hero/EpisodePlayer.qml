@@ -20,7 +20,7 @@ FocusScope {
     function play(url) { resumed=false; started=false; ended=false; failure=''; media.source=url; media.play(); reveal(); forceActiveFocus(); }
     function close() { report('stopped'); started=false; media.stop(); media.source=''; closed(); }
     function seek(delta) {
-        if(media.seekable && started) { media.seek(Math.max(0,Math.min(media.duration,media.position+delta))); report(media.playbackState===MediaPlayer.PausedState ? 'paused' : 'playing'); }
+        if(media.seekable && started) { media.seek(Math.max(0,Math.min(media.duration,media.position+delta))); console.info('ATLAS_TV_EPISODE_SEEK',delta);report(media.playbackState===MediaPlayer.PausedState ? 'paused' : 'playing'); }
         reveal();
     }
     function reveal() { controlsVisible=true; hide.restart(); }
@@ -33,7 +33,7 @@ FocusScope {
         onPositionChanged: {
             if(playbackState===MediaPlayer.PlayingState && hasVideo && position>0) {
                 player.started=true;
-                if(!player.resumed && duration>0) { player.resumed=true; if(player.resumeMs>0 && seekable) seek(Math.min(player.resumeMs,Math.max(0,duration-1000))); player.report('playing'); }
+                if(!player.resumed && duration>0) { player.resumed=true;console.info('ATLAS_TV_EPISODE_READY',hasVideo,hasAudio,duration);if(player.resumeMs>0 && seekable) seek(Math.min(player.resumeMs,Math.max(0,duration-1000))); player.report('playing'); }
             }
         }
         onStatusChanged: if(status===MediaPlayer.EndOfMedia) { player.report('ended'); player.started=false; player.ended=true; player.controlsVisible=true; }

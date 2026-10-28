@@ -1,5 +1,10 @@
 # Atlas sur la télévision : base réutilisable et premier parcours
 
+Passe courante : [vraie fiche animé et navigation](research/2026-10-28-atlas-tv-detail.md),
+adaptées du PC, avec saisons/épisodes, personnages/doubleurs et recommandations.
+Recherche et historique rejoignent cette fiche ; les retours gardent leur
+contexte. Banc contrôlé, nouvelle réception native encore à vérifier.
+
 ## Cadrage du 26 octobre 2026
 
 Passe suivante du 28 octobre : [Recherche et Profil adaptés du PC](research/2026-10-28-atlas-tv-search-profile.md),

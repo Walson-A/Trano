@@ -14,13 +14,14 @@ Item {
     property bool reducedMotion: false
     property real progress: -1
     property real surfaceScale: surface.scale
+    property real artworkWidth: 238
     signal activated()
     signal artworkFailed(bool poster)
-    width: 266; height: 205; z: focused ? 10 : 0
+    width: artworkWidth+28; height: 205; z: focused ? 10 : 0
     Accessible.role: Accessible.Button
     Accessible.name: title
     Item {
-        id: surface; x: 14; y: 18; width: 238; height: 134
+        id: surface; x: 14; y: 18; width: card.artworkWidth; height: width*9/16
         scale: card.focused && !card.reducedMotion ? 1.07 : 1
         transformOrigin: Item.Center
         Behavior on scale { enabled: !card.reducedMotion; NumberAnimation { duration: Motion.ms('focus'); easing.type: Easing.Bezier; easing.bezierCurve: Motion.easeOut() } }
@@ -50,7 +51,7 @@ Item {
             Behavior on opacity { enabled: !card.reducedMotion; NumberAnimation { duration: Motion.ms('focus') } }
         }
     }
-    Text { x: 14; y: 168; width: 238; text: card.title; textFormat: Text.PlainText; wrapMode: Text.WordWrap; maximumLineCount: 2; elide: Text.ElideRight
+    Text { x: 14; y: surface.y+surface.height+16; width: card.artworkWidth; text: card.title; textFormat: Text.PlainText; wrapMode: Text.WordWrap; maximumLineCount: 2; elide: Text.ElideRight
         color: card.focused || card.selected ? '#fafafa' : '#a5a5af'; font.family: card.family; font.pixelSize: 17; font.weight: card.focused ? Font.DemiBold : Font.Normal; lineHeight: 21; lineHeightMode: Text.FixedHeight
     }
     MouseArea { anchors.fill: parent; onClicked: card.activated() }

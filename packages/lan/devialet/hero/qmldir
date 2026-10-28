@@ -10,3 +10,4 @@ ArtworkCache ArtworkCache.qml
 MediaRow MediaRow.qml
 SearchView SearchView.qml
 ProfileView ProfileView.qml
+DetailView DetailView.qml

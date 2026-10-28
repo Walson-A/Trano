@@ -1,4 +1,5 @@
 import QtQuick 2.15
+import QtGraphicalEffects 1.0
 
 FocusScope {
     id:view
@@ -15,6 +16,7 @@ FocusScope {
     property var cards:recentCards()
     property var account:transport && transport.home.compte ? transport.home.compte : ({})
     property string pseudo:history && history.profil ? history.profil.pseudo || account.pseudo || '' : account.pseudo || ''
+    property string avatar:history && history.profil ? history.profil.avatar || account.avatar || '' : account.avatar || ''
     signal closed()
     signal chosen(var cards,int index,string title)
     function recentCards() {
@@ -26,7 +28,7 @@ FocusScope {
         }
         return result;
     }
-    function open() {opened=true;forceActiveFocus();load();}
+    function open() {opened=true;forceActiveFocus();if(state!=='ready')load();}
     function close() {opened=false;generation++;closed();}
     function load() {
         if(!transport)return;
@@ -51,7 +53,9 @@ FocusScope {
     Rectangle {anchors.fill:parent;color:'#090a0d'}
     HeroButton {x:64;y:32;width:148;iconKey:'arrow-left';label:'Retour';family:view.family;focused:view.zone==='back';onActivated:view.close()}
     Rectangle {x:64;y:122;width:72;height:72;radius:36;color:'#323641'
-        Text {anchors.centerIn:parent;text:view.pseudo ? view.pseudo.slice(0,1).toUpperCase() : '—';color:'white';font.family:view.family;font.pixelSize:34;font.weight:Font.Bold}
+        Image {id:avatarImage;objectName:'profileAvatar';anchors.fill:parent;source:view.avatar;sourceSize.width:144;asynchronous:true;fillMode:Image.PreserveAspectCrop;visible:false}
+        OpacityMask {anchors.fill:parent;source:avatarImage;maskSource:Rectangle {width:72;height:72;radius:36}}
+        Text {anchors.centerIn:parent;visible:avatarImage.status!==Image.Ready;text:view.pseudo ? view.pseudo.slice(0,1).toUpperCase() : '—';color:'white';font.family:view.family;font.pixelSize:34;font.weight:Font.Bold}
     }
     Text {x:160;y:119;width:1050;text:view.pseudo || 'Ton profil';textFormat:Text.PlainText;color:'#fafafa';font.family:view.family;font.pixelSize:40;font.weight:Font.Bold;elide:Text.ElideRight}
     Text {x:160;y:170;text:view.account.connecte || view.pseudo ? 'AniList · Ton historique' : 'Compte AniList';color:'#a7a9b4';font.family:view.family;font.pixelSize:19}

@@ -11,10 +11,11 @@ Item {
     property bool soften: false
     property url lastReady: ""
     property bool fadeAllowed: false
+    property bool retainPrevious: true
     signal failed(bool poster)
     function stage() {
         if(front.source===requestedSource) return;
-        back.source=lastReady; usingFallback=false;
+        back.source=retainPrevious ? lastReady : ''; usingFallback=false;
         fadeAllowed=false; front.opacity=0; front.source=requestedSource;
         if(!requestedSource) { fallback(); return; }
         if(front.status===Image.Ready) reveal();
