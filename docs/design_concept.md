@@ -7,8 +7,9 @@ les onglets supérieurs : reprise, sélection à la une et catégories réelles.
 Le héros suit la carte active ; la position de chaque ligne est mémorisée.
 La ligne suivante est perceptible dès l'accueil. Cartes, verre et courbes
 existants sont conservés ; captures et navigation sont revues dans le banc.
-Images/previews du service ont une confirmation humaine, la nouvelle disposition
-attend encore son essai natif. La sourdine reste non fiable malgré son libellé clair.
+Images, previews et rangées du service ont une confirmation humaine. Walson
+précise que la bascule sonore fonctionne ; l'état initial doit annoncer
+« Son activé ». Les actions mémorisées restent distinctes du focus courant.
 
 ## Atlas TV — raccordement du 28 octobre 2026
 

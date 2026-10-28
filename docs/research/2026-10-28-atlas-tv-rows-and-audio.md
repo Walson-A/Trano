@@ -1,5 +1,28 @@
 # Accueil à rangées et limite audio native
 
+## Clarification finale de Walson
+
+`hero-587b216` est publié et Walson confirme les rangées. Il précise ensuite
+que la bascule sonore fonctionne : seul le libellé initial est incohérent.
+Il veut le son activé à l'ouverture. La correction retient donc `muted=false`
+et « Son activé ». L'hypothèse précédente de sourdine native globalement ignorée,
+rapportée plus bas comme étape d'investigation, était excessive.
+
+L'échantillon vidéo seule a bien été validé par FFprobe et le Player : minute
+silencieuse, original audible à partir de 15 s, puis dérivé silencieux à environ
+25,8 s. Walson confirme silence → son → silence. Les paquets vidéo sont identiques,
+seule la piste audio manque. `hasAudio` reste vrai sur les deux fichiers : ce
+champ natif ne prouve pas la présence d'une piste. Le serveur local de cet essai
+est fermé. Cette méthode est valide mais inutile pour le défaut précisé ;
+aucune installation ou modification du contrat preview n'est retenue.
+
+Walson constate aussi un faux retour visuel sur Reprendre lorsqu'il quitte
+Plus d'infos vers les cartes. L'index était conservé ; le style primaire
+remplissait automatiquement Reprendre. Les boutons affichent désormais
+l'action mémorisée, distincte du focus courant. Le banc vérifie le trajet
+Infos → Bas → Haut ainsi que l'état sonore initial. Recherche et Profil sont
+demandés pour la passe suivante.
+
 ## Direction demandée
 
 Après validation des images et bandes-annonces servies par le backend dans
@@ -67,8 +90,9 @@ L'essai natif de cette nouvelle disposition reste à faire après publication.
 Sur `hero-168278b`, Walson confirme images et bandes-annonces, ainsi que la
 lisibilité du bouton « Son coupé / Son activé ». Il confirme aussi que le son
 reste audible au démarrage malgré `MediaPlayer.muted=true` et `volume=0`.
-Les propriétés vérifiées dans le banc simulé ne prouvent donc pas la sourdine
-sur ce backend natif. Ce défaut reste ouvert.
+Les propriétés du banc ne prouvaient pas le comportement sonore natif.
+La clarification ci-dessus remplace la conclusion initiale : le défaut est
+l'état affiché à l'ouverture, pas une bascule native défaillante.
 
 La source publique historique libfbxqml expose `VideoPlayer.mute` via MMS.
 Un essai borné utilisant `fbx.media 1.0` a été lancé avec le SDK officiel :

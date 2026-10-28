@@ -111,6 +111,13 @@ Item {
     def check():
         try:
             window.requestActivate();hero.forceActiveFocus(Qt.OtherFocusReason);hero.setProperty('previewEnabled',False)
+            assert hero.property('muted') is False and window.findChild(QObject,'heroSound').property('label')=='Son activé'
+            QTest.keyClick(window,Qt.Key_Right);QTest.keyClick(window,Qt.Key_Down)
+            assert hero.property('actionIndex')==1 and window.findChild(QObject,'heroInfo').property('selected') is True
+            assert window.findChild(QObject,'heroPlay').property('whiteSurface') is False
+            QTest.keyClick(window,Qt.Key_Up)
+            assert hero.property('actionIndex')==1 and window.findChild(QObject,'heroInfo').property('focused') is True
+            QTest.keyClick(window,Qt.Key_Left)
             assert hero.property('selected').toVariant()['a_lancer']['numero']==13
             QTest.keyClick(window,Qt.Key_Return)
             QTimer.singleShot(400,playing)
@@ -138,10 +145,10 @@ Item {
             bad=[m for m in messages if any(s in m for s in ['Error','is not defined','Unable to assign','Cannot assign','failed'])]
             assert not bad,bad
             audio=window.findChild(QObject,'trailerMedia')
-            assert audio.property('muted') is True and audio.property('volume')==0
-            hero.setProperty('muted',False)
             assert audio.property('muted') is False and abs(audio.property('volume')-.35)<.001
             hero.setProperty('muted',True)
+            assert audio.property('muted') is True and audio.property('volume')==0
+            hero.setProperty('muted',False)
             # An unavailable banner must show this title's poster, not retain the preceding title.
             front=window.findChild(QObject,'heroBanner');art=front.parent().parent()
             art.setProperty('requestedSource',QUrl.fromLocalFile(str(root/'missing-banner.jpg')))
@@ -176,7 +183,7 @@ Item {
             warmed=[body for path,body in calls if path=='/tv/v1/artworks'][3:]
             assert len(warmed)==2 and {v['kind'] for v in warmed}=={'banner','poster'}
             assert all(v['anilist_id']==snapshot['hero'][0]['anilist_id'] for v in warmed)
-            (args.evidence/'verification.json').write_text(json.dumps({'passed':True,'scope':'real QML host/UI with fake API and fake decoder; no native playback claim','canonicalEpisode':13,'lang':'vf','lateTrailerDoesNotChangeSelection':True,'silentGainZero':True,'bannerErrorUsesPoster':True,'artworkQueue':{'maxConcurrent':2,'identityChecked':True,'deduplicated':True,'capabilityRequired':True,'warmWithoutResume':True},'events':events},indent=2),encoding='utf-8')
+            (args.evidence/'verification.json').write_text(json.dumps({'passed':True,'scope':'real QML host/UI with fake API and fake decoder; no native playback claim','canonicalEpisode':13,'lang':'vf','defaultSoundOnAndLabelled':True,'infoSelectionPreserved':True,'lateTrailerDoesNotChangeSelection':True,'silentGainZero':True,'bannerErrorUsesPoster':True,'artworkQueue':{'maxConcurrent':2,'identityChecked':True,'deduplicated':True,'capabilityRequired':True,'warmWithoutResume':True},'events':events},indent=2),encoding='utf-8')
             app.quit()
         except Exception as error: messages.append(str(error));app.exit(1)
     QTimer.singleShot(600,check);QTimer.singleShot(10000,lambda:app.exit(2))

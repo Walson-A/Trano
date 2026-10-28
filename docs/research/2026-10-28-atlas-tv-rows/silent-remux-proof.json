@@ -1,0 +1,45 @@
+{
+  "trailer-reference.mp4": {
+    "bytes": 2374127,
+    "sha256": "7fdac400f021bca1f2da150054d0a23ee7eec06f28f471a8680e639bf258cdc5",
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "h264",
+          "codec_type": "video",
+          "duration": "60.000000"
+        },
+        {
+          "codec_name": "aac",
+          "codec_type": "audio",
+          "duration": "60.000363"
+        }
+      ],
+      "format": {
+        "duration": "60.000363"
+      }
+    },
+    "videoPacketHash": "SHA256=988181bcf0f9e267cc9ce830ea3c65817c2a03edf96b16f01bd768b5e2d5188d"
+  },
+  "trailer-silent.mp4": {
+    "bytes": 1402220,
+    "sha256": "03aad65cafa3bf5bcacd58bf89d6370ed3b5c5b279ba30d5efb84e5f340440bd",
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "h264",
+          "codec_type": "video",
+          "duration": "60.000000"
+        }
+      ],
+      "format": {
+        "duration": "60.000000"
+      }
+    },
+    "videoPacketHash": "SHA256=988181bcf0f9e267cc9ce830ea3c65817c2a03edf96b16f01bd768b5e2d5188d"
+  }
+}

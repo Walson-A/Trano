@@ -1,5 +1,12 @@
 # Héros Atlas TV : raccordement au serveur
 
+État actualisé après clarification : Walson confirme images, bandes-annonces
+et accueil à rangées ; la bascule sonore fonctionne. Le défaut initial est
+le texte « Son coupé » alors que le son doit démarrer activé. Voir la
+[clarification et les corrections](2026-10-28-atlas-tv-rows-and-audio.md).
+Les hypothèses audio ci-dessous conservent l'historique de l'investigation,
+elles ne constituent pas une limitation native prouvée.
+
 ## État du 28 octobre
 
 `hero/live.qml` consomme le contrat média préparé par la conversation backend

@@ -6,7 +6,8 @@ Direction actualisée le 28 octobre après essai : [plusieurs rangées sous le h
 avec les vraies catégories du catalogue et la mémorisation de chaque ligne.
 Les onglets « À reprendre / À la une » sont retirés de cette itération.
 Les images et bandes-annonces du service sont confirmées par Walson ;
-la sourdine native et les épisodes VF restent des défauts ouverts.
+l'état initial du son et les épisodes VF restent à corriger. Walson précise
+que la bascule fonctionne et veut le son activé dès l'ouverture.
 
 Raccordement du 28 octobre : [hôte QML du contrat serveur](research/2026-10-28-atlas-tv-live-host.md),
 sessions limitées, catalogue, bandes-annonces et lecteur avec temps/barre.
