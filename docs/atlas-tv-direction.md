@@ -1,5 +1,11 @@
 # Atlas sur la télévision : base réutilisable et premier parcours
 
+Le [lecteur revu est raccordé et publié](research/2026-10-29-atlas-tv-player-live.md)
+sur le service permanent : `hero-player-914ca56735ce`, 28 fichiers. Le Devialet a
+accepté la relance et demandé les ressources. Nouveau Retour, menus réels et
+épisodes enrichis passent au banc complet ; le rendu et les gestes natifs restent
+à confirmer par Walson. Les propositions ci-dessous conservent leur rôle historique.
+
 Après appréciation de la composition, Walson demande un [sélecteur d'épisodes
 plus reconnaissable](research/2026-10-28-atlas-tv-episode-selector.md). Vignettes,
 titres et durées viennent du banc PC. La liste conserve le contexte, s'ouvre sur

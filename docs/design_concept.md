@@ -1,5 +1,14 @@
 # UI/UX & Design System
 
+## Lecteur TV : proposition raccordée et publiée
+
+Le [lecteur intégré](research/2026-10-29-atlas-tv-player-live.md) reprend les zones
+retenues et le sélecteur enrichi dans la vraie app. Retour masque la barre avant
+de sortir, les menus utilisent les contrats réels et les vignettes passent par
+des capacités d'image d'épisode. Banc complet et session HTTP passent ; paquet
+`hero-player-914ca56735ce` disponible publiquement, SDK accepté et fichiers servis.
+La réception visuelle/native reste distincte et attend le retour de Walson.
+
 ## Lecteur TV : sélecteur d'épisodes enrichi
 
 Walson apprécie la composition et demande une navigation des épisodes inspirée

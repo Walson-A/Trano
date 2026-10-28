@@ -15,3 +15,6 @@ TvNavigation TvNavigation.qml
 PlayerControls PlayerControls.qml
 PlayerMenu PlayerMenu.qml
 PlayerChoice PlayerChoice.qml
+PlayerSetting PlayerSetting.qml
+PlayerEpisodes PlayerEpisodes.qml
+EpisodeArtworkCache EpisodeArtworkCache.qml

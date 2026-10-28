@@ -5,22 +5,30 @@ Item {
     property var player
     property string family:'sans-serif'
     property bool reducedMotion:false
-    Rectangle {anchors.bottom:parent.bottom;width:1280;height:400;gradient:Gradient {GradientStop {position:0;color:'#00000000'} GradientStop {position:.65;color:'#a6000000'} GradientStop {position:1;color:'#f2000000'}}}
-    Text {visible:!chrome.player.menuOpened;x:72;y:405;width:1050;text:chrome.player.title;textFormat:Text.PlainText;color:'white';font.family:chrome.family;font.pixelSize:40;font.weight:Font.Bold;elide:Text.ElideRight}
-    Text {visible:!chrome.player.menuOpened;x:72;y:459;width:1050;text:chrome.player.chapter;textFormat:Text.PlainText;color:'#dedee5';font.family:chrome.family;font.pixelSize:21;elide:Text.ElideRight}
-    Row {x:64;y:514;spacing:12
-        HeroButton {width:168;flat:true;iconKey:'list-video';label:'Épisodes';family:chrome.family;reducedMotion:true;selected:chrome.player.menuName==='episodes';focused:!chrome.player.menuOpened && chrome.player.zone==='actions' && chrome.player.controlIndex===0;onActivated:chrome.player.openMenu('episodes')}
-        HeroButton {width:226;flat:true;label:'Source et lecteur';family:chrome.family;reducedMotion:true;selected:chrome.player.menuName==='source';focused:!chrome.player.menuOpened && chrome.player.zone==='actions' && chrome.player.controlIndex===1;onActivated:chrome.player.openMenu('source')}
-        HeroButton {width:146;flat:true;label:chrome.player.current && chrome.player.current.target.vf ? 'VF' : 'VOSTFR';family:chrome.family;reducedMotion:true;selected:chrome.player.menuName==='version';focused:!chrome.player.menuOpened && chrome.player.zone==='actions' && chrome.player.controlIndex===2;onActivated:chrome.player.openMenu('version')}
-        HeroButton {width:246;flat:true;label:'Qualité'+(chrome.player.current && chrome.player.current.qualityLabel ? ' · '+chrome.player.current.qualityLabel : ' · Auto');family:chrome.family;reducedMotion:true;selected:chrome.player.menuName==='quality';focused:!chrome.player.menuOpened && chrome.player.zone==='actions' && chrome.player.controlIndex===3;onActivated:chrome.player.openMenu('quality')}
+    readonly property var settings:[{label:'Version',value:player.current && player.current.target.vf ? 'VF' : 'VOSTFR',icon:'captions',menu:'version'},{label:'Source',value:player.current && player.current.readerLabel || 'Automatique',icon:'monitor-play',menu:'source'},{label:'Qualité',value:player.current && player.current.qualityLabel || 'Automatique',icon:'settings',menu:'quality'}]
+    Rectangle {anchors.bottom:parent.bottom;width:1280;height:360;gradient:Gradient {GradientStop {position:0;color:'#00000000'} GradientStop {position:.35;color:'#a8000000'} GradientStop {position:.72;color:'#e8000000'} GradientStop {position:1;color:'#f8000000'}}}
+    Text {x:64;y:500;width:535;height:48;text:chrome.player.title;textFormat:Text.PlainText;color:'white';font.family:chrome.family;font.pixelSize:34;font.weight:Font.Bold;elide:Text.ElideRight}
+    Text {x:64;y:548;width:535;text:chrome.player.chapter;textFormat:Text.PlainText;color:'#dedee5';font.family:chrome.family;font.pixelSize:20;elide:Text.ElideRight}
+    Row {x:688;y:506;spacing:12;visible:!chrome.player.failure || chrome.player.menuOpened
+        Repeater {model:chrome.settings
+            PlayerSetting {family:chrome.family;label:modelData.label;value:modelData.value;icon:modelData.icon;focused:!chrome.player.menuOpened && chrome.player.zone==='actions' && chrome.player.controlIndex===index;opened:chrome.player.menuName===modelData.menu;onActivated:chrome.player.openMenu(modelData.menu)}
+        }
     }
-    Rectangle {id:track;x:72;y:632;width:1136;height:chrome.player.zone==='seek' ? 6 : 4;radius:3;color:'#70ffffff'
+    Rectangle {id:track;x:64;y:600;width:1152;height:chrome.player.zone==='seek' ? 6 : 4;radius:3;color:'#66ffffff'
         Rectangle {width:parent.width*(chrome.player.durationMs>0 ? Math.min(1,chrome.player.positionMs/chrome.player.durationMs) : 0);height:parent.height;radius:3;color:'white'}
-        Rectangle {x:parent.width*(chrome.player.durationMs>0 ? Math.min(1,(chrome.player.proposedMs>=0 ? chrome.player.proposedMs : chrome.player.positionMs)/chrome.player.durationMs) : 0)-8;y:parent.height/2-8;width:16;height:16;radius:8;color:'white'}
-        Rectangle {x:Math.max(0,Math.min(1008,parent.width*(chrome.player.durationMs>0 ? chrome.player.proposedMs/chrome.player.durationMs : 0)-64));y:-64;width:128;height:44;radius:10;color:'#eb1b1d24';border.color:'#35ffffff';visible:chrome.player.proposedMs>=0
+        Rectangle {x:parent.width*(chrome.player.durationMs>0 ? Math.min(1,(chrome.player.proposedMs>=0 ? chrome.player.proposedMs : chrome.player.positionMs)/chrome.player.durationMs) : 0)-width/2;y:parent.height/2-height/2;width:chrome.player.zone==='seek' ? 22 : 14;height:width;radius:width/2;color:'white'}
+        Rectangle {x:Math.max(0,Math.min(parent.width-width,parent.width*(chrome.player.durationMs>0 ? chrome.player.proposedMs/chrome.player.durationMs : 0)-width/2));y:-66;width:104;height:42;radius:10;color:'#eb1b1d24';border.color:'#35ffffff';visible:chrome.player.proposedMs>=0
             Text {anchors.centerIn:parent;text:chrome.player.clock(chrome.player.proposedMs);color:'white';font.family:chrome.family;font.pixelSize:23;font.weight:Font.DemiBold}
         }
     }
-    Text {x:72;y:656;text:chrome.player.clock(chrome.player.positionMs);color:'#ededf2';font.family:chrome.family;font.pixelSize:19}
-    Text {x:950;y:656;width:258;horizontalAlignment:Text.AlignRight;text:chrome.player.durationMs>0 ? '−'+chrome.player.clock(chrome.player.durationMs-chrome.player.positionMs) : '—';color:'#c9cbd4';font.family:chrome.family;font.pixelSize:19}
+    Text {x:64;y:620;text:chrome.player.clock(chrome.player.positionMs);color:'#ededf2';font.family:chrome.family;font.pixelSize:18}
+    Text {x:1030;y:620;width:186;horizontalAlignment:Text.AlignRight;text:chrome.player.durationMs>0 ? '−'+chrome.player.clock(chrome.player.durationMs-chrome.player.positionMs) : '—';color:'#c9cbd4';font.family:chrome.family;font.pixelSize:18}
+    Item {x:52;y:658;width:168;height:42
+        Rectangle {anchors.fill:parent;radius:10;color:!chrome.player.menuOpened && chrome.player.zone==='content' ? '#f5f5f7' : chrome.player.menuName==='episodes' || chrome.player.menuName==='seasons' ? '#28ffffff' : 'transparent'}
+        Icon {x:12;y:11;width:20;height:20;name:'list-video';ink:!chrome.player.menuOpened && chrome.player.zone==='content' ? '#151519' : 'white'}
+        Text {x:42;y:8;text:'Épisodes';color:!chrome.player.menuOpened && chrome.player.zone==='content' ? '#151519' : '#f5f5f7';font.family:chrome.family;font.pixelSize:20;font.weight:Font.DemiBold}
+        MouseArea {anchors.fill:parent;onClicked:chrome.player.openMenu('episodes')}
+    }
+    Text {x:238;y:666;width:750;text:{var c=chrome.player.current && chrome.player.current.media;return c && c.episodes>0 ? c.episodes+' épisodes' : '';}
+        color:'#a9a9b3';font.family:chrome.family;font.pixelSize:17}
 }

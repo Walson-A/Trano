@@ -1,0 +1,33 @@
+{
+  "releaseId": "hero-player-914ca56735ce",
+  "files": {
+    "ArtworkCache.qml": "c90bc53b277c8ec940d4c8f9a2e8b2bb35904b395a5707df5b411602475500b5",
+    "bold.ttf": "6f66a554d96e334b06736faf8f9421485160ee295d133eb3ec422121f6749059",
+    "DetailView.qml": "a43866c7ef652b0f03c086ae03ca1015fc3241f329bf16469e36f3e65e88cf88",
+    "EpisodeArtworkCache.qml": "2513a59b7afc5a9b41dc38d16bc981d6a149f980950ca3bd6c8ba840d56e6bf7",
+    "EpisodePlayer.qml": "b29be1c2d0167ab1eb5357f28fdf0350bb906246dc73f18934e6f91d66c5b910",
+    "FocusCard.qml": "8acaa6db56fa57e0da8d646e2f09126d78514cadc3a6066843aa2fbdca54e850",
+    "FONT-LICENSE.txt": "be5f632588774077cbb19a8d3fd788fbc7861af041f4e7165eae5822b11392b3",
+    "Hero.qml": "a51c532302228ea401e895041159c0d49d6102e669045d5823278c5e25e3557e",
+    "HeroArtwork.qml": "125b87912386feead4cd6644c9eb9b6bea47d470bf60de1e2cfa3d7141bf0253",
+    "HeroButton.qml": "96d8fbfd428da49c92b7c35687ec0c6bd0266803c624e6d9ad2fece280df8207",
+    "ICON-LICENSE.txt": "668dcc52803480e0a026b31140a4cae668772663cd764e5991d252eef03f98db",
+    "Icon.qml": "66146dc2d22fb158ea0b087e14a704b46f0acc4d37787098bc8435241960f235",
+    "live.qml": "85a509ea8fdc32ec4e84e5955704ac489fa7f08ec18d5f34416e3e71ee2d0e7d",
+    "manifest.json": "6fc38b9dbfc3511817e84a1fc01ec57c808b65fc62a50ae429ee33d9526e4c85",
+    "MediaRow.qml": "911bfc157aafe95eee78377439b1f9d243682265ada764b4eaad68e5754404c1",
+    "Motion.js": "40e818a9c7579bdd41ff317e7f00cdd8c5752ade926700e24efc61add72a89ad",
+    "PlayerChoice.qml": "6416db10152bb71caf918c5640f32b44cf61c7502b030b50228f4a95b3d2aad7",
+    "PlayerControls.qml": "4341c1fc34aca14df537d1682608e8440842e06b30956e55c88da1441ecf0fc5",
+    "PlayerEpisodes.qml": "345a91dba6c690ba11bd8bfd31c5edf0486d532c4fcd4f89cb585b4b059f10d4",
+    "PlayerMenu.qml": "99ea633a60d5012a78a8808762c93364b31b49ec88c410f909e199561cab4642",
+    "PlayerSetting.qml": "f6411b657fa3f5d8546b8e55cba645e99f12146a08426d6fca67607744b7ddb8",
+    "ProfileView.qml": "6d401b413ec57447d6e0d43f7c0e4249b3775fc654af25218dc9a698b7f3be43",
+    "qmldir": "33d11b1fc2b83ea68c253e1afd867212bd32f5bc8fef97bddcee6c1fcb4bc59c",
+    "regular.ttf": "582e91dd4385855528f8bff0902a34d0924722ecc7ec43a40ede337214a8016b",
+    "SearchView.qml": "182489e2f57cf3b4f02427d1f081ead9958d70bbe67aa83e371df53e09653a0d",
+    "Trailer.qml": "36a05effae9dbb9f885bd7094bb0dd62e60949465feb89533f6012279eac42d2",
+    "TvNavigation.qml": "d8353261a59f401e3ed893579c08658b914d921009d4bbf518528eefd16ea347",
+    "TvSession.qml": "35865d150bb41128215b783422a06395013e29fcc8977a82d68b17e88c212f77"
+  }
+}

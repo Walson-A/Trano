@@ -17,6 +17,8 @@ FocusScope {
     property bool reducedMotion:false
     property string zone:'surface'
     property int controlIndex:0
+    property string menuOrigin:'actions'
+    property int errorIndex:0
     property bool wantsPlaying:false
     property bool restoreAfterSeek:false
     property bool retrying:false
@@ -36,7 +38,8 @@ FocusScope {
     function clock(ms){var s=Math.floor(Math.max(0,ms)/1000);return Math.floor(s/60)+':'+('0'+s%60).slice(-2);}
     function report(state){if(started && media.duration>0)progress({position_ms:media.position,duration_ms:media.duration,state:state});}
     function play(url,desiredPlaying){
-        resumed=false;started=false;ended=false;failure='';wantsPlaying=desiredPlaying!==false;restoreAfterSeek=false;zone='surface';seekTarget=-1;proposedMs=-1;menu.revision++;menu.kind='';menu.message='';media.source=url;media.play();reveal();forceActiveFocus();
+        var returnZone=menu.opened ? menuOrigin : 'surface';
+        resumed=false;started=false;ended=false;failure='';errorIndex=0;wantsPlaying=desiredPlaying!==false;restoreAfterSeek=false;zone=returnZone;seekTarget=-1;proposedMs=-1;menu.revision++;menu.kind='';menu.message='';media.source=url;media.play();reveal();forceActiveFocus();
     }
     function retire(){
         report('stopped');started=false;wantsPlaying=false;restoreAfterSeek=false;retrying=false;proposedMs=-1;seekTarget=-1;media.stop();media.source='';
@@ -49,8 +52,8 @@ FocusScope {
         wantsPlaying=!wantsPlaying;if(wantsPlaying)media.play();else media.pause();
         console.info('ATLAS_TV_PLAY_INTENT',wantsPlaying,media.playbackState);reveal();
     }
-    function openMenu(name){if(changing || failure)return;proposedMs=-1;zone='actions';controlIndex=Math.max(0,['episodes','source','version','quality'].indexOf(name));menu.open(name);reveal();}
-    function activateControl(){openMenu(['episodes','source','version','quality'][controlIndex]);}
+    function openMenu(name){if(changing)return;proposedMs=-1;menuOrigin=name==='episodes' ? 'content' : 'actions';zone=menuOrigin;if(name!=='episodes')controlIndex=Math.max(0,['version','source','quality'].indexOf(name));menu.open(name);reveal();}
+    function activateControl(){openMenu(['version','source','quality'][controlIndex]);}
     function propose(delta){
         if(media.seekable && started && media.duration>0){proposedMs=Math.max(0,Math.min(media.duration-1000,(proposedMs>=0 ? proposedMs : media.position)+delta));zone='seek';}
         reveal();
@@ -86,37 +89,54 @@ FocusScope {
     Loader {anchors.fill:parent;active:!!String(media.source);sourceComponent:Component {
         VideoOutput {objectName:'episodeVideoOutput';anchors.fill:parent;source:media;fillMode:VideoOutput.PreserveAspectFit}
     }}
-    PlayerControls {anchors.fill:parent;player:parent;family:player.family;reducedMotion:player.reducedMotion;visible:!player.failure && (menu.opened || player.controlsVisible || !player.playing)}
-    Item {anchors.centerIn:parent;width:88;height:88;visible:player.started && !player.playing && !player.failure && !menu.opened
-        Rectangle {anchors.fill:parent;radius:44;color:'#78000000'}
-        Icon {anchors.centerIn:parent;width:40;height:40;name:'play'}
+    PlayerControls {anchors.fill:parent;player:parent;family:player.family;reducedMotion:player.reducedMotion;visible:menu.opened || player.controlsVisible}
+    Item {anchors.centerIn:parent;width:80;height:80;visible:player.controlsVisible && player.started && !player.playing && !player.failure && !menu.opened
+        Rectangle {anchors.fill:parent;radius:40;color:'#a5202025';border.color:'#25ffffff'}
+        Icon {anchors.centerIn:parent;width:32;height:32;name:'play'}
     }
-    PlayerMenu {id:menu;anchors.fill:parent;current:player.current;transport:player.transport;family:player.family;busy:player.changing || player.retrying
+    PlayerMenu {id:menu;anchors.fill:parent;current:player.current;transport:player.transport;family:player.family;busy:player.changing || player.retrying;positionMs:player.positionMs;durationMs:player.durationMs
         onChangeRequested:player.changeRequested(media,target,choice)
         onCancelRequested:player.cancelChangeRequested()
-        onDismissed:{player.zone='actions';player.reveal();player.forceActiveFocus();}
+        onDismissed:{player.zone=player.menuOrigin;player.reveal();player.forceActiveFocus();}
     }
-    function changeFailed(message){retrying=false;menu.message=message;reveal();}
-    Text {anchors.centerIn:parent;width:1000;horizontalAlignment:Text.AlignHCenter;wrapMode:Text.WordWrap;text:player.failure || (player.ended ? 'Épisode terminé' : !player.started ? 'Chargement…' : '');color:'white';font.family:player.family;font.pixelSize:26}
-    HeroButton {anchors.horizontalCenter:parent.horizontalCenter;y:parent.height/2+58;width:240;label:player.retrying || player.changing ? 'Préparation…' : 'Réessayer';family:player.family;visible:!!player.failure;focused:true;onActivated:if(!player.retrying && !player.changing)player.retryRequested()}
+    function changeFailed(message){retrying=false;menu.message=message;menu.changeError=true;reveal();}
+    Text {anchors.centerIn:parent;width:1000;horizontalAlignment:Text.AlignHCenter;wrapMode:Text.WordWrap;text:!player.failure && !menu.opened ? (player.ended ? 'Épisode terminé' : !player.started ? 'Chargement…' : '') : '';color:'white';font.family:player.family;font.pixelSize:26}
+    Rectangle {x:344;y:238;width:592;height:224;radius:14;color:'#ee1b1c21';border.color:'#28ffffff';visible:!!player.failure && !menu.opened
+        Text {x:28;y:26;text:'La lecture s’est interrompue';color:'white';font.family:player.family;font.pixelSize:27;font.weight:Font.DemiBold}
+        Text {x:28;y:76;text:'Ta position est conservée à '+player.clock(player.positionMs)+'.';color:'#c6c6ce';font.family:player.family;font.pixelSize:20}
+        Row {x:20;y:142;spacing:12
+            Repeater {model:['Réessayer','Changer de source']
+                Rectangle {width:index===0 ? 176 : 344;height:56;radius:10;color:player.errorIndex===index ? '#f5f5f7' : '#20ffffff'
+                    Text {anchors.centerIn:parent;text:player.retrying || player.changing ? 'Préparation…' : modelData;color:player.errorIndex===index ? '#151519' : 'white';font.family:player.family;font.pixelSize:21;font.weight:Font.DemiBold}
+                    MouseArea {anchors.fill:parent;onClicked:{player.errorIndex=index;if(index===1)player.openMenu('source');else if(!player.retrying && !player.changing)player.retryRequested();}}
+                }
+            }
+        }
+    }
     Timer {interval:250;running:player.restoreAfterSeek && player.wantsPlaying && media.playbackState===MediaPlayer.PausedState && media.status===MediaPlayer.Buffered;onTriggered:{player.restoreAfterSeek=false;media.play();}}
     Timer {interval:15000;repeat:true;running:player.started && media.playbackState===MediaPlayer.PlayingState;onTriggered:player.report('playing')}
     Timer {id:hide;interval:2500;onTriggered:if(player.playing && player.zone==='surface' && !menu.opened)player.controlsVisible=false}
     Keys.onPressed:{
+        if((event.key===Qt.Key_Back || event.key===Qt.Key_Escape) && event.isAutoRepeat){event.accepted=true;return;}
         if(menu.opened){menu.key(event.key);event.accepted=true;return;}
         if(event.key===Qt.Key_Back || event.key===Qt.Key_Escape){
             if(player.changing || player.retrying){cancelChangeRequested();retrying=false;}
             else if(proposedMs>=0){proposedMs=-1;zone='surface';reveal();}
-            else if(zone!=='surface'){zone='surface';reveal();}else close();
+            else if(controlsVisible && !failure){controlsVisible=false;zone='surface';hide.stop();}else close();
+        }else if(failure){
+            if(event.key===Qt.Key_Left || event.key===Qt.Key_Right)errorIndex=event.key===Qt.Key_Left ? 0 : 1;
+            else if(event.key===Qt.Key_Return || event.key===Qt.Key_Enter || event.key===Qt.Key_Select){if(errorIndex===1)openMenu('source');else toggle();}
+        }else if(!controlsVisible && (event.key===Qt.Key_Right || event.key===Qt.Key_Left || event.key===Qt.Key_Up || event.key===Qt.Key_Down)){
+            zone='seek';reveal();
         }else if(event.key===Qt.Key_Return || event.key===Qt.Key_Enter || event.key===Qt.Key_Select){
-            if(failure)toggle();else if(zone==='actions')activateControl();else if(zone==='seek')commitSeek();else toggle();
+            if(zone==='actions')activateControl();else if(zone==='content')openMenu('episodes');else if(zone==='seek')commitSeek();else toggle();
         }else if(event.key===Qt.Key_Right || event.key===Qt.Key_Left){
             var delta=event.key===Qt.Key_Right ? 1 : -1;
-            if(zone==='actions')controlIndex=Math.max(0,Math.min(3,controlIndex+delta));else propose(delta*10000);reveal();
+            if(zone==='actions')controlIndex=Math.max(0,Math.min(2,controlIndex+delta));else if(zone!=='content')propose(delta*10000);reveal();
         }else if(event.key===Qt.Key_Up || event.key===Qt.Key_Down){
             var up=event.key===Qt.Key_Up;
             if(proposedMs>=0)proposedMs=-1;
-            if(zone==='surface')zone=up ? 'actions' : 'seek';else if(zone==='seek')zone=up ? 'actions' : 'surface';else zone='seek';reveal();
+            if(up)zone=zone==='content' ? 'seek' : 'actions';else zone=zone==='actions' ? 'seek' : 'content';reveal();
         }else return;
         event.accepted=true;
     }

@@ -19,6 +19,7 @@ parser.add_argument('--bold',type=pathlib.Path,required=True)
 parser.add_argument('--evidence',type=pathlib.Path,required=True)
 parser.add_argument('--history',type=pathlib.Path,help='Explicit PC history fixture for profile/navigation checks')
 parser.add_argument('--detail-assets',type=pathlib.Path,help='Exact canonical image downloads with sources.json; never distributed')
+parser.add_argument('--episode-fixture',type=pathlib.Path,help='Exact public episode images for the full-host bench only')
 parser.add_argument('--video-frame',type=pathlib.Path,help='Explicit still used behind the mock decoder for contrast review')
 args=parser.parse_args()
 sys.path.insert(0,str(args.qt_path.resolve()))
@@ -37,6 +38,11 @@ history_path=args.history or args.snapshot.parent/'historique.json'
 history=json.loads(history_path.read_text(encoding='utf-8-sig'))
 details={}
 episode_sets={}
+episode_images={}
+if args.episode_fixture:
+    images=json.loads(args.episode_fixture.read_text(encoding='utf-8'))
+    episode_images[str(images['anilist_id'])]={str(row['numero']):(args.episode_fixture.parent/row['vignette']).resolve().as_uri() for row in images['episodes']}
+
 detail_images=json.loads((args.detail_assets/'sources.json').read_text(encoding='utf-8')) if args.detail_assets else {}
 for identity in [154587,182255]:
     details[str(identity)]=json.loads((args.snapshot.parent/('fiche-'+str(identity)+'.json')).read_text(encoding='utf-8-sig'))
@@ -129,6 +135,7 @@ Item {
  property var pendingDetails:[]
  property bool failNextPlayback:false
  property bool failNextVariants:false
+ property bool wrongEpisodeArtwork:false
  property int mediaHeadStatus:200
  signal homeLoaded()
  signal unavailable()
@@ -137,6 +144,7 @@ Item {
  function api(path,body,timeout,done) {
   apiCalled(path,body);
   if(path==='/tv/v1/previews') { pendingPreview=done; return; }
+  if(path==='/tv/v1/artworks' && body.kind==='episode') {var image=benchmarkEpisodeImages[String(body.anilist_id)],url=image && image[String(body.episode)];Qt.callLater(function(){done(url ? 200 : 404,{anilist_id:body.anilist_id,episode:wrongEpisodeArtwork ? body.episode+1 : body.episode,kind:'episode',path:url || '',expires_at:Date.now()/1000+900});});return;}
   if(path==='/tv/v1/artworks') { pendingArtworks=pendingArtworks.concat([done]); return; }
   if(path==='/tv/v1/catalog/search') { pendingSearches=pendingSearches.concat([done]); return; }
   if(path==='/tv/v1/catalog/history') { Qt.callLater(function(){done(200,benchmarkHistory);});return; }
@@ -150,7 +158,7 @@ Item {
  }
  function answerPlayback(body,done){playbackCount++;done(200,{id:'aaaaaaaa-aaaa-aaaa-aaaa-'+('000000000000'+playbackCount).slice(-12),anilist_id:body.anilist_id,episode:body.episode,lang:body.lang,source:body.source || 'voiranime',reader:body.reader_id==='f'.repeat(64) ? 'YourUpload' : 'Mail.ru FHD1',reader_id:body.reader_id || 'e'.repeat(64),variant_id:body.variant_id || null,quality:body.variant_id ? {label:body.variant_id==='1'.repeat(64) ? '360p' : '1080p'} : null,stream:{path:'/tv/v1/episode-media/'+'a'.repeat(64)},resume:{position_ms:120000}});}
  function finishPlayback(index){var pending=pendingPlaybacks[index];answerPlayback(pending.body,pending.done);}
- function mediaUrl(path,kind) { return apiOrigin+path; }
+ function mediaUrl(path,kind) { return kind==='artwork' && path.indexOf('file:')===0 ? path : apiOrigin+path; }
  function inspectEpisode(path,done) {var status=mediaHeadStatus;Qt.callLater(function(){done(status,null);});}
  function finishPreview(id,key) { var done=pendingPreview; pendingPreview=null; done(200,{kind:'trailer',anilist_id:id,youtube_id:key,path:'/tv/v1/preview-media/'+'b'.repeat(64),expires_at:Date.now()/1000+900}); }
  function finishArtwork(index,id,kind) { pendingArtworks[index](200,{anilist_id:id,kind:kind,path:'/tv/v1/artwork-media/'+'c'.repeat(64),expires_at:Date.now()/1000+900}); }
@@ -163,12 +171,21 @@ Item {
     engine.rootContext().setContextProperty('benchmarkHistory',history)
     engine.rootContext().setContextProperty('benchmarkDetails',details)
     engine.rootContext().setContextProperty('benchmarkEpisodes',episode_sets)
+    engine.rootContext().setContextProperty('benchmarkEpisodeImages',episode_images)
     engine.rootContext().setContextProperty('benchmarkVideoFrame',args.video_frame.resolve().as_uri() if args.video_frame else '')
     engine.load(QUrl.fromLocalFile(str(bundle/'live.qml')))
     assert engine.rootObjects(),messages
     window=engine.rootObjects()[0]
     hero=window.findChild(QObject,'atlasHero');session=window.findChild(QObject,'tvSession');screen=window.findChild(QObject,'tvScreen')
     calls=[];session.apiCalled.connect(lambda path,body:calls.append((path,body.toVariant())))
+    def visual_items(item):
+        result=[]
+        for child in item.childItems():
+            result.append(child)
+            result.extend(visual_items(child))
+        return result
+    def episode_thumbnails():
+        return [item for item in visual_items(window.contentItem()) if item.objectName()=='episodeThumbnail']
     def spin(predicate):
         deadline=time.monotonic()+3
         while not predicate() and time.monotonic()<deadline:QTest.qWait(25)
@@ -207,8 +224,12 @@ Item {
             assert window.grabWindow().save(str(args.evidence/'episode-controls.png'))
             QTest.keyClick(window,Qt.Key_Return) # pause
             QTest.qWait(350);assert player.property('playing') is False, 'A finished seek must not override a later explicit pause'
+            QTest.keyClick(window,Qt.Key_Back)
+            assert not player.property('controlsVisible') and screen.property('playbackId') and not player.property('playing'), 'Back also hides the HUD while paused'
+            QTest.keyClick(window,Qt.Key_Right)
+            assert player.property('controlsVisible') and player.property('proposedMs')==-1, 'First arrow reveals controls without seeking'
             QTest.keyClick(window,Qt.Key_Right);QTest.keyClick(window,Qt.Key_Right)
-            assert player.property('positionMs')==120000 and player.property('proposedMs')==140000, 'Timeline is a proposal until OK'
+            assert player.property('positionMs')==120000 and player.property('proposedMs')==140000, {k:player.property(k) for k in ['positionMs','proposedMs','zone','controlsVisible','started','failure','menuOpened']}
             assert window.grabWindow().save(str(args.evidence/'player-timeline.png'))
             QTest.keyClick(window,Qt.Key_Back)
             assert player.property('positionMs')==120000 and player.property('proposedMs')==-1, 'Back cancels seek without changing media'
@@ -238,6 +259,7 @@ Item {
             QTest.keyClick(window,Qt.Key_Down);QTest.keyClick(window,Qt.Key_Return)
             spin(lambda:screen.property('playbackId')!=old_id and player.property('playing'))
             assert player.property('positionMs')==150000 and screen.property('pendingPlayback').toVariant()['qualityLabel']=='360p'
+            assert player.property('zone')=='actions' and player.property('controlIndex')==2, 'A completed quality change restores its trigger focus'
             # A quality switch made while paused preserves both time and intent.
             player.setProperty('zone','surface');QTest.keyClick(window,Qt.Key_Return)
             assert not player.property('wantsPlaying')
@@ -255,6 +277,13 @@ Item {
                 retry=[body for path,body in calls if path=='/tv/v1/playbacks'][-1]
                 assert retry['source']=='voiranime' and retry['reader_id']=='e'*64 and retry['variant_id']=='2'*64 and retry['force_refresh'] is True and retry['exclude_readers']==[], retry
             spin(lambda:player.property('playing'))
+            window.findChild(QObject,'episodeMedia').error.emit(1)
+            QTest.keyClick(window,Qt.Key_Right);QTest.keyClick(window,Qt.Key_Return)
+            menu=window.findChild(QObject,'playerMenu');spin(lambda:menu.property('state')=='ready' and menu.property('kind')=='source')
+            assert player.property('failure') and window.findChild(QObject,'episodeVideoOutput'), 'Another source is reachable without tearing down the failed session'
+            assert window.grabWindow().save(str(args.evidence/'player-error-source.png'))
+            QTest.keyClick(window,Qt.Key_Back);QTest.keyClick(window,Qt.Key_Left);QTest.keyClick(window,Qt.Key_Return)
+            spin(lambda:player.property('playing') and player.property('resumed') and not player.property('restoreAfterSeek') and not player.property('failure'))
             player.openMenu('source');spin(lambda:menu.property('state')=='ready' and len(menu.property('sources').toVariant())==3)
             source_entries=menu.property('entries').toVariant()
             menu.setProperty('index',next(i for i,e in enumerate(source_entries) if e['readerId']=='f'*64))
@@ -263,6 +292,7 @@ Item {
             QTest.keyClick(window,Qt.Key_Return);spin(lambda:not screen.property('resolving'))
             assert screen.property('playbackId')==old_id and player.property('playing') and menu.property('opened')
             assert menu.property('message')=='Ce flux est indisponible pour le moment.'
+            QTest.keyClick(window,Qt.Key_Return) # acknowledge failure, keep choices
             QTest.keyClick(window,Qt.Key_Return);spin(lambda:screen.property('playbackId')!=old_id and player.property('playing'))
             request=[body for path,body in calls if path=='/tv/v1/playbacks'][-1]
             assert request['source']=='anime-sama' and request['reader_id']=='f'*64 and 'variant_id' not in request
@@ -279,6 +309,8 @@ Item {
             assert menu.property('state')=='error' and not menu.property('entries').toVariant() and len(calls)==before
             QTest.keyClick(window,Qt.Key_Back);session.setProperty('variantsEnabled',True)
             player.setProperty('zone','surface');QTest.keyClick(window,Qt.Key_Back)
+            assert screen.property('playbackId') and not player.property('controlsVisible'), 'First Back hides controls without leaving playback'
+            QTest.keyClick(window,Qt.Key_Back)
             QTimer.singleShot(400,returned)
         except Exception as error: messages.append(traceback.format_exc());app.exit(1)
     def returned():
@@ -417,7 +449,27 @@ Item {
             menu=window.findChild(QObject,'playerMenu');old_id=screen.property('playbackId')
             episode_player.openMenu('episodes');spin(lambda:menu.property('state')=='ready' and menu.property('total')==28)
             assert len(menu.property('entries').toVariant())==28
+            if args.episode_fixture:
+                session.setProperty('artworkEnabled',True);menu.warmEpisodes()
+                try:
+                    spin(lambda:any(image.property('status')==1 for image in episode_thumbnails()))
+                except AssertionError:
+                    cache=window.findChild(QObject,'episodeArtworkCache')
+                    raise AssertionError({'images':[(str(image.property('source').toString()),image.property('status')) for image in episode_thumbnails()], 'cache':cache.property('sources').toVariant(), 'entries':cache.property('entries').toVariant(),'active':cache.property('active'),'calls':[body for path,body in calls if path=='/tv/v1/artworks' and body.get('kind')=='episode']})
+            if args.episode_fixture:
+                cache=window.findChild(QObject,'episodeArtworkCache')
+                session.setProperty('wrongEpisodeArtwork',True);cache.request(154587,20)
+                spin(lambda:cache.property('active')==0)
+                assert '154587:20' not in cache.property('sources').toVariant(), 'A ticket for the wrong episode is rejected'
+                session.setProperty('wrongEpisodeArtwork',False)
             assert window.grabWindow().save(str(args.evidence/'player-episodes.png'))
+            assert menu.property('index')==2, 'Episode selector opens on the current episode'
+            QTest.keyClick(window,Qt.Key_Right)
+            assert screen.property('playbackId')==old_id and menu.property('index')==3
+            QTest.keyClick(window,Qt.Key_Up);QTest.keyClick(window,Qt.Key_Right);QTest.keyClick(window,Qt.Key_Return)
+            spin(lambda:menu.property('state')=='ready' and menu.property('index')==2)
+            assert screen.property('playbackId')==old_id, 'Jump to current does not restart it'
+            assert window.grabWindow().save(str(args.evidence/'player-episodes-current.png'))
             before_playbacks=len([1 for path,body in calls if path=='/tv/v1/playbacks'])
             QTest.keyClick(window,Qt.Key_Return) # current episode just closes the overlay
             assert not menu.property('opened') and screen.property('playbackId')==old_id
@@ -456,6 +508,8 @@ Item {
             window.findChild(QObject,'episodeMedia').error.emit(1);QTest.keyClick(window,Qt.Key_Return);QTest.qWait(200)
             assert [body for path,body in calls if path=='/tv/v1/playbacks'][-1]['exclude_readers']==previous[1:]+['e'*64], 'An expired ticket must not add exclusions'
             session.setProperty('mediaHeadStatus',200)
+            QTest.keyClick(window,Qt.Key_Back);QTest.qWait(50)
+            assert screen.property('playbackId') and not episode_player.property('controlsVisible'), 'Back first masks the HUD'
             QTest.keyClick(window,Qt.Key_Back);QTest.qWait(100)
             assert screen.property('panel')=='detail' and detail.property('activeFocus') and detail.property('episodeIndex')==2
             session.setProperty('failNextPlayback',True)
@@ -494,7 +548,7 @@ Item {
             QTest.keyClick(window,Qt.Key_Back);QTest.keyClick(window,Qt.Key_Back);QTest.qWait(80)
             later_bad=[m for m in messages if any(s in m for s in ['ReferenceError','TypeError','Unable to assign','Cannot assign'])]
             assert not later_bad,later_bad
-            (args.evidence/'verification.json').write_text(json.dumps({'passed':True,'scope':'real QML host/UI with fake API and fake decoder; no native playback claim','canonicalEpisode':13,'tvPlayer':{'anchoredMenusKeepChrome':True,'proposedTimelineUntilConfirmed':True,'cancelSeekKeepsPosition':True,'cancelResolutionIgnoresLateResponse':True,'strictSourceReaderVariant':True,'strictRetry401And200KeepsChoice':True,'failedChangeKeepsOldVideo':True,'pausedQualityAndVersionKeepPositionAndIntent':True,'episodesOverlayKeepsVideoAndSeasonBrowsing':True,'missingCapabilityUnavailable':True,'perSessionProgressSequence':True},'lang':'vf','defaultSoundOnAndLabelled':True,'infoSelectionPreserved':True,'search':{'remoteKeyboard':True,'staleIgnored':True,'selectionAndBack':True},'profile':{'publicProfileWithoutOAuth':True,'statsScaleChecked':True,'selectionAndBack':True},'lateTrailerDoesNotChangeSelection':True,'silentGainZero':True,'bannerErrorUsesPoster':True,'artworkQueue':{'maxConcurrent':2,'identityChecked':True,'deduplicated':True,'capabilityRequired':True,'warmWithoutResume':True},'events':events},indent=2),encoding='utf-8')
+            (args.evidence/'verification.json').write_text(json.dumps({'passed':True,'scope':'real QML host/UI with fake API and fake decoder; no native playback claim','canonicalEpisode':13,'tvPlayer':{'anchoredMenusKeepChrome':True,'proposedTimelineUntilConfirmed':True,'cancelSeekKeepsPosition':True,'cancelResolutionIgnoresLateResponse':True,'strictSourceReaderVariant':True,'strictRetry401And200KeepsChoice':True,'failedChangeKeepsOldVideo':True,'pausedQualityAndVersionKeepPositionAndIntent':True,'episodesOverlayKeepsVideoAndSeasonBrowsing':True,'firstBackHidesHudWithoutClosing':True,'episodeJumpPreservesCurrentPlayback':True,'sourceReachableAfterNativeFailure':True,'episodeArtworkIdentityChecked':True,'missingCapabilityUnavailable':True,'perSessionProgressSequence':True},'lang':'vf','defaultSoundOnAndLabelled':True,'infoSelectionPreserved':True,'search':{'remoteKeyboard':True,'staleIgnored':True,'selectionAndBack':True},'profile':{'publicProfileWithoutOAuth':True,'statsScaleChecked':True,'selectionAndBack':True},'lateTrailerDoesNotChangeSelection':True,'silentGainZero':True,'bannerErrorUsesPoster':True,'artworkQueue':{'maxConcurrent':2,'identityChecked':True,'deduplicated':True,'capabilityRequired':True,'warmWithoutResume':True},'events':events},indent=2),encoding='utf-8')
             app.quit()
         except Exception as error: messages.append(traceback.format_exc());app.exit(1)
     QTimer.singleShot(600,check);QTimer.singleShot(25000,lambda:app.exit(2))

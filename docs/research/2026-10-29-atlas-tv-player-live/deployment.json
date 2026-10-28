@@ -1,0 +1,46 @@
+{
+  "releaseId": "hero-player-914ca56735ce",
+  "files": 28,
+  "publicAvailability": true,
+  "changedConfigKeys": [
+    "bundleDir",
+    "files",
+    "releaseId"
+  ],
+  "serverSha256": "837a0035d128ae1a918e796c2d63bd828914fa82e9408f44d4d69a2ac057d7b7",
+  "backendCommit": "c43ffce04c413a14e64ee161e96b9b541fbe5af9",
+  "native": {
+    "state": "assets_requested",
+    "requested": [
+      "ArtworkCache.qml",
+      "DetailView.qml",
+      "EpisodeArtworkCache.qml",
+      "EpisodePlayer.qml",
+      "FocusCard.qml",
+      "Hero.qml",
+      "HeroArtwork.qml",
+      "HeroButton.qml",
+      "Icon.qml",
+      "MediaRow.qml",
+      "Motion.js",
+      "PlayerChoice.qml",
+      "PlayerControls.qml",
+      "PlayerEpisodes.qml",
+      "PlayerMenu.qml",
+      "PlayerSetting.qml",
+      "ProfileView.qml",
+      "SearchView.qml",
+      "Trailer.qml",
+      "TvNavigation.qml",
+      "TvSession.qml",
+      "bold.ttf",
+      "live.qml",
+      "manifest.json",
+      "qmldir",
+      "regular.ttf"
+    ],
+    "renderConfirmed": false
+  },
+  "staleReleaseRefused": true,
+  "engineRestartedByUiPublication": false
+}
