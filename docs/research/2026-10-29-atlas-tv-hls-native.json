@@ -1,6 +1,5 @@
 {
   "native": true,
-  "muted": true,
   "actual_component": "EpisodePlayer.qml",
   "sdk_accepted": true,
   "passed": true,
@@ -144,5 +143,7 @@
       "qmldir",
       "regular.ttf"
     ]
-  }
+  },
+  "mute_requested": true,
+  "muted_observed": null
 }
