@@ -49,10 +49,17 @@ artificielle, aucun classement personnel inventé.
   réduits. Aucun mouvement d’entrée décoratif ni changement de focus pendant
   qu’un utilisateur choisit encore ses critères.
 
-## Contrat backend préparé, non présenté comme livré
+## Contrat backend livré, interface encore en revue
 
-L’autre chat backend a confirmé le contrat suivant et réalise son lot séparé.
-Son état de déploiement n’est pas validé par ce document.
+Le lot backend séparé est déployé : engine `79d236cf5c8222a633f002996663cf56bbbf4a9a`,
+workflow `40794511318` réussi. La preuve a été relue dans le dépôt Atlas au commit
+documentaire `fcaf7fca3aa7a48f8b3cb26254347aa0babbf333`, fichier
+`docs/research/atlas-tv-catalogue-search-2026-10-29.md` et JSON associé.
+Elle consigne six requêtes HTTPS publiques, dont deux pages distinctes et les
+genres cumulés, douze refus de paramètres invalides, les contrôles d’accès et
+de révocation, la compatibilité RPC et une régression de lecture MP4 réussie.
+Ces vérifications sont celles du lot backend ; elles n’ont pas été répétées par
+le banc QML et ne constituent pas une validation native du nouvel écran.
 
 ```json
 POST /tv/v1/catalog/search
@@ -75,10 +82,10 @@ refuse un ancien résultat sans les métadonnées de pagination au lieu d’en
 fabriquer. Aucune personnalisation, aucun « masquer les vus » tant qu’une
 sémantique et une jointure correctes avant pagination ne sont pas disponibles.
 
-Avant publication : attendre le backend testé/déployé, contrôler le contrat
-vivant, raccorder le loader et le paquet, mettre à jour le test complet de
-SearchView puis refaire la revue sur Devialet. Le banc de ce lot ne remplace
-aucune de ces étapes.
+Avant publication : faire juger la proposition, raccorder le loader et le paquet
+au contrat vivant, mettre à jour le test complet de SearchView puis refaire la
+revue sur Devialet. Le backend ne bloque plus cette intégration. Le banc de ce
+lot ne remplace aucune de ces étapes et le paquet publié reste inchangé.
 
 ## Preuves et limites
 
