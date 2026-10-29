@@ -45,3 +45,9 @@ ci-dessus certifie ici le comportement natif observé.
 
 Résultat assaini : [2026-10-29-atlas-tv-hls-native.json](2026-10-29-atlas-tv-hls-native.json).
 Publication du raccord coordonnée avec la session front après ce feu vert.
+
+Comparaison visuelle du menu à 1280 × 720, dans le banc avec API et vidéo
+simulées : [MP4 historique](2026-10-29-atlas-tv-hls-legacy-quality.png),
+[qualités HLS négociées](2026-10-29-atlas-tv-hls-player-quality.png).
+Composition, actions, lisibilité et position du menu conservées. Ces captures
+ne sont pas des images du téléviseur ni une preuve de décodage.
