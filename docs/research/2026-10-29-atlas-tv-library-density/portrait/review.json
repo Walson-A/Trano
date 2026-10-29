@@ -1,0 +1,199 @@
+{
+  "checks": [
+    "entry browses catalog without a query",
+    "first catalog page renders 24 actual fixture cards",
+    "remote enters grid and targets next anime",
+    "Down scrolls catalog to the selected row",
+    "OK hands selected card to detail without playback",
+    "return from detail retains index and exact scroll",
+    "Up reaches filters from the first row",
+    "genre choice remains a draft until Apply",
+    "Back cancels genre draft without leaving Search",
+    "genre selection is capped at three with visible explanation",
+    "Apply sends canonical genres and resets pagination",
+    "filtered fixture page contains the requested genre",
+    "format combines with the applied genre",
+    "year is numeric and combines with existing criteria",
+    "status label sends the canonical diffusion enum",
+    "Back cancels title draft and returns to its trigger",
+    "remote keyboard submits a real title query",
+    "title query renders matching fixture cards",
+    "empty results remain empty without fallback titles",
+    "late catalog response cannot overwrite current criteria",
+    "end of grid reaches the real next page action",
+    "next page is distinct, not a repeated home subset",
+    "previous page restores its focused card",
+    "sort is a server request before pagination",
+    "network failure retains filters without substituting a home list",
+    "retry reuses current criteria",
+    "closed screen rejects an in-flight response",
+    "reopening interrupted request cannot leave a permanent loading state",
+    "Down reaches a short final row instead of skipping it",
+    "first column and viewport do not need an extra Left",
+    "reduced motion preserves directional navigation",
+    "QML runtime has no binding, asset or script errors: []"
+  ],
+  "captures": [
+    "00-before",
+    "00-current",
+    "01-explore",
+    "02-target",
+    "03-scroll",
+    "04-return",
+    "05-genres",
+    "06-filtered",
+    "07-format",
+    "08-combined",
+    "15-year",
+    "16-status",
+    "09-keyboard",
+    "10-title",
+    "14-empty",
+    "11-next-page",
+    "12-loading",
+    "13-error"
+  ],
+  "resolution": [
+    1280,
+    720
+  ],
+  "columns": 6,
+  "denseLayout": true,
+  "qtVersion": "5.15.2",
+  "data": "48 actual Atlas PC fixture cards assembled for UI review; NOT a live catalog ranking",
+  "network": false,
+  "published": false,
+  "nativeDecoder": false,
+  "nativeQa": false,
+  "apiCalls": [
+    {
+      "body": {
+        "page": 1
+      },
+      "path": "/tv/v1/catalog/search"
+    },
+    {
+      "body": {
+        "genres": [
+          "Fantasy"
+        ],
+        "page": 1
+      },
+      "path": "/tv/v1/catalog/search"
+    },
+    {
+      "body": {
+        "format": "MOVIE",
+        "genres": [
+          "Fantasy"
+        ],
+        "page": 1
+      },
+      "path": "/tv/v1/catalog/search"
+    },
+    {
+      "body": {
+        "annee": 2026.0,
+        "format": "MOVIE",
+        "genres": [
+          "Fantasy"
+        ],
+        "page": 1
+      },
+      "path": "/tv/v1/catalog/search"
+    },
+    {
+      "body": {
+        "annee": 2026.0,
+        "format": "MOVIE",
+        "genres": [
+          "Fantasy"
+        ],
+        "page": 1,
+        "statut": "FINISHED"
+      },
+      "path": "/tv/v1/catalog/search"
+    },
+    {
+      "body": {
+        "page": 1
+      },
+      "path": "/tv/v1/catalog/search"
+    },
+    {
+      "body": {
+        "page": 1,
+        "q": "zero"
+      },
+      "path": "/tv/v1/catalog/search"
+    },
+    {
+      "body": {
+        "page": 1,
+        "q": "zzzzzz"
+      },
+      "path": "/tv/v1/catalog/search"
+    },
+    {
+      "body": {
+        "page": 1,
+        "q": "mob"
+      },
+      "path": "/tv/v1/catalog/search"
+    },
+    {
+      "body": {
+        "page": 1,
+        "q": "eternity"
+      },
+      "path": "/tv/v1/catalog/search"
+    },
+    {
+      "body": {
+        "page": 1
+      },
+      "path": "/tv/v1/catalog/search"
+    },
+    {
+      "body": {
+        "page": 2
+      },
+      "path": "/tv/v1/catalog/search"
+    },
+    {
+      "body": {
+        "page": 1
+      },
+      "path": "/tv/v1/catalog/search"
+    },
+    {
+      "body": {
+        "page": 1,
+        "tri": "notes"
+      },
+      "path": "/tv/v1/catalog/search"
+    },
+    {
+      "body": {
+        "page": 1,
+        "tri": "notes"
+      },
+      "path": "/tv/v1/catalog/search"
+    },
+    {
+      "body": {
+        "page": 1,
+        "tri": "notes"
+      },
+      "path": "/tv/v1/catalog/search"
+    },
+    {
+      "body": {
+        "page": 1,
+        "tri": "notes"
+      },
+      "path": "/tv/v1/catalog/search"
+    }
+  ],
+  "qmlMessages": []
+}

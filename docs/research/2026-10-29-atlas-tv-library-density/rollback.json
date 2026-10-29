@@ -1,0 +1,11 @@
+{
+  "restoredRelease": "hero-discovery-6f378d98928e",
+  "rejectedRelease": "hero-discovery-0c63b10e2171",
+  "availabilityVerified": true,
+  "sdkAccepted": true,
+  "launchId": "547c4a41d1c7b20462e4351d3b736707",
+  "engineRestarted": false,
+  "readerChanged": false,
+  "renderConfirmed": false,
+  "reason": "user rejected small landscape cards and artwork framing; restore large portrait layout"
+}

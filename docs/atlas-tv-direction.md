@@ -1,5 +1,10 @@
 # Atlas sur la télévision : base réutilisable et premier parcours
 
+[Réception suivante : densité, bibliothèque et retour arrière](research/2026-10-29-atlas-tv-library-density.md).
+La passe12cartes a été rejetée et retirée ; le Player est revenu à6f378d98928e.
+Six grandes affiches verticales sont préparées au banc uniquement, sans nouvelle
+publication. Les routes TV d’écriture de liste/notes manquent encore.
+
 [Recherche / découverte publiée](research/2026-10-29-atlas-tv-discovery-live.md) :
 catalogue sans saisie obligatoire, critères cumulables, affiches à parcourir et
 aperçu du titre ciblé. Release hero-discovery-6f378d98928e disponible, SDK accepté,

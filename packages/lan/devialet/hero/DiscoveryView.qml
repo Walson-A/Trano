@@ -11,6 +11,9 @@ FocusScope {
     property var artworks
     property string family:'sans-serif'
     property bool reducedMotion:false
+    // Six large posters are opt-in for visual review, not enabled by the live host.
+    property bool denseLayout:false
+    readonly property int columns:denseLayout ? 6 : 4
     property bool opened:false
     property string avatar:''
     property string query:''
@@ -47,8 +50,8 @@ FocusScope {
     signal chosen(var cards,int index,string title)
     function open(){opened=true;forceActiveFocus();if(state==='idle' || state==='loading')search(false,requestedPage);}
     function close(){opened=false;overlay='';closed();}
-    function art(card,kind){if(!card)return '';var local=artworks && artworks.sources[String(card.anilist_id)];return local && (kind==='poster' ? local.poster : local.banner || local.card) || (kind==='poster' ? card.affiche : card.banniere || card.affiche) || '';}
-    function warm(){if(!opened || !artworks || !results.length)return;var first=Math.floor(resultIndex/4)*4;for(var i=first;i<Math.min(first+8,results.length);i++)artworks.request(results[i],'poster',i===resultIndex);artworks.request(currentCard,'banner',true);}
+    function art(card,kind){if(!card)return '';var local=artworks && artworks.sources[String(card.anilist_id)];return local && (kind==='poster' ? local.poster : local.banner || local.card || local.poster) || (kind==='poster' ? card.affiche : card.banniere || card.affiche) || '';}
+    function warm(){if(!opened || !artworks || !results.length)return;var first=Math.floor(resultIndex/columns)*columns;for(var i=first;i<Math.min(first+columns*2,results.length);i++)artworks.request(results[i],'poster',i===resultIndex);if(!denseLayout)artworks.request(currentCard,'banner',true);}
     function search(focusResults,nextPage){
         if(!opened || !transport)return;
         var turn=++generation,target=nextPage || 1;requestedPage=target;state='loading';
@@ -112,29 +115,29 @@ FocusScope {
         }
         HeroButton {width:128;height:48;label:'Effacer';family:view.family;flat:true;opacity:Catalog.count(view.filters) || view.query ? 1 : 0.35;focused:view.zone==='filters' && view.filterIndex===5 && !view.overlay;reducedMotion:view.reducedMotion;onActivated:{view.zone='filters';view.filterIndex=5;view.activate();}}
     }
-    Text {x:66;y:277;width:810;text:view.state==='loading' ? 'Recherche en cours…' : view.state==='error' ? 'Le catalogue ne répond pas.' : view.query ? 'Résultats pour « '+view.query+' »' : view.filters.genres.length ? view.valueLabel(0) : 'À explorer';color:'#b9bdc7';font.family:view.family;font.pixelSize:18;textFormat:Text.PlainText;elide:Text.ElideRight}
-    GridView {id:grid;objectName:'discoveryGrid';x:56;y:310;width:840;height:350;cellWidth:210;cellHeight:336;clip:true;model:view.results;currentIndex:view.resultIndex;interactive:false;keyNavigationEnabled:false;visible:view.state!=='error';opacity:view.state==='loading' ? 0.3 : 1
+    Text {x:66;y:277;width:view.denseLayout ? 1152 : 810;text:view.state==='loading' ? 'Recherche en cours…' : view.state==='error' ? 'Le catalogue ne répond pas.' : view.denseLayout && view.zone==='results' && view.currentCard ? view.currentCard.titre+' · '+Catalog.meta(view.currentCard) : view.query ? 'Résultats pour « '+view.query+' »' : view.filters.genres.length ? view.valueLabel(0) : 'À explorer';color:'#b9bdc7';font.family:view.family;font.pixelSize:18;textFormat:Text.PlainText;elide:Text.ElideRight}
+    GridView {id:grid;objectName:'discoveryGrid';x:56;y:310;width:view.denseLayout ? 1168 : 840;height:350;cellWidth:width/view.columns;cellHeight:view.denseLayout ? 310 : 336;clip:true;model:view.results;currentIndex:view.resultIndex;interactive:false;keyNavigationEnabled:false;visible:view.state!=='error';opacity:view.state==='loading' ? 0.3 : 1
         onCurrentIndexChanged:if(currentIndex>=0 && currentIndex<count)positionViewAtIndex(currentIndex,GridView.Beginning)
-        delegate:Item {id:tile;width:210;height:336
+        delegate:Item {id:tile;width:grid.cellWidth;height:grid.cellHeight
             property bool targeted:view.zone==='results' && view.resultIndex===index && !view.overlay
             property bool chosen:view.resultIndex===index
-            Item {x:8;y:7;width:190;height:300;scale:tile.targeted ? 1.025 : 1;transformOrigin:Item.Top
+            Item {x:8;y:7;width:view.denseLayout ? 174 : 190;height:300;scale:tile.targeted ? 1.025 : 1;transformOrigin:Item.Top
                 Behavior on scale {NumberAnimation {duration:view.reducedMotion ? 0 : Motion.ms('focus');easing.type:Easing.OutCubic}}
-                Rectangle {id:frame;width:190;height:264;radius:9;color:'#1b1e26';border.width:tile.targeted ? 3 : tile.chosen ? 1 : 0;border.color:tile.targeted ? 'white' : '#848994'}
-                Image {id:poster;x:4;y:4;width:182;height:256;source:view.art(modelData,'poster');fillMode:Image.PreserveAspectCrop;asynchronous:true;sourceSize.width:380;visible:false;onStatusChanged:if(status===Image.Error && view.artworks)view.artworks.request(modelData,'poster',true)}
-                OpacityMask {x:4;y:4;width:182;height:256;source:poster;maskSource:Rectangle {width:182;height:256;radius:6}}
+                Rectangle {id:frame;width:parent.width;height:view.denseLayout ? 242 : 264;radius:9;color:'#1b1e26';border.width:tile.targeted ? 3 : tile.chosen ? 1 : 0;border.color:tile.targeted ? 'white' : '#848994'}
+                Image {id:poster;objectName:'discoveryArtwork';x:4;y:4;width:frame.width-8;height:frame.height-8;source:view.art(modelData,'poster');fillMode:Image.PreserveAspectCrop;asynchronous:true;sourceSize.width:380;visible:false;onStatusChanged:if(status===Image.Error && view.artworks)view.artworks.request(modelData,'poster',true)}
+                OpacityMask {x:4;y:4;width:frame.width-8;height:frame.height-8;source:poster;maskSource:Rectangle {width:poster.width;height:poster.height;radius:6}}
                 Text {anchors.centerIn:frame;width:155;text:poster.status===Image.Error ? 'Image indisponible' : 'Atlas';visible:poster.status!==Image.Ready;color:'#727783';font.family:view.family;font.pixelSize:18;horizontalAlignment:Text.AlignHCenter;wrapMode:Text.WordWrap}
-                Text {y:274;width:190;height:46;text:modelData.titre || '';textFormat:Text.PlainText;wrapMode:Text.WordWrap;maximumLineCount:2;elide:Text.ElideRight;color:tile.targeted ? 'white' : '#bfc2ca';font.family:view.family;font.pixelSize:17;font.weight:tile.targeted ? Font.DemiBold : Font.Normal}
+                Text {y:frame.height+10;width:parent.width;height:46;text:modelData.titre || '';textFormat:Text.PlainText;wrapMode:Text.WordWrap;maximumLineCount:2;elide:Text.ElideRight;color:tile.targeted ? 'white' : '#bfc2ca';font.family:view.family;font.pixelSize:17;font.weight:tile.targeted ? Font.DemiBold : Font.Normal}
             }
             MouseArea {anchors.fill:parent;onClicked:{view.zone='results';view.resultIndex=index;view.activate();view.forceActiveFocus();}}
         }
     }
-    Rectangle {x:56;y:640;width:840;height:22;gradient:Gradient {GradientStop {position:0;color:'#00090a0d'} GradientStop {position:1;color:'#090a0d'}}}
-    Rectangle {x:902;y:318;width:2;height:310;radius:1;color:'#252a35';visible:view.results.length>4 && view.state==='ready'
-        Rectangle {width:2;height:parent.height/Math.ceil(view.results.length/4);y:Math.floor(view.resultIndex/4)*height;radius:1;color:'#a3a9b5'}
+    Rectangle {x:56;y:640;width:grid.width;height:22;gradient:Gradient {GradientStop {position:0;color:'#00090a0d'} GradientStop {position:1;color:'#090a0d'}}}
+    Rectangle {x:view.denseLayout ? 1230 : 902;y:318;width:2;height:310;radius:1;color:'#252a35';visible:view.results.length>view.columns && view.state==='ready'
+        Rectangle {width:2;height:parent.height/Math.ceil(view.results.length/view.columns);y:Math.floor(view.resultIndex/view.columns)*height;radius:1;color:'#a3a9b5'}
     }
-    Item {x:930;y:316;width:286;height:354;visible:!!view.currentCard && view.state==='ready'
-        Image {id:preview;width:286;height:144;source:view.art(view.currentCard,'banner');fillMode:Image.PreserveAspectCrop;asynchronous:true;sourceSize.width:600;visible:false;onStatusChanged:if(status===Image.Error && view.artworks)view.artworks.request(view.currentCard,'banner',true)}
+    Item {x:930;y:316;width:286;height:354;visible:!view.denseLayout && !!view.currentCard && view.state==='ready'
+        Image {id:preview;width:286;height:144;source:view.denseLayout ? '' : view.art(view.currentCard,'banner');fillMode:Image.PreserveAspectCrop;asynchronous:true;sourceSize.width:600;visible:false;onStatusChanged:if(status===Image.Error && view.artworks)view.artworks.request(view.currentCard,'banner',true)}
         OpacityMask {width:286;height:144;source:preview;maskSource:Rectangle {width:286;height:144;radius:9}}
         Text {id:previewTitle;y:160;width:286;height:Math.min(implicitHeight,68);text:view.currentCard ? view.currentCard.titre : '';textFormat:Text.PlainText;color:'white';font.family:view.family;font.pixelSize:26;font.weight:Font.Bold;wrapMode:Text.WordWrap;maximumLineCount:2;elide:Text.ElideRight}
         Text {id:previewMeta;y:previewTitle.y+previewTitle.height+12;width:286;text:view.currentCard ? Catalog.meta(view.currentCard) : '';color:'#b2b6c1';font.family:view.family;font.pixelSize:16;elide:Text.ElideRight}
@@ -194,15 +197,15 @@ FocusScope {
             var delta=key===Qt.Key_Left ? -1 : 1;
             if(zone==='nav')navIndex=navigation.step(navIndex,delta);
             else if(zone==='filters')filterIndex=Math.max(0,Math.min(5,filterIndex+delta));
-            else if(zone==='results'){if(delta<0 && resultIndex%4>0 || delta>0 && resultIndex%4<3)resultIndex=Math.max(0,Math.min(results.length-1,resultIndex+delta));}
+            else if(zone==='results'){if(delta<0 && resultIndex%columns>0 || delta>0 && resultIndex%columns<columns-1)resultIndex=Math.max(0,Math.min(results.length-1,resultIndex+delta));}
             else if(zone==='pages')pageIndex=delta<0 && page>1 ? 0 : 1;else if(zone==='search' && delta<0)zone='nav';
         }else if(key===Qt.Key_Down){
             if(zone==='nav')zone='search';else if(zone==='search')zone='filters';
             else if(zone==='filters' && state==='ready' && results.length)zone='results';
             else if(zone==='filters' && state==='error'){zone='pages';pageIndex=1;}
-            else if(zone==='results'){if(Math.floor(resultIndex/4)<Math.floor((results.length-1)/4))resultIndex=Math.min(results.length-1,resultIndex+4);else if(hasNext || page>1){zone='pages';pageIndex=hasNext ? 1 : 0;}}
+            else if(zone==='results'){if(Math.floor(resultIndex/columns)<Math.floor((results.length-1)/columns))resultIndex=Math.min(results.length-1,resultIndex+columns);else if(hasNext || page>1){zone='pages';pageIndex=hasNext ? 1 : 0;}}
         }else if(key===Qt.Key_Up){
-            if(zone==='search')zone='nav';else if(zone==='filters')zone='search';else if(zone==='results'){if(resultIndex>=4)resultIndex-=4;else zone='filters';}else if(zone==='pages')zone=results.length ? 'results' : 'filters';
+            if(zone==='search')zone='nav';else if(zone==='filters')zone='search';else if(zone==='results'){if(resultIndex>=columns)resultIndex-=columns;else zone='filters';}else if(zone==='pages')zone=results.length ? 'results' : 'filters';
         }else if(event.text && event.text.length===1 && event.text.charCodeAt(0)>=32){openKeyboard();append(event.text);}else return;
         event.accepted=true;
     }

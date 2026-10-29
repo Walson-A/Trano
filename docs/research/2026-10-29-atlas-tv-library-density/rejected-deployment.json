@@ -1,0 +1,22 @@
+{
+  "releaseId": "hero-discovery-0c63b10e2171",
+  "files": 30,
+  "bytes": 314613,
+  "serverSha256": "837a0035d128ae1a918e796c2d63bd828914fa82e9408f44d4d69a2ac057d7b7",
+  "configFieldsChanged": [
+    "bundleDir",
+    "files",
+    "releaseId"
+  ],
+  "availabilityVerified": true,
+  "nativeLaunch": {
+    "id": "144ce64ae3280e3efc42598d5e8dd236",
+    "state": "assets_requested",
+    "requestedFiles": 27,
+    "discoveryQmlRequested": true,
+    "discoveryJsRequested": true,
+    "renderConfirmed": false
+  },
+  "transferFilesRemoved": true,
+  "engineRestarted": false
+}

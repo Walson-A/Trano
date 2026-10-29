@@ -4,11 +4,13 @@ import json
 import os
 import pathlib
 import sys
+import time
 import traceback
 
 parser = argparse.ArgumentParser(description=__doc__)
 for name in ['qt-path', 'cards', 'regular', 'bold', 'captures']:
     parser.add_argument('--'+name, type=pathlib.Path, required=True)
+parser.add_argument('--dense',action='store_true',help='Review six large portrait posters; does not publish them')
 args = parser.parse_args()
 sys.path.insert(0, str(args.qt_path.resolve()))
 dll = os.add_dll_directory(str(args.qt_path.resolve()/'PyQt5/Qt5/bin')) if os.name == 'nt' else None
@@ -30,6 +32,7 @@ assert len(fixture) >= 25, 'Use at least two pages of real catalog cards'
 engine = QQmlApplicationEngine()
 engine.rootContext().setContextProperty('benchCards', fixture)
 engine.rootContext().setContextProperty('benchFamily', family)
+engine.rootContext().setContextProperty('benchDense', args.dense)
 source = pathlib.Path(__file__).resolve().parent.parent/'devialet/hero'
 engine.loadData(('''import QtQuick 2.15
 import QtQuick.Window 2.2
@@ -61,7 +64,7 @@ Window {
             request.callback(200,{resultats:rows.slice((page-1)*24,page*24),page:page,has_next_page:rows.length>page*24});
         }
     }
-    DiscoveryView {id:candidate;anchors.fill:parent;visible:!host.showOld;family:benchFamily;transport:session;onChosen:{host.chosenCard=cards[index];opened=false;}}
+    DiscoveryView {id:candidate;anchors.fill:parent;visible:!host.showOld;family:benchFamily;transport:session;denseLayout:benchDense;onChosen:{host.chosenCard=cards[index];opened=false;}}
     SearchView {anchors.fill:parent;visible:host.showOld;family:benchFamily;transport:session}
 }''').encode())
 assert engine.rootObjects(), messages
@@ -90,7 +93,16 @@ def key(which, times=1):
 
 
 def capture(name):
-    QTest.qWait(280)
+    def visual_items(item):
+        for child in item.childItems():
+            yield child
+            yield from visual_items(child)
+    deadline=time.monotonic()+4
+    while time.monotonic()<deadline:
+        images=[v for v in visual_items(window.contentItem()) if v.objectName()=='discoveryArtwork']
+        if all(v.property('status') in (1,3) for v in images):break
+        QTest.qWait(30)
+    QTest.qWait(200)
     assert window.grabWindow().save(str(args.captures/(name+'.png')))
     captures.append(name)
 
@@ -110,19 +122,24 @@ def run():
         expect(value(window, 'calls')[-1]['body']=={'page':1}, 'entry browses catalog without a query')
         finish()
         expect(value(view,'state')=='ready' and len(value(view,'cards'))==24, 'first catalog page renders 24 actual fixture cards')
+        columns=value(view,'columns')
+        view.setProperty('denseLayout',False)
+        capture('00-current')
+        view.setProperty('denseLayout',args.dense)
         capture('01-explore')
         key(Qt.Key_Down)
         key(Qt.Key_Right)
         expect(value(view,'zone')=='results' and value(view,'resultIndex')==1, 'remote enters grid and targets next anime')
         capture('02-target')
         key(Qt.Key_Down,3)
-        expect(value(view,'resultIndex')==13 and value(grid,'contentY')>0, 'Down scrolls catalog to the selected row')
+        reached=1+columns*3
+        expect(value(view,'resultIndex')==reached and value(grid,'contentY')>0, 'Down scrolls catalog to the selected row')
         capture('03-scroll')
         key(Qt.Key_Return)
         saved_y=value(grid,'contentY')
-        expect(not value(view,'opened') and value(window,'chosenCard')['anilist_id']==fixture[13]['anilist_id'], 'OK hands selected card to detail without playback')
+        expect(not value(view,'opened') and value(window,'chosenCard')['anilist_id']==fixture[reached]['anilist_id'], 'OK hands selected card to detail without playback')
         window.returnFromDetail()
-        expect(value(view,'resultIndex')==13 and abs(value(grid,'contentY')-saved_y)<1, 'return from detail retains index and exact scroll')
+        expect(value(view,'resultIndex')==reached and abs(value(grid,'contentY')-saved_y)<1, 'return from detail retains index and exact scroll')
         capture('04-return')
         key(Qt.Key_Up,4)
         expect(value(view,'zone')=='filters', 'Up reaches filters from the first row')
@@ -224,27 +241,27 @@ def run():
         expect(value(view,'state')=='ready', 'reopening interrupted request cannot leave a permanent loading state')
         # Short last rows must remain reachable from every column above.
         view.setProperty('zone','results')
-        view.setProperty('results',fixture[:6])
-        view.setProperty('resultIndex',3)
+        view.setProperty('results',fixture[:columns+2])
+        view.setProperty('resultIndex',columns-1)
         key(Qt.Key_Down)
-        expect(value(view,'resultIndex')==5, 'Down reaches a short final row instead of skipping it')
+        expect(value(view,'resultIndex')==columns+1, 'Down reaches a short final row instead of skipping it')
         key(Qt.Key_Left)
         at_start=value(grid,'contentY')
         key(Qt.Key_Left)
-        expect(value(view,'resultIndex')==4 and value(grid,'contentY')==at_start, 'first column and viewport do not need an extra Left')
+        expect(value(view,'resultIndex')==columns and value(grid,'contentY')==at_start, 'first column and viewport do not need an extra Left')
         view.setProperty('resultIndex',0)
         view.setProperty('reducedMotion',True)
         key(Qt.Key_Right,2)
         expect(value(view,'resultIndex')==2, 'reduced motion preserves directional navigation')
-        bad=[m for m in messages if any(t in m for t in ['ReferenceError','TypeError','Cannot assign','Unable to assign','Binding loop','Cannot open:','is not a function'])]
+        bad=sorted(set(m for m in messages if any(t in m for t in ['ReferenceError','TypeError','Cannot assign','Unable to assign','Binding loop','Cannot open:','is not a function'])))
         expect(not bad, 'QML runtime has no binding, asset or script errors: '+str(bad))
-        result={'checks':checks,'captures':captures,'resolution':[1280,720],'qtVersion':QT_VERSION_STR,'data':'48 actual Atlas PC fixture cards assembled for UI review; NOT a live catalog ranking','network':False,'published':False,'nativeDecoder':False,'nativeQa':False,'apiCalls':value(window,'calls'),'qmlMessages':messages}
+        result={'checks':checks,'captures':captures,'resolution':[1280,720],'columns':columns,'denseLayout':args.dense,'qtVersion':QT_VERSION_STR,'data':'48 actual Atlas PC fixture cards assembled for UI review; NOT a live catalog ranking','network':False,'published':False,'nativeDecoder':False,'nativeQa':False,'apiCalls':value(window,'calls'),'qmlMessages':messages}
         (args.captures/'review.json').write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf-8')
         print(json.dumps({'checks':len(checks),'captures':captures,'qt':QT_VERSION_STR,'errors':bad}))
         app.quit()
     except Exception:
         traceback.print_exc()
-        print(json.dumps({'qmlMessages':messages,'calls':value(window,'calls'),'zone':value(view,'zone'),'overlay':value(view,'overlay'),'key':value(view,'keyIndex'),'tool':value(view,'toolIndex')},ensure_ascii=False))
+        print(json.dumps({'qmlMessages':list(dict.fromkeys(messages))[:12],'messageCount':len(messages),'calls':value(window,'calls'),'zone':value(view,'zone'),'overlay':value(view,'overlay'),'key':value(view,'keyIndex'),'tool':value(view,'toolIndex')},ensure_ascii=False))
         app.exit(1)
 
 

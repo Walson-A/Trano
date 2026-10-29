@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Atlas TV · Densité et affiches</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#111114;color:#f5f5f7;font:15px/1.5 system-ui,sans-serif}main{max-width:1328px;padding:22px 24px;margin:auto}h1{font-size:23px;margin:0}p{color:#c1c5ce}nav{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}button{font:inherit;min-height:44px;padding:8px 14px;border:1px solid #555c69;border-radius:9px;background:transparent;color:inherit}button[aria-selected=true]{background:#f5f5f7;color:#13151b}button:focus-visible,a:focus-visible{outline:2px solid white;outline-offset:3px}img{display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#090a0d}a{color:inherit;text-underline-offset:4px}.small{font-size:13px}.status{color:#d0c4a8}
+</style>
+<main><h1>Atlas TV · Garder de grandes affiches</h1>
+<p class="status">La TV est revenue à la version précédente. Les six affiches ci-dessous sont une proposition à examiner.</p>
+<nav role="tablist" aria-label="Comparer les compositions" id="tabs"></nav>
+<section role="tabpanel" id="panel"><img id="shot" src="portrait/02-target.png" alt="Proposition : six grandes affiches verticales, avec un titre ciblé lisible."></section>
+<p id="description" aria-live="polite"></p>
+<p class="small"><a id="full" href="portrait/02-target.png">Ouvrir l’image pleine taille</a> · <a href="../2026-10-29-atlas-tv-library-density.md">Liste, notes et décisions</a></p>
+<p class="small">Vrais composants QML, captures 1280×720 sur fixtures PC localisées. Les 32 contrôles du banc vérifient le parcours ; cette nouvelle composition n’a pas été publiée sur la TV.</p>
+</main><script>
+const states=[['portrait/02-target.png','Six grandes affiches','Proposition : le panneau latéral libère deux colonnes. Les affiches gardent leur format vertical et une taille proche de la version précédente. Le titre ciblé reste lisible au-dessus.'],['portrait/00-current.png','Version rétablie','La TV utilise de nouveau les quatre grandes affiches avec aperçu à droite.'],['rejected-twelve.png','Passe refusée','La grille de douze petites cartes paysage a été retirée après ton retour. Les images et le cadrage dégradaient le résultat.'],['portrait/03-scroll.png','Défilement proposé','Les flèches parcourent les rangées ; les affiches et les titres ciblés restent entièrement visibles.']];
+const tabs=document.getElementById('tabs'),image=document.getElementById('shot');
+function show(i){const s=states[i];image.src=s[0];image.alt=s[2];document.getElementById('description').textContent=s[2];document.getElementById('full').href=s[0];document.getElementById('panel').setAttribute('aria-labelledby','t'+i);[...tabs.children].forEach((b,n)=>{b.setAttribute('aria-selected',String(n===i));b.tabIndex=n===i?0:-1;});}
+states.forEach((s,i)=>{const b=document.createElement('button');b.type='button';b.id='t'+i;b.textContent=s[1];b.setAttribute('role','tab');b.setAttribute('aria-controls','panel');b.addEventListener('click',()=>show(i));tabs.appendChild(b);});
+tabs.addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;const i=[...tabs.children].indexOf(document.activeElement);if(i<0)return;const n=e.key==='Home'?0:e.key==='End'?states.length-1:(i+(e.key==='ArrowRight'?1:-1)+states.length)%states.length;show(n);tabs.children[n].focus();e.preventDefault();});show(0);
+</script></html>
