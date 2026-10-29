@@ -137,6 +137,7 @@ Application {
             for(var i=0;excluded && i<excluded.length;i++)if(/^[a-f0-9]{64}$/.test(excluded[i]) && excluded[i]!==choice.readerId && readers.indexOf(excluded[i])<0)readers.push(excluded[i]);
             readers=readers.slice(-8);
             var body={anilist_id:media.anilist_id,episode:target.numero,lang:target.vf ? 'vf' : 'vo',exclude_readers:readers};
+            if(session.hlsEnabled)body.accept_hls=true;
             if(choice.source)body.source=choice.source;if(choice.readerId)body.reader_id=choice.readerId;if(choice.variantId)body.variant_id=choice.variantId;if(forceRefresh)body.force_refresh=true;
             hero.previewEnabled=false;if(!replacing)waiting.forceActiveFocus();
             session.api('/tv/v1/playbacks',body,110000,function(status,value){

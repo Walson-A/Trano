@@ -62,6 +62,7 @@ Item {
     function loadReaders(){
         if(!transport.readersEnabled){failed('Choix indisponible ici.',false);return;}
         var turn=revision,key=identity();state='loading';readers=[];sources=[];
+        if(transport.hlsEnabled)key.accept_hls=true;
         transport.api('/tv/v1/readers',key,110000,function(code,value){
             if(turn!==revision || kind!=='source')return;
             if(code!==200 || !matches(value,key) || !Array.isArray(value.readers)){failed('Lecteurs indisponibles.');return;}
@@ -81,13 +82,14 @@ Item {
     function loadVariants(){
         if(!transport.variantsEnabled || !validId(current.readerId) || !sourceName(current.source)){failed('Choix indisponible ici.',false);return;}
         var turn=revision,key=identity();key.source=current.source;key.reader_id=current.readerId;state='loading';variants=[];
+        if(transport.hlsEnabled)key.accept_hls=true;
         transport.api('/tv/v1/variants',key,110000,function(code,value){
             if(turn!==revision || kind!=='quality')return;
             if(code!==200 || !matches(value,key) || value.source!==key.source || value.reader_id!==key.reader_id || !Array.isArray(value.variants)){failed('Qualités indisponibles.');return;}
-            variants=value.variants.slice(0,16).filter(function(v){return validId(v.variant_id) && v.container==='mp4' && typeof v.label==='string' && v.label.length<=80;});
+            variants=value.variants.slice(0,16).filter(function(v){return validId(v.variant_id) && (v.container==='mp4' || transport.hlsEnabled && v.container==='hls') && typeof v.label==='string' && v.label.length<=80;});
             entries=(variants.length>1 ? [{label:'Automatique',variantId:''}] : []).concat(variants.map(function(v){return {label:v.label,variantId:v.variant_id};}));
             index=0;for(var i=0;i<entries.length;i++)if(entries[i].variantId===(current.choice.variantId || ''))index=i;
-            state='ready';if(!variants.length)message='Aucune variante MP4 compatible n’est annoncée pour ce lecteur.';
+            state='ready';if(!variants.length)message=transport.hlsEnabled ? 'Aucune qualité compatible n’est annoncée pour ce lecteur.' : 'Aucune variante MP4 compatible n’est annoncée pour ce lecteur.';
         });
     }
     function loadSeasons(){

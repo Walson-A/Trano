@@ -11,6 +11,7 @@ import traceback
 import time
 
 parser=argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--hls',action='store_true',help='Exercise negotiated HLS requests and quality menus with the fake decoder')
 parser.add_argument('--qt-path',type=pathlib.Path,required=True)
 parser.add_argument('--snapshot',type=pathlib.Path,required=True)
 parser.add_argument('--assets',type=pathlib.Path,required=True)
@@ -128,6 +129,7 @@ Item {
  property bool artworkEnabled:false
  property bool readersEnabled:true
  property bool variantsEnabled:true
+ property bool hlsEnabled:benchmarkHlsEnabled
  property bool delayPlaybacks:false
  property var pendingPlaybacks:[]
  property int playbackCount:0
@@ -156,7 +158,7 @@ Item {
   if(path==='/tv/v1/catalog/detail') { if(delayDetails){pendingDetails=pendingDetails.concat([done]);return;}Qt.callLater(function(){var value=benchmarkDetails[String(body.anilist_id)];done(value ? 200 : 404,value || {});});return; }
   if(path==='/tv/v1/catalog/episodes') { Qt.callLater(function(){var value=benchmarkEpisodes[String(body.anilist_id)];done(value ? 200 : 404,value || {});});return; }
   if(path==='/tv/v1/readers') {Qt.callLater(function(){done(200,{anilist_id:body.anilist_id,episode:body.episode,lang:body.lang,readers:[{reader_id:'e'.repeat(64),source:'voiranime',provider:'mail',label:'Mail.ru FHD1',supported:true},{reader_id:'f'.repeat(64),source:'anime-sama',provider:'yourupload',label:'YourUpload',supported:true},{reader_id:'d'.repeat(64),source:'voiranime',provider:'other',label:'Incompatible',supported:false}],limitations:['franime_browser_required']});});return;}
-  if(path==='/tv/v1/variants') {if(failNextVariants){failNextVariants=false;Qt.callLater(function(){done(502,{});});return;}Qt.callLater(function(){done(200,{anilist_id:body.anilist_id,episode:body.episode,lang:body.lang,source:body.source,reader_id:body.reader_id,variants:[{variant_id:'1'.repeat(64),label:'360p',height:360,container:'mp4'},{variant_id:'2'.repeat(64),label:'1080p',height:1080,container:'mp4'}]});});return;}
+  if(path==='/tv/v1/variants') {if(failNextVariants){failNextVariants=false;Qt.callLater(function(){done(502,{});});return;}Qt.callLater(function(){done(200,{anilist_id:body.anilist_id,episode:body.episode,lang:body.lang,source:body.source,reader_id:body.reader_id,variants:[{variant_id:'1'.repeat(64),label:'360p',height:360,container:hlsEnabled ? 'hls' : 'mp4'},{variant_id:'2'.repeat(64),label:'1080p',height:1080,container:'mp4'}]});});return;}
   if(path==='/tv/v1/playbacks') {if(failNextPlayback){failNextPlayback=false;Qt.callLater(function(){done(502,{});});return;}if(delayPlaybacks){pendingPlaybacks=pendingPlaybacks.concat([{body:body,done:done}]);return;}Qt.callLater(function(){answerPlayback(body,done);});}
 
   else Qt.callLater(function(){done(200,{});});
@@ -172,6 +174,7 @@ Item {
  function finishDetail(index,identity) {pendingDetails[index](200,benchmarkDetails[String(identity)]);}
 }''')
     engine=QQmlApplicationEngine();engine.addImportPath(str(root))
+    engine.rootContext().setContextProperty('benchmarkHlsEnabled',args.hls)
     engine.rootContext().setContextProperty('benchmarkHome',snapshot)
     engine.rootContext().setContextProperty('benchmarkHistory',history)
     engine.rootContext().setContextProperty('benchmarkDetails',details)
@@ -223,7 +226,9 @@ Item {
     def playing():
         try:
             targets=[body for path,body in calls if path=='/tv/v1/playbacks']
-            assert targets==[{'anilist_id':hero.property('selected').toVariant()['anilist_id'],'episode':13,'lang':'vo','exclude_readers':[]}],targets
+            expected={'anilist_id':hero.property('selected').toVariant()['anilist_id'],'episode':13,'lang':'vo','exclude_readers':[]}
+            if args.hls:expected['accept_hls']=True
+            assert targets==[expected],targets
             assert hero.property('selected').toVariant()['a_lancer']['vf'] is True, 'Default VO must not mutate the backend resume hint'
             assert screen.property('playbackId')=='aaaaaaaa-aaaa-aaaa-aaaa-000000000001'
             player=window.findChild(QObject,'episodeLoader').property('item')
@@ -578,7 +583,9 @@ Item {
             QTest.keyClick(window,Qt.Key_Back);QTest.keyClick(window,Qt.Key_Back);QTest.qWait(80)
             later_bad=[m for m in messages if any(s in m for s in ['ReferenceError','TypeError','Unable to assign','Cannot assign'])]
             assert not later_bad,later_bad
-            (args.evidence/'verification.json').write_text(json.dumps({'passed':True,'scope':'real QML host/UI with fake API and fake decoder; no native playback claim','canonicalEpisode':13,'defaultLanguage':'vo','frenchAvailabilityDoesNotSelectLanguage':True,'explicitFrenchStillSupported':True,'tvPlayer':{'anchoredMenusKeepChrome':True,'proposedTimelineUntilConfirmed':True,'cancelSeekKeepsPosition':True,'cancelResolutionIgnoresLateResponse':True,'strictSourceReaderVariant':True,'strictRetry401And200KeepsChoice':True,'failedChangeKeepsOldVideo':True,'pausedQualityAndVersionKeepPositionAndIntent':True,'episodesOverlayKeepsVideoAndSeasonBrowsing':True,'firstBackHidesHudWithoutClosing':True,'episodeJumpPreservesCurrentPlayback':True,'sourceReachableAfterNativeFailure':True,'episodeArtworkIdentityChecked':True,'missingCapabilityUnavailable':True,'perSessionProgressSequence':True},'lang':'vo','defaultSoundOnAndLabelled':True,'infoSelectionPreserved':True,'search':{'remoteKeyboard':True,'staleIgnored':True,'selectionAndBack':True},'profile':{'publicProfileWithoutOAuth':True,'statsScaleChecked':True,'selectionAndBack':True},'lateTrailerDoesNotChangeSelection':True,'silentGainZero':True,'bannerErrorUsesPoster':True,'artworkQueue':{'maxConcurrent':2,'identityChecked':True,'deduplicated':True,'capabilityRequired':True,'warmWithoutResume':True},'events':events},indent=2),encoding='utf-8')
+            negotiated=[body for path,body in calls if path in ['/tv/v1/playbacks','/tv/v1/readers','/tv/v1/variants']]
+            assert negotiated and all((body.get('accept_hls') is True) if args.hls else 'accept_hls' not in body for body in negotiated)
+            (args.evidence/'verification.json').write_text(json.dumps({'passed':True,'scope':'real QML host/UI with fake API and fake decoder; no native playback claim','canonicalEpisode':13,'hlsNegotiated':args.hls,'defaultLanguage':'vo','frenchAvailabilityDoesNotSelectLanguage':True,'explicitFrenchStillSupported':True,'tvPlayer':{'anchoredMenusKeepChrome':True,'proposedTimelineUntilConfirmed':True,'cancelSeekKeepsPosition':True,'cancelResolutionIgnoresLateResponse':True,'strictSourceReaderVariant':True,'strictRetry401And200KeepsChoice':True,'failedChangeKeepsOldVideo':True,'pausedQualityAndVersionKeepPositionAndIntent':True,'episodesOverlayKeepsVideoAndSeasonBrowsing':True,'firstBackHidesHudWithoutClosing':True,'episodeJumpPreservesCurrentPlayback':True,'sourceReachableAfterNativeFailure':True,'episodeArtworkIdentityChecked':True,'missingCapabilityUnavailable':True,'perSessionProgressSequence':True},'lang':'vo','defaultSoundOnAndLabelled':True,'infoSelectionPreserved':True,'search':{'remoteKeyboard':True,'staleIgnored':True,'selectionAndBack':True},'profile':{'publicProfileWithoutOAuth':True,'statsScaleChecked':True,'selectionAndBack':True},'lateTrailerDoesNotChangeSelection':True,'silentGainZero':True,'bannerErrorUsesPoster':True,'artworkQueue':{'maxConcurrent':2,'identityChecked':True,'deduplicated':True,'capabilityRequired':True,'warmWithoutResume':True},'events':events},indent=2),encoding='utf-8')
             app.quit()
         except Exception as error: messages.append(traceback.format_exc());app.exit(1)
     QTimer.singleShot(600,check);QTimer.singleShot(25000,lambda:app.exit(2))
