@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="fr">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Atlas TV · Trouver quoi regarder</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#111114;color:#f5f5f7;font:15px/1.5 system-ui,sans-serif}main{max-width:1328px;margin:auto;padding:20px 24px}header,footer,.toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}h1{font-size:23px;margin:0;font-weight:600}p{color:#bfbfc8;margin:8px 0}a{color:#e0e0e6;text-underline-offset:4px}.badge{font-size:13px;color:#bfc6d5;border:1px solid #454a55;border-radius:24px;padding:5px 12px}nav{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0}button,select{font:inherit;min-height:40px;padding:7px 13px;background:#17191e;color:#e0e0e6;border:1px solid #50505a;border-radius:8px}button[aria-selected=true]{background:#f5f5f7;color:#151519;border-color:#f5f5f7}button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid white;outline-offset:3px}.stage{display:flex;align-items:center;justify-content:center;background:black;border:1px solid #343741}.stage img{display:block;width:100%;height:auto;max-height:calc(100dvh - 260px);aspect-ratio:16/9;object-fit:contain}.stage:fullscreen{width:100%;height:100%}.stage:fullscreen img{height:100%;max-height:100dvh;object-fit:contain}footer{align-items:flex-start;margin-top:12px}#description{max-width:850px;margin:0}.small{font-size:13px}#load-error{color:#ffb5b5}.more{display:flex;align-items:center;gap:8px}.more select{max-width:230px}@media(max-width:700px){main{padding:16px}.stage img{max-height:none}button{min-height:44px}}
+</style>
+<main>
+<header><h1>Atlas TV · Trouver quoi regarder</h1><span class="badge">Proposition QML · Non publiée</span></header>
+<p>Explorer sans titre, affiner ses envies, puis ouvrir une fiche en gardant sa place.</p>
+<div class="toolbar"><nav id="tabs" role="tablist" aria-label="Parcours de découverte"></nav><label class="more">Autres états <select id="more"><option value="">Choisir…</option></select></label></div>
+<section id="screen" role="tabpanel" aria-label="Capture du composant QML"><div class="stage" id="stage"><img id="capture" src="01-explore.png" alt="Recherche Atlas TV, filtres et grille d’affiches, avec aperçu à droite."></div><p id="load-error" role="alert" hidden>La capture n’a pas pu être chargée.</p></section>
+<footer><p id="description" aria-live="polite"></p><button type="button" id="fullscreen">Plein écran</button></footer>
+<p class="small"><a id="full-image" href="01-explore.png" target="_blank" rel="noopener">Image pleine taille</a> · <a href="../2026-10-29-atlas-tv-discovery.md">Références, choix et limites</a> · <a href="review.json">32 contrôles du banc</a></p>
+<p class="small">Captures du vrai composant QML à 1280 × 720. 48 cartes réelles du banc Atlas PC assemblées pour la revue, sans classement vivant. Cette page feuillette les captures ; les filtres et les flèches ont été testés dans le banc QML. Aucun changement de l’app publiée ni essai Devialet dans ce lot.</p>
+</main>
+<script>
+const primary=[
+ ['01-explore','Explorer','Sans saisir de titre : genres, format, année, diffusion et tri. Le clavier ne prend plus la moitié de l’écran.'],
+ ['02-target','Choisir','Le focus blanc désigne une seule carte. À droite, titre, format, genres et résumé aident à décider si sa fiche vaut le détour.'],
+ ['05-genres','Genres','Plusieurs genres peuvent se cumuler. Les coches sont les choix, le blanc est le focus. Appliquer valide le groupe ; Retour l’annule.'],
+ ['06-filtered','Affiner','Le genre choisi reste visible pendant la découverte. La liste du banc est filtrée pour montrer le comportement ; la production utilisera le service avant pagination.'],
+ ['03-scroll','Parcourir','Bas parcourt les rangées. La carte ciblée et son titre restent entièrement visibles ; la barre fine situe la rangée dans la page.'],
+ ['09-keyboard','Saisir','Le clavier apparaît uniquement sur demande. Rechercher applique le texte ; Retour retrouve le catalogue sans modifier la recherche précédente.'],
+ ['10-title','Résultats','La recherche par titre reste disponible, avec les mêmes critères. Sans tri explicite, le service choisira la pertinence plutôt que les tendances.'],
+ ['00-before','Avant','Écran actuellement publié, rendu avec les mêmes fixtures : clavier permanent, liste limitée à droite et aucun filtre de découverte.']
+];
+const secondary=[
+ ['07-format','Menu Format','Format est un critère distinct des genres ; OK applique la valeur, Retour abandonne le choix.'],
+ ['08-combined','Genres + format','Exemple du banc : Fantasy et Films. Les critères sont combinés, sans mélanger les résultats des autres formats.'],
+ ['15-year','Menu Année','Année de sortie numérique, sélection à la télécommande. La grille garde son contexte derrière le menu.'],
+ ['16-status','Menu Diffusion','En cours, terminés, à venir, en pause ou annulés. La coche représente le choix appliqué, pas la ligne simplement survolée.'],
+ ['04-return','Retour de fiche','Même carte et même défilement après ouverture d’une fiche. Le banc vérifie la remise de carte et la réouverture du composant ; le raccordement au loader natif reste à faire.'],
+ ['11-next-page','Page suivante','24 cartes par page. Voir la suite demande une nouvelle page ; Précédente retrouve l’index mémorisé. Le banc montre un autre ensemble réel de cartes.'],
+ ['14-empty','Aucun résultat','Les critères restent éditables. Aucun titre de l’accueil n’est ajouté pour remplir artificiellement une recherche vide.'],
+ ['12-loading','Chargement','Les anciens résultats s’estompent en attendant la réponse. Ils ne sont pas ouvrables avec les nouveaux critères tant que le service n’a pas répondu.'],
+ ['13-error','Panne du catalogue','Critères conservés, Réessayer disponible. Aucun résultat fictif ni ancienne liste présentée comme la nouvelle réponse.']
+];
+const tabs=document.getElementById('tabs'),more=document.getElementById('more'),image=document.getElementById('capture'),panel=document.getElementById('screen');
+function show(state,index=-1){[...tabs.children].forEach((button,i)=>{button.setAttribute('aria-selected',String(i===index));button.tabIndex=i===(index<0?0:index)?0:-1;});image.src=state[0]+'.png';image.alt=state[2];document.getElementById('description').textContent=state[2];document.getElementById('full-image').href=state[0]+'.png';document.getElementById('load-error').hidden=true;if(index>=0){panel.setAttribute('aria-labelledby','tab-'+state[0]);more.value='';}else{panel.removeAttribute('aria-labelledby');panel.setAttribute('aria-label',state[1]);}}
+primary.forEach((state,index)=>{const button=document.createElement('button');button.type='button';button.id='tab-'+state[0];button.textContent=state[1];button.setAttribute('role','tab');button.setAttribute('aria-controls','screen');button.addEventListener('click',()=>show(state,index));tabs.appendChild(button);});
+secondary.forEach((state,index)=>{const option=document.createElement('option');option.value=String(index);option.textContent=state[1];more.appendChild(option);});
+more.addEventListener('change',()=>{if(more.value!=='')show(secondary[Number(more.value)]);});
+tabs.addEventListener('keydown',event=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;const index=[...tabs.children].indexOf(document.activeElement);if(index<0)return;const next=event.key==='Home'?0:event.key==='End'?primary.length-1:(index+(event.key==='ArrowRight'?1:-1)+primary.length)%primary.length;show(primary[next],next);tabs.children[next].focus();event.preventDefault();});
+image.addEventListener('error',()=>document.getElementById('load-error').hidden=false);
+document.getElementById('fullscreen').addEventListener('click',()=>document.getElementById('stage').requestFullscreen?.().catch(()=>{}));
+show(primary[0],0);
+</script>
+</html>

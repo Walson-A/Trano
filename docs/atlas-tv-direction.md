@@ -1,10 +1,18 @@
 # Atlas sur la télévision : base réutilisable et premier parcours
 
+Nouvelle proposition limitée à [Recherche / découverte](research/2026-10-29-atlas-tv-discovery.md) :
+catalogue sans saisie obligatoire, critères cumulables, affiches à parcourir et
+aperçu du titre ciblé. Composant QML séparé, 32 contrôles au banc et carnet de
+17 captures ; pas de modification du loader ou de publication dans ce lot.
+Les épisodes restent hors périmètre.
+
 Le [lecteur revu est raccordé et publié](research/2026-10-29-atlas-tv-player-live.md)
 sur le service permanent : `hero-player-914ca56735ce`, 28 fichiers. Le Devialet a
 accepté la relance et demandé les ressources. Nouveau Retour, menus réels et
-épisodes enrichis passent au banc complet ; le rendu et les gestes natifs restent
-à confirmer par Walson. Les propositions ci-dessous conservent leur rôle historique.
+épisodes enrichis passent au banc complet. Walson a ensuite donné une appréciation
+globale positive du lecteur affiché sur la TV : « la première fois que j’ai rien
+à redire ». Cette réception ne prouve pas chaque commande ou fournisseur. Les
+propositions ci-dessous conservent leur rôle historique.
 
 Après appréciation de la composition, Walson demande un [sélecteur d'épisodes
 plus reconnaissable](research/2026-10-28-atlas-tv-episode-selector.md). Vignettes,
