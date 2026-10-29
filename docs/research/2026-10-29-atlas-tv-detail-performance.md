@@ -1,0 +1,80 @@
+# Atlas TV — ouverture des fiches et suivi
+
+Walson a confirmé les nouveaux boutons sur le vrai Devialet, mais jugé l’ouverture
+très lente et le libellé transitoire « Mon suivi » confus. Cette réception ne
+valide pas l’ergonomie : le présent lot corrige la chaîne de lecture du client.
+
+## Ce qui est mesuré
+
+Le [backend](https://github.com/Walson-A/Atlas/blob/80c6308481cfd71503cc111a7e06b291a4cb2f49/docs/research/atlas-tv-latency-2026-10-29.md)
+a chronométré engine, gateway et HTTPS sur plusieurs titres. Aucun goulot de
+plusieurs secondes n’a été reproduit ; le moteur observé est 36746c75, gateway 1b6e3daa,
+sans nouveau cache privé ni déploiement.
+
+Le [probe natif](2026-10-29-atlas-tv-detail-performance/native-timing.json)
+utilise le vrai TvSession sur le Devialet, avec trois lectures simultanées puis
+le même passage à chaud sur AniList 154587 :
+
+| Route | Premier passage | Chaud |
+| --- | ---: | ---: |
+| Détail | 771 ms | 360 ms |
+| Épisodes | 772 ms | 353 ms |
+| Suivi personnel | 446 ms | 408 ms |
+
+Toutes les réponses sont 200. Le probe mesure le transport natif et le parsing,
+pas le temps de composition d’une fiche complète ni les autres titres. Le paquet
+de mesure est servi temporairement au seul Player, avec credential appareil
+échéant en RAM ; aucune clé propriétaire ne quitte le serveur. Diagnostic révoqué,
+serveur PC fermé, aucune vidéo ni mutation du compte.
+
+## Changements client
+
+Avant, le détail précédait les épisodes et le suivi, puis le panneau relisait
+encore le suivi. Ces requêtes partent maintenant en parallèle. Les épisodes
+préchargés ne sont exposés qu’après alignement avec l’identité et la page de la
+fiche canonique ; un retour ou un changement de titre invalide les callbacks.
+La même page n’est pas redemandée au retour du détail.
+
+Le synopsis déjà reçu dans la carte est affiché immédiatement en texte brut.
+resume_fr est un indicateur, jamais le texte du synopsis. Les boutons neutres
+« Ma liste… » et « Note… » attendent la réponse privée : ils ne prétendent pas
+que le titre est absent ni présent avant sa confirmation.
+
+TvLibrary réutilise pendant 30 s maximum, en RAM, les états present/absent confirmés
+et leurs révisions. Une présence inconnu est relue à la prochaine ouverture. Les
+requêtes identiques en cours sont mutualisées ; un panneau avec une donnée encore
+fraîche s’ouvre immédiatement. Expiration ou recul de l’horloge imposent une
+relecture. Le cache reste borné à 120 entrées et se vide à la perte de session.
+
+Un conflit ou un timeout ne réutilise pas ce cache : Vérifier mon suivi effectue
+une nouvelle lecture, sans replay automatique de la mutation. Aucune lecture
+commencée avant une sauvegarde ne peut servir à cette vérification : l’écriture
+requiert ready et bloque les lectures pendant saving. Le CAS serveur reste frais.
+Le calendrier, les futurs bloqués, la langue et le décodeur ne sont pas assouplis.
+
+## Vérifications et limites
+
+Le banc QML complet, API/compte/décodeur simulés, vérifie les réponses retardées,
+la neutralité de l’état privé, le suivi prêt avant le détail, l’absence de double
+lecture, la prélecture des épisodes, l’expiration et l’inconnu qui redevient connu.
+Les contrôles précédents de conflit/timeout, Ma liste, calendrier et FrAnime sont
+conservés. Les preuves finales et le reçu de publication sont ajoutés ci-dessous.
+
+La mesure native n’a pas reproduit toute la lenteur rapportée. Cette livraison
+supprime des attentes vérifiées dans le client ; elle ne promet pas un temps
+constant sur tous les titres ou réseaux. Le ressenti global après correction
+reste à confirmer sur la TV.
+
+[Chargement neutre](2026-10-29-atlas-tv-detail-performance/followup-loading.png),
+[fiche prête](2026-10-29-atlas-tv-detail-performance/followup-detail.png),
+[panneau de suivi](2026-10-29-atlas-tv-detail-performance/followup-rating.png) :
+revue des vrais composants à1280×720. Les dimensions et le focus sont conservés.
+Les états synthétiques et le décodeur simulé sont propres au banc.
+
+Vérifications finales [HLS](2026-10-29-atlas-tv-detail-performance/hls-follow-up-verification.json)
+et [MP4](2026-10-29-atlas-tv-detail-performance/legacy-follow-up-verification.json)
+réussies, dont l’inconnu relu à l’ouverture suivante et le recul d’horloge.
+Un scénario de banc a d’abord échoué sur une variable Python `reads` réutilisée
+comme compteur ; son nom est corrigé et les deux suites finales passent.
+Une première revue a également révélé le flag resume_fr affiché au lieu du
+synopsis ; le client n’utilise désormais que la chaîne resume et le banc le vérifie.

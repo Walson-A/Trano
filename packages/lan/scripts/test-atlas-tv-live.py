@@ -138,6 +138,8 @@ Item {
  property bool rejectNextUnaired:false
  property var libraryEntries:({})
  property string libraryFailure:''
+ property bool delayLibrary:false
+ property var pendingLibrary:[]
  property int libraryMutations:0
  property int libraryRevision:0
  property int homeReloads:0
@@ -163,7 +165,7 @@ Item {
  function loadHome(){homeReloads++;Qt.callLater(function(){homeLoaded();});}
  function api(path,body,timeout,done) {
   apiCalled(path,body);
-  if(path==='/tv/v1/library-entry'){Qt.callLater(function(){done(200,libraryEntry(body.anilist_id));});return;}
+  if(path==='/tv/v1/library-entry'){if(delayLibrary){pendingLibrary=pendingLibrary.concat([{body:body,done:done}]);return;}Qt.callLater(function(){done(200,libraryEntry(body.anilist_id));});return;}
   if(path==='/tv/v1/library-update'){Qt.callLater(function(){
    var entry=libraryEntry(body.anilist_id),mode=libraryFailure;libraryFailure='';
    if(mode==='conflict'){entry.moi.statut='PAUSED';entry.moi.note=9;entry.revision='conflict-'+(++libraryRevision);seedLibrary(body.anilist_id,entry);done(409,{error:{code:'entry_conflict'}});return;}
@@ -194,6 +196,7 @@ Item {
  function featuredOnly() { state='connecting'; artworkEnabled=false; var value=JSON.parse(JSON.stringify(benchmarkHome)); value.rangees=[]; home=value; artworkEnabled=true; state='ready'; homeLoaded(); }
  function finishSearch(index) {var p=pendingSearches[index];p.done(200,{resultats:benchmarkHome.hero.slice(index%2,index%2+4),page:p.body.page,has_next_page:p.body.page===1});}
  function finishDetail(index,identity) {pendingDetails[index](200,benchmarkDetails[String(identity)]);}
+ function finishLibrary(index){var pending=pendingLibrary[index];pending.done(200,libraryEntry(pending.body.anilist_id));}
  function libraryEntry(id){return JSON.parse(JSON.stringify(libraryEntries[String(id)] || {anilist_id:id,presence:'present',revision:'initial',editable:true,moi:{statut:'CURRENT',note:7.2,progression:5}}));}
  function seedLibrary(id,value){var next={};Object.keys(libraryEntries).forEach(function(k){next[k]=libraryEntries[k];});next[String(id)]=JSON.parse(JSON.stringify(value));libraryEntries=next;}
  function seedLibraryJson(id,text){seedLibrary(id,JSON.parse(text));}

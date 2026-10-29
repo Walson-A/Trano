@@ -1,0 +1,71 @@
+{
+  "scope": "native TvSession HTTPS read-only, no full UI/decoder test",
+  "anilist_id": 154587,
+  "requested": [
+    "manifest.json",
+    "manifest.json",
+    "probe.qml",
+    "qmldir",
+    "TvSession.qml"
+  ],
+  "reports": [
+    {
+      "event": "started"
+    },
+    {
+      "event": "request",
+      "path": "/tv/v1/library-entry",
+      "round": 0,
+      "elapsedMs": 446,
+      "status": 200,
+      "anilist_id": 154587
+    },
+    {
+      "event": "request",
+      "path": "/tv/v1/catalog/detail",
+      "round": 0,
+      "elapsedMs": 771,
+      "status": 200,
+      "anilist_id": 154587
+    },
+    {
+      "event": "request",
+      "path": "/tv/v1/catalog/episodes",
+      "round": 0,
+      "elapsedMs": 772,
+      "status": 200,
+      "anilist_id": 154587
+    },
+    {
+      "event": "request",
+      "path": "/tv/v1/catalog/episodes",
+      "round": 1,
+      "elapsedMs": 353,
+      "status": 200,
+      "anilist_id": 154587
+    },
+    {
+      "event": "request",
+      "path": "/tv/v1/catalog/detail",
+      "round": 1,
+      "elapsedMs": 360,
+      "status": 200,
+      "anilist_id": 154587
+    },
+    {
+      "event": "request",
+      "path": "/tv/v1/library-entry",
+      "round": 1,
+      "elapsedMs": 408,
+      "status": 200,
+      "anilist_id": 154587
+    },
+    {
+      "event": "done"
+    }
+  ],
+  "diagnosticRevoked": true,
+  "temporaryServerClosed": true,
+  "episodeStarted": false,
+  "accountMutations": false
+}

@@ -237,3 +237,10 @@ Le HLS négocié conserve la composition du lecteur et de ses menus. Les qualit�
 MP4/HLS partagent le même choix de résolution ; aucun libellé de protocole ne
 s'ajoute au parcours. Voir `research/2026-10-29-atlas-tv-hls.md` pour les contrôles
 et la distinction entre banc simulé et décodage natif.
+
+## Ouverture des fiches Atlas TV
+
+La carte fournit immédiatement titre, visuel et synopsis connus. Ma liste et
+Note gardent un libellé neutre jusqu’à confirmation privée. Les lectures sont
+parallèles et un suivi récent ne redevient pas un écran de chargement à chaque
+ouverture du panneau. Voir [mesures et parcours](research/2026-10-29-atlas-tv-detail-performance.md).

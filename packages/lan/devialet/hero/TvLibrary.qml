@@ -10,6 +10,8 @@ Item {
     property var phases:({})
     property var messages:({})
     property var serials:({})
+    property var checkedAt:({})
+    readonly property int freshnessMs:30000
     property int epoch:0
     readonly property bool available:!!(transport && transport.libraryEnabled)
     signal changed(int identity)
@@ -19,16 +21,18 @@ Item {
     function message(id){return messages[String(id)] || '';}
     function assign(map,id,value){var copy={};Object.keys(map).forEach(function(k){copy[k]=map[k];});copy[String(id)]=value;return copy;}
     function setPhase(id,phase,text){phases=assign(phases,id,phase);messages=assign(messages,id,text || '');changed(id);}
-    function clear(){epoch++;entries={};phases={};messages={};serials={};}
+    function clear(){epoch++;entries={};phases={};messages={};serials={};checkedAt={};}
     function begin(id){var n=(serials[String(id)] || 0)+1;serials=assign(serials,id,n);return n;}
     function accept(id,value){
         if(!Library.validEntry(value,id))return false;
         // Keep the cache bounded; neither credentials nor personal data go to disk.
         var copy={},keys=Object.keys(entries);for(var i=Math.max(0,keys.length-119);i<keys.length;i++)copy[keys[i]]=entries[keys[i]];
-        copy[String(id)]=value;entries=copy;return true;
+        copy[String(id)]=value;entries=copy;
+        var times={};Object.keys(copy).forEach(function(k){times[k]=k===String(id) ? Date.now() : checkedAt[k];});checkedAt=times;return true;
     }
+    function ensure(id){var age=Date.now()-(checkedAt[String(id)] || 0),value=entry(id);if(phase(id)==='loading' || phase(id)==='saving' || phase(id)==='ready' && value && value.presence!=='inconnu' && age>=0 && age<freshnessMs)return;load(id);}
     function load(id){
-        if(!available || !Number.isInteger(id) || id<=0 || phase(id)==='saving')return;
+        if(!available || !Number.isInteger(id) || id<=0 || phase(id)==='saving' || phase(id)==='loading')return;
         var turn=begin(id),session=epoch;setPhase(id,'loading','');
         transport.api('/tv/v1/library-entry',{anilist_id:id},45000,function(code,value){
             if(session!==epoch || serials[String(id)]!==turn)return;

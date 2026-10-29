@@ -20,6 +20,9 @@ FocusScope {
     property string extrasError: ''
     property int generation: 0
     property int episodeGeneration: 0
+    property string episodeIdentity: ''
+    property int episodeSelectionNumber: 0
+    property var pendingEpisodesReady: null
     property string zone: 'actions'
     property int actionIndex: 0
     property int episodeIndex: 0
@@ -45,6 +48,7 @@ FocusScope {
     readonly property int personalId:card && card.anilist_id>0 ? card.anilist_id : 0
     readonly property var personalEntry:library.entry(personalId)
     readonly property string personalPhase:library.phase(personalId)
+    readonly property bool personalPending:personalPhase==='loading' || personalPhase==='idle'
     readonly property bool personalEnabled:library.available && personalId>0
     signal personalChanged(int identity,var value,bool refreshHome)
     signal closed()
@@ -54,27 +58,38 @@ FocusScope {
         var oldMoi=previous && previous.moi,newMoi=value.moi;
         view.personalChanged(identity,value,!previous || previous.presence!==value.presence || (oldMoi ? oldMoi.statut : null)!==(newMoi ? newMoi.statut : null) || (oldMoi ? oldMoi.progression : 0)!==(newMoi ? newMoi.progression : 0));
     }}
-    function loadPersonal(){if(personalEnabled)library.load(personalId);}
+    function loadPersonal(){if(personalEnabled)library.ensure(personalId);}
     function personalAction(note){
         if(!personalEnabled || personalPhase==='saving')return;
         if(!note && personalPhase==='ready' && personalEntry && personalEntry.editable && personalEntry.presence==='absent')library.save(personalId,{statut:'PLANNING'});
         else followup.open(personalId,card.titre,note);
     }
     function identity(c) {return c && c.anilist_id>0 ? {anilist_id:c.anilist_id} : c && c.franime && c.franime.id>0 ? {franime_id:c.franime.id} : null;}
+    function episodeKey(c){var key=identity(c);return !key ? '' : key.anilist_id ? 'a:'+key.anilist_id : 'f:'+key.franime_id+':'+(c.franime.saison || 1);}
+    function prepareEpisodes(){
+        var next=card.a_lancer ? card.a_lancer.numero : (card.moi ? card.moi.progression+1 : 1),start=Math.max(1,Math.floor((Math.max(1,next)-1)/40)*40+1);
+        if(episodeIdentity===episodeKey(card) && pageStart===start){
+            episodeSelectionNumber=next;
+            if(pendingEpisodesReady){var receive=pendingEpisodesReady;pendingEpisodesReady=null;receive();}
+            else if(episodeData)for(var i=0;i<episodes.length;i++)if(episodes[i].numero===next)episodeIndex=i;
+        }else loadEpisodes(start,next);
+    }
     function art(c) {if(!c)return '';var local=artworks && artworks.sources[String(c.anilist_id)];return local && (local.banner || local.card || local.poster) || c.banniere || c.affiche || '';}
     function open(c) {stack=[];opened=true;load(c);forceActiveFocus();}
     function load(c) {
         var key=identity(c),turn=++generation;episodeGeneration++;media=c;detail=null;episodeData=null;extrasError='';state='loading';episodeState='loading';zone='actions';actionIndex=0;episodeIndex=0;relationIndex=0;castIndex=0;recommendationIndex=0;pageIndex=0;pageStart=1;
         french=false;languageIndex=0;viewport.contentY=0;
+        episodeIdentity='';pendingEpisodesReady=null;
         if(!key || !transport){state='error';return;}
+        loadPersonal();
+        prepareEpisodes();
         artworks.request(c,'banner',true);
         transport.api('/tv/v1/catalog/detail',key,45000,function(status,value) {
             if(!opened || turn!==generation)return;
-            if(status!==200 || !value || !value.carte || (key.anilist_id && value.carte.anilist_id!==key.anilist_id) || (key.franime_id && (!value.carte.franime || value.carte.franime.id!==key.franime_id))){state='error';return;}
-            detail=value;state='ready';seasonIndex=0;loadPersonal();console.info('ATLAS_TV_DETAIL_READY',card.anilist_id || 0);
+            if(status!==200 || !value || !value.carte || (key.anilist_id && value.carte.anilist_id!==key.anilist_id) || (key.franime_id && (!value.carte.franime || value.carte.franime.id!==key.franime_id))){state='error';episodeState='error';pendingEpisodesReady=null;return;}
+            detail=value;state='ready';seasonIndex=0;if(!key.anilist_id)loadPersonal();console.info('ATLAS_TV_DETAIL_READY',card.anilist_id || 0);
             for(var i=0;i<seasons.length;i++)if(card.anilist_id && seasons[i].anilist_id===card.anilist_id)seasonIndex=i;
-            var next=card.a_lancer ? card.a_lancer.numero : (card.moi ? card.moi.progression+1 : 1);
-            loadEpisodes(Math.max(1,Math.floor((Math.max(1,next)-1)/40)*40+1),next);
+            prepareEpisodes();
             if(value.complements_a_charger && key.anilist_id)transport.api('/tv/v1/catalog/detail-extras',key,45000,function(code,extra){
                 if(!opened || turn!==generation)return;
                 if(code!==200 || !extra){extrasError='Certaines informations n’ont pas pu être chargées.';return;}
@@ -88,26 +103,30 @@ FocusScope {
         if(!key){episodeState='error';return;}
         if(key.franime_id)key.saison=card.franime.saison || 1;
         else {key.debut=start;key.nombre=40;}
-        episodeState='loading';episodeData=null;pageStart=start;episodeIndex=0;
+        episodeState='loading';episodeData=null;pageStart=start;episodeIndex=0;episodeIdentity=episodeKey(card);episodeSelectionNumber=selectedNumber;pendingEpisodesReady=null;
         transport.api('/tv/v1/catalog/episodes',key,45000,function(status,value){
+            if(!opened || turn!==episodeGeneration || parentTurn!==generation)return;
+            var receive=function(){
             if(!opened || turn!==episodeGeneration || parentTurn!==generation)return;
             if(extrasError==='Actualisation de la diffusion…')extrasError='';
             if(status!==200 || !value || !Array.isArray(value.episodes) || (key.anilist_id && value.anilist_id!==key.anilist_id)){episodeState='error';return;}
             episodeData=value;episodeState='ready';console.info('ATLAS_TV_EPISODES_READY',card.anilist_id || 0,episodes.length);
-            for(var i=0;i<episodes.length;i++)if(episodes[i].numero===selectedNumber)episodeIndex=i;
+            for(var i=0;i<episodes.length;i++)if(episodes[i].numero===episodeSelectionNumber)episodeIndex=i;
             if(value.complements_a_charger && key.anilist_id)transport.api('/tv/v1/catalog/episode-extras',key,45000,function(code,extra){
                 if(!opened || turn!==episodeGeneration || parentTurn!==generation || code!==200 || !extra || !Array.isArray(extra.episodes))return;
                 var byNumber={};extra.episodes.forEach(function(e){byNumber[e.numero]=e;});
                 var merged={},old=episodeData;Object.keys(old).forEach(function(k){merged[k]=old[k];});
                 merged.episodes=old.episodes.map(function(e){return Episode.merge(e,byNumber[e.numero]);});episodeData=merged;
             });
+            };
+            if(state==='loading')pendingEpisodesReady=receive;else if(state==='ready')receive();
         });
     }
     function remember() {return {media:media,detail:detail,episodeData:episodeData,zone:zone,actionIndex:actionIndex,episodeIndex:episodeIndex,seasonIndex:seasonIndex,relationIndex:relationIndex,castIndex:castIndex,recommendationIndex:recommendationIndex,pageStart:pageStart,french:french,languageIndex:languageIndex,scroll:viewport.contentY};}
     function visit(c) {if(!identity(c))return;stack=stack.slice(-11).concat([remember()]);load(c);forceActiveFocus();}
     function back() {
         console.info('ATLAS_TV_DETAIL_BACK',card && card.anilist_id || 0,stack.length,zone);
-        generation++;episodeGeneration++;
+        generation++;episodeGeneration++;pendingEpisodesReady=null;
         if(stack.length){var saved=stack[stack.length-1],turn=generation;stack=stack.slice(0,-1);media=saved.media;detail=saved.detail;episodeData=saved.episodeData;state=detail ? 'ready' : 'error';episodeState=episodeData ? 'ready' : 'error';zone=saved.zone;actionIndex=saved.actionIndex;episodeIndex=saved.episodeIndex;seasonIndex=saved.seasonIndex;relationIndex=saved.relationIndex;castIndex=saved.castIndex;recommendationIndex=saved.recommendationIndex;pageStart=saved.pageStart;french=saved.french;languageIndex=saved.languageIndex;forceActiveFocus();Qt.callLater(function(){if(view.opened && turn===view.generation)viewport.contentY=saved.scroll;});}
         else {opened=false;closed();}
     }
@@ -171,12 +190,12 @@ FocusScope {
                 Column {id:headerText;x:236;y:100;width:944;spacing:10
                     Text {width:820;text:view.card ? view.card.titre || '' : '';textFormat:Text.PlainText;color:'white';font.family:view.family;font.pixelSize:34;font.weight:Font.Bold;maximumLineCount:2;wrapMode:Text.WordWrap;elide:Text.ElideRight}
                     Text {width:944;elide:Text.ElideRight;text:view.card ? [view.card.annee,view.card.format==='MOVIE' ? 'Film' : 'Série',Episode.seriesLabel(view.episodeData) || Episode.seriesLabel(view.card),view.card.diffusion ? Episode.count(view.card,true) : view.card.episodes ? view.card.episodes+' annoncés' : '',view.card.score ? (view.card.score/10).toFixed(1).replace('.',',')+' / 10' : ''].filter(function(v){return !!v;}).join('   ·   ') : '';color:'#d0d1d8';font.family:view.family;font.pixelSize:18}
-                    Text {width:790;text:view.detail ? view.detail.resume_complet || '' : view.state==='error' ? 'La fiche est indisponible pour le moment.' : 'Chargement de la fiche…';textFormat:Text.PlainText;color:'#d0d1d8';font.family:view.family;font.pixelSize:18;lineHeight:1.25;maximumLineCount:2;wrapMode:Text.WordWrap;elide:Text.ElideRight}
+                    Text {objectName:'detailSummary';width:790;text:view.detail ? view.detail.resume_complet || '' : view.state==='error' ? 'La fiche est indisponible pour le moment.' : view.card && typeof view.card.resume==='string' && view.card.resume ? view.card.resume : 'Chargement de la fiche…';textFormat:Text.PlainText;color:'#d0d1d8';font.family:view.family;font.pixelSize:18;lineHeight:1.25;maximumLineCount:2;wrapMode:Text.WordWrap;elide:Text.ElideRight}
                     Row {spacing:14
                         HeroButton {objectName:'detailPlay';width:320;iconKey:'play';label:view.state==='error' || view.episodeState==='error' ? 'Réessayer' : (view.card && view.card.a_lancer ? 'Reprendre · Ép. '+view.card.a_lancer.numero : 'Lecture')+' · '+(view.french ? 'VF' : 'VOSTFR');family:view.family;primary:true;groupHasFocus:true;focused:view.zone==='actions' && view.actionIndex===0;onActivated:view.primary()}
                         HeroButton {width:160;label:'Épisodes';family:view.family;focused:view.zone==='actions' && view.actionIndex===1;onActivated:{view.zone='actions';view.actionIndex=1;view.activate();}}
-                        HeroButton {objectName:'detailList';width:174;visible:view.personalEnabled;label:view.personalPhase==='saving' ? 'Enregistrement…' : view.personalEntry && view.personalEntry.presence==='absent' ? '+ Ma liste' : view.personalEntry && view.personalEntry.moi ? Personal.statusLabel(view.personalEntry.moi.statut) : 'Mon suivi';iconKey:view.personalEntry && view.personalEntry.presence==='present' ? 'check' : '';family:view.family;focused:view.zone==='actions' && view.actionIndex===2;onActivated:{view.zone='actions';view.actionIndex=2;view.personalAction(false)}}
-                        HeroButton {objectName:'detailRate';width:160;visible:view.personalEnabled;label:view.personalEntry && view.personalEntry.moi && view.personalEntry.moi.note ? 'Ta note · '+Personal.score(view.personalEntry.moi.note) : 'Noter';family:view.family;focused:view.zone==='actions' && view.actionIndex===3;onActivated:{view.zone='actions';view.actionIndex=3;view.personalAction(true)}}
+                        HeroButton {objectName:'detailList';width:174;visible:view.personalEnabled;label:view.personalPhase==='saving' ? 'Enregistrement…' : view.personalPending && !view.personalEntry ? 'Ma liste…' : view.personalEntry && view.personalEntry.presence==='absent' ? '+ Ma liste' : view.personalEntry && view.personalEntry.moi ? Personal.statusLabel(view.personalEntry.moi.statut) : 'Ma liste';iconKey:view.personalEntry && view.personalEntry.presence==='present' ? 'check' : '';family:view.family;focused:view.zone==='actions' && view.actionIndex===2;onActivated:{view.zone='actions';view.actionIndex=2;view.personalAction(false)}}
+                        HeroButton {objectName:'detailRate';width:160;visible:view.personalEnabled;label:view.personalPending && !view.personalEntry ? 'Note…' : view.personalEntry && view.personalEntry.moi && view.personalEntry.moi.note ? 'Ta note · '+Personal.score(view.personalEntry.moi.note) : 'Noter';family:view.family;focused:view.zone==='actions' && view.actionIndex===3;onActivated:{view.zone='actions';view.actionIndex=3;view.personalAction(true)}}
                     }
                 }
             }

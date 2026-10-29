@@ -40,6 +40,50 @@ def run(window, session, screen, details, calls, QTest, Qt, QObject, spin, evide
     assert not editor.property('opened') and screen.property('panel') == 'detail' and len(writes()) == before
     assert window.activeFocusItem()!=editor, 'An invisible editor must relinquish keyboard focus'
 
+    # A fresh canonical entry opens instantly; public moi:null never seeds membership.
+    def personal_reads():
+        return len([b for p,b in calls if p=='/tv/v1/library-entry' and b['anilist_id']==154587])
+    before_reads=personal_reads()
+    detail.personalAction(True)
+    assert editor.property('editable') and not editor.property('waiting') and personal_reads()==before_reads
+    QTest.keyClick(window,Qt.Key_Back)
+    store.clear()
+    session.setProperty('delayLibrary',True);session.setProperty('delayDetails',True)
+    detail_slot=len(data(session,'pendingDetails'));library_slot=len(data(session,'pendingLibrary'))
+    episode_reads=len([p for p,b in calls if p=='/tv/v1/catalog/episodes'])
+    card=dict(details['154587']['carte']);card['moi']=None
+    screen.openDetail(card)
+    assert detail.property('state')=='loading' and detail.property('personalPhase')=='loading'
+    assert personal_reads()==before_reads+1 and window.findChild(QObject,'detailList').property('label')=='Ma liste…'
+    assert len([p for p,b in calls if p=='/tv/v1/catalog/episodes'])==episode_reads+1
+    assert data(detail,'personalEntry') is None
+    assert window.findChild(QObject,'detailSummary').property('text')==card['resume'], 'resume_fr is a flag, not the synopsis text'
+    QTest.qWait(200);assert window.grabWindow().save(str(evidence/'followup-loading.png'))
+    assert detail.property('episodeState')=='loading' and data(detail,'episodes')==[], 'Prefetched rows wait for detail identity/page alignment'
+    store.ensure(154587);store.load(154587)
+    detail.personalAction(True)
+    assert personal_reads()==before_reads+1 and editor.property('waiting') and not editor.property('editable')
+    session.finishLibrary(library_slot)
+    spin(lambda:editor.property('editable'))
+    assert detail.property('state')=='loading' and data(detail,'personalEntry')['moi']['note']==7.2
+    session.finishDetail(detail_slot,154587)
+    spin(lambda:detail.property('state')=='ready' and detail.property('episodeState')=='ready')
+    assert personal_reads()==before_reads+1, 'Detail response must not refetch already-confirmed membership'
+    assert len([p for p,b in calls if p=='/tv/v1/catalog/episodes'])==episode_reads+1, 'Matching prefetched episode page must not be fetched twice'
+    QTest.keyClick(window,Qt.Key_Back)
+    times=data(store,'checkedAt');times['154587']=0;store.setProperty('checkedAt',times)
+    store.ensure(154587);store.ensure(154587)
+    assert personal_reads()==before_reads+2 and detail.property('personalPhase')=='loading'
+    session.finishLibrary(library_slot+1)
+    spin(lambda:detail.property('personalPhase')=='ready')
+    import time
+    times=data(store,'checkedAt');times['154587']=time.time()*1000+60000;store.setProperty('checkedAt',times)
+    store.ensure(154587)
+    assert personal_reads()==before_reads+3, 'A backwards clock change must not make a cached entry fresh forever'
+    session.finishLibrary(library_slot+2)
+    spin(lambda:detail.property('personalPhase')=='ready')
+    session.setProperty('delayLibrary',False);session.setProperty('delayDetails',False)
+
     # Focus alone changes nothing; a status-only save preserves decimal score and progress.
     detail.personalAction(False)
     spin(lambda: editor.property('editable'))
@@ -202,6 +246,13 @@ def run(window, session, screen, details, calls, QTest, Qt, QObject, spin, evide
     QTest.qWait(100)
     assert data(detail,'card')['moi']['progression']==12 and 'progression' not in writes()[-1]
     assert data(hero,'selected')['anilist_id']==home_id and data(hero,'currentRow')['id']==home_row
+    confirmed=data(detail,'personalEntry')
+    session.seedLibraryJson(154587,json.dumps({'anilist_id':154587,'presence':'inconnu','moi':None,'revision':None,'editable':False}))
+    store.load(154587);spin(lambda:detail.property('personalPhase')=='ready')
+    before_reads=personal_reads();session.seedLibraryJson(154587,json.dumps(confirmed));detail.personalAction(True)
+    spin(lambda:editor.property('editable'))
+    assert personal_reads()==before_reads+1, 'Unknown membership must be retried on the next opening, not cached for 30 seconds'
+    QTest.keyClick(window,Qt.Key_Back)
     session.seedLibraryJson(154587,json.dumps({'anilist_id':154587,'presence':'inconnu','moi':None,'revision':None,'editable':False}))
     store.load(154587);spin(lambda:detail.property('personalPhase')=='ready')
     before=len(writes());detail.personalAction(True)
@@ -221,4 +272,8 @@ def run(window, session, screen, details, calls, QTest, Qt, QObject, spin, evide
         'airingBoundaryRechecksWithoutPlaying': True, 'unknownMembershipCannotWrite': True,
         'providerCanonicalProgressHonoured': True, 'homeRefreshKeepsSelection': True, 'emptyTrailingPageRecovers': True,
         'manualFranimeOpaqueReader': True, 'manualFranimeOriginalQuality': True,
+        'privateReadParallelToDetail': True, 'pendingPrivateLabelNeutral': True,
+        'freshEditorDoesNotRefetch': True, 'privateReadsDeduplicated': True, 'expiredPrivateReadRevalidated': True,
+        'episodePagePrefetchedAndAligned': True,
+        'unknownMembershipNotCached': True,
     }, indent=2), encoding='utf-8')

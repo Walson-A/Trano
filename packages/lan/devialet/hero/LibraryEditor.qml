@@ -28,7 +28,7 @@ FocusScope {
     readonly property bool dirty:!!entry && (entry.presence==='absent' || draftStatus!==(entry.moi ? entry.moi.statut : 'PLANNING') || (draftNote || null)!==(entry.moi ? entry.moi.note || null : null))
     signal closed()
     function hydrate(keep){var e=entry;if(!e)return;var changedStatus=draftStatus!==originalStatus,changedNote=(draftNote || null)!==(originalNote || null);originalStatus=e.moi ? e.moi.statut : 'PLANNING';originalNote=e.moi ? e.moi.note || null : null;if(!keep || !changedStatus)draftStatus=originalStatus;if(!keep || !changedNote)draftNote=originalNote;statusIndex=0;for(var i=0;i<Library.statuses.length;i++)if(Library.statuses[i][0]===draftStatus)statusIndex=i;}
-    function open(id,name,note){waiting=true;identity=id;title=name || '';draftStatus='PLANNING';draftNote=null;statusIndex=0;preserveDraft=false;ownSave=false;zone=note ? 'note' : 'status';actionIndex=0;opened=true;store.load(id);forceActiveFocus();}
+    function open(id,name,note){waiting=true;identity=id;title=name || '';draftStatus='PLANNING';draftNote=null;statusIndex=0;preserveDraft=false;ownSave=false;zone=note ? 'note' : 'status';actionIndex=0;opened=true;store.ensure(id);refresh();forceActiveFocus();}
     function close(){focus=false;opened=false;closed();}
     function reload(){waiting=true;preserveDraft=true;store.load(identity);}
     function refresh(){if(!opened || !waiting || phase!=='ready')return;hydrate(preserveDraft);waiting=false;}
