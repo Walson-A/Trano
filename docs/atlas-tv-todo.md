@@ -21,6 +21,13 @@ Les avis privés et leur saisie sont une étape distincte.
 
 ## VOSTFR par défaut
 
+Correctif [publié sur la TV](research/2026-10-29-atlas-tv-search-vostfr-live.md)
+dans bea83d08cae6 : héros Lecture/Reprendre et ouverture d’une fiche demandent VO,
+sans transformer la disponibilité VF en préférence. La VF explicite est conservée.
+Le banc couvre ces deux entrées et la langue du lecteur ; ce lot ne change pas
+les préférences des clients PC/mobile. Le diagnostic et les critères ci-dessous
+sont conservés pour les régressions.
+
 Walson rapporte que la TV lui propose la VF par défaut, alors qu’il préfère
 nettement la VOSTFR. La VF doit rester disponible comme choix explicite.
 
@@ -33,11 +40,11 @@ nettement la VOSTFR. La VF doit rester disponible comme choix explicite.
 - Examiner la règle de préférence mémorisée et sa portée PC/téléphone/TV avant
   de généraliser. Aucun réglage ou historique n’est modifié par cette note.
 
-Point de code déjà relevé : DetailView.qml initialise french à false, mais sa
-fonction open le remplace à partir de a_lancer.vf ou, à défaut, de franime.vf.
+Diagnostic avant correctif : DetailView.qml initialisait french à false, mais sa
+fonction open le remplaçait à partir de a_lancer.vf ou, à défaut, de franime.vf.
 La disponibilité d’une VF peut donc devenir le choix initial de la fiche ; elle
-ne représente pas une préférence explicite de Walson. Vérifier les autres points
-d’entrée avant de corriger cette seule ligne.
+ne représentait pas une préférence explicite de Walson. Le héros présentait le
+même défaut ; les deux chemins sont corrigés et testés.
 
 ## Diffusion des séries et disponibilité des épisodes
 
@@ -80,7 +87,8 @@ la VF comme disponible. Aucun essai ne doit ajouter artificiellement de progress
 
 ## Ordre et coordination
 
-Ces points sont enregistrés pour la suite, sans élargir le lot d’en-tête visuel
-ou le lot HLS en cours dans l’autre chat. Leur analyse backend et leur mise en
-œuvre auront leurs propres contrats et vérifications. Les cas ci-dessus doivent
-être conservés même si le titre exact du signalement n’est pas encore retrouvé.
+La composition visuelle et le VOSTFR ont été livrés après validation, avec le
+lot HLS de l’autre chat. La bibliothèque et la diffusion ont encore besoin de
+leurs propres contrats backend et vérifications ; ce travail est coordonné dans
+ce même chat backend après sa clôture HLS. Les cas ci-dessus doivent être
+conservés même si le titre exact du signalement n’est pas encore retrouvé.

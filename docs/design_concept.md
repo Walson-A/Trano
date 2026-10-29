@@ -155,9 +155,12 @@ composant réel est [raccordé et publié](research/2026-10-29-atlas-tv-discover
 L’itération suivante doit montrer davantage de résultats simultanés et adapter
 les actions de bibliothèque PC/mobile à la télécommande.
 La passe12vignettes a été rejetée ; [le comparatif suivant](research/2026-10-29-atlas-tv-library-density.md)
-conserve le format des affiches et propose six grandes cartes, en revue seulement.
+conserve le format des affiches et propose six grandes cartes.
 La [passe d’en-tête compact](research/2026-10-29-atlas-tv-search-compact.md) retire
 l’accroche, resserre les commandes et rend 54 px au catalogue sans réduire les affiches.
+Cette composition validée est [publiée dans le vrai loader](research/2026-10-29-atlas-tv-search-vostfr-live.md),
+avec le défaut VOSTFR et la VF explicite conservée. Le même paquet intègre le
+raccord HLS testé séparément ; les actions de bibliothèque restent un lot distinct.
 
 La [scène QML](research/2026-10-26-atlas-tv-qml-design-scene.md) compare une carte
 paysage, un focus blanc et un panneau translucide avec flou optionnel. Elle suit

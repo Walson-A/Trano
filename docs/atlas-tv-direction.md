@@ -1,17 +1,23 @@
 # Atlas sur la télévision : base réutilisable et premier parcours
 
 [Suites demandées par Walson](atlas-tv-todo.md) : bibliothèque, VOSTFR par défaut,
-états de diffusion et épisodes futurs avec leurs dates. Ces demandes restent
-hors de la passe visuelle et du lot HLS actuels.
+états de diffusion et épisodes futurs avec leurs dates. Le VOSTFR est traité
+dans la livraison ci-dessous ; la bibliothèque et le calendrier restent à faire.
+
+[Composition validée publiée : Recherche et VOSTFR](research/2026-10-29-atlas-tv-search-vostfr-live.md).
+Le paquet bea83d08cae6 active les six grandes affiches avec en-tête compact,
+demande VOSTFR à l’ouverture et au lancement, conserve la VF explicite et intègre
+le support HLS. Disponibilité et lancement SDK vérifiés ; aucun épisode lancé
+automatiquement pour cette livraison.
 
 [Passe suivante : six grandes affiches et en-tête resserré](research/2026-10-29-atlas-tv-search-compact.md).
 Le catalogue gagne 54 px en hauteur sans réduire les cartes. Comparatif QML en
-revue ; aucun nouveau paquet ni lancement natif dans ce lot.
+revue historique ; ce visuel validé est activé par la composition ci-dessus.
 
 [Réception suivante : densité, bibliothèque et retour arrière](research/2026-10-29-atlas-tv-library-density.md).
 La passe12cartes a été rejetée et retirée ; le Player est revenu à6f378d98928e.
 Six grandes affiches verticales sont préparées au banc uniquement, sans nouvelle
-publication. Les routes TV d’écriture de liste/notes manquent encore.
+publication lors de cette revue. Les routes TV d’écriture de liste/notes manquent encore.
 
 [Recherche / découverte publiée](research/2026-10-29-atlas-tv-discovery-live.md) :
 catalogue sans saisie obligatoire, critères cumulables, affiches à parcourir et

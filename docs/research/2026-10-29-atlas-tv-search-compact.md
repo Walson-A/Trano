@@ -3,8 +3,10 @@
 Walson retient les six grandes affiches et demande d’appliquer les améliorations
 discutées : supprimer la phrase d’accroche, resserrer le titre et les filtres,
 garder le titre complet de la sélection et un focus évident. Ce lot reste un
-aperçu avant publication ; le loader réel n’active pas denseLayout et aucun
-SDK, service ou paquet serveur n’est modifié.
+aperçu avant publication au moment des mesures ci-dessous. Après validation,
+le loader réel l’active dans la [livraison suivante](2026-10-29-atlas-tv-search-vostfr-live.md),
+avec VOSTFR par défaut et le raccord HLS. Les mesures historiques de ce document
+n’incluaient aucun changement de SDK, service ou paquet serveur.
 
 Le [comparatif du vrai QML](2026-10-29-atlas-tv-search-compact/review.html) conserve
 la passe précédente à six affiches pour comparaison. Les deux captures utilisent
