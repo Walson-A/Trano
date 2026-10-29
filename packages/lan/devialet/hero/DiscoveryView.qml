@@ -11,7 +11,7 @@ FocusScope {
     property var artworks
     property string family:'sans-serif'
     property bool reducedMotion:false
-    // Six large posters are opt-in for visual review, not enabled by the live host.
+    // The live host selects six posters; standalone benches can compare four.
     property bool denseLayout:false
     readonly property int columns:denseLayout ? 6 : 4
     property bool opened:false

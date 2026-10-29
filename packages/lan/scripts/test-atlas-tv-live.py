@@ -271,12 +271,12 @@ Item {
             session.setProperty('delayPlaybacks',False)
             player.openMenu('quality');spin(lambda:menu.property('state')=='ready')
             QTest.keyClick(window,Qt.Key_Down);QTest.keyClick(window,Qt.Key_Return)
-            spin(lambda:screen.property('playbackId')!=old_id and player.property('playing'))
+            spin(lambda:screen.property('playbackId')!=old_id and player.property('playing') and player.property('resumed') and not player.property('restoreAfterSeek') and not player.property('changing'))
             assert player.property('positionMs')==150000 and screen.property('pendingPlayback').toVariant()['qualityLabel']=='360p'
             assert player.property('zone')=='actions' and player.property('controlIndex')==2, 'A completed quality change restores its trigger focus'
             # A quality switch made while paused preserves both time and intent.
             player.setProperty('zone','surface');QTest.keyClick(window,Qt.Key_Return)
-            assert not player.property('wantsPlaying')
+            assert not player.property('wantsPlaying'), {k:player.property(k) for k in ['zone','activeFocus','playing','resumed','restoreAfterSeek','changing','retrying','menuOpened','controlsVisible','wantsPlaying']}
             old_id=screen.property('playbackId');player.openMenu('quality');spin(lambda:menu.property('state')=='ready')
             QTest.keyClick(window,Qt.Key_Down);QTest.keyClick(window,Qt.Key_Return)
             spin(lambda:screen.property('playbackId')!=old_id and player.property('resumed'))
@@ -387,6 +387,7 @@ Item {
             QTest.keyClick(window,Qt.Key_Up);QTest.keyClick(window,Qt.Key_Return)
             search=window.findChild(QObject,'atlasDiscovery')
             assert screen.property('panel')=='search' and search.property('activeFocus')
+            assert search.property('denseLayout') is True and search.property('columns')==6, 'The real loader must enable the approved poster layout'
             spin(lambda:len([c for c in calls if c[0]=='/tv/v1/catalog/search'])==1)
             assert [c[1] for c in calls if c[0]=='/tv/v1/catalog/search'][-1]=={'page':1}
             session.finishSearch(0)
@@ -459,6 +460,8 @@ Item {
             assert detail.property('episodes').toVariant()[0]['numero']==1
             assert detail.property('french') is False and detail.property('languageIndex')==0
             assert 'VOSTFR' in window.findChild(QObject,'detailPlay').property('label'), 'New detail defaults to VOSTFR even when VF exists'
+            QTest.qWait(150)
+            assert window.grabWindow().save(str(args.evidence/'detail-default-vostfr.png'))
             detail.setProperty('zone','language');detail.setProperty('languageIndex',1);detail.setProperty('french',True)
             QTest.keyClick(window,Qt.Key_Left)
             assert detail.property('french') is True, 'Focus must not change the chosen language'
