@@ -1,0 +1,6 @@
+{
+  "engineCommit": "ae8051e3989a530e5da696047d0776ca701f1c57",
+  "serverSha256": "1b6e3daa4bd74abd7db137a924df86a1f0eba0c76ed2602544ea0b778cd67134",
+  "releaseBefore": "hero-discovery-bea83d08cae6",
+  "dockerRunning": true
+}

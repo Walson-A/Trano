@@ -1,0 +1,10 @@
+{
+  "releaseId": "hero-library-60a7cb562ecd",
+  "activeBundleVerified": true,
+  "remoteTransfersRemoved": [
+    "atlas-tv-ui-hero-library-60a7cb562ecd.tar.gz",
+    "atlas-tv-publish-hero-library-60a7cb562ecd.py"
+  ],
+  "rollbackBackupRetained": true,
+  "ownPersistentTestServers": 0
+}

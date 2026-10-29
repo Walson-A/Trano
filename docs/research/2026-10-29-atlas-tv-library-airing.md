@@ -105,8 +105,31 @@ validé par LibraryPolicy sur une réponse réelle du gateway : page de 24 élé
 entrée compatible, absence d’avis privés. Le diagnostic est révoqué dans finally ;
 aucune mutation ni commande du Player n’est émise par ce contrôle.
 
-La publication de l’interface et son reçu SDK seront consignés après composition
-du paquet. Les captures de banc ne remplacent pas une observation physique de la TV.
+## Livraison réelle
+
+Le [paquet immuable](2026-10-29-atlas-tv-library-airing/package.json)
+hero-library-60a7cb562ecd contient 35 fichiers / 346144 octets, issus du commit
+source d3de841a7b966c6f14ca4c49c482ee8022416819. Le contrôle préalable vérifie le
+commit engine réellement actif ae8051e3989a530e5da696047d0776ca701f1c57, le gateway
+1b6e3daa4bd74abd7db137a924df86a1f0eba0c76ed2602544ea0b778cd67134 et l’ancienne
+release bea83d08cae6. La [publication](2026-10-29-atlas-tv-library-airing/publication.json)
+remplace seulement le bundle et redémarre son conteneur : disponibilité et toutes
+les empreintes sont vérifiées, engine inchangé. Le correctif FrAnime a reçu le
+feu vert du backend après ses propres tests publics.
+
+Le [reçu SDK](2026-10-29-atlas-tv-library-airing/launch.json) confirme
+l’acceptation du lancement 9c287644263c26cd56cc787d0338f2d8 et les 32 ressources
+demandées par le Player, dont les nouveaux modules privés. Aucun épisode n’est
+lancé automatiquement. Le SDK et le téléchargement ne prouvent pas le rendu :
+la réception physique de cette passe reste à faire.
+
+Le [nettoyage](2026-10-29-atlas-tv-library-airing/cleanup.json) retire nos deux
+transferts serveur après comparaison des empreintes ; le bundle actif et sa
+sauvegarde de configuration privée 0600 restent en place. Les exports temporaires
+et paquets locaux du lot sont retirés après archivage des preuves. Aucun serveur
+de test persistant n’est créé. Le worktree partagé est conservé pour la suite TV,
+avec ses deux éléments non suivis préexistants, sans les modifier. Les caches
+communs QML, polices et images restent disponibles aux autres travaux.
 
 ## Choix manuel FrAnime coordonné
 

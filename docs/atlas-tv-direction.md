@@ -1,8 +1,16 @@
 # Atlas sur la télévision : base réutilisable et premier parcours
 
 [Suites demandées par Walson](atlas-tv-todo.md) : bibliothèque, VOSTFR par défaut,
-états de diffusion et épisodes futurs avec leurs dates. Le VOSTFR est traité
-dans la livraison ci-dessous ; la bibliothèque et le calendrier restent à faire.
+états de diffusion et épisodes futurs avec leurs dates. Le VOSTFR, Ma liste,
+les notes et le calendrier ont désormais leur livraison ci-dessous.
+
+[Ma liste, notes et épisodes à venir publiés](research/2026-10-29-atlas-tv-library-airing.md).
+Le paquet hero-library-60a7cb562ecd (35 fichiers) est raccordé aux routes privées
+appareil du backend. La fiche permet l’ajout, les six statuts et une note sur 10 ;
+les épisodes confirmés futurs sont datés et bloqués dans la fiche, le menu et le
+serveur. Un état inconnu reste distinct. Le choix manuel FrAnime et Originale est
+composé dans ce lot. Le banc QML complet passe en MP4 et HLS ; le contrat réel de
+bibliothèque est validé en lecture seule. Le rendu physique reste à observer.
 
 [Composition validée publiée : Recherche et VOSTFR](research/2026-10-29-atlas-tv-search-vostfr-live.md).
 Le paquet bea83d08cae6 active les six grandes affiches avec en-tête compact,
@@ -17,7 +25,7 @@ revue historique ; ce visuel validé est activé par la composition ci-dessus.
 [Réception suivante : densité, bibliothèque et retour arrière](research/2026-10-29-atlas-tv-library-density.md).
 La passe12cartes a été rejetée et retirée ; le Player est revenu à6f378d98928e.
 Six grandes affiches verticales sont préparées au banc uniquement, sans nouvelle
-publication lors de cette revue. Les routes TV d’écriture de liste/notes manquent encore.
+publication lors de cette revue. Les routes TV d’écriture de liste/notes manquaient lors de cette revue historique.
 
 [Recherche / découverte publiée](research/2026-10-29-atlas-tv-discovery-live.md) :
 catalogue sans saisie obligatoire, critères cumulables, affiches à parcourir et

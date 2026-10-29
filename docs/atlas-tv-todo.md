@@ -1,10 +1,18 @@
 # Atlas TV — suites demandées par Walson
 
 Demandes du 29 octobre 2026 à conserver pour **après la passe visuelle en cours**.
-Ce document décrit le travail restant, pas des fonctions déjà livrées. L’état du
-chantier courant est dans [la direction TV](atlas-tv-direction.md).
+Ce document conserve les critères demandés et distingue leur livraison du reste
+à faire. L’état courant est dans [la direction TV](atlas-tv-direction.md).
 
 ## Bibliothèque et suivi personnel
+
+[Livraison Ma liste / notes / calendrier](research/2026-10-29-atlas-tv-library-airing.md)
+par hero-library-60a7cb562ecd : ajout PLANNING, statuts, note sur 10 et retrait de
+note, annulation, conflits et erreurs, grille privée à six affiches et filtres.
+Le backend expose les routes appareil fermées ; aucun RPC propriétaire n’est
+transmis au Player. Restent les avis privés, le retrait complet d’une entrée et
+une éventuelle édition explicite de progression. Les critères ci-dessous sont
+conservés pour les régressions.
 
 - Ajouter à Ma liste depuis une fiche, montrer l’état confirmé et permettre de
   gérer proprement le statut. Réutiliser les données et règles du PC/mobile.
@@ -13,8 +21,8 @@ chantier courant est dans [la direction TV](atlas-tv-direction.md).
 - Partager le moi confirmé par le backend et l’identité AniList, sans liste
   parallèle locale ni succès fictif. Ne pas confondre le statut personnel
   « En cours/Terminé » avec le statut de diffusion de la série.
-- La route appareil TV de modification de bibliothèque manque encore. Le RPC
-  propriétaire ne doit pas être exposé directement au Player.
+- Les routes appareil fermées utilisent la révision canonique. Le RPC propriétaire
+  ne doit pas être exposé directement au Player.
 
 [Audit PC/mobile et parcours proposé](research/2026-10-29-atlas-tv-library-density.md).
 Les avis privés et leur saisie sont une étape distincte.
@@ -88,7 +96,9 @@ la VF comme disponible. Aucun essai ne doit ajouter artificiellement de progress
 ## Ordre et coordination
 
 La composition visuelle et le VOSTFR ont été livrés après validation, avec le
-lot HLS de l’autre chat. La bibliothèque et la diffusion ont encore besoin de
-leurs propres contrats backend et vérifications ; ce travail est coordonné dans
-ce même chat backend après sa clôture HLS. Les cas ci-dessus doivent être
-conservés même si le titre exact du signalement n’est pas encore retrouvé.
+lot HLS de l’autre chat. Ma liste, notes et diffusion ont ensuite été raccordés
+au backend et publiés dans hero-library-60a7cb562ecd, avec les tests de conflit,
+de relecture après timeout et de futurs bloqués. Le backend FrAnime manuel est
+composé dans la même interface. La réception physique reste à faire. Les cas
+ci-dessus restent les critères de régression ; le titre exact « Gear… » n’a pas
+été identifié et aucun calendrier fictif n’est présenté comme son calendrier.
