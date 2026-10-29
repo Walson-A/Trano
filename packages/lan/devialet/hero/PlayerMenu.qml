@@ -1,4 +1,5 @@
 import QtQuick 2.15
+import "EpisodePolicy.js" as Episode
 
 // One overlay, owned by the episode player. Catalogs never contain provider URLs.
 Item {
@@ -23,6 +24,7 @@ Item {
     property var episodeCard:null
     property int pageStart:1
     property int total:0
+    property var airingData:null
     property int pageIndex:0
     property int positionMs:0
     property int durationMs:0
@@ -31,7 +33,7 @@ Item {
     readonly property bool nextAvailable:pageStart+entries.length<=total
     readonly property var episodeRows:kind==='episodes' ? entries.map(function(e){var row={};Object.keys(e).forEach(function(k){row[k]=e[k];});row.vignette=episodeArt.sources[episodeCard.anilist_id+':'+e.numero] || '';return row;}) : []
     EpisodeArtworkCache {id:episodeArt;transport:menu.transport}
-    function warmEpisodes(){if(kind!=='episodes' || state!=='ready' || !episodeCard)return;for(var i=Math.max(0,index-4);i<Math.min(entries.length,index+5);i++)episodeArt.request(episodeCard.anilist_id,entries[i].numero);}
+    function warmEpisodes(){if(kind!=='episodes' || state!=='ready' || !episodeCard)return;for(var i=Math.max(0,index-4);i<Math.min(entries.length,index+5);i++)if(!Episode.blocked(entries[i]))episodeArt.request(episodeCard.anilist_id,entries[i].numero);}
     onIndexChanged:warmEpisodes()
     onEntriesChanged:warmEpisodes()
     Timer {interval:30000;repeat:true;running:menu.kind==='episodes';onTriggered:menu.warmEpisodes()}
@@ -46,7 +48,7 @@ Item {
     signal dismissed()
     signal cancelRequested()
     function validId(value){return /^[a-f0-9]{64}$/.test(value || '');}
-    function sourceName(value){return value==='voiranime' ? 'Voiranime' : value==='anime-sama' ? 'Anime-sama' : '';}
+    function sourceName(value){return value==='voiranime' ? 'Voiranime' : value==='anime-sama' ? 'Anime-sama' : value==='franime' ? 'FrAnime' : '';}
     function identity(){return {anilist_id:current.media.anilist_id,episode:current.target.numero,lang:current.target.vf ? 'vf' : 'vo'};}
     function matches(value,key){return value && value.anilist_id===key.anilist_id && value.episode===key.episode && value.lang===key.lang;}
     function close(){revision++;kind='';message='';cancelRequested();dismissed();}
@@ -67,7 +69,7 @@ Item {
             if(turn!==revision || kind!=='source')return;
             if(code!==200 || !matches(value,key) || !Array.isArray(value.readers)){failed('Lecteurs indisponibles.');return;}
             readers=value.readers.slice(0,128).filter(function(r){return validId(r.reader_id) && !!sourceName(r.source) && typeof r.label==='string' && r.label.length<=160;});
-            var list=[{id:'',label:'Automatique'}];['voiranime','anime-sama'].forEach(function(s){if(readers.some(function(r){return r.source===s;}))list.push({id:s,label:sourceName(s)});});sources=list;
+            var list=[{id:'',label:'Automatique'}];['voiranime','anime-sama','franime'].forEach(function(s){if(readers.some(function(r){return r.source===s;}))list.push({id:s,label:sourceName(s)});});sources=list;
             state='ready';filterReaders();
         });
     }
@@ -87,7 +89,7 @@ Item {
             if(turn!==revision || kind!=='quality')return;
             if(code!==200 || !matches(value,key) || value.source!==key.source || value.reader_id!==key.reader_id || !Array.isArray(value.variants)){failed('Qualités indisponibles.');return;}
             variants=value.variants.slice(0,16).filter(function(v){return validId(v.variant_id) && (v.container==='mp4' || transport.hlsEnabled && v.container==='hls') && typeof v.label==='string' && v.label.length<=80;});
-            entries=(variants.length>1 ? [{label:'Automatique',variantId:''}] : []).concat(variants.map(function(v){return {label:v.label,variantId:v.variant_id};}));
+            entries=(variants.length ? [{label:'Automatique',variantId:''}] : []).concat(variants.map(function(v){return {label:v.label,variantId:v.variant_id};}));
             index=0;for(var i=0;i<entries.length;i++)if(entries[i].variantId===(current.choice.variantId || ''))index=i;
             state='ready';if(!variants.length)message=transport.hlsEnabled ? 'Aucune qualité compatible n’est annoncée pour ce lecteur.' : 'Aucune variante MP4 compatible n’est annoncée pour ce lecteur.';
         });
@@ -103,25 +105,25 @@ Item {
             });
         });
     }
-    function episodeEntries(rows,key){return rows.slice(0,40).filter(function(e){return Number.isInteger(e.numero) && e.numero>0;}).map(function(e){return {numero:e.numero,label:'Épisode '+e.numero,titre:typeof e.titre==='string' ? e.titre : '',duree:typeof e.duree==='number' && e.duree>0 ? e.duree : 0,detail:current.media.anilist_id===key.anilist_id && current.target.numero===e.numero ? 'En lecture' : e.titre || '',available:true};});}
+    function episodeEntries(rows,key){return rows.slice(0,40).filter(function(e){return Number.isInteger(e.numero) && e.numero>0;}).map(function(e){var row={};Object.keys(e).forEach(function(k){row[k]=e[k];});row.label='Épisode '+e.numero;row.titre=typeof e.titre==='string' ? e.titre : '';row.duree=typeof e.duree==='number' && e.duree>0 ? e.duree : 0;row.detail=Episode.notice(e) || (current.media.anilist_id===key.anilist_id && current.target.numero===e.numero ? 'En lecture' : e.titre || '');row.available=!Episode.blocked(e);return row;});}
     function loadEpisodes(selected){
         var turn=++revision,key={anilist_id:episodeCard.anilist_id,debut:pageStart,nombre:40};state='loading';entries=[];
         transport.api('/tv/v1/catalog/episodes',key,45000,function(code,value){
             if(turn!==revision || kind!=='episodes')return;
             if(code!==200 || !value || value.anilist_id!==key.anilist_id || !Array.isArray(value.episodes)){failed('Impossible de charger les épisodes.');return;}
-            total=Number.isInteger(value.total) && value.total>=0 ? value.total : 0;entries=episodeEntries(value.episodes,key);
+            total=Number.isInteger(value.borne_connue) ? value.borne_connue : Number.isInteger(value.total) && value.total>=0 ? value.total : 0;airingData=value;entries=episodeEntries(value.episodes,key);
             state='ready';index=0;for(var i=0;i<entries.length;i++)if(entries[i].numero===selected)index=i;
             warmEpisodes();showIndex();
             if(value.complements_a_charger===true)transport.api('/tv/v1/catalog/episode-extras',key,45000,function(status,extra){
                 if(turn!==revision || kind!=='episodes' || status!==200 || !extra || extra.anilist_id!==key.anilist_id || !Array.isArray(extra.episodes))return;
                 var rows=episodeEntries(extra.episodes,key),byNumber={};rows.forEach(function(e){byNumber[e.numero]=e;});
-                entries=entries.map(function(e){var more=byNumber[e.numero];if(!more)return e;var row={};Object.keys(e).forEach(function(k){row[k]=e[k];});if(more.titre)row.titre=more.titre;if(more.duree)row.duree=more.duree;return row;});
+                entries=episodeEntries(entries.map(function(e){return Episode.merge(e,byNumber[e.numero]);}),key);
             });
         });
     }
     function selected(entry){
         if(!current || !entry)return false;
-        if(kind==='quality')return entry.variantId===(current.choice.variantId || '') || variants.length===1 && !current.choice.variantId;
+        if(kind==='quality')return entry.variantId===(current.choice.variantId || '');
         if(kind==='version')return entry.vf===current.target.vf;
         if(kind==='seasons')return !!entry.card && !!episodeCard && entry.card.anilist_id===episodeCard.anilist_id;
         if(kind==='episodes')return episodeCard.anilist_id===current.media.anilist_id && entry.numero===current.target.numero;
@@ -140,7 +142,7 @@ Item {
             if(pageIndex===0 && pageStart>1)pageStart=Math.max(1,pageStart-40);else if(pageIndex===1 && pageStart+entries.length<=total)pageStart+=entries.length;else return;
             column='items';loadEpisodes(0);return;
         }
-        var entry=entries[index];if(!entry || entry.available===false)return;
+        var entry=entries[index];if(!entry)return;if(kind==='episodes' && Episode.due(entry)){loadEpisodes(entry.numero);return;}if(entry.available===false)return;
         if(kind==='seasons'){episodeCard=entry.card;kind='episodes';pageStart=1;loadEpisodes(0);return;}
         if(selected(entry)){close();return;}
         var choice={},target={numero:current.target.numero,vf:current.target.vf},card=current.media;
@@ -174,7 +176,7 @@ Item {
         ListView {id:list;objectName:'playerMenuList';x:8;y:64;width:surface.width-16;height:menu.listHeight;clip:true;interactive:false;spacing:4;model:menu.entries;currentIndex:menu.index;onCurrentIndexChanged:if(menu.kind!=='episodes')positionViewAtIndex(currentIndex,ListView.Contain);visible:menu.kind!=='episodes' && menu.state==='ready' && !menu.busy && !menu.changeError
             delegate:PlayerChoice {width:list.width;height:64;family:menu.family;label:modelData.label || '';detail:modelData.detail || '';available:modelData.available!==false;focused:menu.index===index;selected:menu.selected(modelData);onActivated:{menu.index=index;menu.column='items';menu.activate();}}
         }
-        PlayerEpisodes {family:menu.family;episodes:menu.episodeRows;selectedIndex:menu.index;currentEpisode:menu.current ? menu.current.target.numero : 0;sameSeries:menu.current && menu.episodeCard && menu.episodeCard.anilist_id===menu.current.media.anilist_id;seasonLabel:menu.episodeCard && menu.episodeCard.franime && menu.episodeCard.franime.saison ? 'Saison '+menu.episodeCard.franime.saison : 'Épisodes';total:menu.total;pageStart:menu.pageStart;previousAvailable:menu.previousAvailable;nextAvailable:menu.nextAvailable;positionMs:menu.positionMs;durationMs:menu.durationMs;zone:menu.column==='items' ? 'episodes' : menu.column==='header' ? 'season' : menu.column;visible:menu.kind==='episodes' && menu.state==='ready' && !menu.busy && !menu.changeError
+        PlayerEpisodes {family:menu.family;episodes:menu.episodeRows;selectedIndex:menu.index;currentEpisode:menu.current ? menu.current.target.numero : 0;sameSeries:menu.current && menu.episodeCard && menu.episodeCard.anilist_id===menu.current.media.anilist_id;seasonLabel:menu.episodeCard && menu.episodeCard.franime && menu.episodeCard.franime.saison ? 'Saison '+menu.episodeCard.franime.saison : 'Épisodes';total:menu.total;airingSummary:menu.airingData && menu.airingData.diffusion ? Episode.count(menu.airingData,true) : '';pageStart:menu.pageStart;previousAvailable:menu.previousAvailable;nextAvailable:menu.nextAvailable;positionMs:menu.positionMs;durationMs:menu.durationMs;zone:menu.column==='items' ? 'episodes' : menu.column==='header' ? 'season' : menu.column;visible:menu.kind==='episodes' && menu.state==='ready' && !menu.busy && !menu.changeError
             onSelectEpisode:menu.index=index
             onActivateEpisode:{menu.index=index;menu.column='items';menu.activate();}
             onOpenSeasons:{menu.column='header';menu.activate();}

@@ -12,6 +12,9 @@ SearchView SearchView.qml
 DiscoveryView DiscoveryView.qml
 ProfileView ProfileView.qml
 DetailView DetailView.qml
+TvLibrary TvLibrary.qml
+LibraryEditor LibraryEditor.qml
+LibraryView LibraryView.qml
 TvNavigation TvNavigation.qml
 PlayerControls PlayerControls.qml
 PlayerMenu PlayerMenu.qml

@@ -1,5 +1,6 @@
 import QtQuick 2.15
 import QtMultimedia 5.0
+import "EpisodePolicy.js" as Episode
 
 FocusScope {
     id:player
@@ -30,12 +31,14 @@ FocusScope {
     readonly property bool playing:media.playbackState===MediaPlayer.PlayingState
     readonly property bool menuOpened:menu.opened
     readonly property string menuName:menu.kind
+    readonly property string episodeCountLabel:current && menu.airingData && menu.airingData.anilist_id===current.media.anilist_id && menu.airingData.diffusion ? Episode.count(menu.airingData,true) : current && current.media.diffusion ? Episode.count(current.media,true) : current && current.media.episodes>0 ? current.media.episodes+' épisodes' : ''
     signal progress(var value)
     signal closed()
     signal retryRequested()
     signal changeRequested(var media,var target,var choice)
     signal cancelChangeRequested()
     function clock(ms){var s=Math.floor(Math.max(0,ms)/1000);return Math.floor(s/60)+':'+('0'+s%60).slice(-2);}
+    function knownEpisode(identity,number){if(menu.episodeCard && menu.episodeCard.anilist_id===identity)for(var i=0;i<menu.entries.length;i++)if(menu.entries[i].numero===number)return menu.entries[i];return null;}
     function report(state){if(started && media.duration>0)progress({position_ms:media.position,duration_ms:media.duration,state:state});}
     function play(url,desiredPlaying){
         var returnZone=menu.opened ? menuOrigin : 'surface';

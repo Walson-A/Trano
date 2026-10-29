@@ -12,6 +12,7 @@ import time
 
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--hls',action='store_true',help='Exercise negotiated HLS requests and quality menus with the fake decoder')
+parser.add_argument('--follow-up',action='store_true',help='Exercise library writes and the explicit 12 announced/5 aired fixture; no account')
 parser.add_argument('--qt-path',type=pathlib.Path,required=True)
 parser.add_argument('--snapshot',type=pathlib.Path,required=True)
 parser.add_argument('--assets',type=pathlib.Path,required=True)
@@ -130,6 +131,17 @@ Item {
  property bool readersEnabled:true
  property bool variantsEnabled:true
  property bool hlsEnabled:benchmarkHlsEnabled
+ property bool libraryEnabled:false
+ property bool airingEnabled:false
+ property bool followupAiring:false
+ property bool franimeEnabled:false
+ property bool rejectNextUnaired:false
+ property var libraryEntries:({})
+ property string libraryFailure:''
+ property int libraryMutations:0
+ property int libraryRevision:0
+ property int homeReloads:0
+ property bool trimLibrary:false
  property bool delayPlaybacks:false
  property var pendingPlaybacks:[]
  property int playbackCount:0
@@ -148,22 +160,32 @@ Item {
  signal unavailable()
  signal apiCalled(string path,var body)
  function start(url) { home=benchmarkHome; state='ready'; homeLoaded(); }
+ function loadHome(){homeReloads++;Qt.callLater(function(){homeLoaded();});}
  function api(path,body,timeout,done) {
   apiCalled(path,body);
+  if(path==='/tv/v1/library-entry'){Qt.callLater(function(){done(200,libraryEntry(body.anilist_id));});return;}
+  if(path==='/tv/v1/library-update'){Qt.callLater(function(){
+   var entry=libraryEntry(body.anilist_id),mode=libraryFailure;libraryFailure='';
+   if(mode==='conflict'){entry.moi.statut='PAUSED';entry.moi.note=9;entry.revision='conflict-'+(++libraryRevision);seedLibrary(body.anilist_id,entry);done(409,{error:{code:'entry_conflict'}});return;}
+   var next=JSON.parse(JSON.stringify(entry));next.presence='present';next.moi=next.moi || {statut:'PLANNING',note:null,progression:0};['statut','note','progression'].forEach(function(k){if(Object.prototype.hasOwnProperty.call(body,k))next.moi[k]=body[k];});if(mode==='adjust_progress')next.moi.progression=12;next.revision='saved-'+(++libraryRevision);next.request_id=body.request_id;seedLibrary(body.anilist_id,next);libraryMutations++;
+   done(mode==='timeout' ? 0 : 200,mode==='timeout' ? {} : next);
+  });return;}
+  if(path==='/tv/v1/library'){Qt.callLater(function(){var cards=benchmarkLibraryCards.filter(function(c){return !body.statut || c.moi.statut===body.statut;});if(trimLibrary)cards=cards.slice(0,24);done(200,{resultats:cards.slice((body.page-1)*24,body.page*24),page:body.page,total:cards.length,has_next_page:cards.length>body.page*24,presence_connue:true});});return;}
+  if(followupAiring && path==='/tv/v1/catalog/episode-extras'){Qt.callLater(function(){done(200,{anilist_id:body.anilist_id,episodes:[{numero:6,titre:'Complément public tardif',diffusion:{etat:'inconnu',date:null},lancable:true}]});});return;}
   if(path==='/tv/v1/previews') { pendingPreview=done; return; }
   if(path==='/tv/v1/artworks' && body.kind==='episode') {var image=benchmarkEpisodeImages[String(body.anilist_id)],url=image && image[String(body.episode)];Qt.callLater(function(){done(url ? 200 : 404,{anilist_id:body.anilist_id,episode:wrongEpisodeArtwork ? body.episode+1 : body.episode,kind:'episode',path:url || '',expires_at:Date.now()/1000+900});});return;}
   if(path==='/tv/v1/artworks') { pendingArtworks=pendingArtworks.concat([done]); return; }
   if(path==='/tv/v1/catalog/search') { pendingSearches=pendingSearches.concat([{done:done,body:body}]); return; }
   if(path==='/tv/v1/catalog/history') { Qt.callLater(function(){done(200,benchmarkHistory);});return; }
   if(path==='/tv/v1/catalog/detail') { if(delayDetails){pendingDetails=pendingDetails.concat([done]);return;}Qt.callLater(function(){var value=benchmarkDetails[String(body.anilist_id)];done(value ? 200 : 404,value || {});});return; }
-  if(path==='/tv/v1/catalog/episodes') { Qt.callLater(function(){var value=benchmarkEpisodes[String(body.anilist_id)];done(value ? 200 : 404,value || {});});return; }
-  if(path==='/tv/v1/readers') {Qt.callLater(function(){done(200,{anilist_id:body.anilist_id,episode:body.episode,lang:body.lang,readers:[{reader_id:'e'.repeat(64),source:'voiranime',provider:'mail',label:'Mail.ru FHD1',supported:true},{reader_id:'f'.repeat(64),source:'anime-sama',provider:'yourupload',label:'YourUpload',supported:true},{reader_id:'d'.repeat(64),source:'voiranime',provider:'other',label:'Incompatible',supported:false}],limitations:['franime_browser_required']});});return;}
-  if(path==='/tv/v1/variants') {if(failNextVariants){failNextVariants=false;Qt.callLater(function(){done(502,{});});return;}Qt.callLater(function(){done(200,{anilist_id:body.anilist_id,episode:body.episode,lang:body.lang,source:body.source,reader_id:body.reader_id,variants:[{variant_id:'1'.repeat(64),label:'360p',height:360,container:hlsEnabled ? 'hls' : 'mp4'},{variant_id:'2'.repeat(64),label:'1080p',height:1080,container:'mp4'}]});});return;}
-  if(path==='/tv/v1/playbacks') {if(failNextPlayback){failNextPlayback=false;Qt.callLater(function(){done(502,{});});return;}if(delayPlaybacks){pendingPlaybacks=pendingPlaybacks.concat([{body:body,done:done}]);return;}Qt.callLater(function(){answerPlayback(body,done);});}
+  if(path==='/tv/v1/catalog/episodes') { Qt.callLater(function(){var value=followupAiring ? upcomingEpisodes(body.anilist_id) : benchmarkEpisodes[String(body.anilist_id)];done(value ? 200 : 404,value || {});});return; }
+  if(path==='/tv/v1/readers') {Qt.callLater(function(){done(200,{anilist_id:body.anilist_id,episode:body.episode,lang:body.lang,readers:(franimeEnabled ? [{reader_id:'c'.repeat(64),source:'franime',provider:'franime',label:'Sendvid',supported:true}] : []).concat([{reader_id:'e'.repeat(64),source:'voiranime',provider:'mail',label:'Mail.ru FHD1',supported:true},{reader_id:'f'.repeat(64),source:'anime-sama',provider:'yourupload',label:'YourUpload',supported:true},{reader_id:'d'.repeat(64),source:'voiranime',provider:'other',label:'Incompatible',supported:false}]),limitations:['franime_browser_required']});});return;}
+  if(path==='/tv/v1/variants') {if(failNextVariants){failNextVariants=false;Qt.callLater(function(){done(502,{});});return;}Qt.callLater(function(){done(200,{anilist_id:body.anilist_id,episode:body.episode,lang:body.lang,source:body.source,reader_id:body.reader_id,variants:body.source==='franime' ? [{variant_id:'3'.repeat(64),label:'Originale',container:hlsEnabled ? 'hls' : 'mp4'}] : [{variant_id:'1'.repeat(64),label:'360p',height:360,container:hlsEnabled ? 'hls' : 'mp4'},{variant_id:'2'.repeat(64),label:'1080p',height:1080,container:'mp4'}]});});return;}
+  if(path==='/tv/v1/playbacks') {if(rejectNextUnaired){rejectNextUnaired=false;Qt.callLater(function(){done(409,{error:{code:'episode_not_aired',retryable:false,details:{episode:body.episode,diffusion:{etat:'a_venir',date:null}}}});});return;}if(failNextPlayback){failNextPlayback=false;Qt.callLater(function(){done(502,{});});return;}if(delayPlaybacks){pendingPlaybacks=pendingPlaybacks.concat([{body:body,done:done}]);return;}Qt.callLater(function(){answerPlayback(body,done);});}
 
   else Qt.callLater(function(){done(200,{});});
  }
- function answerPlayback(body,done){playbackCount++;done(200,{id:'aaaaaaaa-aaaa-aaaa-aaaa-'+('000000000000'+playbackCount).slice(-12),anilist_id:body.anilist_id,episode:body.episode,lang:body.lang,source:body.source || 'voiranime',reader:body.reader_id==='f'.repeat(64) ? 'YourUpload' : 'Mail.ru FHD1',reader_id:body.reader_id || 'e'.repeat(64),variant_id:body.variant_id || null,quality:body.variant_id ? {label:body.variant_id==='1'.repeat(64) ? '360p' : '1080p'} : null,stream:{path:'/tv/v1/episode-media/'+'a'.repeat(64)},resume:{position_ms:120000}});}
+ function answerPlayback(body,done){playbackCount++;done(200,{id:'aaaaaaaa-aaaa-aaaa-aaaa-'+('000000000000'+playbackCount).slice(-12),anilist_id:body.anilist_id,episode:body.episode,lang:body.lang,source:body.source || 'voiranime',reader:body.source==='franime' ? 'Sendvid' : body.reader_id==='f'.repeat(64) ? 'YourUpload' : 'Mail.ru FHD1',reader_id:body.reader_id || 'e'.repeat(64),variant_id:body.variant_id || null,quality:body.variant_id ? {label:body.variant_id==='3'.repeat(64) ? 'Originale' : body.variant_id==='1'.repeat(64) ? '360p' : '1080p'} : null,stream:{path:'/tv/v1/episode-media/'+'a'.repeat(64)},resume:{position_ms:120000}});}
  function finishPlayback(index){var pending=pendingPlaybacks[index];answerPlayback(pending.body,pending.done);}
  function mediaUrl(path,kind) { return kind==='artwork' && path.indexOf('file:')===0 ? path : apiOrigin+path; }
  function inspectEpisode(path,done) {var status=mediaHeadStatus;Qt.callLater(function(){done(status,null);});}
@@ -172,10 +194,19 @@ Item {
  function featuredOnly() { state='connecting'; artworkEnabled=false; var value=JSON.parse(JSON.stringify(benchmarkHome)); value.rangees=[]; home=value; artworkEnabled=true; state='ready'; homeLoaded(); }
  function finishSearch(index) {var p=pendingSearches[index];p.done(200,{resultats:benchmarkHome.hero.slice(index%2,index%2+4),page:p.body.page,has_next_page:p.body.page===1});}
  function finishDetail(index,identity) {pendingDetails[index](200,benchmarkDetails[String(identity)]);}
-}''')
+ function libraryEntry(id){return JSON.parse(JSON.stringify(libraryEntries[String(id)] || {anilist_id:id,presence:'present',revision:'initial',editable:true,moi:{statut:'CURRENT',note:7.2,progression:5}}));}
+ function seedLibrary(id,value){var next={};Object.keys(libraryEntries).forEach(function(k){next[k]=libraryEntries[k];});next[String(id)]=JSON.parse(JSON.stringify(value));libraryEntries=next;}
+ function seedLibraryJson(id,text){seedLibrary(id,JSON.parse(text));}
+ function upcomingEpisodes(id){var year=new Date().getFullYear()+1,rows=[];for(var n=1;n<=12;n++)rows.push({numero:n,titre:n<=5 ? 'Épisode '+n : '',vu:n<5,duree:n<=5 ? 24 : null,diffusion:{etat:n<=5 ? 'diffuse' : 'a_venir',date:n===6 ? {iso:year+'-01-03T20:00:00+01:00',precision:'instant',source:'anilist',libelle:'03/01/'+year+' à 20:00',fuseau:'Europe/Paris'} : null},lancable:n<=5});return {anilist_id:id,total:12,borne_connue:12,diffusion:{total_annonce:12,diffuses:5,statut:'RELEASING'},episodes:rows,complements_a_charger:true};}
+}''',encoding='utf-8')
     engine=QQmlApplicationEngine();engine.addImportPath(str(root))
     engine.rootContext().setContextProperty('benchmarkHlsEnabled',args.hls)
     engine.rootContext().setContextProperty('benchmarkHome',snapshot)
+    library_cards=[];library_ids=set()
+    for card in snapshot['hero']+[c for row in snapshot.get('rangees',[]) for c in row.get('cartes',[])]:
+        if card.get('anilist_id') in library_ids:continue
+        library_ids.add(card.get('anilist_id'));copy=dict(card);copy['moi']={'statut':['PLANNING','CURRENT','COMPLETED','PAUSED','DROPPED','REPEATING'][len(library_cards)%6],'note':7.2,'progression':5};library_cards.append(copy)
+    engine.rootContext().setContextProperty('benchmarkLibraryCards',library_cards)
     engine.rootContext().setContextProperty('benchmarkHistory',history)
     engine.rootContext().setContextProperty('benchmarkDetails',details)
     engine.rootContext().setContextProperty('benchmarkEpisodes',episode_sets)
@@ -350,8 +381,7 @@ Item {
             # An unavailable banner must show this title's poster, not retain the preceding title.
             front=window.findChild(QObject,'heroBanner');art=front.parent().parent()
             art.setProperty('requestedSource',QUrl.fromLocalFile(str(root/'missing-banner.jpg')))
-            QTest.qWait(150)
-            assert art.property('usingFallback') is True and front.property('status')==1
+            spin(lambda:art.property('usingFallback') is True and front.property('status')==1)
             # Late trailer A must never replace the selected trailer B.
             hero.setProperty('previewEnabled',False)
             hero.setProperty('trailerSources',{}) # remove the explicit video-ownership setup
@@ -584,6 +614,10 @@ Item {
             session.finishDetail(1,154587) # wrong identity must not become the second season
             assert detail.property('state')=='error'
             QTest.keyClick(window,Qt.Key_Back);QTest.keyClick(window,Qt.Key_Back);QTest.qWait(80)
+            if args.follow_up:
+                follow_spec=importlib.util.spec_from_file_location('followup',pathlib.Path(__file__).with_name('atlas_tv_follow_up_bench.py'))
+                follow=importlib.util.module_from_spec(follow_spec);follow_spec.loader.exec_module(follow)
+                follow.run(window,session,screen,details,calls,QTest,Qt,QObject,spin,args.evidence)
             later_bad=[m for m in messages if any(s in m for s in ['ReferenceError','TypeError','Unable to assign','Cannot assign'])]
             assert not later_bad,later_bad
             negotiated=[body for path,body in calls if path in ['/tv/v1/playbacks','/tv/v1/readers','/tv/v1/variants']]
@@ -591,7 +625,7 @@ Item {
             (args.evidence/'verification.json').write_text(json.dumps({'passed':True,'scope':'real QML host/UI with fake API and fake decoder; no native playback claim','canonicalEpisode':13,'hlsNegotiated':args.hls,'defaultLanguage':'vo','frenchAvailabilityDoesNotSelectLanguage':True,'explicitFrenchStillSupported':True,'tvPlayer':{'anchoredMenusKeepChrome':True,'proposedTimelineUntilConfirmed':True,'cancelSeekKeepsPosition':True,'cancelResolutionIgnoresLateResponse':True,'strictSourceReaderVariant':True,'strictRetry401And200KeepsChoice':True,'failedChangeKeepsOldVideo':True,'pausedQualityAndVersionKeepPositionAndIntent':True,'episodesOverlayKeepsVideoAndSeasonBrowsing':True,'firstBackHidesHudWithoutClosing':True,'episodeJumpPreservesCurrentPlayback':True,'sourceReachableAfterNativeFailure':True,'episodeArtworkIdentityChecked':True,'missingCapabilityUnavailable':True,'perSessionProgressSequence':True},'lang':'vo','defaultSoundOnAndLabelled':True,'infoSelectionPreserved':True,'search':{'remoteKeyboard':True,'staleIgnored':True,'selectionAndBack':True},'profile':{'publicProfileWithoutOAuth':True,'statsScaleChecked':True,'selectionAndBack':True},'lateTrailerDoesNotChangeSelection':True,'silentGainZero':True,'bannerErrorUsesPoster':True,'artworkQueue':{'maxConcurrent':2,'identityChecked':True,'deduplicated':True,'capabilityRequired':True,'warmWithoutResume':True},'events':events},indent=2),encoding='utf-8')
             app.quit()
         except Exception as error: messages.append(traceback.format_exc());app.exit(1)
-    QTimer.singleShot(600,check);QTimer.singleShot(25000,lambda:app.exit(2))
+    QTimer.singleShot(600,check);QTimer.singleShot(45000 if args.follow_up else 25000,lambda:app.exit(2))
     code=app.exec_()
     window.close();sip.delete(engine)
     if code: raise AssertionError(messages)

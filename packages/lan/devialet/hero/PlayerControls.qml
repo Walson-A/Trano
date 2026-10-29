@@ -29,6 +29,6 @@ Item {
         Text {x:42;y:8;text:'Épisodes';color:!chrome.player.menuOpened && chrome.player.zone==='content' ? '#151519' : '#f5f5f7';font.family:chrome.family;font.pixelSize:20;font.weight:Font.DemiBold}
         MouseArea {anchors.fill:parent;onClicked:chrome.player.openMenu('episodes')}
     }
-    Text {x:238;y:666;width:750;text:{var c=chrome.player.current && chrome.player.current.media;return c && c.episodes>0 ? c.episodes+' épisodes' : '';}
+    Text {x:238;y:666;width:750;text:chrome.player.episodeCountLabel
         color:'#a9a9b3';font.family:chrome.family;font.pixelSize:17}
 }

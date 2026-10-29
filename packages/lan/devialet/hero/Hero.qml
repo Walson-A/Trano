@@ -22,6 +22,7 @@ FocusScope {
     property int selectedIndex: 0
     property bool muted: false
     property bool previewEnabled: true
+    property bool libraryEnabled:false
     property bool keepPreviewLoaded: false
     property bool reducedMotion: false
     property var displayedMedia: null
@@ -45,6 +46,7 @@ FocusScope {
     signal artworkFailed(var media,string kind)
     signal searchRequested()
     signal profileRequested()
+    signal libraryRequested()
     signal contextBackRequested()
     function row(id) {
         var rows=homeData.rangees || [];
@@ -132,7 +134,7 @@ FocusScope {
         previewObserved(observation);
     }
     function activate() {
-        if(zone==='nav') { if(navIndex===0) searchRequested();else if(navIndex===1) profileRequested();else zone='actions'; }
+        if(zone==='nav') { if(navIndex===0) searchRequested();else if(navIndex===1) profileRequested();else if(navIndex===3 && libraryEnabled)libraryRequested();else zone='actions'; }
         else if(zone==='rail') { zone='actions'; }
         else if(zone==='sound') muted=!muted;
         else if(actionIndex===1) { if(preview.item) preview.item.pause(); detailOpen=true; detailsRequested(selected); }
@@ -167,7 +169,7 @@ FocusScope {
         } else if(!detailOpen && (event.key===Qt.Key_Right || event.key===Qt.Key_Left)) {
             var right=event.key===Qt.Key_Right;
             if(zone==='rail') choose(selectedIndex+(right ? 1 : -1));
-            else if(zone==='nav'){var order=[2,0,1];navIndex=order[Math.max(0,Math.min(2,order.indexOf(navIndex)+(right ? 1 : -1)))];}
+            else if(zone==='nav')navIndex=navigation.step(navIndex,right ? 1 : -1);
             else if(zone==='sound' && !right) { zone='actions'; actionIndex=1; }
             else if(zone==='actions') {
                 if(right && actionIndex===1) zone='sound';
@@ -218,8 +220,8 @@ FocusScope {
             }
         }
     }
-    TvNavigation {id:navigation;family:scene.family;page:'home';focused:scene.zone==='nav';selectedIndex:scene.navIndex;avatar:scene.avatar;pseudo:scene.homeData.compte ? scene.homeData.compte.pseudo || 'Profil' : 'Profil';reducedMotion:scene.reducedMotion
-        onDestinationRequested:{if(destination==='home'){scene.zone='actions';scene.navIndex=2;scene.forceActiveFocus();}else if(destination==='search'){scene.zone='nav';scene.navIndex=0;scene.searchRequested();}else {scene.zone='nav';scene.navIndex=1;scene.profileRequested();}}
+    TvNavigation {id:navigation;family:scene.family;page:'home';libraryEnabled:scene.libraryEnabled;focused:scene.zone==='nav';selectedIndex:scene.navIndex;avatar:scene.avatar;pseudo:scene.homeData.compte ? scene.homeData.compte.pseudo || 'Profil' : 'Profil';reducedMotion:scene.reducedMotion
+        onDestinationRequested:{if(destination==='home'){scene.zone='actions';scene.navIndex=2;scene.forceActiveFocus();}else if(destination==='search'){scene.zone='nav';scene.navIndex=0;scene.searchRequested();}else if(destination==='library'){scene.zone='nav';scene.navIndex=3;scene.libraryRequested();}else {scene.zone='nav';scene.navIndex=1;scene.profileRequested();}}
     }
     HeroButton { objectName:'heroSound'; x: 1036; y: 298; width: 180; iconKey: scene.muted ? 'volume-x' : 'volume-2'; label:scene.muted ? 'Son coupé' : 'Son activé'; reducedMotion: scene.reducedMotion; family: scene.family; backdrop: backdrop; sampleRect: Qt.rect(x,y,width,height); focused: scene.zone==='sound'; onActivated: { scene.zone='sound'; scene.muted=!scene.muted; } }
     Text { x: 870; y: 355; width: 346; horizontalAlignment: Text.AlignRight; color: '#b9bac3'; font.family: scene.family; font.pixelSize: 16

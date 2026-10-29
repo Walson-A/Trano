@@ -1,0 +1,5 @@
+{
+  "passed": true,
+  "checks": 45,
+  "scope": "episode certainty, non-playable future, dates, canonical personal state; no network"
+}

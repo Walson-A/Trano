@@ -1,0 +1,68 @@
+// Domain rules shared by the real QML views. No account, HTTP or native playback.
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+function load(name) {
+  const ctx = vm.createContext({});
+  vm.runInContext(fs.readFileSync(path.join(__dirname, '../devialet/hero', name), 'utf8').replace(/^\.pragma library\s*/, ''), ctx);
+  return ctx;
+}
+const episode = load('EpisodePolicy.js');
+const personal = load('LibraryPolicy.js');
+const plain = x => JSON.parse(JSON.stringify(x));
+let checks = 0;
+function check(fn) { fn(); checks++; }
+const date = {iso:'2026-11-03T20:00:00+01:00', precision:'instant', source:'anilist', fuseau:'Europe/Paris', libelle:'03/11/2026 à 20:00'};
+const future = {numero:6, diffusion:{etat:'a_venir',date}, lancable:false, vu:false};
+check(() => assert.equal(episode.seriesLabel({statut:'RELEASING'}),'En diffusion'));
+check(() => assert.equal(episode.seriesLabel({statut:'FINISHED',moi:{statut:'CURRENT'}}),'Diffusion terminée'));
+check(() => assert.equal(episode.seriesLabel({statut:'NOT_YET_RELEASED'}),'À venir'));
+check(() => assert.equal(episode.seriesLabel({statut:null,moi:{statut:'COMPLETED'}}),''));
+check(() => assert.equal(episode.blocked(future), true));
+check(() => assert.equal(episode.blocked({...future,lancable:true}), true));
+check(() => assert.equal(episode.blocked({numero:6,diffusion:{etat:'a_venir',date:null}}), true));
+check(() => assert.equal(episode.blocked({numero:6,diffusion:{etat:'inconnu',date:null}}), false));
+check(() => assert.equal(episode.blocked({numero:1,franime:null}), false));
+check(() => assert.equal(episode.blocked({numero:13,lancable:false}), true));
+check(() => assert.equal(episode.due(future,Date.parse(date.iso)-1),false));
+check(() => assert.equal(episode.due(future,Date.parse(date.iso)),true));
+check(() => assert.equal(episode.due({...future,diffusion:{etat:'a_venir',date:{iso:'2026-11-03',precision:'jour'}}},Date.parse(date.iso)),false));
+check(() => assert.match(episode.notice(future), /À venir.*03\/11\/2026 à 20:00/));
+check(() => assert.equal(episode.dateLabel(null), 'Date à confirmer'));
+check(() => assert.equal(episode.dateLabel({...date,libelle:null}), '03/11/2026 à 20h00 UTC+01:00'));
+check(() => assert.equal(episode.dateLabel({iso:'2026-11-03T19:00:00Z'}), '03/11/2026 à 19h00 UTC'));
+check(() => assert.equal(episode.dateLabel({iso:'2026-11-03',precision:'jour'}), '03/11/2026'));
+check(() => assert.equal(episode.dateLabel({iso:'garbage'}), 'Date à confirmer'));
+check(() => assert.equal(episode.count({total:12,diffusion:{total_annonce:12,diffuses:5}}, false), '5 épisodes sortis sur 12 annoncés'));
+check(() => assert.equal(episode.count({total:12,diffusion:{total_annonce:12,diffuses:5}}, true), '5/12 diffusés'));
+check(() => assert.equal(episode.count({total:12,moi:{progression:12},diffusion:{total_annonce:null,diffuses:5}}, false), '5 épisodes diffusés'));
+check(() => assert.equal(episode.count({total:12,diffusion:{total_annonce:null,diffuses:null}}, true), 'Total à confirmer'));
+check(() => assert.equal(episode.count({diffusion:{total_annonce:12,diffuses:13}}, false), '13 épisodes diffusés'));
+check(() => assert.equal(episode.count({total:12}, false), '12 épisodes annoncés'));
+check(() => {
+  const merged=episode.merge(future,{numero:6,titre:'Nouveau titre',diffusion:{etat:'inconnu',date:null},lancable:true,vu:true});
+  assert.equal(episode.blocked(merged),true);assert.equal(merged.vu,false);assert.equal(merged.titre,'Nouveau titre');
+  assert.deepEqual(plain(future),{numero:6,diffusion:{etat:'a_venir',date},lancable:false,vu:false});
+});
+check(() => assert.equal(episode.blocked(episode.merge(future,{numero:6,diffusion:{etat:'diffuse',date},lancable:true})),false));
+check(() => assert.equal(episode.merge(future,{numero:7,lancable:true}).numero,6));
+check(() => assert.equal(personal.score(7.2),'7,2'));
+check(() => assert.equal(personal.score(7.25),'7,25'));
+check(() => assert.equal(personal.score(null),'Non noté'));
+check(() => assert.equal(personal.step(7.2,1),7.5));
+check(() => assert.equal(personal.step(7.2,-1),7));
+check(() => assert.equal(personal.step(10,1),10));
+check(() => assert.equal(personal.step(null,1),.5));
+check(() => assert.equal(personal.statuses.length,6));
+check(() => assert.equal(personal.knownStatus('FINISHED'),false));
+check(() => assert.match(personal.uuid(),/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/));
+const entry={anilist_id:154587,presence:'present',editable:true,revision:'opaque-revision',moi:{statut:'CURRENT',note:7.2,progression:5}};
+check(() => assert.equal(personal.validEntry(entry,154587),true));
+check(() => assert.equal(personal.validEntry(entry,1),false));
+check(() => assert.equal(personal.validEntry({...entry,moi:null},154587),false));
+check(() => assert.equal(personal.validEntry({...entry,presence:'absent',moi:null},154587),true));
+check(() => assert.equal(personal.validEntry({...entry,presence:'inconnu',editable:true},154587),false));
+check(() => assert.equal(personal.matches(entry,{note:7.2}),true));
+check(() => assert.equal(personal.matches(entry,{note:8}),false));
+console.log(JSON.stringify({passed:true,checks,scope:'episode certainty, non-playable future, dates, canonical personal state; no network'}));

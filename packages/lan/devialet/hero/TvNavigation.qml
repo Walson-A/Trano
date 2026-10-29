@@ -11,8 +11,10 @@ Item {
     property string pseudo:'Profil'
     property string avatar:''
     property bool reducedMotion:false
+    property bool libraryEnabled:false
     signal destinationRequested(string destination)
-    function step(index,delta){var order=[2,0,1];return order[Math.max(0,Math.min(2,order.indexOf(index)+delta))];}
+    function destination(index){return index===2 ? 'home' : index===1 ? 'profile' : index===3 ? 'library' : 'search';}
+    function step(index,delta){var order=libraryEnabled ? [2,0,3,1] : [2,0,1];return order[Math.max(0,Math.min(order.length-1,order.indexOf(index)+delta))];}
     Rectangle {anchors.fill:parent;gradient:Gradient {GradientStop {position:0;color:'#d9090a0d'} GradientStop {position:1;color:'#00090a0d'}}}
     Row {x:64;y:24;spacing:12
         HeroButton {objectName:'homeEntry';width:140;flat:true;label:'Accueil';family:nav.family;reducedMotion:nav.reducedMotion;focused:nav.focused && nav.selectedIndex===2;onActivated:nav.destinationRequested('home')
@@ -20,6 +22,9 @@ Item {
         }
         HeroButton {objectName:'searchEntry';width:180;flat:true;iconKey:'search';label:'Recherche';family:nav.family;reducedMotion:nav.reducedMotion;focused:nav.focused && nav.selectedIndex===0;onActivated:nav.destinationRequested('search')
             Rectangle {x:58;y:48;width:92;height:3;radius:1.5;color:parent.focused ? '#15171c' : 'white';visible:nav.page==='search'}
+        }
+        HeroButton {objectName:'libraryEntry';width:164;flat:true;visible:nav.libraryEnabled;label:'Ma liste';family:nav.family;reducedMotion:nav.reducedMotion;focused:nav.focused && nav.selectedIndex===3;onActivated:nav.destinationRequested('library')
+            Rectangle {x:42;y:48;width:80;height:3;radius:1.5;color:parent.focused ? '#15171c' : 'white';visible:nav.page==='library'}
         }
     }
     Item {id:profile;objectName:'profileEntry';x:1216-width;y:24;width:Math.max(130,Math.min(260,name.implicitWidth+78));height:52

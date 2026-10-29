@@ -51,9 +51,9 @@ FocusScope {
         return String(n);
     }
     function art(media) {var local=artworks && artworks.sources[String(media.anilist_id)];return local && (local.card || local.poster) || media.banniere || media.affiche || '';}
-    function activate() {if(zone==='nav')navigateRequested(navIndex===2 ? 'home' : navIndex===0 ? 'search' : 'profile');else if(zone==='retry')load();else if(cards.length)chosen(cards,index,'Activité récente');}
+    function activate() {if(zone==='nav')navigateRequested(navigation.destination(navIndex));else if(zone==='retry')load();else if(cards.length)chosen(cards,index,'Activité récente');}
     Rectangle {anchors.fill:parent;color:'#090a0d'}
-    TvNavigation {id:navigation;page:'profile';family:view.family;focused:view.zone==='nav';selectedIndex:view.navIndex;avatar:view.avatar;pseudo:view.pseudo || 'Profil';onDestinationRequested:view.navigateRequested(destination)}
+    TvNavigation {id:navigation;page:'profile';libraryEnabled:!!(view.transport && view.transport.libraryEnabled);family:view.family;focused:view.zone==='nav';selectedIndex:view.navIndex;avatar:view.avatar;pseudo:view.pseudo || 'Profil';onDestinationRequested:view.navigateRequested(destination)}
     Rectangle {x:64;y:122;width:72;height:72;radius:36;color:'#323641'
         Image {id:avatarImage;objectName:'profileAvatar';anchors.fill:parent;source:view.avatar;sourceSize.width:144;asynchronous:true;fillMode:Image.PreserveAspectCrop;visible:false}
         OpacityMask {anchors.fill:parent;source:avatarImage;maskSource:Rectangle {width:72;height:72;radius:36}}

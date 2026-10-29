@@ -161,6 +161,11 @@ l’accroche, resserre les commandes et rend 54 px au catalogue sans réduire le
 Cette composition validée est [publiée dans le vrai loader](research/2026-10-29-atlas-tv-search-vostfr-live.md),
 avec le défaut VOSTFR et la VF explicite conservée. Le même paquet intègre le
 raccord HLS testé séparément ; les actions de bibliothèque restent un lot distinct.
+Le [parcours Ma liste, note et diffusion](research/2026-10-29-atlas-tv-library-airing.md)
+réutilise ensuite la grille et ajoute un panneau Mon suivi contextuel. Le focus
+ne vaut pas sélection ni enregistrement. Les futurs ont une carte neutre avec
+leur date, et les compteurs séparent annoncé/diffusé ; les captures et contrats
+du lot distinguent banc simulé, réponses réelles et publication de l’interface.
 
 La [scène QML](research/2026-10-26-atlas-tv-qml-design-scene.md) compare une carte
 paysage, un focus blanc et un panneau translucide avec flou optionnel. Elle suit

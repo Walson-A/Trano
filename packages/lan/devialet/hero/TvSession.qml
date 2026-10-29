@@ -11,11 +11,14 @@ Item {
     property bool readersEnabled: false
     property bool variantsEnabled: false
     property bool hlsEnabled: false
+    property bool libraryEnabled: false
+    property bool airingEnabled: false
     property double expiresAt: 0
     property bool refreshing: false
     property var waiters: []
     property var requests: []
     property var home: ({})
+    property int homeGeneration:0
     property string state: "connecting"
     property string message: "Connexion à Atlas…"
     signal homeLoaded()
@@ -66,6 +69,8 @@ Item {
             readersEnabled=!!(runtime.capabilities && runtime.capabilities.readers===true);
             variantsEnabled=!!(runtime.capabilities && runtime.capabilities.variants===true);
             hlsEnabled=!!(runtime.capabilities && runtime.capabilities.hls===true);
+            libraryEnabled=!!(runtime.capabilities && runtime.capabilities.library===true);
+            airingEnabled=!!(runtime.capabilities && runtime.capabilities.airing===true);
             request(apiOrigin+'/tv/v1/session/activate',{code:runtime.activation.code},'',12000,function(code,value) {
                 if(code!==200 || !credentials(value)) { fail(); return; }
                 loadHome();
@@ -96,14 +101,15 @@ Item {
         });
     }
     function loadHome() {
+        var turn=++homeGeneration;
         api('/tv/v1/catalog/home',{},45000,function(status,value) {
-            if(!accessToken) return;
+            if(!accessToken || turn!==homeGeneration) return;
             if(status!==200 || !value || !Array.isArray(value.hero) || !Array.isArray(value.rangees)) {
                 state='error'; message='Le catalogue est indisponible. OK pour réessayer.'; return;
             }
             home=value; state='ready'; message=''; homeLoaded();
             if(value.complements_a_charger) api('/tv/v1/catalog/home-extras',{},45000,function(code,complete) {
-                if(code===200 && complete && Array.isArray(complete.hero) && Array.isArray(complete.rangees)) home=complete;
+                if(turn===homeGeneration && code===200 && complete && Array.isArray(complete.hero) && Array.isArray(complete.rangees)) home=complete;
             });
         });
     }
