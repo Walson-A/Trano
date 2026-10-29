@@ -32,7 +32,10 @@ au moment de chaque événement ; les bindings de télémétrie initiaux restaie
 d'EpisodePlayer n'est nécessaire pour HLS.
 
 La sonde conserve le composant réel, avec seulement une instrumentation de
-lecture et le son coupé. Aucun signal progress n'est branché à l'API. L'appareil
+lecture et une demande volume=0/muted=true. Le replay regardé par Walson a
+néanmoins produit du son : la coupure sonore n'est pas validée sur le matériel.
+Le résultat indique donc mute_requested, sans annoncer un silence observé.
+Aucun signal progress n'est branché à l'API. L'appareil
 de diagnostic est révoqué et l'app normale est relancée dans finally. Les images
 sur le téléviseur n'ont pas fait l'objet d'une capture visuelle distante.
 
@@ -45,6 +48,12 @@ ci-dessus certifie ici le comportement natif observé.
 
 Résultat assaini : [2026-10-29-atlas-tv-hls-native.json](2026-10-29-atlas-tv-hls-native.json).
 Publication du raccord coordonnée avec la session front après ce feu vert.
+
+Lors du replay demandé par Walson, l'image et le son sont confirmés. La sonde
+termine volontairement après pause/reprise/seek : retire() remet started à faux
+avant la relance de l'app, ce qui faisait afficher « Chargement… ». Une indication
+« Contrôle terminé · retour à Atlas… » couvre maintenant cette fin de sonde.
+Ce changement concerne uniquement le diagnostic, pas EpisodePlayer du produit.
 
 Comparaison visuelle du menu à 1280 × 720, dans le banc avec API et vidéo
 simulées : [MP4 historique](2026-10-29-atlas-tv-hls-legacy-quality.png),

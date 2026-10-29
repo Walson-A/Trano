@@ -1,4 +1,4 @@
-"""Bounded muted native probe of the actual EpisodePlayer; no progress endpoint.
+"""Bounded native probe of the actual EpisodePlayer; no progress endpoint.
 
 stdin contains only {apiOrigin,path}, a diagnostic server-issued HLS capability.
 The caller must revoke that diagnostic device and restore the normal app in its
@@ -83,7 +83,8 @@ Application {
  }
  function finish(ok){if(finished)return;finished=true;report('complete',ok,true);player.retire();}
  Item {id:probeTransport;property bool readersEnabled:false;property bool variantsEnabled:false;property bool hlsEnabled:true;property bool artworkEnabled:false;function api(path,body,timeout,done){done(503,{});}}
- EpisodePlayer {id:player;anchors.fill:parent;title:'Atlas · contrôle HLS';chapter:'Contrôle technique silencieux';transport:probeTransport;current:({media:{anilist_id:154587},target:{numero:1,vf:false},choice:{}});onProgress:{} }
+ EpisodePlayer {id:player;anchors.fill:parent;title:'Atlas · contrôle HLS';chapter:'Contrôle technique HLS';transport:probeTransport;current:({media:{anilist_id:154587},target:{numero:1,vf:false},choice:{}});onProgress:{} }
+ Rectangle {anchors.fill:parent;visible:root.finished;color:'#121318';Text {anchors.centerIn:parent;color:'white';font.pixelSize:28;text:'Contrôle terminé · retour à Atlas…'}}
  Timer {interval:250;repeat:true;running:!root.finished;onTriggered:{
   if(player.failure || player.probeError){root.finish(false);return;}
   var now=Date.now();
@@ -116,7 +117,7 @@ Application {
             return {'native':True,'passed':False,'sdk_accepted':False,'sdk_error_code':error.get('code') if isinstance(error,dict) else None,'requested_files':sorted(requested),'events':records,'progress_written':False}
         done.wait(65)
         success=bool(records and records[-1].get('finished') and records[-1].get('ok'))
-        return {'native':True,'muted':True,'actual_component':'EpisodePlayer.qml','sdk_accepted':True,'passed':success,'requested_files':sorted(requested),'events':records,'progress_written':False}
+        return {'native':True,'mute_requested':True,'actual_component':'EpisodePlayer.qml','sdk_accepted':True,'passed':success,'requested_files':sorted(requested),'events':records,'progress_written':False}
     finally:
         server.shutdown();server.server_close();thread.join(timeout=3)
 
