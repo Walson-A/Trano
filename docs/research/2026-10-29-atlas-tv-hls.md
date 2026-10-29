@@ -23,7 +23,25 @@ Backend dev 5b5ac6c3, gateway SHA-256
 trois cas HTTPS canoniques vérifiés, playlists/segments/qualité/révocation.
 Les preuves serveur sont dans Atlas/docs/research/atlas-tv-hls-2026-10-29.md.
 
-Le contrôle natif reste en cours : HLS chargé, durée et position disponibles,
-mais les indicateurs Qt hasVideo/hasAudio/seekable ne remontent pas encore dans
-la première sonde. Ne pas annoncer ce candidat comme publié ou comme lecture
-native validée sur cette seule base. Aucun progrès de visionnage n'est envoyé.
+Le contrôle natif du vrai EpisodePlayer est réussi : vidéo et audio présents,
+seekable et started vrais, aucune erreur, durée 1 560 009 ms. La position avance
+713 → 1 712 ms, reste à 1 712 pendant une pause de 1 750 ms, reprend à 2 817 puis
+passe à 18 346 ms après un seek de quinze secondes. Les getters natifs sont lus
+au moment de chaque événement ; les bindings de télémétrie initiaux restaient
+à faux et ne constituaient pas un défaut du lecteur produit. Aucun changement
+d'EpisodePlayer n'est nécessaire pour HLS.
+
+La sonde conserve le composant réel, avec seulement une instrumentation de
+lecture et le son coupé. Aucun signal progress n'est branché à l'API. L'appareil
+de diagnostic est révoqué et l'app normale est relancée dans finally. Les images
+sur le téléviseur n'ont pas fait l'objet d'une capture visuelle distante.
+
+REA capture_process_scenario est indisponible pour un processus Windows natif
+car son adaptateur ne garantit pas le nettoyage des descendants. La sonde a donc
+été exécutée par le shell standard ; ces résultats ne sont pas une Evidence REA.
+La syntaxe QML a été vérifiée avec le décodeur simulé du banc : le plugin
+QtMultimedia Windows de ce banc n'est pas chargeable. Seul le test Devialet
+ci-dessus certifie ici le comportement natif observé.
+
+Résultat assaini : [2026-10-29-atlas-tv-hls-native.json](2026-10-29-atlas-tv-hls-native.json).
+Publication du raccord coordonnée avec la session front après ce feu vert.
