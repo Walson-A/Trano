@@ -1,0 +1,40 @@
+{
+  "releaseId": "hero-discovery-6f378d98928e",
+  "files": 30,
+  "bytes": 313463,
+  "serverSha256": "837a0035d128ae1a918e796c2d63bd828914fa82e9408f44d4d69a2ac057d7b7",
+  "configFieldsChanged": [
+    "bundleDir",
+    "files",
+    "releaseId"
+  ],
+  "availabilityVerified": true,
+  "nativeLaunch": {
+    "id": "fef73ef7261b0174e0642106c3ef0c65",
+    "state": "assets_requested",
+    "requestedFiles": 27,
+    "discoveryQmlRequested": true,
+    "discoveryJsRequested": true,
+    "renderConfirmed": false
+  },
+  "transferFilesRemoved": true,
+  "engineRestarted": false,
+  "backendCommit": "8f5b8acf2957b033b11c4ae10aab8d1dacc8b5c1",
+  "apiPrepublication": {
+    "scenarios": 6,
+    "counts": [
+      24,
+      24,
+      24,
+      24,
+      24,
+      6
+    ],
+    "pageIdentitiesDistinct": true,
+    "filtersVerified": true,
+    "artworkStatus": 200,
+    "artworkBytes": 126905,
+    "diagnosticRevoked": true
+  },
+  "scope": "receipts from publication, preflight and post-publication checks; not native screenshot or full remote QA"
+}

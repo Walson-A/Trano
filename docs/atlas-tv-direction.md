@@ -1,10 +1,11 @@
 # Atlas sur la télévision : base réutilisable et premier parcours
 
-Nouvelle proposition limitée à [Recherche / découverte](research/2026-10-29-atlas-tv-discovery.md) :
+[Recherche / découverte publiée](research/2026-10-29-atlas-tv-discovery-live.md) :
 catalogue sans saisie obligatoire, critères cumulables, affiches à parcourir et
-aperçu du titre ciblé. Composant QML séparé, 32 contrôles au banc et carnet de
-17 captures ; pas de modification du loader ou de publication dans ce lot.
-Les épisodes restent hors périmètre.
+aperçu du titre ciblé. Release hero-discovery-6f378d98928e disponible, SDK accepté,
+contrat réel vérifié et suite QML complète passée. Le [carnet initial](research/2026-10-29-atlas-tv-discovery.md)
+reste une preuve de conception. La densité et la bibliothèque sont les prochains
+points demandés ; les épisodes restent hors périmètre.
 
 Le [lecteur revu est raccordé et publié](research/2026-10-29-atlas-tv-player-live.md)
 sur le service permanent : `hero-player-914ca56735ce`, 28 fichiers. Le Devialet a

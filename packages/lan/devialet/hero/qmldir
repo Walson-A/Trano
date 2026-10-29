@@ -9,6 +9,7 @@ EpisodePlayer EpisodePlayer.qml
 ArtworkCache ArtworkCache.qml
 MediaRow MediaRow.qml
 SearchView SearchView.qml
+DiscoveryView DiscoveryView.qml
 ProfileView ProfileView.qml
 DetailView DetailView.qml
 TvNavigation TvNavigation.qml

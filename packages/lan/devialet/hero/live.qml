@@ -74,7 +74,7 @@ Application {
         }
         function navigate(destination) {
             if(destination==='home'){closePanel('home');return;}
-            if(destination===panel){var same=panel==='search' ? searchPanel : profilePanel;same.item.zone=panel==='search' ? 'keys' : same.item.cards.length ? 'cards' : 'nav';same.item.forceActiveFocus();return;}
+            if(destination===panel){var same=panel==='search' ? searchPanel : profilePanel;same.item.zone=panel==='search' ? 'filters' : same.item.cards.length ? 'cards' : 'nav';same.item.forceActiveFocus();return;}
             if(panel==='search')searchPanel.item.opened=false;
             if(panel==='profile')profilePanel.item.opened=false;
             openPanel(destination);
@@ -213,7 +213,7 @@ Application {
                 if(screen.pendingPlayback && screen.playbackId) screen.startEpisode();
             }
         }
-        Loader {id:searchPanel;objectName:'searchPanel';anchors.fill:parent;source:'SearchView.qml';visible:screen.panel==='search'
+        Loader {id:searchPanel;objectName:'searchPanel';anchors.fill:parent;source:'DiscoveryView.qml';visible:screen.panel==='search'
             onLoaded:{item.transport=session;item.artworks=artworks;item.family=regular.name || 'sans-serif';item.avatar=Qt.binding(function(){return hero.avatar;});item.closed.connect(screen.closePanel);item.chosen.connect(screen.selectPanelResult);item.navigateRequested.connect(screen.navigate);if(screen.panel==='search')item.open();}
             onStatusChanged:if(status===Loader.Error && screen.panel==='search'){screen.closePanel();hero.notice='La recherche n’a pas pu être ouverte. Relance Atlas TV.';}
         }

@@ -3,7 +3,7 @@ import QtGraphicalEffects 1.0
 import "Motion.js" as Motion
 import "Discovery.js" as Catalog
 
-// Review candidate for SearchView. The live loader remains on the validated UI.
+// Live catalog discovery. Uses the authenticated TV session and artwork cache.
 FocusScope {
     id:view
     objectName:'atlasDiscovery'
@@ -48,7 +48,7 @@ FocusScope {
     function open(){opened=true;forceActiveFocus();if(state==='idle' || state==='loading')search(false,requestedPage);}
     function close(){opened=false;overlay='';closed();}
     function art(card,kind){if(!card)return '';var local=artworks && artworks.sources[String(card.anilist_id)];return local && (kind==='poster' ? local.poster : local.banner || local.card) || (kind==='poster' ? card.affiche : card.banniere || card.affiche) || '';}
-    function warm(){if(!artworks || !results.length)return;var first=Math.floor(resultIndex/4)*4;for(var i=first;i<Math.min(first+8,results.length);i++)artworks.request(results[i],'poster',i===resultIndex);artworks.request(currentCard,'banner',true);}
+    function warm(){if(!opened || !artworks || !results.length)return;var first=Math.floor(resultIndex/4)*4;for(var i=first;i<Math.min(first+8,results.length);i++)artworks.request(results[i],'poster',i===resultIndex);artworks.request(currentCard,'banner',true);}
     function search(focusResults,nextPage){
         if(!opened || !transport)return;
         var turn=++generation,target=nextPage || 1;requestedPage=target;state='loading';
@@ -98,7 +98,7 @@ FocusScope {
         else if(zone==='results' && state==='ready' && results.length)chosen(results,resultIndex,query ? 'Recherche · '+query : 'Découvrir');
         else if(zone==='pages'){if(state==='error')search(true,requestedPage);else if(pageIndex===0)goPage(-1);else goPage(1);}
     }
-    onOpenedChanged:if(!opened)generation++;
+    onOpenedChanged:if(!opened){generation++;artDelay.stop();}
     onResultIndexChanged:if(opened && state==='ready')artDelay.restart();
     Timer {id:artDelay;interval:160;onTriggered:view.warm()}
     Rectangle {anchors.fill:parent;color:'#090a0d'}
@@ -177,7 +177,7 @@ FocusScope {
     }
     Keys.onPressed:{
         var key=event.key,back=key===Qt.Key_Back || key===Qt.Key_Escape;
-        if(back){if(overlay){var previous=overlay;overlay='';if(previous==='keyboard')zone='search';}else close();}
+        if(back){if(!event.isAutoRepeat){if(overlay){var previous=overlay;overlay='';if(previous==='keyboard')zone='search';}else close();}}
         else if(key===Qt.Key_Return || key===Qt.Key_Enter || key===Qt.Key_Select)activate();
         else if(overlay==='filter'){
             if(key===Qt.Key_Down){if(optionIndex===options.length-1 && filterIndex===0)applyFocused=true;else if(!applyFocused)optionIndex=Math.min(options.length-1,optionIndex+1);}

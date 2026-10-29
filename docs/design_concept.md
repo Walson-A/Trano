@@ -151,7 +151,9 @@ Le design TV est étudié séparément du tableau de bord domotique décrit ci-d
 La [Recherche du 29 octobre](research/2026-10-29-atlas-tv-discovery.md) privilégie
 l’exploration sans titre : filtres visibles, grille d’affiches, aperçu du titre
 ciblé, clavier à la demande et contexte conservé au retour d’une fiche. Le
-composant réel est en revue sur banc QML ; le loader de production reste inchangé.
+composant réel est [raccordé et publié](research/2026-10-29-atlas-tv-discovery-live.md).
+L’itération suivante doit montrer davantage de résultats simultanés et adapter
+les actions de bibliothèque PC/mobile à la télécommande.
 
 La [scène QML](research/2026-10-26-atlas-tv-qml-design-scene.md) compare une carte
 paysage, un focus blanc et un panneau translucide avec flou optionnel. Elle suit

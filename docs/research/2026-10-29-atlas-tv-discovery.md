@@ -1,5 +1,8 @@
 # Recherche Atlas TV : trouver quoi regarder
 
+État suivant : [raccordement et publication sur le Devialet](2026-10-29-atlas-tv-discovery-live.md).
+Le présent carnet conserve le périmètre et les preuves de la proposition initiale.
+
 Le 29 octobre, Walson demande un écran pour découvrir des animés, filtrer et
 parcourir le catalogue sans connaître un titre. Les épisodes restent hors de ce
 chantier. Le lecteur récemment publié a reçu une appréciation globale positive

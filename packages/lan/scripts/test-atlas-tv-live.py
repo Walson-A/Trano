@@ -21,6 +21,7 @@ parser.add_argument('--history',type=pathlib.Path,help='Explicit PC history fixt
 parser.add_argument('--detail-assets',type=pathlib.Path,help='Exact canonical image downloads with sources.json; never distributed')
 parser.add_argument('--episode-fixture',type=pathlib.Path,help='Exact public episode images for the full-host bench only')
 parser.add_argument('--video-frame',type=pathlib.Path,help='Explicit still used behind the mock decoder for contrast review')
+parser.add_argument('--poster-assets',type=pathlib.Path,help='Exact AniList-id-poster.jpg images for portrait catalog cards; never distributed')
 args=parser.parse_args()
 sys.path.insert(0,str(args.qt_path.resolve()))
 dll=os.add_dll_directory(str(args.qt_path.resolve()/'PyQt5/Qt5/bin')) if os.name=='nt' else None
@@ -67,11 +68,13 @@ for event in history.get('activite',[]):
     if not card:continue
     image=args.assets/(str(card['anilist_id'])+'-banner.jpg')
     card['banniere']=image.resolve().as_uri() if image.exists() else ''
-    card['affiche']=card['banniere']
+    poster=args.poster_assets/(str(card['anilist_id'])+'-poster.jpg') if args.poster_assets else None
+    card['affiche']=poster.resolve().as_uri() if poster and poster.is_file() else card['banniere']
 for card in snapshot['hero']+[c for r in snapshot['rangees'] for c in r['cartes']]:
     path=args.assets/(str(card['anilist_id'])+'-banner.jpg')
     card['banniere']=path.resolve().as_uri() if path.exists() else ''
-    card['affiche']=card['banniere']
+    poster=args.poster_assets/(str(card['anilist_id'])+'-poster.jpg') if args.poster_assets else None
+    card['affiche']=poster.resolve().as_uri() if poster and poster.is_file() else card['banniere']
 messages=[]
 qInstallMessageHandler(lambda kind,context,value:messages.append(value))
 app=QGuiApplication([])
@@ -81,9 +84,11 @@ with tempfile.TemporaryDirectory(prefix='atlas-tv-live-',dir=args.evidence.paren
     pack.build(bundle,args.regular,args.bold)
     # The Windows bench registers font bytes just like the existing hero bench.
     for font in [args.regular,args.bold]:
-        assert QFontDatabase.addApplicationFontFromData(QByteArray(font.read_bytes()))>=0
+        font_id=QFontDatabase.addApplicationFontFromData(QByteArray(font.read_bytes()))
+        assert font_id>=0
+    family=QFontDatabase.applicationFontFamilies(font_id)[0]
     path=bundle/'live.qml'
-    path.write_text(path.read_text(encoding='utf-8').replace('source: "regular.ttf"','source: ""').replace('source: "bold.ttf"','source: ""'),encoding='utf-8')
+    path.write_text(path.read_text(encoding='utf-8').replace('source: "regular.ttf"','source: ""').replace('source: "bold.ttf"','source: ""').replace("regular.name || 'sans-serif'",json.dumps(family)),encoding='utf-8')
     fbx=root/'fbx/application';fbx.mkdir(parents=True)
     (fbx/'qmldir').write_text('module fbx.application\nApplication 1.0 Application.qml\n')
     (fbx/'Application.qml').write_text('import QtQuick 2.15\nimport QtQuick.Window 2.2\nWindow { width:1280; height:720; visible:true }')
@@ -146,7 +151,7 @@ Item {
   if(path==='/tv/v1/previews') { pendingPreview=done; return; }
   if(path==='/tv/v1/artworks' && body.kind==='episode') {var image=benchmarkEpisodeImages[String(body.anilist_id)],url=image && image[String(body.episode)];Qt.callLater(function(){done(url ? 200 : 404,{anilist_id:body.anilist_id,episode:wrongEpisodeArtwork ? body.episode+1 : body.episode,kind:'episode',path:url || '',expires_at:Date.now()/1000+900});});return;}
   if(path==='/tv/v1/artworks') { pendingArtworks=pendingArtworks.concat([done]); return; }
-  if(path==='/tv/v1/catalog/search') { pendingSearches=pendingSearches.concat([done]); return; }
+  if(path==='/tv/v1/catalog/search') { pendingSearches=pendingSearches.concat([{done:done,body:body}]); return; }
   if(path==='/tv/v1/catalog/history') { Qt.callLater(function(){done(200,benchmarkHistory);});return; }
   if(path==='/tv/v1/catalog/detail') { if(delayDetails){pendingDetails=pendingDetails.concat([done]);return;}Qt.callLater(function(){var value=benchmarkDetails[String(body.anilist_id)];done(value ? 200 : 404,value || {});});return; }
   if(path==='/tv/v1/catalog/episodes') { Qt.callLater(function(){var value=benchmarkEpisodes[String(body.anilist_id)];done(value ? 200 : 404,value || {});});return; }
@@ -163,7 +168,7 @@ Item {
  function finishPreview(id,key) { var done=pendingPreview; pendingPreview=null; done(200,{kind:'trailer',anilist_id:id,youtube_id:key,path:'/tv/v1/preview-media/'+'b'.repeat(64),expires_at:Date.now()/1000+900}); }
  function finishArtwork(index,id,kind) { pendingArtworks[index](200,{anilist_id:id,kind:kind,path:'/tv/v1/artwork-media/'+'c'.repeat(64),expires_at:Date.now()/1000+900}); }
  function featuredOnly() { state='connecting'; artworkEnabled=false; var value=JSON.parse(JSON.stringify(benchmarkHome)); value.rangees=[]; home=value; artworkEnabled=true; state='ready'; homeLoaded(); }
- function finishSearch(index) {pendingSearches[index](200,{resultats:benchmarkHome.hero.slice(index,index+4)});}
+ function finishSearch(index) {var p=pendingSearches[index];p.done(200,{resultats:benchmarkHome.hero.slice(index%2,index%2+4),page:p.body.page,has_next_page:p.body.page===1});}
  function finishDetail(index,identity) {pendingDetails[index](200,benchmarkDetails[String(identity)]);}
 }''')
     engine=QQmlApplicationEngine();engine.addImportPath(str(root))
@@ -371,22 +376,40 @@ Item {
             # Drive search with the same directional keys as the TV remote.
             session.setProperty('artworkEnabled',False);hero.setProperty('zone','actions');hero.forceActiveFocus(Qt.OtherFocusReason)
             QTest.keyClick(window,Qt.Key_Up);QTest.keyClick(window,Qt.Key_Return)
-            search=window.findChild(QObject,'atlasSearch')
+            search=window.findChild(QObject,'atlasDiscovery')
             assert screen.property('panel')=='search' and search.property('activeFocus')
-            for _ in range(5):QTest.keyClick(window,Qt.Key_Right)
-            QTest.keyClick(window,Qt.Key_Return) # F
-            QTest.keyClick(window,Qt.Key_Down);QTest.keyClick(window,Qt.Key_Down);QTest.keyClick(window,Qt.Key_Return) # R
             spin(lambda:len([c for c in calls if c[0]=='/tv/v1/catalog/search'])==1)
-            assert search.property('query')=='FR'
-            QTest.keyClick(window,Qt.Key_A)
-            spin(lambda:len([c for c in calls if c[0]=='/tv/v1/catalog/search'])==2)
-            assert search.property('query')=='FRa'
+            assert [c[1] for c in calls if c[0]=='/tv/v1/catalog/search'][-1]=={'page':1}
             session.finishSearch(0)
-            assert search.property('results').toVariant()==[], 'Stale search response was shown'
-            session.finishSearch(1);QTest.qWait(80)
+            assert search.property('state')=='ready' and search.property('zone')=='filters'
+            QTest.keyClick(window,Qt.Key_Return)
+            for _ in range(4):QTest.keyClick(window,Qt.Key_Down)
+            QTest.keyClick(window,Qt.Key_Return) # Fantasy draft
+            QTest.keyClick(window,Qt.Key_Right);QTest.keyClick(window,Qt.Key_Return) # Apply
+            spin(lambda:len([c for c in calls if c[0]=='/tv/v1/catalog/search'])==2)
+            assert [c[1] for c in calls if c[0]=='/tv/v1/catalog/search'][-1]=={'genres':['Fantasy'],'page':1}
+            session.finishSearch(1)
+            QTest.keyClick(window,Qt.Key_Up);QTest.keyClick(window,Qt.Key_Up);QTest.keyClick(window,Qt.Key_Return)
+            assert search.property('overlay')=='keyboard'
+            QTest.keyClick(window,Qt.Key_F);QTest.keyClick(window,Qt.Key_R)
+            for _ in range(4):QTest.keyClick(window,Qt.Key_Down)
+            QTest.keyClick(window,Qt.Key_Right);QTest.keyClick(window,Qt.Key_Right);QTest.keyClick(window,Qt.Key_Return)
+            assert search.property('query')=='fr'
+            search.openKeyboard();QTest.keyClick(window,Qt.Key_A)
+            search.submitQuery()
+            assert search.property('query')=='fra'
+            assert len([c for c in calls if c[0]=='/tv/v1/catalog/search'])==4
+            before=search.property('results').toVariant()
+            session.finishSearch(2)
+            assert search.property('results').toVariant()==before and search.property('state')=='loading', 'Stale search response was shown'
+            session.finishSearch(3);QTest.qWait(80)
             assert search.property('results').toVariant()[0]['anilist_id']==snapshot['hero'][1]['anilist_id']
-            QTest.keyClick(window,Qt.Key_Right)
             assert search.property('zone')=='results'
+            search.goPage(1)
+            assert [c[1] for c in calls if c[0]=='/tv/v1/catalog/search'][-1]=={'genres':['Fantasy'],'q':'fra','page':2}
+            session.finishSearch(4);assert search.property('page')==2
+            search.goPage(-1);session.finishSearch(5)
+            assert search.property('page')==1 and search.property('resultIndex')==0
             QTest.qWait(200)
             assert window.grabWindow().save(str(args.evidence/'search.png'))
             QTest.keyClick(window,Qt.Key_Return);QTest.qWait(80)
@@ -394,7 +417,8 @@ Item {
             detail=window.findChild(QObject,'atlasDetail')
             assert detail.property('media').toVariant()['anilist_id']==snapshot['hero'][1]['anilist_id']
             QTest.keyClick(window,Qt.Key_Escape)
-            assert screen.property('panel')=='search' and search.property('query')=='FRa'
+            assert screen.property('panel')=='search' and search.property('query')=='fra' and search.property('filters').toVariant()['genres']==['Fantasy']
+            assert search.property('zone')=='results' and len([c for c in calls if c[0]=='/tv/v1/catalog/search'])==6, 'Detail return lost search context or refreshed unnecessarily'
             QTest.keyClick(window,Qt.Key_Escape);QTest.qWait(80)
             context_value=hero.property('contextRow')
             assert screen.property('panel')=='' and (context_value is None or context_value.toVariant() is None)
