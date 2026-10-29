@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Atlas TV · Six affiches, plus de catalogue</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#111114;color:#f5f5f7;font:15px/1.5 system-ui,sans-serif}main{max-width:1328px;padding:22px 24px;margin:auto}h1{font-size:23px;margin:0}p{color:#c1c5ce}nav{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}button{font:inherit;min-height:44px;padding:8px 14px;border:1px solid #555c69;border-radius:9px;background:transparent;color:inherit}button[aria-selected=true]{background:#f5f5f7;color:#13151b}button:focus-visible,a:focus-visible{outline:2px solid white;outline-offset:3px}img{display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#090a0d}a{color:inherit;text-underline-offset:4px}.small{font-size:13px}.status{color:#d0c4a8}
+</style>
+<main><h1>Atlas TV · Six affiches, plus de catalogue</h1>
+<p class="status">Même taille d’affiches, en-tête resserré. Aperçu QML, pas encore publié sur la TV.</p>
+<nav role="tablist" aria-label="Comparer les états" id="tabs"></nav>
+<section role="tabpanel" id="panel"><img id="shot" src="02-target.png" alt="Six grandes affiches sous un en-tête compact, avec titre ciblé et métadonnées."></section>
+<p id="description" aria-live="polite"></p>
+<p class="small"><a id="full" href="02-target.png">Image pleine taille</a> · <a href="../2026-10-29-atlas-tv-search-compact.md">Choix et vérifications</a></p>
+<p class="small">Captures des vrais composants à 1280×720, sur 48 cartes du banc PC. API simulée, 32 contrôles de parcours. Aucun lancement Devialet dans ce lot.</p>
+</main><script>
+const states=[['02-target.png','Après','La phrase d’accroche disparaît, le titre est plus discret et les filtres remontent. Le catalogue gagne 54 px de hauteur sans réduire les affiches.'],['../2026-10-29-atlas-tv-library-density/portrait/02-target.png','Avant','La précédente proposition à six affiches réservait davantage de hauteur au titre et à la phrase d’accroche.'],['01-explore.png','Arrivée','Les filtres sont immédiatement accessibles. Les six affiches entières et la rangée suivante donnent une vue du catalogue.'],['03-scroll.png','Défilement','La sélection et son titre complet restent visibles quand on parcourt les rangées.'],['05-genres.png','Genres','Le menu reste attaché à la ligne des filtres. Les coches indiquent les choix, le blanc indique le focus.'],['09-keyboard.png','Clavier','Le clavier reste à la demande. Retour annule le brouillon sans quitter la recherche.'],['14-empty.png','Aucun résultat','Les critères restent accessibles et le message est centré sur le catalogue.'],['13-error.png','Panne','Réessayer conserve les critères ; la panne ne produit pas de faux résultats.']];
+const tabs=document.getElementById('tabs'),image=document.getElementById('shot');
+function show(i){const s=states[i];image.src=s[0];image.alt=s[2];document.getElementById('description').textContent=s[2];document.getElementById('full').href=s[0];document.getElementById('panel').setAttribute('aria-labelledby','t'+i);[...tabs.children].forEach((b,n)=>{b.setAttribute('aria-selected',String(n===i));b.tabIndex=n===i?0:-1;});}
+states.forEach((s,i)=>{const b=document.createElement('button');b.type='button';b.id='t'+i;b.textContent=s[1];b.setAttribute('role','tab');b.setAttribute('aria-controls','panel');b.addEventListener('click',()=>show(i));tabs.appendChild(b);});
+tabs.addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;const i=[...tabs.children].indexOf(document.activeElement);if(i<0)return;const n=e.key==='Home'?0:e.key==='End'?states.length-1:(i+(e.key==='ArrowRight'?1:-1)+states.length)%states.length;show(n);tabs.children[n].focus();e.preventDefault();});show(0);
+</script></html>

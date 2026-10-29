@@ -413,7 +413,7 @@ Item {
             QTest.qWait(200)
             assert window.grabWindow().save(str(args.evidence/'search.png'))
             QTest.keyClick(window,Qt.Key_Return);QTest.qWait(80)
-            assert screen.property('panel')=='detail'
+            assert screen.property('panel')=='detail', {'panel':screen.property('panel'),'searchFocus':search.property('activeFocus'),'zone':search.property('zone'),'state':search.property('state'),'overlay':search.property('overlay'),'exitVisible':screen.property('exitVisible')}
             detail=window.findChild(QObject,'atlasDetail')
             assert detail.property('media').toVariant()['anilist_id']==snapshot['hero'][1]['anilist_id']
             QTest.keyClick(window,Qt.Key_Escape)

@@ -156,6 +156,8 @@ L’itération suivante doit montrer davantage de résultats simultanés et adap
 les actions de bibliothèque PC/mobile à la télécommande.
 La passe12vignettes a été rejetée ; [le comparatif suivant](research/2026-10-29-atlas-tv-library-density.md)
 conserve le format des affiches et propose six grandes cartes, en revue seulement.
+La [passe d’en-tête compact](research/2026-10-29-atlas-tv-search-compact.md) retire
+l’accroche, resserre les commandes et rend 54 px au catalogue sans réduire les affiches.
 
 La [scène QML](research/2026-10-26-atlas-tv-qml-design-scene.md) compare une carte
 paysage, un focus blanc et un panneau translucide avec flou optionnel. Elle suit

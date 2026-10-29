@@ -1,5 +1,13 @@
 # Atlas sur la télévision : base réutilisable et premier parcours
 
+[Suites demandées par Walson](atlas-tv-todo.md) : bibliothèque, VOSTFR par défaut,
+états de diffusion et épisodes futurs avec leurs dates. Ces demandes restent
+hors de la passe visuelle et du lot HLS actuels.
+
+[Passe suivante : six grandes affiches et en-tête resserré](research/2026-10-29-atlas-tv-search-compact.md).
+Le catalogue gagne 54 px en hauteur sans réduire les cartes. Comparatif QML en
+revue ; aucun nouveau paquet ni lancement natif dans ce lot.
+
 [Réception suivante : densité, bibliothèque et retour arrière](research/2026-10-29-atlas-tv-library-density.md).
 La passe12cartes a été rejetée et retirée ; le Player est revenu à6f378d98928e.
 Six grandes affiches verticales sont préparées au banc uniquement, sans nouvelle

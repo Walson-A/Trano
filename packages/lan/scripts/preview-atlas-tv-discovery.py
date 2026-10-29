@@ -255,7 +255,7 @@ def run():
         expect(value(view,'resultIndex')==2, 'reduced motion preserves directional navigation')
         bad=sorted(set(m for m in messages if any(t in m for t in ['ReferenceError','TypeError','Cannot assign','Unable to assign','Binding loop','Cannot open:','is not a function'])))
         expect(not bad, 'QML runtime has no binding, asset or script errors: '+str(bad))
-        result={'checks':checks,'captures':captures,'resolution':[1280,720],'columns':columns,'denseLayout':args.dense,'qtVersion':QT_VERSION_STR,'data':'48 actual Atlas PC fixture cards assembled for UI review; NOT a live catalog ranking','network':False,'published':False,'nativeDecoder':False,'nativeQa':False,'apiCalls':value(window,'calls'),'qmlMessages':messages}
+        result={'checks':checks,'captures':captures,'resolution':[1280,720],'columns':columns,'denseLayout':args.dense,'grid':{key:value(grid,key) for key in ['x','y','width','height','cellWidth','cellHeight']},'qtVersion':QT_VERSION_STR,'data':'48 actual Atlas PC fixture cards assembled for UI review; NOT a live catalog ranking','network':False,'published':False,'nativeDecoder':False,'nativeQa':False,'apiCalls':value(window,'calls'),'qmlMessages':messages}
         (args.captures/'review.json').write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf-8')
         print(json.dumps({'checks':len(checks),'captures':captures,'qt':QT_VERSION_STR,'errors':bad}))
         app.quit()

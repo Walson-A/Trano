@@ -106,17 +106,17 @@ FocusScope {
     Timer {id:artDelay;interval:160;onTriggered:view.warm()}
     Rectangle {anchors.fill:parent;color:'#090a0d'}
     TvNavigation {id:navigation;page:'search';family:view.family;focused:view.zone==='nav' && !view.overlay;selectedIndex:view.navIndex;avatar:view.avatar;reducedMotion:view.reducedMotion;pseudo:view.transport && view.transport.home.compte ? view.transport.home.compte.pseudo || 'Profil' : 'Profil';onDestinationRequested:view.navigateRequested(destination)}
-    Text {x:64;y:110;text:'Recherche';color:'white';font.family:view.family;font.pixelSize:40;font.weight:Font.Bold}
-    Text {x:66;y:164;text:'Trouve ta prochaine histoire.';color:'#a7aab4';font.family:view.family;font.pixelSize:20}
-    HeroButton {objectName:'discoverySearch';x:772;y:119;width:444;height:60;family:view.family;label:view.query || 'Rechercher un animé';iconKey:'search';focused:view.zone==='search' && !view.overlay;reducedMotion:view.reducedMotion;onActivated:{view.zone='search';view.openKeyboard();}}
-    Row {x:64;y:214;spacing:12
+    Text {x:64;y:view.denseLayout ? 102 : 110;text:'Recherche';color:'white';font.family:view.family;font.pixelSize:view.denseLayout ? 32 : 40;font.weight:Font.Bold}
+    Text {x:66;y:164;visible:!view.denseLayout;text:'Trouve ta prochaine histoire.';color:'#a7aab4';font.family:view.family;font.pixelSize:20}
+    HeroButton {objectName:'discoverySearch';x:772;y:view.denseLayout ? 98 : 119;width:444;height:view.denseLayout ? 52 : 60;family:view.family;label:view.query || 'Rechercher un animé';iconKey:'search';focused:view.zone==='search' && !view.overlay;reducedMotion:view.reducedMotion;onActivated:{view.zone='search';view.openKeyboard();}}
+    Row {x:64;y:view.denseLayout ? 164 : 214;spacing:12
         Repeater {model:[212,168,130,188,206]
-            HeroButton {objectName:'discoveryFilter'+index;width:modelData;height:48;label:view.valueLabel(index);family:view.family;selected:view.filterActive(index);focused:view.zone==='filters' && view.filterIndex===index && !view.overlay;iconKey:'chevron-down';reducedMotion:view.reducedMotion;onActivated:{view.zone='filters';view.openFilter(index);}}
+            HeroButton {objectName:'discoveryFilter'+index;width:modelData;height:view.denseLayout ? 46 : 48;label:view.valueLabel(index);family:view.family;selected:view.filterActive(index);focused:view.zone==='filters' && view.filterIndex===index && !view.overlay;iconKey:'chevron-down';reducedMotion:view.reducedMotion;onActivated:{view.zone='filters';view.openFilter(index);}}
         }
-        HeroButton {width:128;height:48;label:'Effacer';family:view.family;flat:true;opacity:Catalog.count(view.filters) || view.query ? 1 : 0.35;focused:view.zone==='filters' && view.filterIndex===5 && !view.overlay;reducedMotion:view.reducedMotion;onActivated:{view.zone='filters';view.filterIndex=5;view.activate();}}
+        HeroButton {width:128;height:view.denseLayout ? 46 : 48;label:'Effacer';family:view.family;flat:true;opacity:Catalog.count(view.filters) || view.query ? 1 : 0.35;focused:view.zone==='filters' && view.filterIndex===5 && !view.overlay;reducedMotion:view.reducedMotion;onActivated:{view.zone='filters';view.filterIndex=5;view.activate();}}
     }
-    Text {x:66;y:277;width:view.denseLayout ? 1152 : 810;text:view.state==='loading' ? 'Recherche en cours…' : view.state==='error' ? 'Le catalogue ne répond pas.' : view.denseLayout && view.zone==='results' && view.currentCard ? view.currentCard.titre+' · '+Catalog.meta(view.currentCard) : view.query ? 'Résultats pour « '+view.query+' »' : view.filters.genres.length ? view.valueLabel(0) : 'À explorer';color:'#b9bdc7';font.family:view.family;font.pixelSize:18;textFormat:Text.PlainText;elide:Text.ElideRight}
-    GridView {id:grid;objectName:'discoveryGrid';x:56;y:310;width:view.denseLayout ? 1168 : 840;height:350;cellWidth:width/view.columns;cellHeight:view.denseLayout ? 310 : 336;clip:true;model:view.results;currentIndex:view.resultIndex;interactive:false;keyNavigationEnabled:false;visible:view.state!=='error';opacity:view.state==='loading' ? 0.3 : 1
+    Text {x:66;y:view.denseLayout ? 222 : 277;width:view.denseLayout ? 1152 : 810;text:view.state==='loading' ? 'Recherche en cours…' : view.state==='error' ? 'Le catalogue ne répond pas.' : view.denseLayout && view.zone==='results' && view.currentCard ? view.currentCard.titre+' · '+Catalog.meta(view.currentCard) : view.query ? 'Résultats pour « '+view.query+' »' : view.filters.genres.length ? view.valueLabel(0) : 'À explorer';color:'#b9bdc7';font.family:view.family;font.pixelSize:18;textFormat:Text.PlainText;elide:Text.ElideRight}
+    GridView {id:grid;objectName:'discoveryGrid';x:56;y:view.denseLayout ? 256 : 310;width:view.denseLayout ? 1168 : 840;height:view.denseLayout ? 404 : 350;cellWidth:width/view.columns;cellHeight:view.denseLayout ? 310 : 336;clip:true;model:view.results;currentIndex:view.resultIndex;interactive:false;keyNavigationEnabled:false;visible:view.state!=='error';opacity:view.state==='loading' ? 0.3 : 1
         onCurrentIndexChanged:if(currentIndex>=0 && currentIndex<count)positionViewAtIndex(currentIndex,GridView.Beginning)
         delegate:Item {id:tile;width:grid.cellWidth;height:grid.cellHeight
             property bool targeted:view.zone==='results' && view.resultIndex===index && !view.overlay
@@ -133,7 +133,7 @@ FocusScope {
         }
     }
     Rectangle {x:56;y:640;width:grid.width;height:22;gradient:Gradient {GradientStop {position:0;color:'#00090a0d'} GradientStop {position:1;color:'#090a0d'}}}
-    Rectangle {x:view.denseLayout ? 1230 : 902;y:318;width:2;height:310;radius:1;color:'#252a35';visible:view.results.length>view.columns && view.state==='ready'
+    Rectangle {x:view.denseLayout ? 1230 : 902;y:grid.y+8;width:2;height:grid.height-40;radius:1;color:'#252a35';visible:view.results.length>view.columns && view.state==='ready'
         Rectangle {width:2;height:parent.height/Math.ceil(view.results.length/view.columns);y:Math.floor(view.resultIndex/view.columns)*height;radius:1;color:'#a3a9b5'}
     }
     Item {x:930;y:316;width:286;height:354;visible:!view.denseLayout && !!view.currentCard && view.state==='ready'
@@ -144,9 +144,9 @@ FocusScope {
         Text {id:previewGenres;y:previewMeta.y+28;width:286;text:view.currentCard && view.currentCard.genres ? view.currentCard.genres.slice(0,3).join(' · ') : '';color:'#d3d5dc';font.family:view.family;font.pixelSize:16;elide:Text.ElideRight}
         Text {y:previewGenres.y+32;width:286;height:382-y;text:view.currentCard ? Catalog.plain(view.currentCard.resume) || 'Ouvre la fiche pour en savoir plus.' : '';color:'#a7acb7';font.family:view.family;font.pixelSize:17;wrapMode:Text.WordWrap;elide:Text.ElideRight;textFormat:Text.PlainText}
     }
-    Item {x:64;y:364;width:800;height:220;visible:view.state==='error' || view.state==='ready' && !view.results.length
-        Text {width:800;text:view.state==='error' ? 'Impossible de charger les animés' : 'Aucun animé avec ces critères';color:'white';font.family:view.family;font.pixelSize:30;font.weight:Font.DemiBold;horizontalAlignment:Text.AlignHCenter}
-        Text {y:54;width:800;text:view.state==='error' ? 'Tes critères sont conservés. Tu peux réessayer.' : view.query ? 'Essaie un autre titre ou efface les critères.' : 'Essaie un autre genre ou efface les filtres.';color:'#a7acb7';font.family:view.family;font.pixelSize:20;horizontalAlignment:Text.AlignHCenter}
+    Item {x:64;y:view.denseLayout ? 336 : 364;width:view.denseLayout ? 1152 : 800;height:220;visible:view.state==='error' || view.state==='ready' && !view.results.length
+        Text {width:parent.width;text:view.state==='error' ? 'Impossible de charger les animés' : 'Aucun animé avec ces critères';color:'white';font.family:view.family;font.pixelSize:30;font.weight:Font.DemiBold;horizontalAlignment:Text.AlignHCenter}
+        Text {y:54;width:parent.width;text:view.state==='error' ? 'Tes critères sont conservés. Tu peux réessayer.' : view.query ? 'Essaie un autre titre ou efface les critères.' : 'Essaie un autre genre ou efface les filtres.';color:'#a7acb7';font.family:view.family;font.pixelSize:20;horizontalAlignment:Text.AlignHCenter}
     }
     Row {x:64;y:670;spacing:12
         HeroButton {width:154;height:38;label:'Précédente';family:view.family;flat:true;visible:view.page>1;focused:view.zone==='pages' && view.pageIndex===0;onActivated:view.goPage(-1)}
@@ -154,7 +154,7 @@ FocusScope {
         HeroButton {width:172;height:38;label:view.state==='error' ? 'Réessayer' : 'Voir la suite';family:view.family;flat:true;visible:view.hasNext || view.state==='error';focused:view.zone==='pages' && view.pageIndex===1;onActivated:{view.zone='pages';view.pageIndex=1;view.activate();}}
     }
     Rectangle {anchors.fill:parent;color:'#ce050609';visible:!!view.overlay;z:10;MouseArea {anchors.fill:parent;onClicked:{view.overlay='';view.forceActiveFocus();}}}
-    Rectangle {objectName:'discoveryFilterPanel';x:Math.min(64+[0,224,404,546,746][Math.min(view.filterIndex,4)],816);y:204;width:400;height:480;radius:18;color:'#f020232c';border.color:'#606773';visible:view.overlay==='filter';z:11
+    Rectangle {objectName:'discoveryFilterPanel';x:Math.min(64+[0,224,404,546,746][Math.min(view.filterIndex,4)],816);y:view.denseLayout ? 154 : 204;width:400;height:480;radius:18;color:'#f020232c';border.color:'#606773';visible:view.overlay==='filter';z:11
         Text {x:24;y:21;width:352;text:view.filterNames[view.filterIndex] || '';color:'white';font.family:view.family;font.pixelSize:27;font.weight:Font.DemiBold}
         Text {x:24;y:63;width:352;text:view.filterIndex===0 ? view.filterNotice || '3 maximum · tous les genres choisis' : 'Choisir pour appliquer';color:'#aeb4c0';font.family:view.family;font.pixelSize:16}
         ListView {id:optionList;objectName:'discoveryOptions';x:14;y:101;width:372;height:view.filterIndex===0 ? 294 : 354;clip:true;model:view.options;currentIndex:view.optionIndex;interactive:false
