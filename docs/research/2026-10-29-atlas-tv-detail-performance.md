@@ -68,7 +68,7 @@ reste à confirmer sur la TV.
 [Chargement neutre](2026-10-29-atlas-tv-detail-performance/followup-loading.png),
 [fiche prête](2026-10-29-atlas-tv-detail-performance/followup-detail.png),
 [panneau de suivi](2026-10-29-atlas-tv-detail-performance/followup-rating.png) :
-revue des vrais composants à1280×720. Les dimensions et le focus sont conservés.
+revue des vrais composants à 1280×720. Les dimensions et le focus sont conservés.
 Les états synthétiques et le décodeur simulé sont propres au banc.
 
 Vérifications finales [HLS](2026-10-29-atlas-tv-detail-performance/hls-follow-up-verification.json)
@@ -78,3 +78,24 @@ Un scénario de banc a d’abord échoué sur une variable Python `reads` réuti
 comme compteur ; son nom est corrigé et les deux suites finales passent.
 Une première revue a également révélé le flag resume_fr affiché au lieu du
 synopsis ; le client n’utilise désormais que la chaîne resume et le banc le vérifie.
+
+## Publication
+
+La release [hero-detail-0b0a6c8a1416](2026-10-29-atlas-tv-detail-performance/package.json),
+35 fichiers / 348228 octets, est issue du commit 8afb4f7867ed42e6a0d7eb02dba9b260b8ec45ad.
+Le [précontrôle](2026-10-29-atlas-tv-detail-performance/preflight.json) vérifie
+le moteur réellement actif 36746c754539e7d990e29092bd917b41dc11b13d, le gateway
+1b6e3daa4bd74abd7db137a924df86a1f0eba0c76ed2602544ea0b778cd67134 et l’ancienne
+release 60a7cb562ecd. La [publication](2026-10-29-atlas-tv-detail-performance/publication.json)
+modifie le bundle QML, vérifie sa disponibilité et ne redémarre pas l’engine.
+Le [reçu SDK](2026-10-29-atlas-tv-detail-performance/launch.json) confirme la
+relance standard, sans démarrage d’épisode ; le rendu et la rapidité de cette
+version complète restent à confirmer physiquement par Walson.
+
+Les transferts distants du lot sont retirés après contrôle des empreintes ; le
+bundle actif et son rollback privé 0600 sont conservés. Les exports temporaires
+locaux sont supprimés après archivage. Aucun serveur de test persistant ne reste.
+Le worktree partagé et les caches communs sont conservés pour les suites TV, avec
+les deux éléments non suivis préexistants laissés intacts.
+
+[Reçu de nettoyage](2026-10-29-atlas-tv-detail-performance/cleanup.json).

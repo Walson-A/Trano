@@ -4,6 +4,12 @@
 états de diffusion et épisodes futurs avec leurs dates. Le VOSTFR, Ma liste,
 les notes et le calendrier ont désormais leur livraison ci-dessous.
 
+[Ouverture des fiches et du suivi corrigée](research/2026-10-29-atlas-tv-detail-performance.md).
+hero-detail-0b0a6c8a1416 lance détail/épisodes/suivi en parallèle, réutilise les états
+privés confirmés pendant30s et affiche immédiatement le synopsis connu. Le probe
+natif a mesuré353–772ms selon la route sur un titre ; il ne mesure pas la fiche
+complète. Les bancs passent, la réception de la rapidité globale reste à faire.
+
 [Ma liste, notes et épisodes à venir publiés](research/2026-10-29-atlas-tv-library-airing.md).
 Le paquet hero-library-60a7cb562ecd (35 fichiers) est raccordé aux routes privées
 appareil du backend. La fiche permet l’ajout, les six statuts et une note sur 10 ;

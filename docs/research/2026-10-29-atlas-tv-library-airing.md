@@ -146,3 +146,11 @@ après le signal du backend, avec le lot Ma liste et diffusion.
 [Menu Source](2026-10-29-atlas-tv-library-airing/followup-franime-source.png) et
 [choix Originale](2026-10-29-atlas-tv-library-airing/followup-franime-quality.png)
 dans le banc QML, avec lecteur simulé.
+
+## Réception et suite
+
+Walson a confirmé l’apparition de Ma liste et des boutons sur la vraie TV, mais
+a jugé l’ouverture des fiches et le libellé transitoire Mon suivi trop lents et
+confus. Le [correctif de chargement](2026-10-29-atlas-tv-detail-performance.md)
+conserve cette interface et corrige les attentes séquentielles ; la réception
+initiale ne constituait pas une validation de sa rapidité ni de tous ses contrôles.
