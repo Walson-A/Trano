@@ -214,13 +214,17 @@ Item {
             assert hero.property('actionIndex')==1 and window.findChild(QObject,'heroInfo').property('focused') is True
             QTest.keyClick(window,Qt.Key_Left)
             assert hero.property('selected').toVariant()['a_lancer']['numero']==13
+            assert hero.property('selected').toVariant()['a_lancer']['vf'] is True
+            fallback=hero.target({'anilist_id':154587,'franime':{'titre':'Frieren','saison':1,'episode':1,'vf':True}}).toVariant()
+            assert fallback['numero']==1 and fallback['vf'] is False, 'VF availability must not choose the initial language'
             QTest.keyClick(window,Qt.Key_Return)
             QTimer.singleShot(400,playing)
         except Exception as error: messages.append(traceback.format_exc());app.exit(1)
     def playing():
         try:
             targets=[body for path,body in calls if path=='/tv/v1/playbacks']
-            assert targets==[{'anilist_id':hero.property('selected').toVariant()['anilist_id'],'episode':13,'lang':'vf','exclude_readers':[]}],targets
+            assert targets==[{'anilist_id':hero.property('selected').toVariant()['anilist_id'],'episode':13,'lang':'vo','exclude_readers':[]}],targets
+            assert hero.property('selected').toVariant()['a_lancer']['vf'] is True, 'Default VO must not mutate the backend resume hint'
             assert screen.property('playbackId')=='aaaaaaaa-aaaa-aaaa-aaaa-000000000001'
             player=window.findChild(QObject,'episodeLoader').property('item')
             spin(lambda:player.property('playing') is True)
@@ -448,6 +452,8 @@ Item {
             spin(lambda:detail.property('episodeState')=='ready')
             assert detail.property('detail').toVariant()['carte']['anilist_id']==154587
             assert detail.property('episodes').toVariant()[0]['numero']==1
+            assert detail.property('french') is False and detail.property('languageIndex')==0
+            assert 'VOSTFR' in window.findChild(QObject,'detailPlay').property('label'), 'New detail defaults to VOSTFR even when VF exists'
             detail.setProperty('zone','language');detail.setProperty('languageIndex',1);detail.setProperty('french',True)
             QTest.keyClick(window,Qt.Key_Left)
             assert detail.property('french') is True, 'Focus must not change the chosen language'
@@ -572,7 +578,7 @@ Item {
             QTest.keyClick(window,Qt.Key_Back);QTest.keyClick(window,Qt.Key_Back);QTest.qWait(80)
             later_bad=[m for m in messages if any(s in m for s in ['ReferenceError','TypeError','Unable to assign','Cannot assign'])]
             assert not later_bad,later_bad
-            (args.evidence/'verification.json').write_text(json.dumps({'passed':True,'scope':'real QML host/UI with fake API and fake decoder; no native playback claim','canonicalEpisode':13,'tvPlayer':{'anchoredMenusKeepChrome':True,'proposedTimelineUntilConfirmed':True,'cancelSeekKeepsPosition':True,'cancelResolutionIgnoresLateResponse':True,'strictSourceReaderVariant':True,'strictRetry401And200KeepsChoice':True,'failedChangeKeepsOldVideo':True,'pausedQualityAndVersionKeepPositionAndIntent':True,'episodesOverlayKeepsVideoAndSeasonBrowsing':True,'firstBackHidesHudWithoutClosing':True,'episodeJumpPreservesCurrentPlayback':True,'sourceReachableAfterNativeFailure':True,'episodeArtworkIdentityChecked':True,'missingCapabilityUnavailable':True,'perSessionProgressSequence':True},'lang':'vf','defaultSoundOnAndLabelled':True,'infoSelectionPreserved':True,'search':{'remoteKeyboard':True,'staleIgnored':True,'selectionAndBack':True},'profile':{'publicProfileWithoutOAuth':True,'statsScaleChecked':True,'selectionAndBack':True},'lateTrailerDoesNotChangeSelection':True,'silentGainZero':True,'bannerErrorUsesPoster':True,'artworkQueue':{'maxConcurrent':2,'identityChecked':True,'deduplicated':True,'capabilityRequired':True,'warmWithoutResume':True},'events':events},indent=2),encoding='utf-8')
+            (args.evidence/'verification.json').write_text(json.dumps({'passed':True,'scope':'real QML host/UI with fake API and fake decoder; no native playback claim','canonicalEpisode':13,'defaultLanguage':'vo','frenchAvailabilityDoesNotSelectLanguage':True,'explicitFrenchStillSupported':True,'tvPlayer':{'anchoredMenusKeepChrome':True,'proposedTimelineUntilConfirmed':True,'cancelSeekKeepsPosition':True,'cancelResolutionIgnoresLateResponse':True,'strictSourceReaderVariant':True,'strictRetry401And200KeepsChoice':True,'failedChangeKeepsOldVideo':True,'pausedQualityAndVersionKeepPositionAndIntent':True,'episodesOverlayKeepsVideoAndSeasonBrowsing':True,'firstBackHidesHudWithoutClosing':True,'episodeJumpPreservesCurrentPlayback':True,'sourceReachableAfterNativeFailure':True,'episodeArtworkIdentityChecked':True,'missingCapabilityUnavailable':True,'perSessionProgressSequence':True},'lang':'vo','defaultSoundOnAndLabelled':True,'infoSelectionPreserved':True,'search':{'remoteKeyboard':True,'staleIgnored':True,'selectionAndBack':True},'profile':{'publicProfileWithoutOAuth':True,'statsScaleChecked':True,'selectionAndBack':True},'lateTrailerDoesNotChangeSelection':True,'silentGainZero':True,'bannerErrorUsesPoster':True,'artworkQueue':{'maxConcurrent':2,'identityChecked':True,'deduplicated':True,'capabilityRequired':True,'warmWithoutResume':True},'events':events},indent=2),encoding='utf-8')
             app.quit()
         except Exception as error: messages.append(traceback.format_exc());app.exit(1)
     QTimer.singleShot(600,check);QTimer.singleShot(25000,lambda:app.exit(2))

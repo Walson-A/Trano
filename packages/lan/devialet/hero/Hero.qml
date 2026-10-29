@@ -61,9 +61,10 @@ FocusScope {
     }
     function target(media) {
         if (!media) return null;
-        if (media.a_lancer) return media.a_lancer;
+        // Availability and a backend resume hint are not a language preference.
+        if (media.a_lancer) { var next=JSON.parse(JSON.stringify(media.a_lancer)); next.vf=false; return next; }
         var f=media.franime;
-        return f ? {franime_titre:f.titre,saison:f.saison,episode:f.episode,numero:1,vf:f.vf} : media.anilist_id>0 ? {numero:1,vf:false} : null;
+        return f ? {franime_titre:f.titre,saison:f.saison,episode:f.episode,numero:1,vf:false} : media.anilist_id>0 ? {numero:1,vf:false} : null;
     }
     function art(media,kind) {
         if (!media) return "";

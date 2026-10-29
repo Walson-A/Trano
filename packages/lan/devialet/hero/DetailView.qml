@@ -47,7 +47,7 @@ FocusScope {
     function open(c) {stack=[];opened=true;load(c);forceActiveFocus();}
     function load(c) {
         var key=identity(c),turn=++generation;episodeGeneration++;media=c;detail=null;episodeData=null;extrasError='';state='loading';episodeState='loading';zone='actions';actionIndex=0;episodeIndex=0;relationIndex=0;castIndex=0;recommendationIndex=0;pageIndex=0;pageStart=1;
-        french=!!(c && (c.a_lancer ? c.a_lancer.vf : c.franime && c.franime.vf));languageIndex=french ? 1 : 0;viewport.contentY=0;
+        french=false;languageIndex=0;viewport.contentY=0;
         if(!key || !transport){state='error';return;}
         artworks.request(c,'banner',true);
         transport.api('/tv/v1/catalog/detail',key,45000,function(status,value) {
