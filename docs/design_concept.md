@@ -229,4 +229,3 @@ Le HLS négocié conserve la composition du lecteur et de ses menus. Les qualit�
 MP4/HLS partagent le même choix de résolution ; aucun libellé de protocole ne
 s'ajoute au parcours. Voir `research/2026-10-29-atlas-tv-hls.md` pour les contrôles
 et la distinction entre banc simulé et décodage natif.
-
