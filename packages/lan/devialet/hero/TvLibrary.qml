@@ -42,7 +42,7 @@ Item {
     function read(id,reuseRecent){
         if(!available || !Number.isInteger(id) || id<=0 || phase(id)==='saving' || phase(id)==='loading')return;
         var before=entry(id),turn=begin(id),session=epoch;setPhase(id,'loading','');
-        var body={anilist_id:id};if(reuseRecent===true && transport.libraryReadCacheEnabled===true)body.reuse_recent=true;
+        var body={anilist_id:id};if(reuseRecent===true && !pendingRemovals[String(id)] && transport.libraryReadCacheEnabled===true)body.reuse_recent=true;
         transport.api('/tv/v1/library-entry',body,45000,function(code,value){
             if(session!==epoch || serials[String(id)]!==turn)return;
             if(code!==200 || !accept(id,value)){setPhase(id,'error',RequestState.message(code,value,'Impossible de charger ton suivi. Réessaie.'));return;}

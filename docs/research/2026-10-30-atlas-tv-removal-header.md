@@ -28,7 +28,9 @@ par hypothèse. Une réponse 409 ou perdue garde un état explicite. La vérific
 est fraîche et ne renvoie jamais la suppression. Si elle confirme l’absence,
 celle-ci se propage à la fiche, au héros et à l’invalidation de Ma liste. Si
 l’entrée existe toujours, un nouveau consentement est nécessaire, avec Annuler
-à nouveau sélectionné. HTTP401 invalide la session, sans rejeu après refresh.
+à nouveau sélectionné. Même si la vérification échoue puis que le panneau est
+fermé et rouvert, le retrait en attente interdit reuse_recent : cette reprise
+reste une lecture fraîche. HTTP401 invalide la session, sans rejeu après refresh.
 
 Revue à 1280×720 des composants QML réels, avec compte et API **simulés** :
 [action dans le suivi](2026-10-30-atlas-tv-removal-header/remove-entry.png),
@@ -74,7 +76,8 @@ indépendants : elles vérifient la composition, pas une association de médias 
 - [Retrait](2026-10-30-atlas-tv-removal-header/removal-verification.json) : capacité
   absente, consentement, annulation/Retour, doublon pendant l’envoi, absence
   canonique, conflit, réponses perdues appliquées et non appliquées, révision
-  manquante après édition, entrée non confirmée incapable de supprimer.
+  manquante après édition, entrée non confirmée incapable de supprimer,
+  vérification échouée puis panneau rouvert toujours relu fraîchement.
 - [Host QML](2026-10-30-atlas-tv-removal-header/verification.json),
   [suivi](2026-10-30-atlas-tv-removal-header/follow-up-verification.json),
   [chargements](2026-10-30-atlas-tv-removal-header/loading-verification.json) :

@@ -136,6 +136,7 @@ Item {
  property bool libraryRemoveEnabled:true
  property string removalFailure:""
  property bool removalUnavailable:false
+ property bool failNextLibraryRead:false
  property bool airingEnabled:false
  property bool followupAiring:false
  property bool franimeEnabled:false
@@ -173,7 +174,7 @@ Item {
  function api(path,body,timeout,done) {
   apiCalled(path,body);
   if(delayCollections && ['/tv/v1/library','/tv/v1/catalog/history'].indexOf(path)>=0){pendingCollections=pendingCollections.concat([{path:path,body:body,done:done}]);return;}
-  if(path==='/tv/v1/library-entry'){if(delayLibrary){pendingLibrary=pendingLibrary.concat([{body:body,done:done}]);return;}Qt.callLater(function(){done(200,libraryEntry(body.anilist_id));});return;}
+  if(path==='/tv/v1/library-entry'){if(failNextLibraryRead){failNextLibraryRead=false;Qt.callLater(function(){done(503,{});});return;}if(delayLibrary){pendingLibrary=pendingLibrary.concat([{body:body,done:done}]);return;}Qt.callLater(function(){done(200,libraryEntry(body.anilist_id));});return;}
   if(path==='/tv/v1/library-remove'){Qt.callLater(function(){
    var mode=removalFailure;removalFailure='';
    if(mode==='conflict'){var entry=libraryEntry(body.anilist_id);entry.moi.note=9;entry.revision='new-'+(++libraryRevision);seedLibrary(body.anilist_id,entry);done(409,{error:{code:'entry_conflict'}});return;}

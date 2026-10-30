@@ -12,5 +12,6 @@
   "lostAppliedResponseReconciledWithoutReplay": true,
   "lostUnappliedResponseNeverReplayed": true,
   "missingNewRevisionForcesFreshRead": true,
-  "unconfirmedEntryCannotDelete": true
+  "unconfirmedEntryCannotDelete": true,
+  "failedVerificationReopenedFresh": true
 }

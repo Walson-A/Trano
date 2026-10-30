@@ -66,6 +66,15 @@ def run(window, session, screen, details, calls, QTest, Qt, QObject, spin, evide
     assert editor.property('opened') and editor.property('removeOpen') and len(removals())==before
     assert editor.property('removeChoice')==0 and 'reuse_recent' not in reads()[-1]
     QTest.keyClick(window,Qt.Key_Back);QTest.keyClick(window,Qt.Key_Back)
+    # A failed verification must not turn a later reopening into a cached read.
+    seed();open_editor();editor.askRemoval();session.setProperty('removalFailure','timeout_present')
+    editor.confirmRemoval();spin(lambda:editor.property('phase')=='uncertain')
+    session.setProperty('failNextLibraryRead',True);editor.confirmRemoval()
+    spin(lambda:editor.property('phase')=='error')
+    before=len(removals());QTest.keyClick(window,Qt.Key_Back);QTest.keyClick(window,Qt.Key_Back)
+    open_editor()
+    assert len(removals())==before and 'reuse_recent' not in reads()[-1]
+    QTest.keyClick(window,Qt.Key_Back)
 
     # An update response without a new removal revision cannot reuse the old consent token.
     seed();open_editor();QTest.keyClick(window,Qt.Key_Right)
@@ -90,5 +99,5 @@ def run(window, session, screen, details, calls, QTest, Qt, QObject, spin, evide
         'strictCapabilityGate':True,'explicitConsent':True,'defaultCancel':True,'layeredBack':True,
         'opaqueRemovalRevisionOnly':True,'canonicalAbsencePropagated':True,'duplicateWhileSavingIgnored':True,
         'conflictFreshReadAndNewConsent':True,'lostAppliedResponseReconciledWithoutReplay':True,
-        'lostUnappliedResponseNeverReplayed':True,'missingNewRevisionForcesFreshRead':True,'unconfirmedEntryCannotDelete':True,
+        'lostUnappliedResponseNeverReplayed':True,'missingNewRevisionForcesFreshRead':True,'unconfirmedEntryCannotDelete':True,'failedVerificationReopenedFresh':True,
     },indent=2),encoding='utf-8')
