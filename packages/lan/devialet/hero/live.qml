@@ -18,9 +18,10 @@ Application {
         }
         if(!restored)hero.selectMode(hero.resumeItems.length ? 'resume' : 'featured');Qt.callLater(screen.warmArtwork);
     }
-        onUnavailable:{if(screen.playbackId && episode.item)episode.item.close();hero.previewEnabled=false;}
+        onUnavailable:{if(screen.playbackId && episode.item)episode.item.close();hero.previewEnabled=false;if(detailPanel.item)detailPanel.item.stopPreview();}
     }
     ArtworkCache { id:artworks; objectName:'artworkCache'; transport:session }
+    TvPreviews {id:previews;objectName:'tvPreviews';transport:session}
     Item {
         id: screen; objectName:'tvScreen'
         width:1280; height:720; scale:Math.min(parent.width/1280,parent.height/720); transformOrigin:Item.TopLeft
@@ -29,11 +30,8 @@ Application {
         property string playbackId: ""
         property var pendingPlayback: null
         property int sequence: 0
-        property bool previewBusy: false
         property bool retryInspectBusy:false
         property int retrySerial:0
-        property var previewCache: ({})
-        property var previewFailures: ({})
         property string panel: ''
         property string returnPanel: 'search'
         property string homeRowId: ''
@@ -69,7 +67,7 @@ Application {
             else {hero.detailOpen=false;hero.zone='actions';hero.actionIndex=1;hero.previewEnabled=true;hero.forceActiveFocus();}
         }
         function returnFromPlayback() {
-            if(panel==='detail'){hero.previewEnabled=false;detailPanel.item.resumeExtras();detailPanel.item.forceActiveFocus();}
+            if(panel==='detail'){hero.previewEnabled=false;detailPanel.item.resumeExtras();detailPanel.item.resumePreview();detailPanel.item.forceActiveFocus();}
             else {hero.previewEnabled=true;hero.forceActiveFocus();}
         }
         function playbackError(message) {
@@ -119,26 +117,11 @@ Application {
         }
         function preview() {
             if(resolving || playbackId || panel || !hero.selected || !hero.trailerId || session.state!=='ready') return;
-            if(previewBusy) { hero.previewState='loading'; return; }
-            var id=hero.selected.anilist_id, key=hero.trailerId, cached=previewCache[key];
-            if(!(id>0)) return;
-            if(cached && cached.expires>Date.now()+30000) { var available={}; available[key]=cached.url; hero.trailerSources=available; return; }
-            if(previewFailures[key]>Date.now()) { hero.previewState='unavailable'; return; }
-            previewBusy=true; hero.previewState='loading';
-            session.api('/tv/v1/previews',{anilist_id:id},110000,function(status,value) {
-                previewBusy=false;
-                var url=value ? session.mediaUrl(value.path,'trailer') : '';
-                if(status===200 && value && value.kind==='trailer' && value.anilist_id===id && value.youtube_id===key && url) {
-                    var next={}, keys=Object.keys(previewCache);
-                    for(var i=Math.max(0,keys.length-15);i<keys.length;i++) if(previewCache[keys[i]].expires>Date.now()) next[keys[i]]=previewCache[keys[i]];
-                    next[key]={url:url,expires:value.expires_at*1000}; previewCache=next;
-                    if(hero.trailerId===key && !resolving && !playbackId) { var sources={}; sources[key]=url; hero.trailerSources=sources; }
-                } else {
-                    previewFailures[key]=Date.now()+60000;
-                    if(hero.trailerId===key) hero.previewState='unavailable';
-                }
-                // A late response can warm its own cache, never change the selection.
-                if(hero.trailerId!==key) preview();
+            var media=hero.selected,id=media.anilist_id,key=hero.trailerId;hero.previewState='loading';
+            previews.resolve(media,function(status,url){
+                if(!hero.selected || hero.selected.anilist_id!==id || hero.trailerId!==key || resolving || playbackId || panel)return;
+                if(status===200 && url){var sources={};sources[key]=url;hero.trailerSources=sources;}
+                else hero.previewState='unavailable';
             });
         }
         function launch(media,target,excluded,resumeOverride) {
@@ -161,6 +144,7 @@ Application {
             if(choice.source && ['voiranime','anime-sama','franime'].indexOf(choice.source)<0 || choice.readerId && !/^[a-f0-9]{64}$/.test(choice.readerId) || choice.variantId && (!/^[a-f0-9]{64}$/.test(choice.variantId) || !choice.readerId || !choice.source))return;
             if((choice.readerId || choice.source) && !session.readersEnabled || choice.variantId && !session.variantsEnabled){if(replacing)episode.item.changeFailed('Ce choix n’est pas disponible sur cette connexion.');return;}
             resolving=true;var turn=++generation,old=pendingPlayback,oldId=playbackId;
+            if(panel==='detail' && detailPanel.item)detailPanel.item.suspendPreview();
             var readers=[];
             for(var i=0;excluded && i<excluded.length;i++)if(/^[a-f0-9]{64}$/.test(excluded[i]) && excluded[i]!==choice.readerId && readers.indexOf(excluded[i])<0)readers.push(excluded[i]);
             readers=readers.slice(-8);
@@ -213,8 +197,7 @@ Application {
         }
         Timer { interval:30000; repeat:true; running:session.state==='ready' && !screen.panel && !screen.playbackId && !screen.resolving; onTriggered: {
             screen.warmArtwork();
-            var key=hero.trailerId, cached=screen.previewCache[key];
-            if(cached && cached.expires<=Date.now()+30000 && hero.trailerSources[key]) hero.trailerSources={};
+            if(hero.trailerSources[hero.trailerId] && !previews.cachedSource(hero.selected))hero.trailerSources={};
         } }
         Hero {
             id:hero; objectName:'atlasHero'; family:regular.name || 'sans-serif'; homeData:session.home; keepPreviewLoaded:true
@@ -259,7 +242,7 @@ Application {
             onStatusChanged:if(status===Loader.Error && screen.panel==='profile'){screen.closePanel();hero.notice='Le profil n’a pas pu être ouvert. Relance Atlas TV.';}
         }
         Loader {id:detailPanel;objectName:'detailPanel';anchors.fill:parent;source:'DetailView.qml';visible:screen.panel==='detail' && !screen.playbackId
-            onLoaded:{item.transport=session;item.artworks=artworks;item.family=regular.name || 'sans-serif';item.closed.connect(screen.closeDetail);item.playRequested.connect(screen.launch);item.personalChanged.connect(screen.updatePersonal);}
+            onLoaded:{item.transport=session;item.artworks=artworks;item.previews=previews;item.previewMuted=Qt.binding(function(){return hero.muted;});item.family=regular.name || 'sans-serif';item.closed.connect(screen.closeDetail);item.playRequested.connect(screen.launch);item.personalChanged.connect(screen.updatePersonal);}
         }
         FocusScope {
             id:waiting; anchors.fill:parent; visible:session.state!=='ready' || screen.resolving && !screen.playbackId || (screen.panel==='search' && searchPanel.status!==Loader.Ready) || (screen.panel==='profile' && profilePanel.status!==Loader.Ready) || (screen.panel==='library' && libraryPanel.status!==Loader.Ready)

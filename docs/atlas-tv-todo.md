@@ -131,5 +131,8 @@ restent simulées, aucun animé réel n’a été supprimé pour la livraison.
 Walson choisit l’accueil pour la nouvelle passe. La [proposition QML et son
 carnet](research/2026-10-30-atlas-tv-home-browse.md) présentent le grand héros
 à l’arrivée et deux rangées lisibles pendant l’exploration, avec mémoire du
-focus et du numéro de reprise. Le lecteur validé reste inchangé. Revue de la
-proposition attendue ; aucune nouvelle version n’est publiée sur le Devialet.
+focus et du numéro de reprise. Le lecteur validé reste inchangé. Walson accepte
+le grand héros à l’arrivée puis sa réduction pendant la navigation. Il demande
+les [bandes-annonces de fiche](research/2026-10-30-atlas-tv-detail-previews.md),
+automatiques en fond et accessibles en plein écran. Bancs passés ; publication
+et réception physique sont suivies dans le rapport dédié.

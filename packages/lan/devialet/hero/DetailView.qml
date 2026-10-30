@@ -10,6 +10,16 @@ FocusScope {
     objectName: 'atlasDetail'
     property var transport
     property var artworks
+    property var previews
+    property bool previewMuted:false
+    property bool previewSuspended:false
+    property int previewGeneration:0
+    property string previewState:'image'
+    property bool fullPreview:false
+    property bool previewHud:true
+    property string previewControl:'pause'
+    readonly property bool hasTrailer:!!(card && /^[A-Za-z0-9_-]{11}$/.test(card.bande_annonce || ''))
+    readonly property bool previewWanted:!!(opened && visible && !previewSuspended && transport && transport.state==='ready' && previews && previews.identity(card) && (fullPreview || viewport.contentY<1) && !followup.opened)
     property string family: 'sans-serif'
     property bool reducedMotion: false
     property bool opened: false
@@ -63,6 +73,28 @@ FocusScope {
     signal personalChanged(int identity,var value,bool refreshHome)
     signal closed()
     signal playRequested(var media,var target)
+    function stopPreview(){previewGeneration++;if(previewDelay)previewDelay.stop();if(previewTimeout)previewTimeout.stop();if(detailTrailer)detailTrailer.stop();previewState='image';}
+    function suspendPreview(){previewSuspended=true;stopPreview();}
+    function resumePreview(){previewSuspended=false;if(previewWanted)previewDelay.restart();}
+    function previewClock(ms){var s=Math.floor(Math.max(0,ms)/1000);return Math.floor(s/60)+':'+('0'+s%60).slice(-2);}
+    function revealPreview(){previewHud=true;previewHide.restart();}
+    function openFullPreview(){if(!hasTrailer || !previews || previewSuspended)return;fullPreview=true;previewControl='pause';revealPreview();forceActiveFocus();if(!detailTrailer.hasSource)startPreview();}
+    function closeFullPreview(){fullPreview=false;previewHide.stop();previewHud=true;forceActiveFocus();}
+    function startPreview(){
+        if(!previewWanted)return;
+        var turn=++previewGeneration,key=previews.identity(card);previewState='loading';
+        previews.resolve(card,function(status,url){
+            if(turn!==previewGeneration || !previewWanted || previews.identity(card)!==key)return;
+            if(status===200 && url){detailTrailer.play(url);previewTimeout.restart();}
+            else previewState='unavailable';
+        });
+    }
+    onPreviewWantedChanged:{if(previewWanted)previewDelay.restart();else stopPreview();}
+    onCardChanged:{stopPreview();if(previewWanted)previewDelay.restart();}
+    onPreviewStateChanged:if(fullPreview && previewState==='unavailable'){previewControl='back';revealPreview();}
+    Timer {id:previewDelay;interval:900;onTriggered:view.startPreview();}
+    Timer {id:previewTimeout;interval:10000;onTriggered:{detailTrailer.stop();view.previewState='unavailable';}}
+    Timer {id:previewHide;interval:3500;onTriggered:if(detailTrailer.playing)view.previewHud=false;}
     TvLibrary {id:library;objectName:'detailLibrary';transport:view.transport;onAvailableChanged:if(available && view.opened && view.personalId)view.loadPersonal();onSaved:{
         if(identity===view.personalId && view.detail){var next={},updated={};Object.keys(view.detail).forEach(function(k){next[k]=view.detail[k];});Object.keys(view.card).forEach(function(k){updated[k]=view.card[k];});updated.moi=value.moi;next.carte=updated;view.detail=next;}
         var oldMoi=previous && previous.moi,newMoi=value.moi;
@@ -118,12 +150,13 @@ FocusScope {
     }
     function stopExtras(){detailEnrichment.stop();episodeEnrichment.stop();pendingDetailExtras=null;pendingEpisodeExtras=null;detailExtrasInFlight=false;episodeExtrasInFlight=false;}
     function resumeExtras(){if(!opened || !visible)return;if(detail && detail.complements_a_charger)scheduleDetailExtras(identity(card),generation);if(episodeData && episodeData.complements_a_charger){var key=identity(card);if(key && key.anilist_id){key.debut=pageStart;key.nombre=40;scheduleEpisodeExtras(key,episodeGeneration,generation);}}}
-    onVisibleChanged:{if(!visible){detailEnrichment.stop();episodeEnrichment.stop();}else resumeExtras();}
+    onVisibleChanged:{if(!visible){detailEnrichment.stop();episodeEnrichment.stop();stopPreview();}else {resumeExtras();if(previewWanted)previewDelay.restart();}}
     Timer {id:detailEnrichment;interval:1200;onTriggered:{var task=view.pendingDetailExtras;view.pendingDetailExtras=null;if(task)task();}}
     Timer {id:episodeEnrichment;interval:1200;onTriggered:{var task=view.pendingEpisodeExtras;view.pendingEpisodeExtras=null;if(task)task();}}
     function load(c) {
         if(episodeKey(c)===episodeKey(media) && Date.now()<detailRetryAt)return;
         stopExtras();
+        fullPreview=false;previewHide.stop();stopPreview();previewSuspended=false;
         detailError='';detailRetryAt=0;
         var key=identity(c),turn=++generation;episodeGeneration++;media=c;detail=null;episodeData=null;extrasError='';state='loading';episodeState='loading';zone='actions';actionIndex=0;episodeIndex=0;relationIndex=0;castIndex=0;recommendationIndex=0;pageIndex=0;pageStart=1;
         french=false;languageIndex=0;viewport.contentY=0;
@@ -169,6 +202,7 @@ FocusScope {
         console.info('ATLAS_TV_DETAIL_BACK',card && card.anilist_id || 0,stack.length,zone);
         generation++;episodeGeneration++;pendingEpisodesReady=null;
         stopExtras();
+        fullPreview=false;previewHide.stop();stopPreview();previewSuspended=false;
         if(stack.length){var saved=stack[stack.length-1],turn=generation;stack=stack.slice(0,-1);media=saved.media;detail=saved.detail;episodeData=saved.episodeData;state=detail ? 'ready' : 'error';episodeState=episodeData ? 'ready' : 'error';zone=saved.zone;actionIndex=saved.actionIndex;episodeIndex=saved.episodeIndex;seasonIndex=saved.seasonIndex;relationIndex=saved.relationIndex;castIndex=saved.castIndex;recommendationIndex=saved.recommendationIndex;pageStart=saved.pageStart;french=saved.french;languageIndex=saved.languageIndex;forceActiveFocus();Qt.callLater(function(){if(view.opened && turn===view.generation){viewport.contentY=saved.scroll;view.resumeExtras();}});}
         else {opened=false;closed();}
     }
@@ -194,9 +228,10 @@ FocusScope {
         viewport.contentY=item ? Math.min(item.y-16,Math.max(0,viewport.contentHeight-viewport.height)) : 0;
         if(zone==='episodes')episodeRail.positionViewAtIndex(episodeIndex,ListView.Contain);
     }
-    function move(direction) {var list=zones(),at=list.indexOf(zone);zone=list[Math.max(0,Math.min(list.length-1,at+direction))];if(zone==='language')languageIndex=french ? 1 : 0;scrollToZone();}
+    function move(direction) {var list=zones(),at=list.indexOf(zone==='trailer' ? 'back' : zone),next=Math.max(0,Math.min(list.length-1,at+direction));if(next!==at)zone=list[next];if(zone==='language')languageIndex=french ? 1 : 0;scrollToZone();}
     function activate() {
         if(zone==='back')back();else if(zone==='actions'){if(actionIndex===1){zone=episodes.length ? 'episodes' : 'language';scrollToZone();}else if(actionIndex>=2)personalAction(actionIndex===3);else primary();}
+        else if(zone==='trailer')openFullPreview();
         else if(zone==='seasons') {var c=seasons[seasonIndex];if(c && (!card || c.anilist_id!==card.anilist_id))visit(c);}
         else if(zone==='language'){if(languageIndex===0 || hasFrench || transport && transport.airingEnabled){french=languageIndex===1;extrasError='';}else extrasError='La VF n’est pas disponible pour cette saison.';}
         else if(zone==='episodes')launch(currentEpisode);
@@ -206,6 +241,8 @@ FocusScope {
     }
     function horizontal(delta) {
         if(zone==='actions')actionIndex=Math.max(0,Math.min(personalEnabled ? 3 : 1,actionIndex+delta));
+        else if(zone==='back' && delta>0 && hasTrailer)zone='trailer';
+        else if(zone==='trailer' && delta<0)zone='back';
         else if(zone==='language')languageIndex=delta>0 ? 1 : 0;
         else if(zone==='seasons')seasonIndex=Math.max(0,Math.min(seasons.length-1,seasonIndex+delta));
         else if(zone==='episodes'){episodeIndex=Math.max(0,Math.min(episodes.length-1,episodeIndex+delta));episodeRail.positionViewAtIndex(episodeIndex,ListView.Contain);}
@@ -220,11 +257,14 @@ FocusScope {
         Behavior on contentY {enabled:!view.reducedMotion;NumberAnimation {duration:Motion.ms('scroll');easing.type:Easing.Bezier;easing.bezierCurve:Motion.easeOut()}}
         Column {id:content;width:1280;spacing:20
             Item {id:header;width:1280;height:Math.max(308,headerText.height+108)
-                HeroArtwork {x:620;y:0;width:660;height:header.height;retainPrevious:false;requestedSource:view.art(view.card);fallbackSource:view.posterArt(view.card);onFailed:view.artworks.failed(view.card,poster ? 'poster' : 'banner',failedSource);onImageReady:view.artworks.confirmed(view.card,poster ? 'poster' : 'banner',loadedSource)}
+                Item {id:detailBackdrop;x:0;y:0;width:1280;height:header.height
+                    HeroArtwork {x:620;y:0;width:660;height:parent.height;retainPrevious:false;requestedSource:view.art(view.card);fallbackSource:view.posterArt(view.card);onFailed:view.artworks.failed(view.card,poster ? 'poster' : 'banner',failedSource);onImageReady:view.artworks.confirmed(view.card,poster ? 'poster' : 'banner',loadedSource)}
+                }
                 Rectangle {anchors.fill:parent;gradient:Gradient {orientation:Gradient.Horizontal;GradientStop {position:0;color:'#ff090a0d'} GradientStop {position:.45;color:'#dc090a0d'} GradientStop {position:1;color:'#20090a0d'}}}
                 Rectangle {anchors.fill:parent;gradient:Gradient {GradientStop {position:.4;color:'#00090a0d'} GradientStop {position:1;color:'#ff090a0d'}}}
                 HeroButton {x:64;y:28;width:138;iconKey:'arrow-left';label:'Retour';family:view.family;focused:view.zone==='back';onActivated:view.back()}
                 Text {x:236;y:43;text:'Épisodes et détails';color:'#c6c9d3';font.family:view.family;font.pixelSize:19}
+                HeroButton {objectName:'detailTrailerButton';x:996;y:28;width:220;iconKey:'play';label:'Bande-annonce';family:view.family;visible:view.hasTrailer;focused:view.zone==='trailer';onActivated:{view.zone='trailer';view.openFullPreview();}}
                 Rectangle {x:64;y:100;width:140;height:196;radius:10;color:'#242731'
                     Image {id:poster;objectName:'detailPoster';anchors.fill:parent;source:view.posterArt(view.card);asynchronous:true;fillMode:Image.PreserveAspectCrop;sourceSize.width:280;visible:false;onStatusChanged:if(status===Image.Error)view.artworks.failed(view.card,'poster',source);else if(status===Image.Ready)view.artworks.confirmed(view.card,'poster',source)}
                     OpacityMask {anchors.fill:parent;source:poster;maskSource:Rectangle {width:140;height:196;radius:10}}
@@ -335,6 +375,15 @@ FocusScope {
         Text {anchors.fill:parent;anchors.margins:12;text:view.extrasError;color:'#f0d6b2';font.family:view.family;font.pixelSize:17;elide:Text.ElideRight}
     }
     Keys.onPressed: {
+        if(fullPreview){
+            if(event.key===Qt.Key_Back || event.key===Qt.Key_Escape){if(previewHud && detailTrailer.ready){previewHud=false;previewHide.stop();}else closeFullPreview();}
+            else if(event.key===Qt.Key_Return || event.key===Qt.Key_Enter || event.key===Qt.Key_Select){if(previewControl==='back')closeFullPreview();else {detailTrailer.toggle();revealPreview();}}
+            else if(event.key===Qt.Key_Up){previewControl='back';revealPreview();}
+            else if(event.key===Qt.Key_Down){previewControl='pause';revealPreview();}
+            else if(event.key===Qt.Key_Right || event.key===Qt.Key_Left){detailTrailer.seekBy(event.key===Qt.Key_Right ? 10000 : -10000);previewControl='pause';revealPreview();}
+            else return;
+            event.accepted=true;return;
+        }
         if(followup.opened){followup.key(event.key);event.accepted=true;return;}
         if(event.key===Qt.Key_Back || event.key===Qt.Key_Escape)back();
         else if(event.key===Qt.Key_Return || event.key===Qt.Key_Enter || event.key===Qt.Key_Select)activate();
@@ -344,4 +393,26 @@ FocusScope {
         event.accepted=true;
     }
     LibraryEditor {id:followup;anchors.fill:parent;z:20;store:library;family:view.family;reducedMotion:view.reducedMotion;onClosed:view.forceActiveFocus()}
+    Rectangle {anchors.fill:parent;z:29;color:'black';visible:view.fullPreview}
+    Trailer {id:detailTrailer;objectName:'detailTrailer';parent:view.fullPreview ? view : detailBackdrop;x:0;y:0;width:parent.width;height:parent.height;z:view.fullPreview ? 30 : 1
+        silent:view.previewMuted;gain:view.fullPreview ? 1 : .35;fitFrame:view.fullPreview;opacity:view.previewWanted && ready ? 1 : 0
+        onObserved:{
+            if(observation.event==='error'){stop();view.previewState='unavailable';previewTimeout.stop();view.revealPreview();}
+            else if(observation.event==='preview' && observation.positionMs>400){view.previewState='playing';previewTimeout.stop();}
+            else if(observation.event==='status' && observation.status===7){stop();view.previewState='ended';previewTimeout.stop();if(view.fullPreview)view.closeFullPreview();}
+        }
+    }
+    Item {anchors.fill:parent;z:31;visible:view.fullPreview && (view.previewHud || !detailTrailer.ready)
+        Rectangle {anchors.fill:parent;gradient:Gradient {GradientStop {position:0;color:'#b3090a0d'}GradientStop {position:.25;color:'#00090a0d'}GradientStop {position:.7;color:'#00090a0d'}GradientStop {position:1;color:'#e6090a0d'}}}
+        HeroButton {x:64;y:28;width:138;iconKey:'arrow-left';label:'Retour';family:view.family;focused:view.previewControl==='back';onActivated:view.closeFullPreview()}
+        Text {x:236;y:28;width:980;text:view.card ? view.card.titre : '';textFormat:Text.PlainText;elide:Text.ElideRight;color:'white';font.family:view.family;font.pixelSize:26;font.weight:Font.DemiBold}
+        Text {x:236;y:66;text:'Bande-annonce';color:'#c6c9d3';font.family:view.family;font.pixelSize:18}
+        Text {anchors.centerIn:parent;visible:!detailTrailer.ready;text:view.previewState==='unavailable' ? 'Bande-annonce indisponible' : 'Préparation de la bande-annonce…';font.family:view.family;font.pixelSize:24;color:'white'}
+        HeroButton {objectName:'trailerPause';x:614;y:550;width:52;visible:detailTrailer.ready;iconKey:detailTrailer.playing ? 'pause' : 'play';Accessible.name:detailTrailer.playing ? 'Mettre la bande-annonce en pause' : 'Reprendre la bande-annonce';family:view.family;focused:view.previewControl==='pause';onActivated:{detailTrailer.toggle();view.revealPreview();}}
+        Text {x:64;y:632;text:view.previewClock(detailTrailer.positionMs);color:'white';font.family:view.family;font.pixelSize:18;visible:detailTrailer.ready}
+        Text {x:1120;y:632;width:96;horizontalAlignment:Text.AlignRight;text:view.previewClock(detailTrailer.durationMs);color:'white';font.family:view.family;font.pixelSize:18;visible:detailTrailer.ready}
+        Rectangle {x:64;y:674;width:1152;height:4;radius:2;color:'#60ffffff';visible:detailTrailer.ready
+            Rectangle {width:parent.width*Math.min(1,detailTrailer.positionMs/Math.max(1,detailTrailer.durationMs));height:4;radius:2;color:'white'}
+        }
+    }
 }

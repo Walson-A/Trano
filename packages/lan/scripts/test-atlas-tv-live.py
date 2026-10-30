@@ -13,6 +13,7 @@ import time
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--hls',action='store_true',help='Exercise negotiated HLS requests and quality menus with the fake decoder')
 parser.add_argument('--follow-up',action='store_true',help='Exercise library writes and the explicit 12 announced/5 aired fixture; no account')
+parser.add_argument('--detail-preview',action='store_true',help='Exercise background/fullscreen trailer ownership with fake API/decoder')
 parser.add_argument('--qt-path',type=pathlib.Path,required=True)
 parser.add_argument('--snapshot',type=pathlib.Path,required=True)
 parser.add_argument('--assets',type=pathlib.Path,required=True)
@@ -97,7 +98,7 @@ with tempfile.TemporaryDirectory(prefix='atlas-tv-live-',dir=args.evidence.paren
     # This suite checks host focus/identity/UI, not hardware decoding or upstream resolution.
     media=root/'TestMedia';media.mkdir()
     (media/'qmldir').write_text('module TestMedia\nMediaPlayer 5.0 MediaPlayer.qml\nVideoOutput 5.0 VideoOutput.qml\n')
-    (media/'VideoOutput.qml').write_text('import QtQuick 2.15\nItem { enum Mode { PreserveAspectFit, PreserveAspectCrop } property var source; property int fillMode;Image {anchors.fill:parent;source:benchmarkVideoFrame;fillMode:Image.PreserveAspectFit} }')
+    (media/'VideoOutput.qml').write_text('import QtQuick 2.15\nItem { enum Mode { PreserveAspectFit, PreserveAspectCrop } property var source; property int fillMode;Image {anchors.fill:parent;source:benchmarkVideoFrame;fillMode:parent.fillMode===1 ? Image.PreserveAspectCrop : Image.PreserveAspectFit} }')
     (media/'MediaPlayer.qml').write_text('''import QtQuick 2.15
 Item {
  enum State { StoppedState, PlayingState, PausedState }
@@ -114,7 +115,7 @@ Item {
  property int duration:1500095
  property int position:0
  signal error(int error)
- function play() {status=6;if(playbackState===2){playbackState=1;return;}duration=0;playbackState=1;position=1;Qt.callLater(function(){duration=1500095;position=1000;}); }
+ function play() {status=6;if(playbackState===2){playbackState=1;return;}duration=0;playbackState=1;position=1;Qt.callLater(function(){duration=String(source).indexOf('/preview-media/')>=0 ? 93000 : 1500095;position=1000;}); }
  function pause() { playbackState=2; }
  function stop() { playbackState=0; }
  function seek(value) {position=value;if(playbackState===1){playbackState=2;status=4;Qt.callLater(function(){status=6;});}}
@@ -154,7 +155,7 @@ Item {
  property int playbackCount:0
  property var home:({})
  property string apiOrigin:"https://test.invalid"
- property var pendingPreview:null
+ property var pendingPreviews:({})
  property var pendingArtworks:[]
  property var pendingSearches:[]
  property bool delayCollections:false
@@ -190,7 +191,7 @@ Item {
   });return;}
   if(path==='/tv/v1/library'){Qt.callLater(function(){var cards=benchmarkLibraryCards.filter(function(c){return !body.statut || c.moi.statut===body.statut;});if(trimLibrary)cards=cards.slice(0,24);done(200,{resultats:cards.slice((body.page-1)*24,body.page*24),page:body.page,total:cards.length,has_next_page:cards.length>body.page*24,presence_connue:true});});return;}
   if(followupAiring && path==='/tv/v1/catalog/episode-extras'){Qt.callLater(function(){done(200,{anilist_id:body.anilist_id,episodes:[{numero:6,titre:'Complément public tardif',diffusion:{etat:'inconnu',date:null},lancable:true}]});});return;}
-  if(path==='/tv/v1/previews') { pendingPreview=done; return; }
+  if(path==='/tv/v1/previews') { pendingPreviews[body.anilist_id]=done; return; }
   if(path==='/tv/v1/artworks' && body.kind==='episode') {var image=benchmarkEpisodeImages[String(body.anilist_id)],url=image && image[String(body.episode)];Qt.callLater(function(){done(url ? 200 : 404,{anilist_id:body.anilist_id,episode:wrongEpisodeArtwork ? body.episode+1 : body.episode,kind:'episode',path:url || '',expires_at:Date.now()/1000+900});});return;}
   if(path==='/tv/v1/artworks') { pendingArtworks=pendingArtworks.concat([done]); return; }
   if(path==='/tv/v1/catalog/search') { pendingSearches=pendingSearches.concat([{done:done,body:body}]); return; }
@@ -207,7 +208,7 @@ Item {
  function finishPlayback(index){var pending=pendingPlaybacks[index];answerPlayback(pending.body,pending.done);}
  function mediaUrl(path,kind) { if(kind==='artwork' && /^\/tv\/v1\/artwork-media\/[a-f0-9]{64}$/.test(path))return benchmarkArtworkGrant;return kind==='artwork' && path.indexOf('file:')===0 ? path : apiOrigin+path; }
  function inspectEpisode(path,done) {var status=mediaHeadStatus;Qt.callLater(function(){done(status,null);});}
- function finishPreview(id,key) { var done=pendingPreview; pendingPreview=null; done(200,{kind:'trailer',anilist_id:id,youtube_id:key,path:'/tv/v1/preview-media/'+'b'.repeat(64),expires_at:Date.now()/1000+900}); }
+ function finishPreview(id,key) { var done=pendingPreviews[id];delete pendingPreviews[id];done(200,{kind:'trailer',anilist_id:id,youtube_id:key,path:'/tv/v1/preview-media/'+'b'.repeat(64),expires_at:Date.now()/1000+900}); }
  function finishArtwork(index,id,kind) { pendingArtworks[index](200,{anilist_id:id,kind:kind,path:'/tv/v1/artwork-media/'+'c'.repeat(64),expires_at:Date.now()/1000+900}); }
  function featuredOnly() { state='connecting'; artworkEnabled=false; var value=JSON.parse(JSON.stringify(benchmarkHome)); value.rangees=[]; home=value; artworkEnabled=true; state='ready'; homeLoaded(); }
  function failSearch(index){pendingSearches[index].done(429,{error:{code:'anilist_busy',details:{retry_after:3}}});}
@@ -414,6 +415,7 @@ Item {
             hero.choose(1)
             selected=hero.property('selected').toVariant()
             assert selected['bande_annonce']!=first['bande_annonce']
+            screen.preview()
             session.finishPreview(first['anilist_id'],first['bande_annonce'])
             assert hero.property('selected').toVariant()['anilist_id']==selected['anilist_id']
             assert first['bande_annonce'] not in hero.property('trailerSources').toVariant()
@@ -650,6 +652,10 @@ Item {
                 removal_spec=importlib.util.spec_from_file_location('removal',pathlib.Path(__file__).with_name('atlas_tv_removal_bench.py'))
                 removal=importlib.util.module_from_spec(removal_spec);removal_spec.loader.exec_module(removal)
                 removal.run(window,session,screen,details,calls,QTest,Qt,QObject,spin,args.evidence)
+            if args.detail_preview:
+                preview_spec=importlib.util.spec_from_file_location('detail_preview',pathlib.Path(__file__).with_name('atlas_tv_detail_preview_bench.py'))
+                preview_bench=importlib.util.module_from_spec(preview_spec);preview_spec.loader.exec_module(preview_bench)
+                preview_bench.run(window,session,screen,details,calls,QTest,Qt,QObject,spin,args.evidence)
             later_bad=[m for m in messages if any(s in m for s in ['ReferenceError','TypeError','Unable to assign','Cannot assign'])]
             assert not later_bad,later_bad
             negotiated=[body for path,body in calls if path in ['/tv/v1/playbacks','/tv/v1/readers','/tv/v1/variants']]

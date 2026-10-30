@@ -1,0 +1,18 @@
+{
+  "passed": true,
+  "scope": "real QML/full host with fake API/decoder, frame is bench media; no real trailer playback claim",
+  "automaticBackground": true,
+  "sharedGrantDeduplication": true,
+  "oneVideoOutputAtATime": true,
+  "fullscreenKeepsSourceAndPosition": true,
+  "pauseResumeAndSeek": true,
+  "backHidesHudThenReturnsToDetail": true,
+  "scrollReleasesOutput": true,
+  "freshCacheReused": true,
+  "episodeResolutionStopsPreviewFirst": true,
+  "lateAnswerDoesNotReopen": true,
+  "wrongTrailerRejected": true,
+  "missingMetadataDoesNotInvent": true,
+  "invalidatedEpochCannotRestoreGrant": true,
+  "trailersDoNotCreateEpisodeSessions": true
+}

@@ -1,5 +1,11 @@
 # Atlas sur la télévision : base réutilisable et premier parcours
 
+[Fiche : bande-annonce automatique et plein écran](research/2026-10-30-atlas-tv-detail-previews.md).
+L’accueil compact est accepté pendant l’exploration, avec grand héros à
+l’arrivée. La fiche partage désormais la résolution et le cache des previews ;
+le plein écran conserve la lecture et reste exclusif avec les épisodes.
+Bancs HLS/MP4 passés ; publication et réception native suivies dans le rapport.
+
 [Proposition du 30 octobre : accueil et exploration des rangées](research/2026-10-30-atlas-tv-home-browse.md).
 Walson choisit ce parcours pour la passe suivante. Le héros reste complet à
 l’arrivée, puis se resserre pendant la navigation pour rendre deux lignes

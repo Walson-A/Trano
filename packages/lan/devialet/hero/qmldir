@@ -6,6 +6,7 @@ FocusCard FocusCard.qml
 HeroArtwork HeroArtwork.qml
 Icon Icon.qml
 TvSession TvSession.qml
+TvPreviews TvPreviews.qml
 EpisodePlayer EpisodePlayer.qml
 ArtworkCache ArtworkCache.qml
 MediaRow MediaRow.qml

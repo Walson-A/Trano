@@ -1,5 +1,13 @@
 # UI/UX & Design System
 
+## Fiche TV : aperçu automatique et plein écran
+
+Les [bandes-annonces de fiche](research/2026-10-30-atlas-tv-detail-previews.md)
+reprennent le fond animé du héros. Un bouton dans l’en-tête ouvre la même vidéo
+en plein écran sans la relancer. Les actions et épisodes gardent leur place ;
+défilement et lecture d’épisode libèrent la preview. Transport partagé avec le
+héros, bancs HLS/MP4 passés ; la réception native reste distincte.
+
 ## Accueil TV : proposition d’exploration à deux rangées
 
 Le [héros et les rangées](research/2026-10-30-atlas-tv-home-browse.md) gardent la
