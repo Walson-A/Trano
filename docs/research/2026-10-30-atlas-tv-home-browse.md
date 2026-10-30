@@ -7,8 +7,11 @@ du retrait de Ma liste et du haut de l’écran. La proposition modifie les vrai
 composants QML, avec une revue avant publication sur le Devialet. Elle ne change
 pas le lecteur, les routes backend ni le lancement depuis le téléphone.
 
-**Cette proposition n’est pas publiée sur le Devialet.** La version distante
-n’a pas été interrogée ou modifiée dans ce lot. Les captures utilisent un
+**Proposition acceptée puis publiée** dans hero-detail-preview-390d8b68e685,
+avec les [bandes-annonces de fiche](2026-10-30-atlas-tv-detail-previews.md).
+Walson précise et accepte le mode compact uniquement pendant la navigation,
+avec grand héros et bande-annonce à l’arrivée. La réception native de ce paquet
+reste distincte. Les captures utilisent un
 instantané explicite du banc PC, des images locales et aucune lecture vidéo.
 Les visuels absents du cache du banc sont présentés comme indisponibles ; ce
 résultat ne diagnostique pas le service d’images en production.

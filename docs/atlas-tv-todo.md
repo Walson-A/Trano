@@ -134,5 +134,6 @@ carnet](research/2026-10-30-atlas-tv-home-browse.md) présentent le grand héros
 focus et du numéro de reprise. Le lecteur validé reste inchangé. Walson accepte
 le grand héros à l’arrivée puis sa réduction pendant la navigation. Il demande
 les [bandes-annonces de fiche](research/2026-10-30-atlas-tv-detail-previews.md),
-automatiques en fond et accessibles en plein écran. Bancs passés ; publication
-et réception physique sont suivies dans le rapport dédié.
+automatiques en fond et accessibles en plein écran. Bancs passés, paquet
+hero-detail-preview-390d8b68e685 publié et relancé par SDK. La réception physique
+est suivie séparément dans le rapport dédié.

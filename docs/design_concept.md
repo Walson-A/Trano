@@ -6,7 +6,8 @@ Les [bandes-annonces de fiche](research/2026-10-30-atlas-tv-detail-previews.md)
 reprennent le fond animé du héros. Un bouton dans l’en-tête ouvre la même vidéo
 en plein écran sans la relancer. Les actions et épisodes gardent leur place ;
 défilement et lecture d’épisode libèrent la preview. Transport partagé avec le
-héros, bancs HLS/MP4 passés ; la réception native reste distincte.
+héros, bancs HLS/MP4 passés. Le paquet hero-detail-preview-390d8b68e685 est publié
+et relancé par SDK ; la réception native reste distincte.
 
 ## Accueil TV : proposition d’exploration à deux rangées
 
@@ -14,8 +15,9 @@ Le [héros et les rangées](research/2026-10-30-atlas-tv-home-browse.md) gardent
 présentation complète à l’arrivée, puis un contexte compact pendant le parcours
 des cartes. Deux lignes deviennent lisibles sans réduire les images ; le focus
 appartient uniquement à la ligne active. La reprise annonce son numéro d’épisode
-plutôt qu’une barre d’avancement dans la série. Le vrai QML est préparé pour revue,
-avec captures et bancs ; cette proposition n’est pas publiée sur le Devialet.
+plutôt qu’une barre d’avancement dans la série. Walson accepte la composition
+avec grand héros à l’arrivée et mode compact pendant la navigation ; elle est
+publiée avec les bandes-annonces de fiche. Les captures restent celles du banc.
 
 ## Lecteur TV : proposition raccordée et publiée
 

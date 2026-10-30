@@ -4,13 +4,15 @@
 L’accueil compact est accepté pendant l’exploration, avec grand héros à
 l’arrivée. La fiche partage désormais la résolution et le cache des previews ;
 le plein écran conserve la lecture et reste exclusif avec les épisodes.
-Bancs HLS/MP4 passés ; publication et réception native suivies dans le rapport.
+Bancs HLS/MP4 passés ; hero-detail-preview-390d8b68e685 est publié et relancé
+par SDK. La réception native reste suivie séparément dans le rapport.
 
 [Proposition du 30 octobre : accueil et exploration des rangées](research/2026-10-30-atlas-tv-home-browse.md).
 Walson choisit ce parcours pour la passe suivante. Le héros reste complet à
 l’arrivée, puis se resserre pendant la navigation pour rendre deux lignes
-lisibles sans réduire les cartes. Le vrai QML et son carnet sont préparés pour
-revue ; aucune publication sur le Devialet n’est effectuée dans ce lot.
+lisibles sans réduire les cartes. Walson accepte le grand héros à l’arrivée et
+sa réduction pendant la navigation. La composition est publiée avec le lot
+bandes-annonces de fiche ; le carnet conserve ses captures avant/après.
 
 [Suites demandées par Walson](atlas-tv-todo.md) : bibliothèque, VOSTFR par défaut,
 états de diffusion et épisodes futurs avec leurs dates. Le VOSTFR, Ma liste,

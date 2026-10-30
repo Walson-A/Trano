@@ -1,0 +1,11 @@
+{
+  "stage": "C:\\Users\\Walson\\.codex\\visualizations\\2026\\10\\20\\01a15964-d853-7811-9412-d44ff1e65bee\\trano-local-network\\.local\\atlas-tv-detail-preview-20261030",
+  "files": 280,
+  "bytes": 58419545.0,
+  "ownedBenchProcessesRemaining": 0,
+  "remoteTransferFilesRemoved": true,
+  "retainedNativeSession": "SDK d9f8907883c45c271bb428e0bef4c782, application Atlas TV demandée et laissée pour le test puis l'usage ; arrêt via Quitter/Netflix/redémarrage du Player.",
+  "retainedRemote": "Paquet actif hero-detail-preview-390d8b68e685 et configuration privée de rollback ; service atlas-tv-launch déjà existant.",
+  "retainedLocal": "Worktree partagé actif et caches de référence antérieurs ; brouillons antérieurs packages/lan/devialet/tv/ et packages/lan/scripts/preview-atlas-tv-home.py inchangés.",
+  "stageRemoved": true
+}

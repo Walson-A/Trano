@@ -1,0 +1,11 @@
+{
+  "releaseId": "hero-detail-preview-390d8b68e685",
+  "files": 38,
+  "bytes": 386264,
+  "availabilityVerified": true,
+  "serverSha256": "9aff6df6cb928627931116a6b05b60273b9b6c78c2c2d160d44a7a657f645b12",
+  "engineRestarted": false,
+  "backendCommit": "9a24539c351f0c2a912b45d7262642051e3f0e5b",
+  "sourceCommit": "ed9caf6d2a71c74919ef17d879d31f24ecbdd1d6",
+  "transferFilesRemoved": true
+}

@@ -60,3 +60,22 @@ place des actions et commandes plein écran. Les résultats
 [MP4](2026-10-30-atlas-tv-detail-previews/mp4-preview-verification.json) ne valident
 pas le décodeur matériel. Le rendu, le son et la conservation de vidéo pendant
 le changement de surface restent à confirmer sur le Devialet.
+
+## Publication et lancement
+
+Le paquet **hero-detail-preview-390d8b68e685**, 38 fichiers et 386264 octets,
+est publié par CAS depuis hero-membership-5541d3b5f6e2. Il contient l’accueil
+accepté et le code de fiche du commit ed9caf6d2a71c74919ef17d879d31f24ecbdd1d6.
+La disponibilité confirme les empreintes exactes du paquet. Le gateway garde
+son SHA256 9aff6df6cb928627931116a6b05b60273b9b6c78c2c2d160d44a7a657f645b12 ;
+l’engine servi lors de la publication est 9a24539c351f0c2a912b45d7262642051e3f0e5b.
+Aucun redémarrage d’engine ni changement de server.mjs dans ce lot.
+
+Walson confirme avoir rallumé le Devialet et être disponible pour tester.
+Le lancement d9f8907883c45c271bb428e0bef4c782 est accepté par le SDK ; le Player
+demande 35 assets, dont TvPreviews.qml, DetailView.qml et Trailer.qml.
+Cela ne prouve pas l’image ni le son : la question de réception native est
+envoyée et son résultat reste distinct. Aucun épisode réel n’est lancé par nous.
+Voir [publication](2026-10-30-atlas-tv-detail-previews/publication.json),
+[paquet](2026-10-30-atlas-tv-detail-previews/package.json) et
+[reçu SDK](2026-10-30-atlas-tv-detail-previews/launch.json).
