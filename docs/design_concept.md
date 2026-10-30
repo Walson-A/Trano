@@ -298,3 +298,12 @@ Le héros garde ses boutons à y=298. Son titre de deux lignes réduit le résum
 16 px de marge intérieure, 12 px entre pseudo et avatar et une largeur naturelle
 bornée ; son avatar est circulaire sans étirement. Voir la
 [revue et les preuves](research/2026-10-30-atlas-tv-removal-header.md).
+
+## Bandes-annonces des fiches Atlas TV
+
+La fiche garde son contenu pendant la lecture automatique en fond. Le plein
+écran reprend le lecteur validé : pause au centre, timeline avec position
+proposée et Retour qui masque les commandes puis retrouve la fiche. Les menus
+d’épisode sont absents de ce mode. Un visuel connu reste affiché pendant
+l’attente ou une indisponibilité ; aucune lecture réussie n’est déduite des
+seules métadonnées. Voir [réception native, reprise et limites](research/2026-10-30-atlas-tv-trailer-repair.md).

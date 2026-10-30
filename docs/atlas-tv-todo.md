@@ -4,6 +4,16 @@ Demandes du 29 octobre 2026 à conserver pour **après la passe visuelle en cour
 Ce document conserve les critères demandés et distingue leur livraison du reste
 à faire. L’état courant est dans [la direction TV](atlas-tv-direction.md).
 
+## Réception native des bandes-annonces
+
+Le premier lecteur de fiche échoue au test physique (audio sans image) et sa
+composition est rejetée. La [correction](research/2026-10-30-atlas-tv-trailer-repair.md)
+réutilise le lecteur validé à parent stable et ajoute une file annulable.
+Confirmer l’image dans la fiche puis en plein écran, le son, la pause, le seek
+et Retour sur le Devialet. Vérifier séparément le repli de formats côté backend.
+La limite serveur de seize fichiers protégés par les tickets quinze minutes
+reste une contrainte à traiter avec le backend après navigation prolongée.
+
 ## Bibliothèque et suivi personnel
 
 [Livraison Ma liste / notes / calendrier](research/2026-10-29-atlas-tv-library-airing.md)

@@ -1,5 +1,10 @@
 # Fiche : bande-annonce automatique et plein écran
 
+**Réception native en échec :** Walson signale du son sans image et rejette les
+commandes du plein écran spécifique. Les captures de banc ci-dessous ne
+validaient pas le matériel. La [reprise du lecteur et le diagnostic](2026-10-30-atlas-tv-trailer-repair.md)
+remplacent ce parcours ; cette page conserve le compte rendu du premier lot.
+
 Walson accepte le héros compact pendant l’exploration, avec grand héros et vidéo
 à l’arrivée. Il demande une bande-annonce automatique dans la fiche et un moyen
 de la regarder en plein écran. Ce lot prépare la publication de ces deux parcours ;

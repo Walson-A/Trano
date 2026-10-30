@@ -320,3 +320,13 @@ le titre reste sous la navigation, le pseudo et l’avatar gardent des espacemen
 constants. Publié dans hero-membership-5541d3b5f6e2 après vérification du backend,
 du gateway et du runtime. Walson confirme le bouton, la confirmation et le haut
 de l’écran propres sur le Devialet ; aucune suppression réelle n’est déduite.
+
+## Réception des bandes-annonces — 30 octobre 2026
+
+Le premier plein écran spécifique est rejeté : son sans image sur Re:ZERO et
+pause décentrée. La correction réutilise EpisodePlayer à parent racine stable,
+garde sa timeline et ses règles de Retour et met en attente la cible courante
+au lieu de la déclarer indisponible quand deux préparations sont actives.
+L’audit trouve 141 références sur 149 titres, sans garantir leur lecture.
+Le décodeur natif et la disponibilité des formats restent des vérifications
+distinctes du banc. [Diagnostic, captures et réception](research/2026-10-30-atlas-tv-trailer-repair.md).

@@ -156,6 +156,10 @@ Item {
  property var home:({})
  property string apiOrigin:"https://test.invalid"
  property var pendingPreviews:({})
+ property var previewLeases:[]
+ property var previewReplies:[]
+ function askPreview(store,card) { var identity=card.anilist_id;var lease=store.resolve(card,function(status,url){previewReplies=previewReplies.concat([{id:identity,status:status,url:url}]);});previewLeases=previewLeases.concat([lease || null]); }
+ function cancelPreview(index) { if(previewLeases[index])previewLeases[index].cancel(); }
  property var pendingArtworks:[]
  property var pendingSearches:[]
  property bool delayCollections:false

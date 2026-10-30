@@ -31,6 +31,7 @@ Application {
         property var pendingPlayback: null
         property int sequence: 0
         property bool retryInspectBusy:false
+        property var homePreviewLease:null
         property int retrySerial:0
         property string panel: ''
         property string returnPanel: 'search'
@@ -118,12 +119,14 @@ Application {
         function preview() {
             if(resolving || playbackId || panel || !hero.selected || !hero.trailerId || session.state!=='ready') return;
             var media=hero.selected,id=media.anilist_id,key=hero.trailerId;hero.previewState='loading';
-            previews.resolve(media,function(status,url){
+            cancelHomePreview();
+            homePreviewLease=previews.resolve(media,function(status,url){
                 if(!hero.selected || hero.selected.anilist_id!==id || hero.trailerId!==key || resolving || playbackId || panel)return;
                 if(status===200 && url){var sources={};sources[key]=url;hero.trailerSources=sources;}
                 else hero.previewState='unavailable';
             });
         }
+        function cancelHomePreview(){if(homePreviewLease)homePreviewLease.cancel();homePreviewLease=null;}
         function launch(media,target,excluded,resumeOverride) {
             if(playbackId)return;
             resolvePlayback(media,target,{},excluded,resumeOverride,false,false);
@@ -217,7 +220,7 @@ Application {
             libraryEnabled:!!session.libraryEnabled
             onContextBackRequested:screen.openPanel(screen.returnPanel)
         }
-        Connections { target:hero; function onSelectedChanged() { screen.warmArtwork(); } function onItemsChanged() { screen.warmArtwork(); } }
+        Connections { target:hero; function onSelectedChanged() { screen.cancelHomePreview();screen.warmArtwork(); } function onItemsChanged() { screen.warmArtwork(); } function onPreviewEnabledChanged(){if(!hero.previewEnabled)screen.cancelHomePreview();} }
         Loader {
             // Load once during bootstrap: the asset ticket expires in ten minutes.
             id:episode; objectName:'episodeLoader'; anchors.fill:parent; source:'EpisodePlayer.qml'; visible:!!screen.playbackId
@@ -241,8 +244,15 @@ Application {
             onLoaded:{item.transport=session;item.artworks=artworks;item.family=regular.name || 'sans-serif';item.closed.connect(screen.closePanel);item.chosen.connect(screen.selectPanelResult);item.navigateRequested.connect(screen.navigate);if(screen.panel==='profile')item.open();}
             onStatusChanged:if(status===Loader.Error && screen.panel==='profile'){screen.closePanel();hero.notice='Le profil n’a pas pu être ouvert. Relance Atlas TV.';}
         }
+        EpisodePlayer {id:detailTrailerPlayer;objectName:'detailTrailerPlayer';x:0;y:0;width:1280;height:detailPanel.item && detailPanel.item.fullPreview ? 720 : detailPanel.item ? detailPanel.item.headerHeight : 308
+            z:detailPanel.item && detailPanel.item.fullPreview ? 30 : 0;trailerMode:true;inlinePreview:!(detailPanel.item && detailPanel.item.fullPreview);muted:hero.muted
+            visible:screen.panel==='detail' && !screen.playbackId && !!detailPanel.item && detailPanel.item.previewWanted
+            enabled:visible && !inlinePreview;transport:session;family:regular.name || 'sans-serif';title:detailPanel.item && detailPanel.item.card ? detailPanel.item.card.titre : '';chapter:'Bande-annonce'
+            onInlineRequested:if(detailPanel.item)detailPanel.item.closeFullPreview()
+            onRetryRequested:if(detailPanel.item){retrying=true;previews.invalidate(detailPanel.item.card);detailPanel.item.startPreview();}
+        }
         Loader {id:detailPanel;objectName:'detailPanel';anchors.fill:parent;source:'DetailView.qml';visible:screen.panel==='detail' && !screen.playbackId
-            onLoaded:{item.transport=session;item.artworks=artworks;item.previews=previews;item.previewMuted=Qt.binding(function(){return hero.muted;});item.family=regular.name || 'sans-serif';item.closed.connect(screen.closeDetail);item.playRequested.connect(screen.launch);item.personalChanged.connect(screen.updatePersonal);}
+            onLoaded:{item.transport=session;item.artworks=artworks;item.previews=previews;item.trailerPlayer=detailTrailerPlayer;item.previewMuted=Qt.binding(function(){return hero.muted;});item.family=regular.name || 'sans-serif';item.closed.connect(screen.closeDetail);item.playRequested.connect(screen.launch);item.personalChanged.connect(screen.updatePersonal);}
         }
         FocusScope {
             id:waiting; anchors.fill:parent; visible:session.state!=='ready' || screen.resolving && !screen.playbackId || (screen.panel==='search' && searchPanel.status!==Loader.Ready) || (screen.panel==='profile' && profilePanel.status!==Loader.Ready) || (screen.panel==='library' && libraryPanel.status!==Loader.Ready)
