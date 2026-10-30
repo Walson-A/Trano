@@ -69,7 +69,7 @@ Application {
             else {hero.detailOpen=false;hero.zone='actions';hero.actionIndex=1;hero.previewEnabled=true;hero.forceActiveFocus();}
         }
         function returnFromPlayback() {
-            if(panel==='detail'){hero.previewEnabled=false;detailPanel.item.forceActiveFocus();}
+            if(panel==='detail'){hero.previewEnabled=false;detailPanel.item.resumeExtras();detailPanel.item.forceActiveFocus();}
             else {hero.previewEnabled=true;hero.forceActiveFocus();}
         }
         function playbackError(message) {
@@ -211,7 +211,7 @@ Application {
                 if(status!==200) hero.notice='La progression n’a pas pu être synchronisée.';
             });
         }
-        Timer { interval:30000; repeat:true; running:session.state==='ready' && !screen.playbackId && !screen.resolving; onTriggered: {
+        Timer { interval:30000; repeat:true; running:session.state==='ready' && !screen.panel && !screen.playbackId && !screen.resolving; onTriggered: {
             screen.warmArtwork();
             var key=hero.trailerId, cached=screen.previewCache[key];
             if(cached && cached.expires<=Date.now()+30000 && hero.trailerSources[key]) hero.trailerSources={};
@@ -264,7 +264,8 @@ Application {
         FocusScope {
             id:waiting; anchors.fill:parent; visible:session.state!=='ready' || screen.resolving && !screen.playbackId || (screen.panel==='search' && searchPanel.status!==Loader.Ready) || (screen.panel==='profile' && profilePanel.status!==Loader.Ready) || (screen.panel==='library' && libraryPanel.status!==Loader.Ready)
             Rectangle { anchors.fill:parent; color:'#f2090a0d' }
-            Text { anchors.centerIn:parent; width:1000; horizontalAlignment:Text.AlignHCenter; wrapMode:Text.WordWrap; text:session.state!=='ready' ? session.message : screen.resolving ? 'Préparation de l’épisode…\nRetour pour annuler' : 'Ouverture…'; color:'white'; font.family:regular.name || 'sans-serif'; font.pixelSize:26 }
+            LoadingSkeleton {objectName:'homeSkeleton';x:64;y:150;width:1152;height:490;layout:'home';active:waiting.visible && session.state!=='error' && !screen.resolving}
+            Text { x:64;y:session.state==='error' || screen.resolving ? 320 : 50; width:1152; horizontalAlignment:Text.AlignHCenter; wrapMode:Text.WordWrap; text:session.state!=='ready' ? session.message : screen.resolving ? 'Préparation de l’épisode…\nRetour pour annuler' : 'Ouverture…'; color:'white'; font.family:regular.name || 'sans-serif'; font.pixelSize:session.state==='error' || screen.resolving ? 26 : 18 }
             Keys.onPressed: {
                 if(event.key===Qt.Key_Back || event.key===Qt.Key_Escape) {
                     if(screen.resolving) { screen.generation++; screen.resolving=false; screen.returnFromPlayback(); }else if(screen.panel==='detail')detailPanel.item.back();else if(screen.panel)screen.closePanel();else Qt.quit();

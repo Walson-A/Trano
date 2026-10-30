@@ -61,6 +61,7 @@ FocusScope {
     }
     Text {x:160;y:119;width:1050;text:view.pseudo || 'Ton profil';textFormat:Text.PlainText;color:'#fafafa';font.family:view.family;font.pixelSize:40;font.weight:Font.Bold;elide:Text.ElideRight}
     Text {x:160;y:170;text:view.account.connecte || view.pseudo ? 'AniList · Ton historique' : 'Compte AniList';color:'#a7a9b4';font.family:view.family;font.pixelSize:19}
+    LoadingSkeleton {objectName:'profileSkeleton';x:64;y:238;width:1152;height:380;layout:'profile';active:view.opened && view.state==='loading' && !view.history}
     Row {x:64;y:238;spacing:16;visible:!!view.history
         Repeater {model:[{key:'animes',label:'Animés dans ta liste'},{key:'episodes',label:'Épisodes regardés'},{key:'minutes',label:'Temps de visionnage'},{key:'moyenne',label:'Ta note moyenne'}]
             Rectangle {width:276;height:112;radius:16;color:'#1b1d24';border.color:'#30323c'

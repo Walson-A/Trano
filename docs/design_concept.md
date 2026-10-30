@@ -251,3 +251,17 @@ Les affiches gardent leur place dans la composition et le focus. Le cache évinc
 les moins récemment utilisés, indépendamment du numéro AniList ; une image en
 erreur peut se réparer sans rouvrir la fiche. Les reprises sont bornées pour
 conserver une navigation réactive. Voir [preuves et limites](research/2026-10-30-atlas-tv-artwork.md).
+
+## Chargements et diffusion Atlas TV
+
+Un chargement vide garde la géométrie de l’écran avec des squelettes statiques,
+non sélectionnables, après 160 ms. Les données déjà connues restent affichées ;
+aucun résultat ni statut personnel n’est inventé. Après 4 s, Recherche et Ma liste
+ajoutent une indication discrète. Un refus temporaire permet une reprise explicite
+après le délai serveur. Les squelettes ne corrigent pas une saturation réseau.
+
+La section porte « 12 épisodes » ; « 5 diffusés sur 12 » reste une information
+secondaire uniquement si la diffusion est incomplète. Une carte future reprend
+le visuel connu de la série, assombri, avec un petit repère À venir et sa date.
+Elle ne montre ni commande de lecture ni progression fictive. Voir
+[contrat et captures réelles](research/2026-10-30-atlas-tv-loading-budget.md).

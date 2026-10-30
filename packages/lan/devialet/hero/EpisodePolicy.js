@@ -30,11 +30,13 @@ function count(data,compact) {
     var announced=Number.isInteger(info.total_annonce) && info.total_annonce>=0 ? info.total_annonce : info.total_annonce===null ? null : Number.isInteger(data.total) && data.total>=0 ? data.total : null;
     var aired=Number.isInteger(info.diffuses) && info.diffuses>=0 ? info.diffuses : null;
     if(aired!==null && announced!==null && aired>announced)announced=null;
-    if(aired!==null && announced!==null)return compact ? aired+'/'+announced+' diffusés' : aired+' épisode'+(aired===1 ? '' : 's')+' sorti'+(aired===1 ? '' : 's')+' sur '+announced+' annoncé'+(announced===1 ? '' : 's');
+    if(aired!==null && announced!==null){if(aired===announced)return announced+' épisode'+(announced===1 ? '' : 's');return compact ? aired+'/'+announced+' diffusés' : aired+' diffusés sur '+announced;}
     if(aired!==null)return aired+' épisode'+(aired===1 ? '' : 's')+' diffusé'+(aired===1 ? '' : 's');
-    if(announced!==null)return announced+' épisode'+(announced===1 ? '' : 's')+' annoncé'+(announced===1 ? '' : 's');
+    if(announced!==null)return announced+' épisode'+(announced===1 ? '' : 's');
     return compact ? 'Total à confirmer' : 'Nombre d’épisodes à confirmer';
 }
+function heading(data){var info=data && data.diffusion,total=info ? Number.isInteger(info.total_annonce) && info.total_annonce>=0 && !(info.diffuses>info.total_annonce) ? info.total_annonce : Number.isInteger(info.diffuses) && info.diffuses>=0 ? info.diffuses : null : data && Number.isInteger(data.total) ? data.total : data && Number.isInteger(data.episodes) ? data.episodes : null;return total!==null ? total+' épisode'+(total===1 ? '' : 's') : 'Épisodes';}
+function airingDetail(data){var info=data && data.diffusion;if(!info || !Number.isInteger(info.diffuses) || !Number.isInteger(info.total_annonce) || info.diffuses>=info.total_annonce)return '';return info.diffuses+' diffusés sur '+info.total_annonce;}
 function merge(base,extra){
     var row={};Object.keys(base).forEach(function(k){row[k]=base[k];});
     if(!extra || extra.numero!==base.numero)return row;

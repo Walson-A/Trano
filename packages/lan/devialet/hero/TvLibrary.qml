@@ -1,5 +1,6 @@
 import QtQuick 2.15
 import "LibraryPolicy.js" as Library
+import "RequestState.js" as RequestState
 
 // Session-only confirmed state. A public card with moi:null is not an absence.
 Item {
@@ -30,13 +31,15 @@ Item {
         copy[String(id)]=value;entries=copy;
         var times={};Object.keys(copy).forEach(function(k){times[k]=k===String(id) ? Date.now() : checkedAt[k];});checkedAt=times;return true;
     }
-    function ensure(id){var age=Date.now()-(checkedAt[String(id)] || 0),value=entry(id);if(phase(id)==='loading' || phase(id)==='saving' || phase(id)==='ready' && value && value.presence!=='inconnu' && age>=0 && age<freshnessMs)return;load(id);}
-    function load(id){
+    function ensure(id){var age=Date.now()-(checkedAt[String(id)] || 0),value=entry(id);if(phase(id)==='loading' || phase(id)==='saving' || phase(id)==='ready' && value && value.presence!=='inconnu' && age>=0 && age<freshnessMs)return;read(id,['conflict','uncertain'].indexOf(phase(id))<0 && !(value && value.presence==='inconnu'));}
+    function load(id){read(id,false);}
+    function read(id,reuseRecent){
         if(!available || !Number.isInteger(id) || id<=0 || phase(id)==='saving' || phase(id)==='loading')return;
         var turn=begin(id),session=epoch;setPhase(id,'loading','');
-        transport.api('/tv/v1/library-entry',{anilist_id:id},45000,function(code,value){
+        var body={anilist_id:id};if(reuseRecent===true && transport.libraryReadCacheEnabled===true)body.reuse_recent=true;
+        transport.api('/tv/v1/library-entry',body,45000,function(code,value){
             if(session!==epoch || serials[String(id)]!==turn)return;
-            if(code!==200 || !accept(id,value)){setPhase(id,'error','Impossible de charger ton suivi. Réessaie.');return;}
+            if(code!==200 || !accept(id,value)){setPhase(id,'error',RequestState.message(code,value,'Impossible de charger ton suivi. Réessaie.'));return;}
             setPhase(id,'ready',value.presence==='inconnu' ? 'Connecte AniList dans Atlas pour retrouver ton suivi.' : !value.editable ? 'Ton suivi est en lecture seule sur cette TV.' : '');
         });
     }

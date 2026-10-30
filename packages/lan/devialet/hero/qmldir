@@ -1,5 +1,6 @@
 Hero Hero.qml
 HeroButton HeroButton.qml
+LoadingSkeleton LoadingSkeleton.qml
 Trailer Trailer.qml
 FocusCard FocusCard.qml
 HeroArtwork HeroArtwork.qml

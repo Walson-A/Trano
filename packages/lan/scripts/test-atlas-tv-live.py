@@ -132,6 +132,7 @@ Item {
  property bool variantsEnabled:true
  property bool hlsEnabled:benchmarkHlsEnabled
  property bool libraryEnabled:false
+ property bool libraryReadCacheEnabled:true
  property bool airingEnabled:false
  property bool followupAiring:false
  property bool franimeEnabled:false
@@ -152,6 +153,9 @@ Item {
  property var pendingPreview:null
  property var pendingArtworks:[]
  property var pendingSearches:[]
+ property bool delayCollections:false
+ property var pendingCollections:[]
+ property bool extrasEnabled:false
  property bool delayDetails:false
  property var pendingDetails:[]
  property bool failNextPlayback:false
@@ -165,6 +169,7 @@ Item {
  function loadHome(){homeReloads++;Qt.callLater(function(){homeLoaded();});}
  function api(path,body,timeout,done) {
   apiCalled(path,body);
+  if(delayCollections && ['/tv/v1/library','/tv/v1/catalog/history'].indexOf(path)>=0){pendingCollections=pendingCollections.concat([{path:path,body:body,done:done}]);return;}
   if(path==='/tv/v1/library-entry'){if(delayLibrary){pendingLibrary=pendingLibrary.concat([{body:body,done:done}]);return;}Qt.callLater(function(){done(200,libraryEntry(body.anilist_id));});return;}
   if(path==='/tv/v1/library-update'){Qt.callLater(function(){
    var entry=libraryEntry(body.anilist_id),mode=libraryFailure;libraryFailure='';
@@ -179,7 +184,7 @@ Item {
   if(path==='/tv/v1/artworks') { pendingArtworks=pendingArtworks.concat([done]); return; }
   if(path==='/tv/v1/catalog/search') { pendingSearches=pendingSearches.concat([{done:done,body:body}]); return; }
   if(path==='/tv/v1/catalog/history') { Qt.callLater(function(){done(200,benchmarkHistory);});return; }
-  if(path==='/tv/v1/catalog/detail') { if(delayDetails){pendingDetails=pendingDetails.concat([done]);return;}Qt.callLater(function(){var value=benchmarkDetails[String(body.anilist_id)];done(value ? 200 : 404,value || {});});return; }
+  if(path==='/tv/v1/catalog/detail') { if(delayDetails){pendingDetails=pendingDetails.concat([done]);return;}Qt.callLater(function(){var value=benchmarkDetails[String(body.anilist_id)];if(value && extrasEnabled){value=JSON.parse(JSON.stringify(value));value.complements_a_charger=true;}done(value ? 200 : 404,value || {});});return; }
   if(path==='/tv/v1/catalog/episodes') { Qt.callLater(function(){var value=followupAiring ? upcomingEpisodes(body.anilist_id) : benchmarkEpisodes[String(body.anilist_id)];done(value ? 200 : 404,value || {});});return; }
   if(path==='/tv/v1/readers') {Qt.callLater(function(){done(200,{anilist_id:body.anilist_id,episode:body.episode,lang:body.lang,readers:(franimeEnabled ? [{reader_id:'c'.repeat(64),source:'franime',provider:'franime',label:'Sendvid',supported:true}] : []).concat([{reader_id:'e'.repeat(64),source:'voiranime',provider:'mail',label:'Mail.ru FHD1',supported:true},{reader_id:'f'.repeat(64),source:'anime-sama',provider:'yourupload',label:'YourUpload',supported:true},{reader_id:'d'.repeat(64),source:'voiranime',provider:'other',label:'Incompatible',supported:false}]),limitations:['franime_browser_required']});});return;}
   if(path==='/tv/v1/variants') {if(failNextVariants){failNextVariants=false;Qt.callLater(function(){done(502,{});});return;}Qt.callLater(function(){done(200,{anilist_id:body.anilist_id,episode:body.episode,lang:body.lang,source:body.source,reader_id:body.reader_id,variants:body.source==='franime' ? [{variant_id:'3'.repeat(64),label:'Originale',container:hlsEnabled ? 'hls' : 'mp4'}] : [{variant_id:'1'.repeat(64),label:'360p',height:360,container:hlsEnabled ? 'hls' : 'mp4'},{variant_id:'2'.repeat(64),label:'1080p',height:1080,container:'mp4'}]});});return;}
@@ -194,6 +199,8 @@ Item {
  function finishPreview(id,key) { var done=pendingPreview; pendingPreview=null; done(200,{kind:'trailer',anilist_id:id,youtube_id:key,path:'/tv/v1/preview-media/'+'b'.repeat(64),expires_at:Date.now()/1000+900}); }
  function finishArtwork(index,id,kind) { pendingArtworks[index](200,{anilist_id:id,kind:kind,path:'/tv/v1/artwork-media/'+'c'.repeat(64),expires_at:Date.now()/1000+900}); }
  function featuredOnly() { state='connecting'; artworkEnabled=false; var value=JSON.parse(JSON.stringify(benchmarkHome)); value.rangees=[]; home=value; artworkEnabled=true; state='ready'; homeLoaded(); }
+ function failSearch(index){pendingSearches[index].done(429,{error:{code:'anilist_busy',details:{retry_after:3}}});}
+ function finishCollection(index){var p=pendingCollections[index];p.done(200,p.path==='/tv/v1/library' ? {resultats:benchmarkLibraryCards.slice(0,24),page:p.body.page,has_next_page:false,total:24,presence_connue:true} : benchmarkHistory);}
  function finishSearch(index) {var p=pendingSearches[index];p.done(200,{resultats:benchmarkHome.hero.slice(index%2,index%2+4),page:p.body.page,has_next_page:p.body.page===1});}
  function finishDetail(index,identity) {pendingDetails[index](200,benchmarkDetails[String(identity)]);}
  function finishLibrary(index){var pending=pendingLibrary[index];pending.done(200,libraryEntry(pending.body.anilist_id));}
@@ -626,6 +633,9 @@ Item {
                 follow_spec=importlib.util.spec_from_file_location('followup',pathlib.Path(__file__).with_name('atlas_tv_follow_up_bench.py'))
                 follow=importlib.util.module_from_spec(follow_spec);follow_spec.loader.exec_module(follow)
                 follow.run(window,session,screen,details,calls,QTest,Qt,QObject,spin,args.evidence)
+                loading_spec=importlib.util.spec_from_file_location('loading',pathlib.Path(__file__).with_name('atlas_tv_loading_bench.py'))
+                loading=importlib.util.module_from_spec(loading_spec);loading_spec.loader.exec_module(loading)
+                loading.run(window,session,screen,details,calls,QTest,Qt,QObject,spin,args.evidence)
             later_bad=[m for m in messages if any(s in m for s in ['ReferenceError','TypeError','Unable to assign','Cannot assign'])]
             assert not later_bad,later_bad
             negotiated=[body for path,body in calls if path in ['/tv/v1/playbacks','/tv/v1/readers','/tv/v1/variants']]
@@ -633,7 +643,7 @@ Item {
             (args.evidence/'verification.json').write_text(json.dumps({'passed':True,'scope':'real QML host/UI with fake API and fake decoder; no native playback claim','canonicalEpisode':13,'hlsNegotiated':args.hls,'defaultLanguage':'vo','frenchAvailabilityDoesNotSelectLanguage':True,'explicitFrenchStillSupported':True,'tvPlayer':{'anchoredMenusKeepChrome':True,'proposedTimelineUntilConfirmed':True,'cancelSeekKeepsPosition':True,'cancelResolutionIgnoresLateResponse':True,'strictSourceReaderVariant':True,'strictRetry401And200KeepsChoice':True,'failedChangeKeepsOldVideo':True,'pausedQualityAndVersionKeepPositionAndIntent':True,'episodesOverlayKeepsVideoAndSeasonBrowsing':True,'firstBackHidesHudWithoutClosing':True,'episodeJumpPreservesCurrentPlayback':True,'sourceReachableAfterNativeFailure':True,'episodeArtworkIdentityChecked':True,'missingCapabilityUnavailable':True,'perSessionProgressSequence':True},'lang':'vo','defaultSoundOnAndLabelled':True,'infoSelectionPreserved':True,'search':{'remoteKeyboard':True,'staleIgnored':True,'selectionAndBack':True},'profile':{'publicProfileWithoutOAuth':True,'statsScaleChecked':True,'selectionAndBack':True},'lateTrailerDoesNotChangeSelection':True,'silentGainZero':True,'bannerErrorUsesPoster':True,'artworkQueue':{'maxConcurrent':2,'identityChecked':True,'deduplicated':True,'capabilityRequired':True,'warmWithoutResume':True},'events':events},indent=2),encoding='utf-8')
             app.quit()
         except Exception as error: messages.append(traceback.format_exc());app.exit(1)
-    QTimer.singleShot(600,check);QTimer.singleShot(45000 if args.follow_up else 25000,lambda:app.exit(2))
+    QTimer.singleShot(600,check);QTimer.singleShot(60000 if args.follow_up else 25000,lambda:app.exit(2))
     code=app.exec_()
     window.close();sip.delete(engine)
     if code: raise AssertionError(messages)

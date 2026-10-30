@@ -72,8 +72,8 @@ Critères attendus :
 
 - Série : état À venir/En diffusion/Terminée lorsqu’il est connu ; ne pas déduire
   cet état du statut personnel dans Ma liste.
-- Compteur explicite du type « 5 épisodes sortis sur 12 annoncés » quand ces deux
-  nombres sont confirmés, plutôt qu’un simple « 12 épisodes » trompeur.
+- Titre « 12 épisodes », accompagné discrètement de « 5 diffusés sur 12 » si la
+  diffusion est incomplète et les nombres confirmés ; aucune répétition si terminée.
 - Épisode futur connu : repère À venir, date/heure si connues et aucune commande
   de lecture active qui lance une résolution vouée à l’échec. Pas de marque Vu
   ou de progression écrite par sa simple sélection.
@@ -102,3 +102,14 @@ de relecture après timeout et de futurs bloqués. Le backend FrAnime manuel est
 composé dans la même interface. La réception physique reste à faire. Les cas
 ci-dessus restent les critères de régression ; le titre exact « Gear… » n’a pas
 été identifié et aucun calendrier fictif n’est présenté comme son calendrier.
+
+## Chargements — 30 octobre 2026
+
+La saturation du limiteur AniList pouvait dépasser la deadline des routes. Le
+backend corrige l’admission et partage les lectures minimales ; la TV diffère
+les compléments non essentiels de 1200 ms, annule ceux non envoyés au départ
+et interrompt le préchargement des affiches d’accueil pendant les panneaux.
+La réutilisation privée de cinq secondes est un opt-in de lecture normale ;
+les vérifications après conflit ou réponse perdue restent fraîches.
+Voir [preuves et limites](research/2026-10-30-atlas-tv-loading-budget.md). La
+réception physique et la latence sur une longue session restent à vérifier.

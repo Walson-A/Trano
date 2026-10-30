@@ -289,3 +289,11 @@ au Player sélectionné. Il prend en charge les requêtes HTTP Range simples pou
 le lecteur ; les plages multiples ou impossibles sont refusées. Le diagnostic
 est une preuve de moteur vidéo, pas une interface Atlas TV validée visuellement.
 Le fichier généré est supprimable après le test et peut être régénéré avec cette commande.
+
+## États de chargement — 30 octobre 2026
+
+Les squelettes statiques épousent les emplacements réels de Recherche/Ma liste,
+des épisodes, du suivi, du profil et des menus du lecteur. Ils sont décoratifs,
+sans focus ni travail GPU continu. La diffusion partielle devient une métadonnée
+secondaire ; la carte future garde la date et sa garde de lecture.
+[Contrat, revue et limites](research/2026-10-30-atlas-tv-loading-budget.md).

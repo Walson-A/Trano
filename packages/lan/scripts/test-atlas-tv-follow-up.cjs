@@ -10,6 +10,7 @@ function load(name) {
 }
 const episode = load('EpisodePolicy.js');
 const personal = load('LibraryPolicy.js');
+const request = load('RequestState.js');
 const plain = x => JSON.parse(JSON.stringify(x));
 let checks = 0;
 function check(fn) { fn(); checks++; }
@@ -34,12 +35,12 @@ check(() => assert.equal(episode.dateLabel({...date,libelle:null}), '03/11/2026 
 check(() => assert.equal(episode.dateLabel({iso:'2026-11-03T19:00:00Z'}), '03/11/2026 à 19h00 UTC'));
 check(() => assert.equal(episode.dateLabel({iso:'2026-11-03',precision:'jour'}), '03/11/2026'));
 check(() => assert.equal(episode.dateLabel({iso:'garbage'}), 'Date à confirmer'));
-check(() => assert.equal(episode.count({total:12,diffusion:{total_annonce:12,diffuses:5}}, false), '5 épisodes sortis sur 12 annoncés'));
+check(() => assert.equal(episode.count({total:12,diffusion:{total_annonce:12,diffuses:5}}, false), '5 diffusés sur 12'));
 check(() => assert.equal(episode.count({total:12,diffusion:{total_annonce:12,diffuses:5}}, true), '5/12 diffusés'));
 check(() => assert.equal(episode.count({total:12,moi:{progression:12},diffusion:{total_annonce:null,diffuses:5}}, false), '5 épisodes diffusés'));
 check(() => assert.equal(episode.count({total:12,diffusion:{total_annonce:null,diffuses:null}}, true), 'Total à confirmer'));
 check(() => assert.equal(episode.count({diffusion:{total_annonce:12,diffuses:13}}, false), '13 épisodes diffusés'));
-check(() => assert.equal(episode.count({total:12}, false), '12 épisodes annoncés'));
+check(() => assert.equal(episode.count({total:12}, false), '12 épisodes'));
 check(() => {
   const merged=episode.merge(future,{numero:6,titre:'Nouveau titre',diffusion:{etat:'inconnu',date:null},lancable:true,vu:true});
   assert.equal(episode.blocked(merged),true);assert.equal(merged.vu,false);assert.equal(merged.titre,'Nouveau titre');
@@ -65,4 +66,14 @@ check(() => assert.equal(personal.validEntry({...entry,presence:'absent',moi:nul
 check(() => assert.equal(personal.validEntry({...entry,presence:'inconnu',editable:true},154587),false));
 check(() => assert.equal(personal.matches(entry,{note:7.2}),true));
 check(() => assert.equal(personal.matches(entry,{note:8}),false));
-console.log(JSON.stringify({passed:true,checks,scope:'episode certainty, non-playable future, dates, canonical personal state; no network'}));
+
+
+check(() => assert.equal(episode.count({diffusion:{total_annonce:9,diffuses:9}},false),'9 épisodes'));
+check(() => assert.equal(episode.heading({diffusion:{total_annonce:12,diffuses:5}}),'12 épisodes'));
+check(() => assert.equal(episode.airingDetail({diffusion:{total_annonce:9,diffuses:9}}),''));
+check(() => assert.equal(episode.airingDetail({diffusion:{total_annonce:12,diffuses:5}}),'5 diffusés sur 12'));
+check(() => assert.equal(request.retrySeconds(429,{error:{code:'anilist_busy',details:{retry_after:12}}}),12));
+check(() => assert.equal(request.retrySeconds(429,{error:{details:{retry_after:999999}}}),0));
+check(() => assert.equal(request.retrySeconds(500,{error:{details:{retry_after:12}}}),0));
+check(() => assert.match(request.message(429,{error:{code:'anilist_busy'}},'fallback'),/très sollicité/));
+console.log(JSON.stringify({passed:true,checks,scope:'episode certainty, compact counts, retry hints, canonical personal state; no network'}));

@@ -1,4 +1,5 @@
 import QtQuick 2.15
+import "RequestState.js" as RequestState
 
 // Credentials belong to this runtime only. Never persist or log tokens/URLs.
 Item {
@@ -12,6 +13,7 @@ Item {
     property bool variantsEnabled: false
     property bool hlsEnabled: false
     property bool libraryEnabled: false
+    property bool libraryReadCacheEnabled:false
     property bool airingEnabled: false
     property double expiresAt: 0
     property bool refreshing: false
@@ -70,6 +72,7 @@ Item {
             variantsEnabled=!!(runtime.capabilities && runtime.capabilities.variants===true);
             hlsEnabled=!!(runtime.capabilities && runtime.capabilities.hls===true);
             libraryEnabled=!!(runtime.capabilities && runtime.capabilities.library===true);
+            libraryReadCacheEnabled=!!(runtime.capabilities && runtime.capabilities.library_read_cache===true);
             airingEnabled=!!(runtime.capabilities && runtime.capabilities.airing===true);
             request(apiOrigin+'/tv/v1/session/activate',{code:runtime.activation.code},'',12000,function(code,value) {
                 if(code!==200 || !credentials(value)) { fail(); return; }
@@ -105,7 +108,7 @@ Item {
         api('/tv/v1/catalog/home',{},45000,function(status,value) {
             if(!accessToken || turn!==homeGeneration) return;
             if(status!==200 || !value || !Array.isArray(value.hero) || !Array.isArray(value.rangees)) {
-                state='error'; message='Le catalogue est indisponible. OK pour réessayer.'; return;
+                state='error'; message=RequestState.message(status,value,'Le catalogue est indisponible. OK pour réessayer.'); return;
             }
             home=value; state='ready'; message=''; homeLoaded();
             if(value.complements_a_charger) api('/tv/v1/catalog/home-extras',{},45000,function(code,complete) {

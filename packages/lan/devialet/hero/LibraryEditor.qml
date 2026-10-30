@@ -59,13 +59,14 @@ FocusScope {
         Text {x:40;y:32;text:'Mon suivi';font.family:editor.family;font.pixelSize:34;font.weight:Font.Bold;color:'white'}
         Text {x:40;y:82;width:624;height:52;text:editor.title;textFormat:Text.PlainText;maximumLineCount:2;wrapMode:Text.WordWrap;elide:Text.ElideRight;font.family:editor.family;font.pixelSize:21;color:'#c5c9d3'}
         Text {x:40;y:149;text:'Ma liste';font.family:editor.family;font.pixelSize:20;font.weight:Font.DemiBold;color:'white'}
-        Grid {x:40;y:184;columns:2;spacing:10
+        LoadingSkeleton {objectName:'followupSkeleton';x:40;y:184;width:624;height:306;layout:'followup';active:editor.opened && editor.phase==='loading'}
+        Grid {x:40;y:184;columns:2;spacing:10;opacity:editor.phase==='loading' ? 0 : 1
             Repeater {model:Library.statuses
                 HeroButton {width:306;height:50;family:editor.family;label:modelData[1];selected:editor.editable && editor.draftStatus===modelData[0];focused:editor.zone==='status' && editor.statusIndex===index;iconKey:editor.editable && editor.draftStatus===modelData[0] ? 'check' : '';reducedMotion:editor.reducedMotion;opacity:editor.editable ? 1 : .45;onActivated:{editor.zone='status';editor.chooseStatus(index)}}
             }
         }
         Text {x:40;y:374;text:'Ta note';font.family:editor.family;font.pixelSize:20;font.weight:Font.DemiBold;color:'white'}
-        Rectangle {x:40;y:410;width:624;height:80;radius:12;color:'#292e39';border.width:editor.zone==='note' ? 2 : 1;border.color:editor.zone==='note' ? 'white' : '#45ffffff';opacity:editor.editable ? 1 : .45
+        Rectangle {x:40;y:410;width:624;height:80;radius:12;color:'#292e39';border.width:editor.zone==='note' ? 2 : 1;border.color:editor.zone==='note' ? 'white' : '#45ffffff';opacity:editor.phase==='loading' ? 0 : editor.editable ? 1 : .45
             HeroButton {x:8;y:14;width:64;label:'−';family:editor.family;flat:true;onActivated:{editor.zone='note';editor.changeNote(-1)}}
             Text {anchors.centerIn:parent;text:Library.score(editor.draftNote)+(editor.draftNote ? ' / 10' : '');font.family:editor.family;font.pixelSize:editor.draftNote ? 38 : 26;font.weight:Font.DemiBold;color:'white'}
             HeroButton {x:552;y:14;width:64;label:'+';family:editor.family;flat:true;onActivated:{editor.zone='note';editor.changeNote(1)}}

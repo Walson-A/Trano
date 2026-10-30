@@ -54,6 +54,7 @@ def run(window, session, screen, details, calls, QTest, Qt, QObject, spin, evide
     card=dict(details['154587']['carte']);card['moi']=None
     screen.openDetail(card)
     assert detail.property('state')=='loading' and detail.property('personalPhase')=='loading'
+    assert [b for p,b in calls if p=='/tv/v1/library-entry'][-1].get('reuse_recent') is True
     assert personal_reads()==before_reads+1 and window.findChild(QObject,'detailList').property('label')=='Ma liste…'
     assert len([p for p,b in calls if p=='/tv/v1/catalog/episodes'])==episode_reads+1
     assert data(detail,'personalEntry') is None
@@ -111,6 +112,7 @@ def run(window, session, screen, details, calls, QTest, Qt, QObject, spin, evide
     before = len(writes())
     QTest.keyClick(window, Qt.Key_Return)
     spin(lambda: editor.property('editable'))
+    assert 'reuse_recent' not in [b for p,b in calls if p=='/tv/v1/library-entry'][-1]
     assert len(writes()) == before and editor.property('draftStatus') == 'PAUSED' and editor.property('draftNote') == 7.5
     QTest.keyClick(window, Qt.Key_Return)
     spin(lambda: not editor.property('opened'))
@@ -127,6 +129,7 @@ def run(window, session, screen, details, calls, QTest, Qt, QObject, spin, evide
     before = len(writes())
     QTest.keyClick(window, Qt.Key_Return)
     spin(lambda: editor.property('editable'))
+    assert 'reuse_recent' not in [b for p,b in calls if p=='/tv/v1/library-entry'][-1]
     assert not editor.property('dirty') and len(writes()) == before
     QTest.keyClick(window, Qt.Key_Return)
     assert len(writes()) == before
@@ -161,7 +164,8 @@ def run(window, session, screen, details, calls, QTest, Qt, QObject, spin, evide
     detail.setProperty('episodeIndex', 5)
     detail.scrollToZone()
     QTest.qWait(300)
-    assert '5 épisodes sortis sur 12 annoncés' in window.findChild(QObject, 'detailEpisodeCount').property('text')
+    assert window.findChild(QObject,'detailEpisodeCount').property('text')=='12 épisodes'
+    assert window.findChild(QObject,'detailAiringSummary').property('text')=='5 diffusés sur 12'
     assert '03/01/' in window.findChild(QObject, 'episodeAiringNotice').property('text')
     assert window.grabWindow().save(str(evidence / 'followup-upcoming-detail.png'))
     before = len(playbacks())

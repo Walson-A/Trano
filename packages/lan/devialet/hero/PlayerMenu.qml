@@ -171,7 +171,7 @@ Item {
         if(code===Qt.Key_Up || code===Qt.Key_Down){index=Math.max(0,Math.min(entries.length-1,index+(code===Qt.Key_Up ? -1 : 1)));showIndex();}
     }
     visible:opened
-    Rectangle {id:surface;x:menu.episodeMenu ? 64 : Math.min(1216-width,688+(menu.kind==='version' ? 0 : menu.kind==='source' ? 1 : 2)*180);y:(menu.kind==='episodes' ? 474 : 486)-height;width:menu.kind==='episodes' ? 1152 : menu.kind==='version' ? 396 : menu.kind==='source' ? 380 : 304;height:menu.kind==='episodes' && menu.state==='ready' && !menu.busy && !menu.changeError ? 322 : menu.busy || menu.changeError || menu.state!=='ready' ? 184 : 72+menu.listHeight;radius:14;color:'#ee1b1c21';border.color:'#28ffffff'
+    Rectangle {id:surface;x:menu.episodeMenu ? 64 : Math.min(1216-width,688+(menu.kind==='version' ? 0 : menu.kind==='source' ? 1 : 2)*180);y:(menu.kind==='episodes' ? 474 : 486)-height;width:menu.kind==='episodes' ? 1152 : menu.kind==='version' ? 396 : menu.kind==='source' ? 380 : 304;height:menu.state==='loading' && !menu.busy && !menu.changeError ? (menu.kind==='episodes' ? 322 : 248) : menu.kind==='episodes' && menu.state==='ready' && !menu.busy && !menu.changeError ? 322 : menu.busy || menu.changeError || menu.state!=='ready' ? 184 : 72+menu.listHeight;radius:14;color:'#ee1b1c21';border.color:'#28ffffff'
         Text {x:24;y:19;width:parent.width-48;text:menu.heading;color:'#f5f5f7';font.family:menu.family;font.pixelSize:23;font.weight:Font.DemiBold;visible:menu.kind!=='episodes' || menu.state!=='ready' || menu.busy || menu.changeError}
         ListView {id:list;objectName:'playerMenuList';x:8;y:64;width:surface.width-16;height:menu.listHeight;clip:true;interactive:false;spacing:4;model:menu.entries;currentIndex:menu.index;onCurrentIndexChanged:if(menu.kind!=='episodes')positionViewAtIndex(currentIndex,ListView.Contain);visible:menu.kind!=='episodes' && menu.state==='ready' && !menu.busy && !menu.changeError
             delegate:PlayerChoice {width:list.width;height:64;family:menu.family;label:modelData.label || '';detail:modelData.detail || '';available:modelData.available!==false;focused:menu.index===index;selected:menu.selected(modelData);onActivated:{menu.index=index;menu.column='items';menu.activate();}}
@@ -184,7 +184,8 @@ Item {
             onChangePage:menu.changePage(direction)
             onThumbnailFailed:episodeArt.invalidate(menu.episodeCard.anilist_id,number)
         }
-        Text {x:24;y:72;width:parent.width-48;text:menu.busy ? 'Préparation…' : menu.state==='loading' ? 'Chargement…' : menu.message;textFormat:Text.PlainText;color:'#c6c6ce';font.family:menu.family;font.pixelSize:18;wrapMode:Text.Wrap;visible:menu.busy || menu.changeError || menu.state!=='ready'}
+        LoadingSkeleton {x:16;y:64;width:parent.width-32;height:240;layout:menu.kind==='episodes' ? 'episode-menu' : 'options';active:menu.opened && menu.state==='loading' && !menu.busy}
+        Text {x:24;y:72;width:parent.width-48;text:menu.busy ? 'Préparation…' : menu.state==='loading' ? '' : menu.message;textFormat:Text.PlainText;color:'#c6c6ce';font.family:menu.family;font.pixelSize:18;wrapMode:Text.Wrap;visible:menu.busy || menu.changeError || menu.state!=='ready'}
         Rectangle {x:16;y:128;width:parent.width-32;height:40;radius:8;color:'#f5f5f7';visible:menu.busy || menu.changeError || menu.state==='error' && menu.retryAllowed
             Text {anchors.centerIn:parent;text:menu.busy ? 'Annuler' : menu.changeError ? 'Revenir aux choix' : 'Réessayer';color:'#151519';font.family:menu.family;font.pixelSize:18;font.weight:Font.DemiBold}
             MouseArea {anchors.fill:parent;onClicked:{if(menu.busy){menu.cancelRequested();menu.message='';}else menu.activate();}}
