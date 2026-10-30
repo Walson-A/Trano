@@ -15,7 +15,7 @@ Le backend passe à une admission immédiate et un refus 429 anilist_busy avec
 error.details.retry_after, plutôt qu’une attente destinée à expirer. Il partage
 les lectures publiques et minimales privées et réduit les enrichissements
 inutiles. Le quota amont n’est pas augmenté. Le moteur ec1216adc4e3f0f6c3f633f5b1a7a6fd5ff8ce5b
-est réellement servi après le workflow 40981766771. Le
+a été vérifié réellement servi après le workflow 40981766771. Le
 [diagnostic backend](2026-10-30-atlas-tv-loading-budget/backend-measures.json),
 révoqué après lecture seule, mesure : Death Note détail/épisodes 718/717 ms,
 My Hero Academia 291/289 ms, One Piece 659/658 ms. Les neuf lectures TV ont
@@ -98,3 +98,34 @@ garde ce repère et sa date, sans inventer une vignette d’épisode futur. Pas 
 Ces tests ne mesurent ni le rendu physique du Devialet ni une longue navigation
 sur le service réel. La saturation amont reste possible et doit être présentée
 comme telle, sans écran de chargement indéfini.
+
+## Publication vérifiée
+
+Le [paquet](2026-10-30-atlas-tv-loading-budget/package.json)
+hero-loading-5fe5d213c956 provient du commit source
+868a6e318dfd8806c5a79e361c5666763e69b76d : 37 fichiers, 368182 octets, sans banc
+ni identifiants. Le [précontrôle indépendant](2026-10-30-atlas-tv-loading-budget/preflight.json)
+constate l’engine d0e7d0026d453ac1f1c260c2408405abfa703dbd alors servi :
+le travail Carte a été déployé après les mesures ec1216ad, avec le correctif TV
+conservé. Les mesures précédentes ne sont pas réattribuées à ce nouveau binaire.
+
+Le gateway canonique 60197fa3eb26bfa47bb66fb48d6d459e05d754b6 annonce désormais
+library_read_cache:true dans availability et runtime ; son SHA servi est
+b620248f501686a6afd3b7e29c1440ddf7becb1e38c60dd480c0041e8a76698a. Ce
+raccord est nécessaire : le bit n’était pas lu depuis config.capabilities.
+La [publication UI](2026-10-30-atlas-tv-loading-budget/publication.json) valide
+ce SHA, remplace seulement hero-artwork-20a862cdc84a et ne redémarre pas l’engine.
+
+Le [reçu de lancement](2026-10-30-atlas-tv-loading-budget/launch.json) confirme
+le SDK accepté et 34 ressources demandées, dont RequestState.js et
+LoadingSkeleton.qml. Le runtime effectif, lu en mémoire avant ce lancement,
+annonce strictement library_read_cache:true. Aucun épisode n’est démarré
+automatiquement. Le téléchargement ne prouve pas le rendu physique ni une
+longue session : la réception de Walson est demandée et reste en attente.
+
+[Nettoyage](2026-10-30-atlas-tv-loading-budget/cleanup.json) : les deux transferts
+distants sont retirés après vérification des empreintes ; le bundle actif et son
+rollback privé 0600 restent disponibles. Les exports et paquets intermédiaires
+locaux sont retirés après archivage des preuves. Aucun serveur de test du lot
+ne reste actif. Le worktree partagé, les caches Qt/fonts/images communs et les
+deux éléments non suivis préexistants sont conservés pour la suite TV.
