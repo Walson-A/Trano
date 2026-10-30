@@ -12,6 +12,7 @@ FocusScope {
     property string family: "Segoe UI"
     property string mode: currentRow && currentRow.id==='reprendre' ? 'resume' : currentRow && currentRow.id==='featured' ? 'featured' : currentRow ? currentRow.id : ''
     property string zone: "actions"
+    readonly property bool browsingRows: zone==='rail' && !detailOpen
     property int actionIndex: 0
     property int navIndex: 0
     property string avatar: ''
@@ -79,7 +80,7 @@ FocusScope {
         if(!media) return "";
         var parts=[];
         if(media.score) parts.push("★ " + (media.score/10).toFixed(1).replace('.',','));
-        if(media.franime && media.franime.vf) parts.push("VF");
+        if(media.franime && media.franime.vf) parts.push("VF disponible");
         if(media.annee) parts.push(media.annee);
         parts.push(media.format === "MOVIE" ? "Film" : "Série");
         if(media.genres) parts.push(media.genres.slice(0,3).join(" · "));
@@ -112,7 +113,7 @@ FocusScope {
     }
     function queueHero() {
         if(!displayedMedia || reducedMotion) { displayedMedia=selected; contentVisible=true; return; }
-        if(selected && displayedMedia && selected.anilist_id===displayedMedia.anilist_id) { heroSwap.stop(); contentVisible=true; return; }
+        if(selected && displayedMedia && selected.anilist_id===displayedMedia.anilist_id) { heroSwap.stop(); displayedMedia=selected; contentVisible=true; return; }
         contentVisible=false; heroSwap.restart();
     }
     function restartPreview() {
@@ -144,6 +145,7 @@ FocusScope {
     onSelectedChanged: { notice=""; queueHero(); restartPreview(); }
     onSelectedIndexChanged: { remember(); Qt.callLater(alignRail); }
     onItemsChanged: Qt.callLater(alignRail)
+    onBrowsingRowsChanged: Qt.callLater(alignRail)
     onRowsChanged: {
         var index=0;
         for(var i=0;i<rows.length;i++) if(rows[i].id===selectedRowId) { index=i; break; }
@@ -204,19 +206,32 @@ FocusScope {
             GradientStop { position: 0.82; color: "#a0090a0d" }
             GradientStop { position: 1; color: "#ff090a0d" }
         } }
+        Rectangle { anchors.fill:parent;opacity:scene.browsingRows ? 1 : 0
+            gradient:Gradient {
+                GradientStop {position:0;color:'#00090a0d'}
+                GradientStop {position:.25;color:'#20090a0d'}
+                GradientStop {position:.46;color:'#d9090a0d'}
+                GradientStop {position:.72;color:'#f5090a0d'}
+                GradientStop {position:1;color:'#ff090a0d'}
+            }
+            Behavior on opacity {enabled:!scene.reducedMotion;NumberAnimation {duration:Motion.ms('scroll');easing.type:Easing.Bezier;easing.bezierCurve:Motion.easeOut()}}
+        }
     }
     Column {
         objectName:'heroCopy'
         x: 64; width: 630; anchors.bottom: parent.top; anchors.bottomMargin: -350; spacing: 12
+        transform: Translate { y:scene.browsingRows ? -152 : 0
+            Behavior on y {enabled:!scene.reducedMotion;NumberAnimation {duration:Motion.ms('scroll');easing.type:Easing.Bezier;easing.bezierCurve:Motion.easeOut()}}
+        }
         opacity: scene.contentVisible ? 1 : 0
         Behavior on opacity { enabled: !scene.reducedMotion; NumberAnimation { duration: scene.contentVisible ? Motion.ms('focus') : Motion.ms('settle'); easing.type: Easing.Bezier; easing.bezierCurve: Motion.easeOut() } }
         Text { id:heroTitle; objectName: "heroTitle"; width: 630; text: scene.displayedMedia ? scene.displayedMedia.titre : "Aucun animé disponible";
             color: "#fafafb"; font.family: scene.family; font.pixelSize: 48; font.weight: Font.Bold; font.letterSpacing: -1.3;
-            wrapMode: Text.Wrap; maximumLineCount: 2; elide: Text.ElideRight; textFormat: Text.PlainText; lineHeight: 50; lineHeightMode: Text.FixedHeight }
+            wrapMode: Text.Wrap; maximumLineCount: scene.browsingRows ? 1 : 2; elide: Text.ElideRight; textFormat: Text.PlainText; lineHeight: 50; lineHeightMode: Text.FixedHeight }
         Text { width: 650; text: scene.meta(scene.displayedMedia); color: "#d2d2d7"; font.family: scene.family; font.pixelSize: 17; elide: Text.ElideRight }
-        Text { width: 600; text: scene.displayedMedia ? scene.displayedMedia.resume || "" : ""; textFormat: Text.PlainText; color: "#d0d0d6";
+        Text { width: 600; visible:!scene.browsingRows; text: scene.displayedMedia ? scene.displayedMedia.resume || "" : ""; textFormat: Text.PlainText; color: "#d0d0d6";
             font.family: scene.family; font.pixelSize: 19; lineHeight: 24; lineHeightMode: Text.FixedHeight; wrapMode: Text.WordWrap; maximumLineCount: heroTitle.lineCount>1 ? 1 : 2; elide: Text.ElideRight }
-        Item { width: 630; height: 52
+        Item { width: 630; height: 52; visible:!scene.browsingRows
             Row { anchors.bottom: parent.bottom; spacing: 14
                 HeroButton { objectName:'heroPlay'; width: scene.selected && scene.selected.a_lancer ? 244 : 174; iconKey: 'play'; reducedMotion: scene.reducedMotion; label: scene.selected && scene.selected.a_lancer ? "Reprendre · Ép. " + scene.selected.a_lancer.numero : "Lecture"; family: scene.family; primary: true; groupHasFocus:true; selected:scene.zone==='rail' && scene.actionIndex===0; focused: scene.zone==='actions' && scene.actionIndex===0; onActivated: { scene.zone='actions'; scene.actionIndex=0; scene.activate(); } }
                 HeroButton { objectName:'heroInfo'; width: 180; iconKey: 'info'; reducedMotion: scene.reducedMotion; label: "Plus d’infos"; family: scene.family; selected:scene.zone==='rail' && scene.actionIndex===1; backdrop: backdrop; sampleRect: Qt.rect(scene.selected && scene.selected.a_lancer ? 322 : 252,298,width,height); focused: scene.zone==='actions' && scene.actionIndex===1; onActivated: { scene.zone='actions'; scene.actionIndex=1; scene.activate(); } }
@@ -226,13 +241,16 @@ FocusScope {
     TvNavigation {id:navigation;family:scene.family;page:'home';libraryEnabled:scene.libraryEnabled;focused:scene.zone==='nav';selectedIndex:scene.navIndex;avatar:scene.avatar;pseudo:scene.homeData.compte ? scene.homeData.compte.pseudo || 'Profil' : 'Profil';reducedMotion:scene.reducedMotion
         onDestinationRequested:{if(destination==='home'){scene.zone='actions';scene.navIndex=2;scene.forceActiveFocus();}else if(destination==='search'){scene.zone='nav';scene.navIndex=0;scene.searchRequested();}else if(destination==='library'){scene.zone='nav';scene.navIndex=3;scene.libraryRequested();}else {scene.zone='nav';scene.navIndex=1;scene.profileRequested();}}
     }
-    HeroButton { objectName:'heroSound'; x: 1036; y: 298; width: 180; iconKey: scene.muted ? 'volume-x' : 'volume-2'; label:scene.muted ? 'Son coupé' : 'Son activé'; reducedMotion: scene.reducedMotion; family: scene.family; backdrop: backdrop; sampleRect: Qt.rect(x,y,width,height); focused: scene.zone==='sound'; onActivated: { scene.zone='sound'; scene.muted=!scene.muted; } }
+    HeroButton { objectName:'heroSound'; x: 1036; y: 298; width: 180; visible:!scene.browsingRows; iconKey: scene.muted ? 'volume-x' : 'volume-2'; label:scene.muted ? 'Son coupé' : 'Son activé'; reducedMotion: scene.reducedMotion; family: scene.family; backdrop: backdrop; sampleRect: Qt.rect(x,y,width,height); focused: scene.zone==='sound'; onActivated: { scene.zone='sound'; scene.muted=!scene.muted; } }
     Text { x: 870; y: 355; width: 346; horizontalAlignment: Text.AlignRight; color: '#b9bac3'; font.family: scene.family; font.pixelSize: 16
-        visible: scene.previewEnabled && !scene.detailOpen
+        visible: scene.previewEnabled && !scene.detailOpen && !scene.browsingRows
         text: scene.previewState==='loading' ? 'Chargement de la bande-annonce…' : scene.previewState==='unavailable' || scene.previewState==='error' ? 'Bande-annonce indisponible' : ''
     }
     ListView {
-        id:rowList; objectName:'heroRows'; x:0; y:380; width:1280; height:340; clip:true
+        id:rowList; objectName:'heroRows'; x:0; y:380; width:1280; height:scene.browsingRows ? 498 : 340; clip:true
+        transform: Translate { y:scene.browsingRows ? -158 : 0
+            Behavior on y {enabled:!scene.reducedMotion;NumberAnimation {duration:Motion.ms('scroll');easing.type:Easing.Bezier;easing.bezierCurve:Motion.easeOut()}}
+        }
         model:scene.rows; currentIndex:scene.selectedRow; keyNavigationEnabled:false; interactive:false
         boundsBehavior:Flickable.StopAtBounds; highlightRangeMode:ListView.NoHighlightRange; cacheBuffer:0
         Behavior on contentY { enabled:!scene.reducedMotion; NumberAnimation { duration:Motion.ms('scroll'); easing.type:Easing.Bezier; easing.bezierCurve:Motion.easeOut() } }

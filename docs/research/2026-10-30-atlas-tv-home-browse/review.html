@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="fr">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Atlas TV — accueil et rangées</title>
+<style>
+  :root{color-scheme:dark;font:16px/1.5 system-ui,sans-serif;background:#111;color:#f5f5f7}
+  *{box-sizing:border-box}body{max-width:1360px;margin:auto;padding:24px 32px 40px}
+  header{display:flex;justify-content:space-between;align-items:baseline;gap:20px;flex-wrap:wrap}
+  h1{font-size:25px;font-weight:600;letter-spacing:-.6px;margin:0}header p{margin:0;color:#a8a8af;font-size:14px}
+  .controls{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:20px 0 12px}
+  .group{display:flex;gap:6px;flex-wrap:wrap}button{font:inherit;font-size:14px;border:1px solid #414148;border-radius:7px;padding:8px 14px;color:#e5e5ea;background:transparent;cursor:pointer}
+  button[aria-pressed="true"]{background:#f5f5f7;color:#141416;border-color:#f5f5f7}button:focus-visible,a:focus-visible{outline:3px solid #9acbff;outline-offset:3px}
+  button:disabled{opacity:.35;cursor:default}figure{margin:0}img{display:block;width:100%;height:auto;aspect-ratio:16/9;background:#090a0d}
+  figcaption{display:flex;justify-content:space-between;gap:20px;margin-top:12px;color:#c8c8d0;font-size:15px}
+  .notes{max-width:900px;color:#aaaab3;font-size:14px;margin-top:20px}.notes p{margin:8px 0}.notes a{color:#dce9ff}
+  @media(max-width:700px){body{padding:16px}h1{font-size:21px}figcaption{display:block}button{padding:7px 10px}}
+</style>
+<header><h1>Atlas TV · Accueil et rangées</h1><p>Proposition QML · pas encore publiée sur la TV</p></header>
+<div class="controls">
+  <div class="group" aria-label="État de l’accueil">
+    <button data-state="arrival" aria-pressed="false">À l’arrivée</button>
+    <button data-state="browse" aria-pressed="true">Dans les rangées</button>
+    <button data-state="selection" aria-pressed="false">Changer de carte</button>
+    <button data-state="long" aria-pressed="false">Titre long</button>
+    <button data-state="actions" aria-pressed="false">Retour au héros</button>
+  </div>
+  <div class="group" aria-label="Version à comparer">
+    <button id="before" aria-pressed="false">Avant</button>
+    <button id="after" aria-pressed="true">Proposition</button>
+  </div>
+</div>
+<figure><img id="screen" src="browse.png" alt="L’accueil en exploration : contexte du titre en haut et deux rangées lisibles en dessous.">
+  <figcaption><span id="caption">En descendant, le héros se resserre : À reprendre et À la une deviennent lisibles ensemble.</span><span id="version">Proposition</span></figcaption>
+</figure>
+<div class="notes">
+  <p>Bas entre dans les cartes. Haut/Bas changent de ligne et chaque ligne conserve sa carte. OK ou Retour retrouvent les boutons du héros, sans lancer un épisode.</p>
+  <p>Captures du vrai QML sur Windows, avec un instantané du catalogue PC et des images locales. Vidéos désactivées dans ce banc. Le titre très long est un cas de limite synthétique. Ces images ne valident pas la fluidité ni le rendu vidéo du Devialet.</p>
+  <p><a href="../2026-10-30-atlas-tv-home-browse.md">Décisions et limites</a> · <a href="verification.json">Parcours vérifiés</a> · <a href="1080p.png">Capture 1080p</a></p>
+</div>
+<script>
+  const states={
+    arrival:{after:'arrival.png',before:'before-arrival.png',text:'À l’arrivée : grand héros, synopsis et actions. La reprise indique son numéro d’épisode.'},
+    browse:{after:'browse.png',before:'before-browse.png',text:'En descendant, le héros se resserre : À reprendre et À la une deviennent lisibles ensemble.'},
+    selection:{after:'selection.png',before:'before-selection.png',text:'Une seule carte porte le focus. Le héros suit l’œuvre choisie et les rangées gardent leur position.'},
+    long:{after:'long-title.png',text:'Pendant l’exploration, le titre tient sur une ligne. Le cas long ne recouvre pas la navigation.'},
+    actions:{after:'long-title-actions.png',text:'Retour aux actions : le héros retrouve ses deux lignes de titre, son synopsis et ses boutons.'}
+  };
+  let state='browse',version='after';
+  function render(){
+    const view=states[state];if(!view.before)version='after';
+    document.querySelector('#screen').src=view[version];document.querySelector('#screen').alt=view.text;
+    document.querySelector('#caption').textContent=view.text;document.querySelector('#version').textContent=version==='after'?'Proposition':'Avant';
+    document.querySelectorAll('[data-state]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.state===state)));
+    document.querySelector('#before').disabled=!view.before;
+    document.querySelector('#before').setAttribute('aria-pressed',String(version==='before'));
+    document.querySelector('#after').setAttribute('aria-pressed',String(version==='after'));
+  }
+  document.querySelectorAll('[data-state]').forEach(b=>b.addEventListener('click',()=>{state=b.dataset.state;render()}));
+  document.querySelector('#before').addEventListener('click',()=>{version='before';render()});
+  document.querySelector('#after').addEventListener('click',()=>{version='after';render()});render();
+</script>
+</html>

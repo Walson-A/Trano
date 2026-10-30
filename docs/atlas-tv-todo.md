@@ -125,3 +125,11 @@ annonce la perte du suivi AniList et la conservation de l’historique local.
 
 Le lot est publié dans hero-membership-5541d3b5f6e2 ; les preuves de retrait
 restent simulées, aucun animé réel n’a été supprimé pour la livraison.
+
+## Accueil et rangées — proposition du 30 octobre 2026
+
+Walson choisit l’accueil pour la nouvelle passe. La [proposition QML et son
+carnet](research/2026-10-30-atlas-tv-home-browse.md) présentent le grand héros
+à l’arrivée et deux rangées lisibles pendant l’exploration, avec mémoire du
+focus et du numéro de reprise. Le lecteur validé reste inchangé. Revue de la
+proposition attendue ; aucune nouvelle version n’est publiée sur le Devialet.

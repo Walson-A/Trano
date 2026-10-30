@@ -1,5 +1,14 @@
 # UI/UX & Design System
 
+## Accueil TV : proposition d’exploration à deux rangées
+
+Le [héros et les rangées](research/2026-10-30-atlas-tv-home-browse.md) gardent la
+présentation complète à l’arrivée, puis un contexte compact pendant le parcours
+des cartes. Deux lignes deviennent lisibles sans réduire les images ; le focus
+appartient uniquement à la ligne active. La reprise annonce son numéro d’épisode
+plutôt qu’une barre d’avancement dans la série. Le vrai QML est préparé pour revue,
+avec captures et bancs ; cette proposition n’est pas publiée sur le Devialet.
+
 ## Lecteur TV : proposition raccordée et publiée
 
 Le [lecteur intégré](research/2026-10-29-atlas-tv-player-live.md) reprend les zones

@@ -1,0 +1,114 @@
+{
+  "validated": true,
+  "scope": "actual Hero QML, explicit PC snapshot/local images; no decoder, server or Devialet validation",
+  "reducedMotion": false,
+  "cases": [
+    {
+      "case": "arrival",
+      "row": 0,
+      "index": 0,
+      "zone": "actions",
+      "titleTop": 142.0,
+      "rowsTop": 380.0,
+      "rowsHeight": 340.0
+    },
+    {
+      "case": "browse-resume",
+      "row": 0,
+      "index": 0,
+      "zone": "rail",
+      "titleTop": 114.0,
+      "rowsTop": 222.0,
+      "rowsHeight": 498.0
+    },
+    {
+      "case": "browse-featured",
+      "row": 1,
+      "index": 0,
+      "zone": "rail",
+      "titleTop": 114.0,
+      "rowsTop": 222.0,
+      "rowsHeight": 498.0
+    },
+    {
+      "case": "browse-selection",
+      "row": 1,
+      "index": 3,
+      "zone": "rail",
+      "titleTop": 114.0,
+      "rowsTop": 222.0,
+      "rowsHeight": 498.0
+    },
+    {
+      "case": "browse-two-full-rows",
+      "row": 3,
+      "index": 0,
+      "zone": "rail",
+      "titleTop": 114.0,
+      "rowsTop": 222.0,
+      "rowsHeight": 498.0
+    },
+    {
+      "case": "back-to-actions",
+      "row": 1,
+      "index": 0,
+      "zone": "actions",
+      "titleTop": 142.0,
+      "rowsTop": 380.0,
+      "rowsHeight": 340.0
+    },
+    {
+      "case": "last-row",
+      "row": 13,
+      "index": 0,
+      "zone": "rail",
+      "titleTop": 114.0,
+      "rowsTop": 222.0,
+      "rowsHeight": 498.0
+    },
+    {
+      "case": "browse-1080p",
+      "row": 0,
+      "index": 0,
+      "zone": "rail",
+      "titleTop": 114.0,
+      "rowsTop": 222.0,
+      "rowsHeight": 498.0
+    },
+    {
+      "case": "without-resume",
+      "row": 0,
+      "index": 0,
+      "zone": "rail",
+      "titleTop": 114.0,
+      "rowsTop": 222.0,
+      "rowsHeight": 498.0
+    },
+    {
+      "case": "long-title",
+      "row": 0,
+      "index": 0,
+      "zone": "rail",
+      "titleTop": 114.0,
+      "rowsTop": 222.0,
+      "rowsHeight": 498.0
+    },
+    {
+      "case": "long-title-actions",
+      "row": 0,
+      "index": 0,
+      "zone": "actions",
+      "titleTop": 116.0,
+      "rowsTop": 380.0,
+      "rowsHeight": 340.0
+    }
+  ],
+  "playTarget": {
+    "episode": 13,
+    "franime_titre": "Fumetsu no Anata e",
+    "numero": 13,
+    "saison": 1,
+    "vf": false
+  },
+  "errors": []
+}

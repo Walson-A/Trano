@@ -4,6 +4,7 @@ import "Motion.js" as Motion
 Item {
     id: card
     property string title: ""
+    property string subtitle: ""
     property url artwork: ""
     property url fallbackArtwork: ""
     onArtworkChanged: cardImage.source=artwork
@@ -52,8 +53,11 @@ Item {
             Behavior on opacity { enabled: !card.reducedMotion; NumberAnimation { duration: Motion.ms('focus') } }
         }
     }
-    Text { x: 14; y: surface.y+surface.height+16; width: card.artworkWidth; text: card.title; textFormat: Text.PlainText; wrapMode: Text.WordWrap; maximumLineCount: 2; elide: Text.ElideRight
+    Text { objectName:'cardTitle'; x: 14; y: surface.y+surface.height+16; width: card.artworkWidth; text: card.title; textFormat: Text.PlainText; wrapMode: Text.WordWrap; maximumLineCount: card.subtitle ? 1 : 2; elide: Text.ElideRight
         color: card.focused || card.selected ? '#fafafa' : '#a5a5af'; font.family: card.family; font.pixelSize: 17; font.weight: card.focused ? Font.DemiBold : Font.Normal; lineHeight: 21; lineHeightMode: Text.FixedHeight
+    }
+    Text { objectName:'cardSubtitle'; x:14; y:surface.y+surface.height+39; width:card.artworkWidth; visible:!!card.subtitle;text:card.subtitle;textFormat:Text.PlainText;elide:Text.ElideRight
+        color:'#b6b8c3';font.family:card.family;font.pixelSize:15
     }
     MouseArea { anchors.fill: parent; onClicked: card.activated() }
 }

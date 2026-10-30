@@ -31,8 +31,8 @@ Item {
         delegate:FocusCard {
             objectName:row.current ? 'heroCard'+index : 'row'+row.rowIndex+'Card'+index
             title:modelData.titre; artwork:row.host.art(modelData,'card'); fallbackArtwork:row.host.art(modelData,'poster'); family:row.host.family
-            selected:row.selection===index; focused:row.current && selected && row.host.zone==='rail'; reducedMotion:row.host.reducedMotion
-            progress:modelData.moi && modelData.episodes ? modelData.moi.progression/Math.max(1,modelData.episodes) : -1
+            subtitle:row.rowData.id==='reprendre' && modelData.a_lancer && modelData.a_lancer.numero>0 ? 'Épisode '+modelData.a_lancer.numero : ''
+            selected:row.current && row.selection===index; focused:selected && row.host.zone==='rail'; reducedMotion:row.host.reducedMotion
             onActivated: { row.host.selectRow(row.rowIndex); row.host.zone='rail'; row.host.choose(index); row.host.forceActiveFocus(); }
             onArtworkFailed:row.host.artworkFailed(modelData,poster ? 'poster' : 'banner',failedSource)
             onArtworkReady:if(row.host.artworkReady)row.host.artworkReady(modelData,poster ? 'poster' : 'banner',loadedSource)

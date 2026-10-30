@@ -1,5 +1,11 @@
 # Atlas sur la télévision : base réutilisable et premier parcours
 
+[Proposition du 30 octobre : accueil et exploration des rangées](research/2026-10-30-atlas-tv-home-browse.md).
+Walson choisit ce parcours pour la passe suivante. Le héros reste complet à
+l’arrivée, puis se resserre pendant la navigation pour rendre deux lignes
+lisibles sans réduire les cartes. Le vrai QML et son carnet sont préparés pour
+revue ; aucune publication sur le Devialet n’est effectuée dans ce lot.
+
 [Suites demandées par Walson](atlas-tv-todo.md) : bibliothèque, VOSTFR par défaut,
 états de diffusion et épisodes futurs avec leurs dates. Le VOSTFR, Ma liste,
 les notes et le calendrier ont désormais leur livraison ci-dessous.
