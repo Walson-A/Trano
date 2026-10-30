@@ -76,3 +76,23 @@ la même ; les affiches, la bannière et les repères de focus sont visibles.
 La reproduction en cache plein prouve un défaut du code, pas une capture de
 l’état mémoire exact de Walson lors de son incident. Le succès natif prouve le
 décodage, sans affirmer une réception physique de l’interface complète corrigée.
+
+## Publication et nettoyage
+
+Le [paquet](2026-10-30-atlas-tv-artwork/package.json) hero-artwork-20a862cdc84a,
+35 fichiers / 354920 octets, provient du commit source
+56410bc41f17709e90b49a844e0904f6d75289f9. Le [précontrôle](2026-10-30-atlas-tv-artwork/preflight.json)
+vérifie le moteur actif 36746c754539e7d990e29092bd917b41dc11b13d et le gateway
+1b6e3daa4bd74abd7db137a924df86a1f0eba0c76ed2602544ea0b778cd67134. La
+[publication](2026-10-30-atlas-tv-artwork/publication.json) remplace seulement le
+bundle précédent 0b0a6c8a1416, valide toutes les empreintes et ne redémarre pas
+l’engine. Le [reçu SDK](2026-10-30-atlas-tv-artwork/launch.json) confirme le lancement
+dd9161c20018cfcdcf01248530002364 et les 32 ressources demandées. Aucun épisode
+n’est lancé automatiquement. La confirmation utilisateur des deux fiches reste
+en attente ; le reçu de téléchargement ne prouve pas à lui seul leur rendu.
+
+[Nettoyage](2026-10-30-atlas-tv-artwork/cleanup.json) : transferts serveur retirés
+après vérification, bundle actif et sauvegarde privée 0600 conservés. Les exports
+et paquets locaux du lot sont retirés après archivage ; aucun serveur de test
+persistant ne reste. Le worktree partagé, les caches communs et ses deux éléments
+non suivis préexistants sont conservés pour la suite TV, sans modification.

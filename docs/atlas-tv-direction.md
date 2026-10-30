@@ -4,6 +4,13 @@
 états de diffusion et épisodes futurs avec leurs dates. Le VOSTFR, Ma liste,
 les notes et le calendrier ont désormais leur livraison ci-dessous.
 
+[Affiches bloquées corrigées](research/2026-10-30-atlas-tv-artwork.md).
+hero-artwork-20a862cdc84a garde les 64 images selon leur récence réelle, invalide une
+URL réellement en erreur et reprend le chargement de façon bornée. La fiche
+demande le poster dès l’ouverture. Les quatre images Apothecary S3/Devilman sont
+décodées par Qt sur le Devialet ; les bancs et le SDK passent. La réception des
+deux fiches complètes reste à confirmer.
+
 [Ouverture des fiches et du suivi corrigée](research/2026-10-29-atlas-tv-detail-performance.md).
 hero-detail-0b0a6c8a1416 lance détail/épisodes/suivi en parallèle, réutilise les états
 privés confirmés pendant30s et affiche immédiatement le synopsis connu. Le probe

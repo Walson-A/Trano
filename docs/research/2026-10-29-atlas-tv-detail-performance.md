@@ -99,3 +99,10 @@ Le worktree partagé et les caches communs sont conservés pour les suites TV, a
 les deux éléments non suivis préexistants laissés intacts.
 
 [Reçu de nettoyage](2026-10-29-atlas-tv-detail-performance/cleanup.json).
+
+## Réception utilisateur
+
+Walson confirme que les fiches sont beaucoup plus rapides, puis signale des
+affiches bloquées pour Apothecary Diaries S3 et Devilman. Cette amélioration de
+rapidité ne validait pas toute la chaîne des images ; le
+[correctif de cache et reprise](2026-10-30-atlas-tv-artwork.md) traite ce second lot.
