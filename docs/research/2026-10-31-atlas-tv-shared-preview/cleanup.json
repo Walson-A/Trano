@@ -1,0 +1,21 @@
+{
+  "temporaryStageRemoved": true,
+  "localTrailerCopyRemoved": true,
+  "nativeDiagnosticServerClosed": true,
+  "testSessionsFinished": [
+    9508,
+    46499,
+    83450
+  ],
+  "localBackgroundProcessesRetained": [],
+  "normalAppRestored": true,
+  "nativePictureConfirmed": false,
+  "existingSharedCheckoutRetained": true,
+  "checkoutReason": "Branche de livraison non intégrée et travaux tiers existants à préserver ; aucun nouveau worktree créé",
+  "preexistingUntrackedPreserved": [
+    "packages/lan/devialet/tv/",
+    "packages/lan/scripts/preview-atlas-tv-home.py"
+  ],
+  "productionService": "atlas-tv-launch",
+  "serviceReason": "Service Atlas TV demandé ; arrêt lors du retrait explicite du service"
+}

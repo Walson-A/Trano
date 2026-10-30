@@ -59,3 +59,21 @@ lecteur accepté, notamment le titre, le contraste, la timeline et la pause au
 centre. Les preuves sont dans `2026-10-31-atlas-tv-shared-preview/`.
 La réception native de cette nouvelle architecture reste à confirmer après
 publication, sur un titre dont le héros fonctionne.
+
+## Publication
+
+La release **hero-shared-trailer-148e925d020e**, 40 fichiers et 404864 octets,
+est publiée depuis `292dced`, poussé sur `feat/local-network`, après prévol
+de la release précédente et des empreintes. L’engine reste
+`39cfb1c3e1af9c88e90730b78a0f0c6a8e902917` et le gateway garde le SHA256
+`3fe9b6eacd5baac82f110448439261962d7f2ff2f9b1eb389ed5c5cd39ea95c4`.
+Cette publication ne change pas l’engine.
+
+Le lancement SDK `f270adab4ec7a20ed5cc2a9b63a7eda9` est accepté. Le Devialet
+demande 37 assets, dont TrailerPlayer.qml, Hero.qml et Trailer.qml. L’application
+normale est donc relancée après le diagnostic temporaire. Aucun épisode réel
+n’est lancé. La question de réception de Mob Psycho dans la fiche puis en plein
+écran est envoyée ; **l’image de cette version reste non confirmée** à ce stade.
+Voir [paquet](2026-10-31-atlas-tv-shared-preview/package.json),
+[publication](2026-10-31-atlas-tv-shared-preview/publication.json) et
+[reçu SDK](2026-10-31-atlas-tv-shared-preview/launch.json).
