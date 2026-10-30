@@ -1,5 +1,5 @@
 {
-  "releaseId": "hero-membership-81fa3ddd6ced",
+  "releaseId": "hero-membership-5541d3b5f6e2",
   "files": {
     "ArtworkCache.qml": "9afc9010b2f8d249f14ed0b7e204509bead0420e58fa0f9941321f965f755498",
     "bold.ttf": "6f66a554d96e334b06736faf8f9421485160ee295d133eb3ec422121f6749059",
@@ -35,11 +35,11 @@
     "RequestState.js": "3751caeccfeecc7e78b2465478323d3a9938fa868ece9552f7b2f297e4bca9ef",
     "SearchView.qml": "9c0f9d66187aad6e3e7909bbf97bffa4f037f439f90c75ba24374e37119a0c37",
     "Trailer.qml": "36a05effae9dbb9f885bd7094bb0dd62e60949465feb89533f6012279eac42d2",
-    "TvLibrary.qml": "fd8234201a8638861534181642a903f8eebecdd629ad931da6273a7e750e13f0",
+    "TvLibrary.qml": "d065031203e296145c1de25753dea614e21be63b30e95527b7366d4f4c5f51da",
     "TvNavigation.qml": "38820354bdfed4b07dc5a582164bf579e414acd33c21b8c51815296912708ffa",
     "TvSession.qml": "794718c2c458cac319e42e00a0d08dd03504583bdc17c87537edabbde5eab0ce"
   },
-  "bytes": 374732,
-  "sourceCommit": "a3fbda799ccf1e81ff497528c06bd51851ec46bc",
-  "archiveSha256": "91235d0f8e10e302c10cd0a2e320262d3ae73a4ae62fb71e394df2dfac8b0dc6"
+  "bytes": 374764,
+  "sourceCommit": "c060e744d10ca3de6832f050f7bc1e13a866bf47",
+  "archiveSha256": "f980e0a215b2636d80c4dec495744e28f584fa286c19d37ef9fe039609053dcb"
 }

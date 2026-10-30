@@ -47,17 +47,17 @@ Le bloc du héros était ancré par son bas à y=350. Avec deux lignes de titre,
 deux lignes de résumé et ses espacements, son haut remontait à y=58 :
 [avant](2026-10-30-atlas-tv-removal-header/before-long.png),
 [mesure](2026-10-30-atlas-tv-removal-header/before-verification.json).
-Il chevauchait donc la navigation (boutons entre y=24 et76).
+Il chevauchait donc la navigation (boutons entre y=24 et 76).
 
-Le titre reste sur deux lignes au maximum, à48px avec une interligne de50.
-Un titre sur deux lignes limite le résumé à une ligne ; les espacements sont12px
-et l’emplacement des boutons reste y=298–350. Le haut du titre long passe à116,
-sous la zone de navigation98 avec18px de respiration. Un titre court commence
-à142 et garde deux lignes de résumé. Pas de déplacement des rangées ou des CTA.
+Le titre reste sur deux lignes au maximum, à 48 px avec une interligne de 50.
+Un titre sur deux lignes limite le résumé à une ligne ; les espacements sont 12 px
+et l’emplacement des boutons reste y=298–350. Le haut du titre long passe à 116,
+sous la zone de navigation 98 avec 18 px de respiration. Un titre court commence
+à 142 et garde deux lignes de résumé. Pas de déplacement des rangées ou des CTA.
 
 Le bloc à droite est le bouton Profil : pseudo et avatar. Sa largeur est
-naturelle entre96 et260, au lieu d’imposer130 à un pseudo d’une lettre.
-Les marges sont16, le vide entre texte et avatar12, l’avatar36×36 circulaire
+naturelle entre 96 et 260, au lieu d’imposer 130 à un pseudo d’une lettre.
+Les marges sont 16, le vide entre texte et avatar 12, l’avatar 36×36 circulaire
 avec PreserveAspectCrop. Le texte long s’élide sans repousser le bord droit.
 Le masque utilise les dimensions de l’image ; le pictogramme Profil prend le
 relais si elle manque. Le nom accessible désigne le profil concerné.
@@ -71,7 +71,7 @@ indépendants : elles vérifient la composition, pas une association de médias 
 ## Vérifications et limites
 
 - [Géométrie](2026-10-30-atlas-tv-removal-header/header-verification.json) : titre
-  sous y112, boutons à298, bord droit conservé, gap12, avatar carré et centrage
+  sous y=112, boutons à 298, bord droit conservé, gap 12, avatar carré et centrage
   vertical à un demi-pixel près (arrondi Qt), pseudos courts et longs.
 - [Retrait](2026-10-30-atlas-tv-removal-header/removal-verification.json) : capacité
   absente, consentement, annulation/Retour, doublon pendant l’envoi, absence
@@ -89,5 +89,31 @@ indépendants : elles vérifient la composition, pas une association de médias 
   (sept requêtes, rotation concurrente unique, runtime non fiable refusé).
 
 Aucun animé du compte réel n’est retiré pour ces tests. La réception physique
-de ces trois changements reste à confirmer après publication. Les preuves de
-déploiement seront ajoutées quand le backend et le gateway annoncent le contrat.
+de ces trois changements reste à confirmer ; elle est demandée à Walson avec
+un essai qui peut être annulé sans retirer d’entrée.
+
+## Publication et ménage
+
+Le [paquet](2026-10-30-atlas-tv-removal-header/package.json)
+hero-membership-5541d3b5f6e2 contient 37 fichiers / 374764 octets, construits depuis
+c060e744d10ca3de6832f050f7bc1e13a866bf47. Aucun banc, média local ou identifiant
+n’est distribué. Le [précontrôle indépendant](2026-10-30-atlas-tv-removal-header/preflight.json)
+vérifie l’engine réellement servi 9a24539c351f0c2a912b45d7262642051e3f0e5b
+(CI 40988549084 réussie côté backend) et le gateway SHA
+9aff6df6cb928627931116a6b05b60273b9b6c78c2c2d160d44a7a657f645b12.
+Les capacités library_remove et library_read_cache sont annoncées strictement.
+
+La [publication UI](2026-10-30-atlas-tv-removal-header/publication.json) remplace
+seulement hero-loading-5fe5d213c956, vérifie les empreintes et ne redémarre pas
+l’engine. Le [reçu SDK](2026-10-30-atlas-tv-removal-header/launch.json) confirme
+l’acceptation et 34 ressources demandées. Le runtime effectif, lu en mémoire avant
+le SDK, expose les deux capacités. Aucun épisode ni retrait d’entrée n’est lancé.
+Le téléchargement ne prouve pas le rendu physique ni une mutation AniList réelle.
+
+[Nettoyage](2026-10-30-atlas-tv-removal-header/cleanup.json) : les deux transferts
+distants sont retirés après vérification des empreintes ; le bundle actif et son
+rollback privé 0600 sont conservés. Les exports et paquets intermédiaires locaux
+sont supprimés après archivage des preuves. Aucun serveur de test du lot ne
+reste actif. Le worktree partagé, les caches Qt/fonts/images communs et les deux
+éléments non suivis préexistants sont préservés pour la suite TV. Le futur
+lancement depuis Oby n’est pas inclus dans ce lot ni dans sa validation.

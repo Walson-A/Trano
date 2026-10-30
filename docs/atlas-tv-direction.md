@@ -303,4 +303,5 @@ secondaire ; la carte future garde la date et sa garde de lecture.
 [Retrait de Ma liste, titre long et bloc Profil](research/2026-10-30-atlas-tv-removal-header.md) :
 action séparée du statut Abandonné, confirmation explicite et reprise sans rejeu ;
 le titre reste sous la navigation, le pseudo et l’avatar gardent des espacements
-constants. Préparé et vérifié au banc ; la publication est tracée dans ce rapport.
+constants. Publié dans hero-membership-5541d3b5f6e2 après vérification du backend,
+du gateway et du runtime ; réception physique encore attendue.

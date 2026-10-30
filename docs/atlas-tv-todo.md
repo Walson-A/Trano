@@ -122,3 +122,6 @@ TV utilise la capacité library_remove et une révision de retrait dédiée ; un
 réponse perdue impose une lecture fraîche, sans rejeu automatique. Le panneau
 annonce la perte du suivi AniList et la conservation de l’historique local.
 [Contrat, états et livraison](research/2026-10-30-atlas-tv-removal-header.md).
+
+Le lot est publié dans hero-membership-5541d3b5f6e2 ; les preuves de retrait
+restent simulées, aucun animé réel n’a été supprimé pour la livraison.
