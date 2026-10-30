@@ -19,7 +19,7 @@ def build(destination, regular, bold):
         fonts[name] = data
     destination.mkdir(parents=True)
     for name in ['Hero.qml', 'HeroButton.qml', 'LoadingSkeleton.qml', 'FocusCard.qml', 'HeroArtwork.qml', 'Icon.qml',
-                 'Motion.js', 'Discovery.js', 'DiscoveryView.qml', 'EpisodePolicy.js', 'RequestState.js', 'LibraryPolicy.js', 'TvLibrary.qml', 'LibraryEditor.qml', 'LibraryView.qml', 'Trailer.qml', 'TvSession.qml', 'TvPreviews.qml', 'TvConversationLaunch.qml', 'EpisodePlayer.qml', 'ArtworkCache.qml', 'MediaRow.qml', 'SearchView.qml', 'ProfileView.qml', 'DetailView.qml', 'TvNavigation.qml', 'PlayerControls.qml', 'PlayerMenu.qml', 'PlayerChoice.qml', 'PlayerSetting.qml', 'PlayerEpisodes.qml', 'EpisodeArtworkCache.qml', 'live.qml', 'qmldir']:
+                 'Motion.js', 'Discovery.js', 'DiscoveryView.qml', 'EpisodePolicy.js', 'RequestState.js', 'LibraryPolicy.js', 'TvLibrary.qml', 'LibraryEditor.qml', 'LibraryView.qml', 'Trailer.qml', 'TrailerPlayer.qml', 'TvSession.qml', 'TvPreviews.qml', 'TvConversationLaunch.qml', 'EpisodePlayer.qml', 'ArtworkCache.qml', 'MediaRow.qml', 'SearchView.qml', 'ProfileView.qml', 'DetailView.qml', 'TvNavigation.qml', 'PlayerControls.qml', 'PlayerMenu.qml', 'PlayerChoice.qml', 'PlayerSetting.qml', 'PlayerEpisodes.qml', 'EpisodeArtworkCache.qml', 'live.qml', 'qmldir']:
         shutil.copyfile(source / name, destination / name)
     # Icons remain usable after the ten-minute bootstrap ticket expires.
     embedded = {}

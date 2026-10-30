@@ -340,3 +340,12 @@ position. Les demandes expirées ou annulées ne reprennent pas en retard.
 La connexion primary se vérifie séparément d’un lancement réel ; les essais
 de livraison ne lancent aucun épisode personnel.
 [Contrat client, vérifications et limites](research/2026-10-30-atlas-tv-conversation.md).
+
+## Bande-annonce : instance du héros réutilisée — 31 octobre 2026
+
+Walson confirme encore le noir avec audio dans la fiche, alors que Mob Psycho
+fonctionne dans le héros. Le second lecteur EpisodePlayer de preview est
+remplacé par un contrôleur des commandes : la fiche utilise désormais le
+Trailer natif du héros. La confirmation physique de cette nouvelle version
+reste distincte des tests simulés.
+[Diagnostic et preuves](research/2026-10-31-atlas-tv-shared-preview.md).

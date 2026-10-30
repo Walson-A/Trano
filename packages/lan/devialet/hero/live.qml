@@ -221,6 +221,7 @@ Application {
         } }
         Hero {
             id:hero; objectName:'atlasHero'; family:regular.name || 'sans-serif'; homeData:session.home; keepPreviewLoaded:true
+            previewExternal:screen.panel==='detail' && !screen.playbackId;previewExternalFullscreen:!!detailPanel.item && detailPanel.item.fullPreview;previewExternalHeight:detailPanel.item ? detailPanel.item.headerHeight : 308
             artworkMap:artworks.sources
             avatar:session.home.compte && session.home.compte.avatar ? session.home.compte.avatar : profilePanel.item ? profilePanel.item.avatar : ''
             visible:session.state==='ready' && !screen.playbackId
@@ -262,15 +263,14 @@ Application {
             onLoaded:{item.interaction.connect(conversation.localAction);item.transport=session;item.artworks=artworks;item.family=regular.name || 'sans-serif';item.closed.connect(screen.closePanel);item.chosen.connect(screen.selectPanelResult);item.navigateRequested.connect(screen.navigate);if(screen.panel==='profile')item.open();}
             onStatusChanged:if(status===Loader.Error && screen.panel==='profile'){screen.closePanel();hero.notice='Le profil n’a pas pu être ouvert. Relance Atlas TV.';}
         }
-        EpisodePlayer {id:detailTrailerPlayer;objectName:'detailTrailerPlayer';x:0;y:0;width:1280;height:detailPanel.item && detailPanel.item.fullPreview ? 720 : detailPanel.item ? detailPanel.item.headerHeight : 308
-            z:detailPanel.item && detailPanel.item.fullPreview ? 30 : 0;trailerMode:true;inlinePreview:!(detailPanel.item && detailPanel.item.fullPreview);muted:hero.muted
+        TrailerPlayer {id:detailTrailerPlayer;objectName:'detailTrailerPlayer';anchors.fill:parent;z:30;core:hero.previewPlayer;inlinePreview:!(detailPanel.item && detailPanel.item.fullPreview)
             visible:screen.panel==='detail' && !screen.playbackId && !!detailPanel.item && detailPanel.item.previewWanted
-            enabled:visible && !inlinePreview;transport:session;family:regular.name || 'sans-serif';title:detailPanel.item && detailPanel.item.card ? detailPanel.item.card.titre : '';chapter:'Bande-annonce'
+            enabled:visible && !inlinePreview;family:regular.name || 'sans-serif';title:detailPanel.item && detailPanel.item.card ? detailPanel.item.card.titre : ''
             onInteraction:conversation.localAction()
             onInlineRequested:if(detailPanel.item)detailPanel.item.closeFullPreview()
             onRetryRequested:if(detailPanel.item){retrying=true;previews.invalidate(detailPanel.item.card);detailPanel.item.startPreview();}
         }
-        Loader {id:detailPanel;objectName:'detailPanel';anchors.fill:parent;source:'DetailView.qml';visible:screen.panel==='detail' && !screen.playbackId
+        Loader {id:detailPanel;objectName:'detailPanel';anchors.fill:parent;source:'DetailView.qml';visible:screen.panel==='detail' && !screen.playbackId;opacity:item && item.fullPreview ? 0 : 1
             onLoaded:{item.interaction.connect(conversation.localAction);item.transport=session;item.artworks=artworks;item.previews=previews;item.trailerPlayer=detailTrailerPlayer;item.previewMuted=Qt.binding(function(){return hero.muted;});item.family=regular.name || 'sans-serif';item.closed.connect(screen.closeDetail);item.playRequested.connect(screen.launch);item.personalChanged.connect(screen.updatePersonal);}
         }
         FocusScope {

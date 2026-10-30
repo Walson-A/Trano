@@ -18,6 +18,12 @@ def run(args):
     assert source.count(marker)==1
     source=source.replace(marker,"    function nativeSnapshot(){return {video:media.hasVideo,audio:media.hasAudio,status:media.status,error:media.error,position:media.position,duration:media.duration,playing:player.playing};}\n"+marker)
     files['EpisodePlayer.qml']=source.encode()
+    if args.layout_compare:
+        text=files['Trailer.qml'].decode('utf-8').replace('\r\n','\n')
+        text=text.replace('    signal observed(var observation)',"    function nativeSnapshot(){return {video:media.hasVideo,audio:media.hasAudio,status:media.status,error:media.error,position:media.position,duration:media.duration,playing:preview.playing};}\n    signal observed(var observation)")
+        files['Trailer.qml']=text.encode()
+        text=files['Hero.qml'].decode('utf-8').replace('\r\n','\n').replace('    property var homeData:', '    readonly property var nativePreview:preview.item\n    property var homeData:',1)
+        assert 'readonly property var nativePreview' in text;files['Hero.qml']=text.encode()
     manifest=json.loads(files['manifest.json']);manifest['entryPoints']['main']['file']='native-probe.qml';files['manifest.json']=json.dumps(manifest).encode()
     nonce=secrets.token_urlsafe(24);records=[];requested=set();done=threading.Event();start=time.monotonic()
     class Handler(http.server.BaseHTTPRequestHandler):
@@ -47,8 +53,8 @@ def run(args):
             length=int(self.headers.get('Content-Length','0'))
             if not 0<length<=2048:self.send_error(413);return
             value=json.loads(self.rfile.read(length))
-            allowed={'video','audio','status','error','position','duration','playing','clock','finished'}
-            if set(value)-allowed or len(records)>=24 or not all(isinstance(v,(int,float,bool)) for v in value.values()):self.send_error(400);return
+            allowed={'video','audio','status','error','position','duration','playing','clock','finished','phase','heroVideo','heroPosition','detailVideo','detailAudio','detailPosition','detailStatus','detailReady','heroPresent'}
+            if set(value)-allowed or len(records)>=40 or not all(isinstance(v,(int,float,bool)) for v in value.values()):self.send_error(400);return
             records.append(dict(value,elapsedMs=round((time.monotonic()-start)*1000)))
             self.send_response(204);self.send_header('Content-Length','0');self.end_headers()
             if value.get('finished'):done.set()
@@ -66,6 +72,31 @@ Application {
  Component.onCompleted:player.play(MEDIA,true)
 }
 '''.replace('ENDPOINT',json.dumps(base+'events')).replace('MEDIA',json.dumps(base+'trailer.mp4'))).encode()
+    if args.layout_compare:
+        files['native-probe.qml']=('''import QtQuick 2.15
+import fbx.application 1.0
+Application {
+ id:root;property int ticks:0;property int phase:0
+ FontLoader {id:regular;source:'regular.ttf'}
+ property var card:({anilist_id:21355,titre:'Re:ZERO · diagnostic vidéo',bande_annonce:'vFfXjuVA1Jk',banniere:'',affiche:'',synopsis:'Comparaison du même fichier sur les lecteurs natifs.'})
+ function report(last){var h=hero.nativePreview ? hero.nativePreview.nativeSnapshot() : null,d=detail.nativeSnapshot();var value={phase:phase,finished:last,heroPresent:!!h,heroVideo:!!h && h.video,heroPosition:h ? h.position : 0,detailVideo:d.video,detailAudio:d.audio,detailPosition:d.position,detailStatus:d.status,detailReady:detail.videoReady};var xhr=new XMLHttpRequest();xhr.open('POST',ENDPOINT);xhr.setRequestHeader('Content-Type','application/json');xhr.send(JSON.stringify(value));}
+ Item {id:probeTransport;property bool readersEnabled:false;property bool variantsEnabled:false;property bool hlsEnabled:false;property bool artworkEnabled:false;property bool airingEnabled:false;function api(path,body,timeout,done){done(503,{});}}
+ Item {width:1280;height:720;scale:Math.min(parent.width/1280,parent.height/720);transformOrigin:Item.TopLeft
+  Hero {id:hero;anchors.fill:parent;family:regular.name || 'sans-serif';keepPreviewLoaded:true;homeData:({hero:[root.card],rangees:[]});onTrailerRequested:{var sources={};sources[root.card.bande_annonce]=MEDIA;trailerSources=sources;}}
+  EpisodePlayer {id:detail;x:0;y:0;width:1280;height:root.phase===1 ? 308 : 720;visible:root.phase>0;trailerMode:true;inlinePreview:root.phase===1;title:'Re:ZERO';chapter:'Diagnostic natif';family:regular.name || 'sans-serif';transport:probeTransport;onProgress:{}}
+  Rectangle {x:0;y:308;width:1280;height:412;visible:root.phase===1;color:'#090a0d'}
+  Rectangle {x:700;y:18;width:550;height:48;radius:8;z:100;color:'#ee111111';Text {anchors.centerIn:parent;color:'white';font.pixelSize:20;text:['1/5 · Héros','2/5 · Fiche','3/5 · Plein écran','4/5 · Héros masqué','5/5 · Premier lecteur libéré'][root.phase]}}
+ }
+ Timer {interval:2000;repeat:true;running:true;onTriggered:{
+  root.ticks++;root.report(root.ticks>=30);
+  if(root.ticks===6){root.phase=1;hero.previewEnabled=false;detail.play(MEDIA,true);}
+  if(root.ticks===12){root.phase=2;detail.reveal();detail.forceActiveFocus();}
+  if(root.ticks===18){root.phase=3;hero.visible=false;}
+  if(root.ticks===24){root.phase=4;hero.keepPreviewLoaded=false;detail.retire();Qt.callLater(function(){detail.play(MEDIA,true);});}
+  if(root.ticks>=30){stop();detail.retire();}
+ }}
+}
+'''.replace('ENDPOINT',json.dumps(base+'events')).replace('MEDIA',json.dumps(base+'trailer.mp4'))).encode()
     thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
     class NoRedirect(urllib.request.HTTPRedirectHandler):
         def redirect_request(self,*_):return None
@@ -75,8 +106,9 @@ Application {
         req=urllib.request.Request('http://'+args.player+'/pub/devel',data=json.dumps(body).encode(),headers={'Content-Type':'application/json'})
         with opener.open(req,timeout=10) as response:reply=json.load(response)
         assert reply.get('result') and not reply.get('error'),'SDK rejected probe'
-        print(json.dumps({'sdkAccepted':True,'nativeProbeStarted':True,'durationSeconds':20}),flush=True)
-        done.wait(30)
+        duration=60 if args.layout_compare else 20
+        print(json.dumps({'sdkAccepted':True,'nativeProbeStarted':True,'durationSeconds':duration}),flush=True)
+        done.wait(duration+15)
         result={'sdkAccepted':True,'mediaRequested':'trailer.mp4' in requested,'requestedFiles':sorted(requested),'events':records,'videoSha256':hashlib.sha256(clip).hexdigest(),'progressWritten':False,'physicalPictureConfirmed':False}
     finally:
         server.shutdown();server.server_close();thread.join(timeout=3)
@@ -88,4 +120,5 @@ if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--player',type=lan,required=True);p.add_argument('--bind',type=lan,required=True)
     p.add_argument('--bundle',type=pathlib.Path,required=True);p.add_argument('--video',type=pathlib.Path,required=True);p.add_argument('--evidence',type=pathlib.Path,required=True)
+    p.add_argument('--layout-compare',action='store_true',help='Compare the actual Hero and EpisodePlayer with the same explicit clip for 60 seconds')
     run(p.parse_args())

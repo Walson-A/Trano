@@ -43,7 +43,10 @@ def run(window,session,screen,details,calls,QTest,Qt,QObject,spin,evidence):
     assert output_count()==1,'Hero and detail must not own video outputs simultaneously'
     assert trailer.parentItem().objectName()=='tvScreen','Native video keeps the application root as its parent'
     assert window.grabWindow().save(str(evidence/'detail-trailer-background.png'))
-    media=trailer.findChild(QObject,'detailTrailerMedia');source=str(media.property('source').toString());position=media.property('position')
+    core=trailer.property('core');assert core is hero.property('previewPlayer'),'Hero/detail must use the exact same native player'
+    assert len(window.findChildren(QObject,'trailerMedia'))==1,'Only one native trailer player exists'
+    assert not trailer.findChildren(QObject,'detailTrailerMedia'),'The detail controller never creates another decoder'
+    media=core.findChild(QObject,'trailerMedia');surface=core.findChild(QObject,'trailerVideoOutput');source=str(media.property('source').toString());position=media.property('position')
     # Directional access to the secondary trailer action, without changing episodes.
     detail.setProperty('zone','actions');detail.forceActiveFocus();QTest.keyClick(window,Qt.Key_Up);QTest.keyClick(window,Qt.Key_Right)
     assert detail.property('zone')=='trailer'
@@ -51,6 +54,7 @@ def run(window,session,screen,details,calls,QTest,Qt,QObject,spin,evidence):
     assert detail.property('fullPreview') is True and trailer.property('inlinePreview') is False
     assert media.property('position')==position and str(media.property('source').toString())==source,'Fullscreen must not restart the trailer'
     assert output_count()==1 and trailer.width()==1280 and trailer.height()==720
+    assert core.findChild(QObject,'trailerVideoOutput') is surface,'Fullscreen retains the Hero video surface'
     shot('detail-trailer-fullscreen')
     chrome=trailer.findChild(QObject,'playerPauseFeedback');QTest.keyClick(window,Qt.Key_Return)
     assert abs(chrome.x()+chrome.width()/2-trailer.width()/2)<1 and abs(chrome.y()+chrome.height()/2-trailer.height()/2)<1
@@ -70,7 +74,7 @@ def run(window,session,screen,details,calls,QTest,Qt,QObject,spin,evidence):
     QTest.keyClick(window,Qt.Key_Back)
     assert detail.property('fullPreview') is False and screen.property('panel')=='detail'
     assert detail.property('zone')=='trailer' and trailer.property('positionMs')==position and output_count()==1
-    assert trailer.property('inlinePreview') and trailer.height()<720
+    assert trailer.property('inlinePreview') and core.height()<720
     # A failed native grant must not remain a positive cache hit until its TTL.
     media.error.emit(1);assert detail.property('previewState')=='unavailable' and not store.cachedSource(first)
     before=len(preview_calls());detail.startPreview();assert len(preview_calls())==before+1
@@ -121,4 +125,5 @@ def run(window,session,screen,details,calls,QTest,Qt,QObject,spin,evidence):
             'pauseResumeAndSeek':True,'backHidesHudThenReturnsToDetail':True,'scrollReleasesOutput':True,'freshCacheReused':True,'failedNativeGrantInvalidated':True,
             'episodeResolutionStopsPreviewFirst':True,'lateAnswerDoesNotReopen':True,'wrongTrailerRejected':True,'missingMetadataDoesNotInvent':True,
             'invalidatedEpochCannotRestoreGrant':True,'trailersDoNotCreateEpisodeSessions':True}
+    result.update(sameHeroTrailerInstance=True,oneNativeTrailerPlayer=True,sameSurfaceInFullscreen=True)
     (evidence/'detail-preview-verification.json').write_text(json.dumps(result,indent=2),encoding='utf-8')

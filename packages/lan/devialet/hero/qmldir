@@ -25,3 +25,4 @@ PlayerChoice PlayerChoice.qml
 PlayerSetting PlayerSetting.qml
 PlayerEpisodes PlayerEpisodes.qml
 EpisodeArtworkCache EpisodeArtworkCache.qml
+TrailerPlayer TrailerPlayer.qml

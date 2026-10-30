@@ -1,0 +1,19 @@
+{
+  "passed": true,
+  "scope": "real QML host with fake transport/decoder; no account, no real episode",
+  "strictCapabilityAndPrimary": true,
+  "onePoll": true,
+  "acceptedConfirmedBeforeDispatch": true,
+  "lostAcceptedAckRetriedWithoutDispatchReplay": true,
+  "playingRequiresVideoAndPostSeekAdvancingPositions": true,
+  "lostPlayingAckDoesNotRestart": true,
+  "deduplicated": true,
+  "samePlayingTargetNotRestarted": true,
+  "replacementUsesExistingPipelineAndForcesPlaying": true,
+  "localBackCancelsLateResolution": true,
+  "ttlCancelsLateResolution": true,
+  "wrongIdentityRejected": true,
+  "unairedEpisodeRefused": true,
+  "nativeErrorCorrelated": true,
+  "invalidEnvelopeIgnored": true
+}

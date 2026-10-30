@@ -1,5 +1,10 @@
 # Bandes-annonces : réception native et reprise du lecteur
 
+**Réception toujours en échec le 31 octobre :** audio sans image dans la fiche,
+y compris pour Mob Psycho qui fonctionne dans le héros. Le
+[lot suivant](2026-10-31-atlas-tv-shared-preview.md) réutilise l’instance native
+du héros ; le présent compte rendu ne constitue pas une validation matérielle.
+
 ## Échec observé
 
 Sur `hero-detail-preview-390d8b68e685`, Walson signale l’absence de bande-annonce

@@ -315,3 +315,11 @@ La télécommande garde la priorité pendant la préparation : une action locale
 annule la demande distante. L’interface et la conversation distinguent demande
 acceptée et vidéo réellement observée, sans ajouter une seconde interface de
 lecture. [Comportement et preuves](research/2026-10-30-atlas-tv-conversation.md).
+
+## Surface de bande-annonce partagée
+
+Héros, fiche et plein écran pilotent le même Trailer et son MediaPlayer. La
+fiche masque la composition de l’accueil, puis conserve ses propres textes et
+dégradés au-dessus de cette surface. Le plein écran superpose les commandes
+validées sans créer un second lecteur ni déplacer le parent du VideoOutput.
+[Réception en échec, diagnostic et reprise](research/2026-10-31-atlas-tv-shared-preview.md).

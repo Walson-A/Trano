@@ -13,8 +13,9 @@ Item {
     readonly property bool hasSource:!!String(media.source)
     property bool ready: (playing || media.playbackState===MediaPlayer.PausedState) && media.position>400 && media.hasVideo
     signal observed(var observation)
+    function currentPosition(){return media.position;}
     function play(url) { restoreAfterSeek=false;wantsPlaying=true;media.stop(); media.source=url; media.play(); }
-    function stop() { restoreAfterSeek=false;wantsPlaying=false;media.stop(); media.source=""; }
+    function stop() { restoreAfterSeek=false;wantsPlaying=false;if(String(media.source)){media.stop(); media.source="";} }
     function pause() { wantsPlaying=false;restoreAfterSeek=false;media.pause(); }
     function toggle(){if(String(media.source)){if(wantsPlaying)pause();else {wantsPlaying=true;media.play();}}}
     function seekBy(delta){if(media.seekable && durationMs>0){restoreAfterSeek=wantsPlaying;media.seek(Math.max(0,Math.min(durationMs-1000,positionMs+delta)));}}
