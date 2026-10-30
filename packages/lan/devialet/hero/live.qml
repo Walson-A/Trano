@@ -22,9 +22,11 @@ Application {
     }
     ArtworkCache { id:artworks; objectName:'artworkCache'; transport:session }
     TvPreviews {id:previews;objectName:'tvPreviews';transport:session}
+    TvConversationLaunch {id:conversation;transport:session;host:screen;player:episode.item;primary:true}
     Item {
         id: screen; objectName:'tvScreen'
         width:1280; height:720; scale:Math.min(parent.width/1280,parent.height/720); transformOrigin:Item.TopLeft
+        property string remoteRequestId:""
         property bool resolving: false
         property int generation: 0
         property string playbackId: ""
@@ -51,9 +53,10 @@ Application {
             var detail=detailPanel.item;if(detail && detail.opened && detail.card && detail.card.anilist_id===media.anilist_id){for(var i=0;i<detail.episodes.length;i++)if(detail.episodes[i].numero===number)return detail.episodes[i];}
             return episode.item ? episode.item.knownEpisode(media.anilist_id,number) : null;
         }
-        function askExit(){exitVisible=true;exitChosen=false;hero.previewEnabled=false;exitDialog.forceActiveFocus();}
+        function askExit(){conversation.localAction();exitVisible=true;exitChosen=false;hero.previewEnabled=false;exitDialog.forceActiveFocus();}
         function cancelExit(){exitVisible=false;hero.previewEnabled=true;hero.forceActiveFocus();}
         function openDetail(media) {
+            conversation.localAction();
             if(detailPanel.status!==Loader.Ready){hero.notice='La fiche n’a pas pu être chargée. Relance Atlas TV.';return;}
             detailOrigin=panel;
             if(panel==='search')searchPanel.item.opened=false;
@@ -85,6 +88,7 @@ Application {
             }
         }
         function openPanel(name) {
+            conversation.localAction();
             if(['search','profile','library'].indexOf(name)<0 || name==='library' && !session.libraryEnabled)return;
             if(hero.currentRow && hero.currentRow.id!=='context_selection')homeRowId=hero.currentRow.id;
             panel=name;returnPanel=name;hero.previewEnabled=false;
@@ -127,26 +131,38 @@ Application {
             });
         }
         function cancelHomePreview(){if(homePreviewLease)homePreviewLease.cancel();homePreviewLease=null;}
-        function launch(media,target,excluded,resumeOverride) {
+        function launch(media,target,excluded,resumeOverride){conversation.localAction();launchRequested(media,target,excluded,resumeOverride,'');}
+        function launchRequested(media,target,excluded,resumeOverride,requestId) {
             if(playbackId)return;
-            resolvePlayback(media,target,{},excluded,resumeOverride,false,false);
+            resolvePlayback(media,target,{},excluded,resumeOverride,false,false,requestId);
         }
-        function cancelChange(){generation++;resolving=false;retrySerial++;retryInspectBusy=false;if(episode.item)episode.item.retrying=false;}
-        function changeEpisode(media,target,choice){resolvePlayback(media,target,choice,[],undefined,true,false);}
-        function resolvePlayback(media,target,choice,excluded,resumeOverride,replacing,forceRefresh) {
-            if(resolving || (replacing && !playbackId))return;
-            if(app.homeContext && !replacing){playbackError('Actualisation de ton suivi…');return;}
-            if(episode.status===Loader.Error){playbackError('Le lecteur n’a pas pu être chargé. Relance Atlas TV.');return;}
+        function cancelChange(){conversation.localAction();remoteRequestId="";generation++;resolving=false;retrySerial++;retryInspectBusy=false;if(episode.item)episode.item.retrying=false;}
+        function changeEpisode(media,target,choice){conversation.localAction();resolvePlayback(media,target,choice,[],undefined,true,false,'');}
+        function cancelConversation(id){
+            if(remoteRequestId!==id)return;
+            remoteRequestId='';generation++;resolving=false;
+            if(pendingPlayback && pendingPlayback.remoteRequestId===id && playbackId && episode.item)episode.item.close();
+            else if(!playbackId)returnFromPlayback();
+        }
+        function dispatchConversation(media,intent){
+            var target={numero:intent.episode,vf:intent.lang==='vf'};
+            if(playbackId)resolvePlayback(media,target,{},[],undefined,true,false,intent.request_id);else launchRequested(media,target,undefined,undefined,intent.request_id);
+        }
+        function rejectConversation(id,code){if(id)conversation.failed(id,code || 'resolution_failed');}
+        function resolvePlayback(media,target,choice,excluded,resumeOverride,replacing,forceRefresh,requestId) {
+            if(resolving || (replacing && !playbackId)){rejectConversation(requestId,'cancelled');return;}
+            if(app.homeContext && !replacing){playbackError('Actualisation de ton suivi…');rejectConversation(requestId);return;}
+            if(episode.status===Loader.Error){playbackError('Le lecteur n’a pas pu être chargé. Relance Atlas TV.');rejectConversation(requestId);return;}
             if(!media || !(media.anilist_id>0) || !target || !(target.numero>0)){playbackError('Cet épisode ne dispose pas d’une identité de lecture compatible TV.');return;}
             var known=knownEpisode(media,target.numero);
             if(Episode.blocked(known)){
                 var blocked=Episode.notice(known);
-                if(replacing)episode.item.changeFailed(blocked);else playbackError(blocked);return;
+                if(replacing)episode.item.changeFailed(blocked);else playbackError(blocked);rejectConversation(requestId,'episode_not_aired');return;
             }
             choice=choice || {};
             if(choice.source && ['voiranime','anime-sama','franime'].indexOf(choice.source)<0 || choice.readerId && !/^[a-f0-9]{64}$/.test(choice.readerId) || choice.variantId && (!/^[a-f0-9]{64}$/.test(choice.variantId) || !choice.readerId || !choice.source))return;
             if((choice.readerId || choice.source) && !session.readersEnabled || choice.variantId && !session.variantsEnabled){if(replacing)episode.item.changeFailed('Ce choix n’est pas disponible sur cette connexion.');return;}
-            resolving=true;var turn=++generation,old=pendingPlayback,oldId=playbackId;
+            resolving=true;remoteRequestId=requestId || '';var turn=++generation,old=pendingPlayback,oldId=playbackId;
             if(panel==='detail' && detailPanel.item)detailPanel.item.suspendPreview();
             var readers=[];
             for(var i=0;excluded && i<excluded.length;i++)if(/^[a-f0-9]{64}$/.test(excluded[i]) && excluded[i]!==choice.readerId && readers.indexOf(excluded[i])<0)readers.push(excluded[i]);
@@ -163,15 +179,16 @@ Application {
                     logResolveFailure(status,value);
                     var error=value && value.error || {};
                     var message=error.code==='episode_not_aired' ? Episode.notice({diffusion:error.details && error.details.diffusion || {etat:'a_venir'},lancable:false}) : error.code==='episode_out_of_range' ? 'Cet épisode ne fait pas partie de cette saison.' : error.code==='airing_unavailable' ? 'Le calendrier est temporairement indisponible. Réessaie dans un instant.' : status===429 ? 'Une vidéo est en cours de préparation. Réessaie dans un instant.' : 'Ce flux est indisponible pour le moment.';
+                    rejectConversation(requestId,error.code==='episode_not_aired' ? 'episode_not_aired' : 'resolution_failed');
                     if(replacing)episode.item.changeFailed(message);else {playbackError(message);returnFromPlayback();}return;
                 }
                 var sameEpisode=replacing && old.media.anilist_id===media.anilist_id && old.target.numero===target.numero;
                 var resume=typeof resumeOverride==='number' && isFinite(resumeOverride) && resumeOverride>=0 ? resumeOverride : sameEpisode ? episode.item.positionMs : value.resume ? value.resume.position_ms || 0 : 0;
-                var intent=replacing ? episode.item.failure ? true : episode.item.wantsPlaying : true;
+                var intent=requestId ? true : replacing ? episode.item.failure ? true : episode.item.wantsPlaying : true;
                 // This reports the old session before installing the new identity/sequence.
                 if(replacing)episode.item.retire();
                 playbackId=value.id;sequence=0;
-                pendingPlayback={url:url,path:value.stream.path,title:media.titre,chapter:'Épisode '+target.numero+' · '+(target.vf ? 'VF' : 'VOSTFR'),resume:resume,playingIntent:intent,media:media,target:{numero:target.numero,vf:!!target.vf},readerId:/^[a-f0-9]{64}$/.test(value.reader_id || '') ? value.reader_id : '',source:['voiranime','anime-sama','franime'].indexOf(value.source)>=0 ? value.source : '',readerLabel:typeof value.reader==='string' ? (value.source==='franime' ? 'FrAnime · ' : '')+value.reader.slice(0,160) : '',qualityLabel:value.quality && typeof value.quality.label==='string' ? value.quality.label.slice(0,80) : '',choice:{source:choice.source || '',readerId:choice.readerId || '',variantId:choice.variantId || ''},excluded:readers};
+                pendingPlayback={remoteRequestId:requestId || '',url:url,path:value.stream.path,title:media.titre,chapter:'Épisode '+target.numero+' · '+(target.vf ? 'VF' : 'VOSTFR'),resume:resume,playingIntent:intent,media:media,target:{numero:target.numero,vf:!!target.vf},readerId:/^[a-f0-9]{64}$/.test(value.reader_id || '') ? value.reader_id : '',source:['voiranime','anime-sama','franime'].indexOf(value.source)>=0 ? value.source : '',readerLabel:typeof value.reader==='string' ? (value.source==='franime' ? 'FrAnime · ' : '')+value.reader.slice(0,160) : '',qualityLabel:value.quality && typeof value.quality.label==='string' ? value.quality.label.slice(0,80) : '',choice:{source:choice.source || '',readerId:choice.readerId || '',variantId:choice.variantId || ''},excluded:readers};
                 if(episode.status===Loader.Ready)startEpisode();
             });
         }
@@ -208,6 +225,7 @@ Application {
             avatar:session.home.compte && session.home.compte.avatar ? session.home.compte.avatar : profilePanel.item ? profilePanel.item.avatar : ''
             visible:session.state==='ready' && !screen.playbackId
             enabled:!screen.resolving && !screen.panel
+            onInteraction:conversation.localAction()
             onTrailerRequested: screen.preview()
             onPlayRequested: screen.launch(media,target)
             onDetailsRequested:screen.openDetail(media)
@@ -227,32 +245,33 @@ Application {
             onLoaded: {
                 item.family=regular.name || 'sans-serif';
                 item.transport=session;item.current=Qt.binding(function(){return screen.pendingPlayback;});item.changing=Qt.binding(function(){return screen.resolving;});
-                item.progress.connect(screen.progress);item.changeRequested.connect(screen.changeEpisode);item.cancelChangeRequested.connect(screen.cancelChange);item.retryRequested.connect(screen.retryEpisode);
+                item.interaction.connect(conversation.localAction);item.progress.connect(screen.progress);item.changeRequested.connect(screen.changeEpisode);item.cancelChangeRequested.connect(screen.cancelChange);item.retryRequested.connect(screen.retryEpisode);
                 item.closed.connect(function() { screen.playbackId='';screen.pendingPlayback=null;screen.cancelChange();screen.returnFromPlayback(); });
                 if(screen.pendingPlayback && screen.playbackId) screen.startEpisode();
             }
         }
         Loader {id:searchPanel;objectName:'searchPanel';anchors.fill:parent;source:'DiscoveryView.qml';visible:screen.panel==='search'
-            onLoaded:{item.transport=session;item.artworks=artworks;item.family=regular.name || 'sans-serif';item.denseLayout=true;item.avatar=Qt.binding(function(){return hero.avatar;});item.closed.connect(screen.closePanel);item.chosen.connect(screen.selectPanelResult);item.navigateRequested.connect(screen.navigate);if(screen.panel==='search')item.open();}
+            onLoaded:{item.interaction.connect(conversation.localAction);item.transport=session;item.artworks=artworks;item.family=regular.name || 'sans-serif';item.denseLayout=true;item.avatar=Qt.binding(function(){return hero.avatar;});item.closed.connect(screen.closePanel);item.chosen.connect(screen.selectPanelResult);item.navigateRequested.connect(screen.navigate);if(screen.panel==='search')item.open();}
             onStatusChanged:if(status===Loader.Error && screen.panel==='search'){screen.closePanel();hero.notice='La recherche n’a pas pu être ouverte. Relance Atlas TV.';}
         }
         Loader {id:libraryPanel;objectName:'libraryPanel';anchors.fill:parent;source:'LibraryView.qml';visible:screen.panel==='library'
-            onLoaded:{item.transport=session;item.artworks=artworks;item.family=regular.name || 'sans-serif';item.avatar=Qt.binding(function(){return hero.avatar;});item.closed.connect(screen.closePanel);item.chosen.connect(screen.selectPanelResult);item.navigateRequested.connect(screen.navigate);if(screen.panel==='library')item.open();}
+            onLoaded:{item.interaction.connect(conversation.localAction);item.transport=session;item.artworks=artworks;item.family=regular.name || 'sans-serif';item.avatar=Qt.binding(function(){return hero.avatar;});item.closed.connect(screen.closePanel);item.chosen.connect(screen.selectPanelResult);item.navigateRequested.connect(screen.navigate);if(screen.panel==='library')item.open();}
             onStatusChanged:if(status===Loader.Error && screen.panel==='library'){screen.closePanel();hero.notice='Ta liste n’a pas pu être ouverte. Relance Atlas TV.';}
         }
         Loader {id:profilePanel;objectName:'profilePanel';anchors.fill:parent;source:'ProfileView.qml';visible:screen.panel==='profile'
-            onLoaded:{item.transport=session;item.artworks=artworks;item.family=regular.name || 'sans-serif';item.closed.connect(screen.closePanel);item.chosen.connect(screen.selectPanelResult);item.navigateRequested.connect(screen.navigate);if(screen.panel==='profile')item.open();}
+            onLoaded:{item.interaction.connect(conversation.localAction);item.transport=session;item.artworks=artworks;item.family=regular.name || 'sans-serif';item.closed.connect(screen.closePanel);item.chosen.connect(screen.selectPanelResult);item.navigateRequested.connect(screen.navigate);if(screen.panel==='profile')item.open();}
             onStatusChanged:if(status===Loader.Error && screen.panel==='profile'){screen.closePanel();hero.notice='Le profil n’a pas pu être ouvert. Relance Atlas TV.';}
         }
         EpisodePlayer {id:detailTrailerPlayer;objectName:'detailTrailerPlayer';x:0;y:0;width:1280;height:detailPanel.item && detailPanel.item.fullPreview ? 720 : detailPanel.item ? detailPanel.item.headerHeight : 308
             z:detailPanel.item && detailPanel.item.fullPreview ? 30 : 0;trailerMode:true;inlinePreview:!(detailPanel.item && detailPanel.item.fullPreview);muted:hero.muted
             visible:screen.panel==='detail' && !screen.playbackId && !!detailPanel.item && detailPanel.item.previewWanted
             enabled:visible && !inlinePreview;transport:session;family:regular.name || 'sans-serif';title:detailPanel.item && detailPanel.item.card ? detailPanel.item.card.titre : '';chapter:'Bande-annonce'
+            onInteraction:conversation.localAction()
             onInlineRequested:if(detailPanel.item)detailPanel.item.closeFullPreview()
             onRetryRequested:if(detailPanel.item){retrying=true;previews.invalidate(detailPanel.item.card);detailPanel.item.startPreview();}
         }
         Loader {id:detailPanel;objectName:'detailPanel';anchors.fill:parent;source:'DetailView.qml';visible:screen.panel==='detail' && !screen.playbackId
-            onLoaded:{item.transport=session;item.artworks=artworks;item.previews=previews;item.trailerPlayer=detailTrailerPlayer;item.previewMuted=Qt.binding(function(){return hero.muted;});item.family=regular.name || 'sans-serif';item.closed.connect(screen.closeDetail);item.playRequested.connect(screen.launch);item.personalChanged.connect(screen.updatePersonal);}
+            onLoaded:{item.interaction.connect(conversation.localAction);item.transport=session;item.artworks=artworks;item.previews=previews;item.trailerPlayer=detailTrailerPlayer;item.previewMuted=Qt.binding(function(){return hero.muted;});item.family=regular.name || 'sans-serif';item.closed.connect(screen.closeDetail);item.playRequested.connect(screen.launch);item.personalChanged.connect(screen.updatePersonal);}
         }
         FocusScope {
             id:waiting; anchors.fill:parent; visible:session.state!=='ready' || screen.resolving && !screen.playbackId || (screen.panel==='search' && searchPanel.status!==Loader.Ready) || (screen.panel==='profile' && profilePanel.status!==Loader.Ready) || (screen.panel==='library' && libraryPanel.status!==Loader.Ready)
@@ -260,8 +279,10 @@ Application {
             LoadingSkeleton {objectName:'homeSkeleton';x:64;y:150;width:1152;height:490;layout:'home';active:waiting.visible && session.state!=='error' && !screen.resolving}
             Text { x:64;y:session.state==='error' || screen.resolving ? 320 : 50; width:1152; horizontalAlignment:Text.AlignHCenter; wrapMode:Text.WordWrap; text:session.state!=='ready' ? session.message : screen.resolving ? 'Préparation de l’épisode…\nRetour pour annuler' : 'Ouverture…'; color:'white'; font.family:regular.name || 'sans-serif'; font.pixelSize:session.state==='error' || screen.resolving ? 26 : 18 }
             Keys.onPressed: {
+                var wasResolving=screen.resolving;
+                conversation.localAction();
                 if(event.key===Qt.Key_Back || event.key===Qt.Key_Escape) {
-                    if(screen.resolving) { screen.generation++; screen.resolving=false; screen.returnFromPlayback(); }else if(screen.panel==='detail')detailPanel.item.back();else if(screen.panel)screen.closePanel();else Qt.quit();
+                    if(wasResolving) { screen.generation++; screen.resolving=false; screen.returnFromPlayback(); }else if(screen.panel==='detail')detailPanel.item.back();else if(screen.panel)screen.closePanel();else Qt.quit();
                 } else if((event.key===Qt.Key_Return || event.key===Qt.Key_Select || event.key===Qt.Key_Enter) && session.state==='error' && session.accessToken) session.loadHome();
                 else return;
                 event.accepted=true;
@@ -278,6 +299,7 @@ Application {
                 }
             }
             Keys.onPressed:{
+                conversation.localAction();
                 if(event.key===Qt.Key_Back || event.key===Qt.Key_Escape)screen.cancelExit();
                 else if(event.key===Qt.Key_Left)screen.exitChosen=false;else if(event.key===Qt.Key_Right)screen.exitChosen=true;
                 else if(event.key===Qt.Key_Return || event.key===Qt.Key_Enter || event.key===Qt.Key_Select){if(screen.exitChosen)Qt.quit();else screen.cancelExit();}else return;

@@ -330,3 +330,13 @@ au lieu de la déclarer indisponible quand deux préparations sont actives.
 L’audit trouve 141 références sur 149 titres, sans garantir leur lecture.
 Le décodeur natif et la disponibilité des formats restent des vérifications
 distinctes du banc. [Diagnostic, captures et réception](research/2026-10-30-atlas-tv-trailer-repair.md).
+
+## Lancement demandé à Oby — 30 octobre 2026
+
+L’application ouverte peut recevoir une sélection canonique envoyée depuis une
+conversation. Elle confirme d’abord la réception, utilise le lecteur existant,
+puis confirme la lecture seulement après observation de la vidéo et de sa
+position. Les demandes expirées ou annulées ne reprennent pas en retard.
+La connexion primary se vérifie séparément d’un lancement réel ; les essais
+de livraison ne lancent aucun épisode personnel.
+[Contrat client, vérifications et limites](research/2026-10-30-atlas-tv-conversation.md).

@@ -307,3 +307,11 @@ proposée et Retour qui masque les commandes puis retrouve la fiche. Les menus
 d’épisode sont absents de ce mode. Un visuel connu reste affiché pendant
 l’attente ou une indisponibilité ; aucune lecture réussie n’est déduite des
 seules métadonnées. Voir [réception native, reprise et limites](research/2026-10-30-atlas-tv-trailer-repair.md).
+
+## Commande de lecture depuis Oby
+
+La sélection reçue rejoint le parcours de préparation et le lecteur existants.
+La télécommande garde la priorité pendant la préparation : une action locale
+annule la demande distante. L’interface et la conversation distinguent demande
+acceptée et vidéo réellement observée, sans ajouter une seconde interface de
+lecture. [Comportement et preuves](research/2026-10-30-atlas-tv-conversation.md).

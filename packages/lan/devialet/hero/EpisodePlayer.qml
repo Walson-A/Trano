@@ -29,11 +29,13 @@ FocusScope {
     property bool changing:false
     property int seekTarget:-1
     property int proposedMs:-1
+    property int observationResumeTarget:-1
     readonly property int positionMs:media.position
     readonly property int durationMs:media.duration
     readonly property bool playing:media.playbackState===MediaPlayer.PlayingState
     readonly property bool videoReady:media.hasVideo && media.position>400 && (playing || media.playbackState===MediaPlayer.PausedState)
     readonly property bool hasSource:!!String(media.source)
+    readonly property bool observationReady:media.hasVideo && playing && started && resumed && observationResumeTarget<0 && seekTarget<0 && proposedMs<0 && !failure && !ended && !changing && !retrying
     readonly property bool menuOpened:menu.opened
     readonly property string menuName:menu.kind
     readonly property string episodeCountLabel:current && menu.airingData && menu.airingData.anilist_id===current.media.anilist_id && menu.airingData.diffusion ? Episode.count(menu.airingData,true) : current && current.media.diffusion ? Episode.count(current.media,true) : current && current.media.episodes>0 ? current.media.episodes+' épisodes' : ''
@@ -43,12 +45,13 @@ FocusScope {
     signal changeRequested(var media,var target,var choice)
     signal cancelChangeRequested()
     signal inlineRequested()
+    signal interaction()
     function clock(ms){var s=Math.floor(Math.max(0,ms)/1000);return Math.floor(s/60)+':'+('0'+s%60).slice(-2);}
     function knownEpisode(identity,number){if(menu.episodeCard && menu.episodeCard.anilist_id===identity)for(var i=0;i<menu.entries.length;i++)if(menu.entries[i].numero===number)return menu.entries[i];return null;}
     function report(state){if(!trailerMode && started && media.duration>0)progress({position_ms:media.position,duration_ms:media.duration,state:state});}
     function play(url,desiredPlaying){
         var returnZone=menu.opened ? menuOrigin : 'surface';
-        resumed=false;started=false;ended=false;failure='';errorIndex=0;wantsPlaying=desiredPlaying!==false;restoreAfterSeek=false;zone=returnZone;seekTarget=-1;proposedMs=-1;menu.revision++;menu.kind='';menu.message='';media.source=url;media.play();reveal();if(!inlinePreview)forceActiveFocus();
+        resumed=false;started=false;ended=false;failure='';errorIndex=0;observationResumeTarget=resumeMs>0 ? resumeMs : -1;wantsPlaying=desiredPlaying!==false;restoreAfterSeek=false;zone=returnZone;seekTarget=-1;proposedMs=-1;menu.revision++;menu.kind='';menu.message='';media.source=url;media.play();reveal();if(!inlinePreview)forceActiveFocus();
     }
     function retire(){
         report('stopped');started=false;wantsPlaying=false;restoreAfterSeek=false;retrying=false;proposedMs=-1;seekTarget=-1;media.stop();media.source='';
@@ -86,11 +89,12 @@ FocusScope {
                 player.started=true;
                 if(!player.resumed && duration>0){
                     player.resumed=true;console.info('ATLAS_TV_EPISODE_READY',hasVideo,hasAudio,duration);
-                    if(player.resumeMs>0 && seekable){player.restoreAfterSeek=player.wantsPlaying;media.seek(Math.min(player.resumeMs,Math.max(0,duration-1000)));}
+                    if(player.resumeMs>0 && seekable){player.observationResumeTarget=Math.min(player.resumeMs,Math.max(0,duration-1000));player.restoreAfterSeek=player.wantsPlaying;media.seek(player.observationResumeTarget);}else player.observationResumeTarget=-1;
                     if(!player.wantsPlaying)media.pause();player.report(player.wantsPlaying ? 'playing' : 'paused');
                 }
             }
             if(player.seekTarget>=0 && Math.abs(position-player.seekTarget)<2000){player.seekTarget=-1;player.report(player.wantsPlaying ? 'playing' : 'paused');}
+            if(player.observationResumeTarget>=0 && Math.abs(position-player.observationResumeTarget)<2000)player.observationResumeTarget=-1;
         }
         onStatusChanged:{console.info('ATLAS_TV_EPISODE_STATUS',status);if(status===MediaPlayer.EndOfMedia){player.report('ended');player.started=false;player.wantsPlaying=false;player.ended=true;player.controlsVisible=true;}}
         onError:{console.info('ATLAS_TV_EPISODE_ERROR',error);player.report('error');player.started=false;player.wantsPlaying=false;player.failure='La lecture a été interrompue.';player.controlsVisible=true;}
@@ -126,6 +130,7 @@ FocusScope {
     Timer {interval:15000;repeat:true;running:player.started && media.playbackState===MediaPlayer.PlayingState;onTriggered:player.report('playing')}
     Timer {id:hide;interval:2500;onTriggered:if(player.playing && player.zone==='surface' && !menu.opened)player.controlsVisible=false}
     Keys.onPressed:{
+        interaction();
         if(player.trailerMode){
             if(event.isAutoRepeat && (event.key===Qt.Key_Back || event.key===Qt.Key_Escape)){event.accepted=true;return;}
             if(event.key===Qt.Key_Back || event.key===Qt.Key_Escape){if(!started || failure)inlineRequested();else if(proposedMs>=0){proposedMs=-1;zone='surface';reveal();}else if(controlsVisible){controlsVisible=false;hide.stop();}else inlineRequested();}

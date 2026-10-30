@@ -7,6 +7,7 @@ HeroArtwork HeroArtwork.qml
 Icon Icon.qml
 TvSession TvSession.qml
 TvPreviews TvPreviews.qml
+TvConversationLaunch TvConversationLaunch.qml
 EpisodePlayer EpisodePlayer.qml
 ArtworkCache ArtworkCache.qml
 MediaRow MediaRow.qml

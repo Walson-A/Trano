@@ -18,6 +18,7 @@ FocusScope {
     property var account:transport && transport.home.compte ? transport.home.compte : ({})
     property string pseudo:history && history.profil ? history.profil.pseudo || account.pseudo || '' : account.pseudo || ''
     property string avatar:history && history.profil ? history.profil.avatar || account.avatar || '' : account.avatar || ''
+    signal interaction()
     signal closed()
     signal navigateRequested(string destination)
     signal chosen(var cards,int index,string title)
@@ -84,6 +85,7 @@ FocusScope {
     }
     HeroButton {x:1000;y:650;width:216;visible:view.state==='error';label:'Réessayer';family:view.family;focused:view.zone==='retry';onActivated:view.load()}
     Keys.onPressed: {
+        interaction();
         var key=event.key;
         if(key===Qt.Key_Back || key===Qt.Key_Escape)close();
         else if(key===Qt.Key_Return || key===Qt.Key_Enter || key===Qt.Key_Select)activate();

@@ -55,6 +55,7 @@ FocusScope {
     readonly property var filterNames:libraryMode ? ['Statut'] : ['Genres','Format','Année','Diffusion','Trier']
     readonly property var filterFields:libraryMode ? ['statut'] : ['genres','format','annee','statut','tri']
     readonly property var options:libraryMode ? [['','Tous mes animés']].concat(Personal.statuses) : multiGenre ? Catalog.genres : filterIndex===1 ? Catalog.formats : filterIndex===2 ? Catalog.years() : filterIndex===3 ? Catalog.statuses : Catalog.sorts
+    signal interaction()
     signal closed()
     signal navigateRequested(string destination)
     signal chosen(var cards,int index,string title)
@@ -204,6 +205,7 @@ FocusScope {
         Row {x:30;y:425;spacing:12;Repeater {model:['Espace','Effacer','Rechercher'];HeroButton {width:index===2 ? 284 : 210;height:52;label:modelData;family:view.family;focused:view.keyboardZone==='tools' && view.toolIndex===index;onActivated:{view.toolIndex=index;view.keyboardZone='tools';view.activate();view.forceActiveFocus();}}}}
     }
     Keys.onPressed:{
+        interaction();
         var key=event.key,back=key===Qt.Key_Back || key===Qt.Key_Escape;
         if(back){if(!event.isAutoRepeat){if(overlay){var previous=overlay;overlay='';if(previous==='keyboard')zone='search';}else close();}}
         else if(key===Qt.Key_Return || key===Qt.Key_Enter || key===Qt.Key_Select)activate();

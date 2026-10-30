@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "scope": "real Qt HTTP transport; fake credentials only",
+  "concurrent401SingleRotation": true,
+  "nextAndAckRetriedOnce": true,
+  "second401FailsClosed": true,
+  "ordinaryMutationNotReplayed": true,
+  "replayTransportRejectsMutationPath": true,
+  "temporaryServerClosed": true
+}

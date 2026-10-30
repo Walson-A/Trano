@@ -39,6 +39,7 @@ FocusScope {
     property string trailerId: selected && selected.bande_annonce ? selected.bande_annonce : ""
     property string playingTrailerKey: ""
     property bool videoReady: !!preview.item && preview.item.ready && playingTrailerKey===trailerId && !!displayedMedia && displayedMedia.bande_annonce===trailerId
+    signal interaction()
     signal dismissed()
     signal playRequested(var media, var target)
     signal detailsRequested(var media)
@@ -158,6 +159,7 @@ FocusScope {
     onDetailOpenChanged: { if(!detailOpen) restartPreview(); }
     Component.onCompleted: { selectRow(0); forceActiveFocus(); restartPreview(); }
     Keys.onPressed: {
+        interaction();
         if(event.key===Qt.Key_Back || event.key===Qt.Key_Escape) {
             if(detailOpen) { detailOpen=false; restartPreview(); }
             else if(zone==='rail') zone='actions';

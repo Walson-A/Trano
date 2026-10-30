@@ -16,6 +16,7 @@ Item {
     property bool libraryReadCacheEnabled:false
     property bool libraryRemoveEnabled:false
     property bool airingEnabled: false
+    property bool conversationLaunchEnabled:false
     property double expiresAt: 0
     property bool refreshing: false
     property var waiters: []
@@ -76,6 +77,7 @@ Item {
             libraryReadCacheEnabled=!!(runtime.capabilities && runtime.capabilities.library_read_cache===true);
             libraryRemoveEnabled=!!(runtime.capabilities && runtime.capabilities.library_remove===true);
             airingEnabled=!!(runtime.capabilities && runtime.capabilities.airing===true);
+            conversationLaunchEnabled=!!(runtime.capabilities && runtime.capabilities.conversation_launch===true);
             request(apiOrigin+'/tv/v1/session/activate',{code:runtime.activation.code},'',12000,function(code,value) {
                 if(code!==200 || !credentials(value)) { fail(); return; }
                 loadHome();
@@ -104,6 +106,19 @@ Item {
                 done(status,value);
             });
         });
+    }
+    // Only receiver next/ack are idempotent across a single access refresh.
+    function conversationApi(path,body,timeout,done){
+        if(path!=='/tv/v1/launch-intents/next' && !/^\/tv\/v1\/launch-intents\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\/ack$/.test(path)){done(400,null);return;}
+        function attempt(retried){withAccess(function(ok){
+            if(!ok){done(401,null);return;}
+            var admitted=accessToken;
+            request(apiOrigin+path,body,admitted,timeout,function(status,value){
+                if(status===401 && !retried){if(accessToken===admitted)expiresAt=0;attempt(true);return;}
+                if(status===401)fail();done(status,value);
+            });
+        });}
+        attempt(false);
     }
     function loadHome() {
         var turn=++homeGeneration;

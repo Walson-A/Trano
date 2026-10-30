@@ -72,6 +72,7 @@ FocusScope {
     readonly property string personalPhase:library.phase(personalId)
     readonly property bool personalPending:personalPhase==='loading' || personalPhase==='idle'
     readonly property bool personalEnabled:library.available && personalId>0
+    signal interaction()
     signal personalChanged(int identity,var value,bool refreshHome)
     signal closed()
     signal playRequested(var media,var target)
@@ -381,6 +382,7 @@ FocusScope {
         Text {anchors.fill:parent;anchors.margins:12;text:view.extrasError;color:'#f0d6b2';font.family:view.family;font.pixelSize:17;elide:Text.ElideRight}
     }
     Keys.onPressed: {
+        interaction();
         if(followup.opened){followup.key(event.key);event.accepted=true;return;}
         if(event.key===Qt.Key_Back || event.key===Qt.Key_Escape)back();
         else if(event.key===Qt.Key_Return || event.key===Qt.Key_Enter || event.key===Qt.Key_Select)activate();

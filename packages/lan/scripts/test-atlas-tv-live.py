@@ -14,6 +14,7 @@ parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--hls',action='store_true',help='Exercise negotiated HLS requests and quality menus with the fake decoder')
 parser.add_argument('--follow-up',action='store_true',help='Exercise library writes and the explicit 12 announced/5 aired fixture; no account')
 parser.add_argument('--detail-preview',action='store_true',help='Exercise background/fullscreen trailer ownership with fake API/decoder')
+parser.add_argument('--conversation-launch',action='store_true',help='Exercise primary conversation launch receiver with fake transport/media only')
 parser.add_argument('--qt-path',type=pathlib.Path,required=True)
 parser.add_argument('--snapshot',type=pathlib.Path,required=True)
 parser.add_argument('--assets',type=pathlib.Path,required=True)
@@ -156,6 +157,29 @@ Item {
  property var home:({})
  property string apiOrigin:"https://test.invalid"
  property var pendingPreviews:({})
+ property bool conversationLaunchEnabled:false
+ property var intentPoll:null
+ readonly property bool intentPollPending:!!intentPoll
+ property int intentPollCount:0
+ property int maxIntentPolls:0
+ property int openIntentPolls:0
+ property bool loseAcceptedAck:false
+ property bool losePlayingAck:false
+ property var ackReceipts:({})
+ property var conversationAcks:[]
+ function conversationApi(path,body,timeout,done){
+  apiCalled(path,body);
+  if(path==='/tv/v1/launch-intents/next'){openIntentPolls++;maxIntentPolls=Math.max(maxIntentPolls,openIntentPolls);intentPollCount++;intentPoll=done;return;}
+  var id=path.split('/')[4],receipt=ackReceipts[id];conversationAcks=conversationAcks.concat([{id:id,state:body.state,code:body.code || ''}]);
+  if(!receipt){Qt.callLater(function(){done(404,{});});return;}
+  var value=JSON.parse(JSON.stringify(receipt));value.state=body.state;ackReceipts[id]=value;
+  var lose=body.state==='accepted' && loseAcceptedAck || body.state==='playing' && losePlayingAck;
+  if(body.state==='accepted')loseAcceptedAck=false;if(body.state==='playing')losePlayingAck=false;
+  Qt.callLater(function(){done(lose ? 0 : 200,lose ? {} : value);});
+ }
+ function deliverIntent(value){var done=intentPoll;intentPoll=null;openIntentPolls--;ackReceipts[value.request_id]=value;done(200,{intent:value,poll_after_ms:250});}
+ function finishIntentPoll(){if(!intentPoll)return;var done=intentPoll;intentPoll=null;openIntentPolls--;done(200,{intent:null,poll_after_ms:250});}
+ function expireIntent(receiver){receiver.active.deadline=Date.now()-1;receiver.tick();}
  property var previewLeases:[]
  property var previewReplies:[]
  function askPreview(store,card) { var identity=card.anilist_id;var lease=store.resolve(card,function(status,url){previewReplies=previewReplies.concat([{id:identity,status:status,url:url}]);});previewLeases=previewLeases.concat([lease || null]); }
@@ -660,6 +684,10 @@ Item {
                 preview_spec=importlib.util.spec_from_file_location('detail_preview',pathlib.Path(__file__).with_name('atlas_tv_detail_preview_bench.py'))
                 preview_bench=importlib.util.module_from_spec(preview_spec);preview_spec.loader.exec_module(preview_bench)
                 preview_bench.run(window,session,screen,details,calls,QTest,Qt,QObject,spin,args.evidence)
+            if args.conversation_launch:
+                spec=importlib.util.spec_from_file_location('conversation',pathlib.Path(__file__).with_name('atlas_tv_conversation_bench.py'))
+                consumer=importlib.util.module_from_spec(spec);spec.loader.exec_module(consumer)
+                consumer.run(window,session,screen,details,calls,QTest,Qt,QObject,spin,args.evidence)
             later_bad=[m for m in messages if any(s in m for s in ['ReferenceError','TypeError','Unable to assign','Cannot assign'])]
             assert not later_bad,later_bad
             negotiated=[body for path,body in calls if path in ['/tv/v1/playbacks','/tv/v1/readers','/tv/v1/variants']]
@@ -667,8 +695,8 @@ Item {
             (args.evidence/'verification.json').write_text(json.dumps({'passed':True,'scope':'real QML host/UI with fake API and fake decoder; no native playback claim','canonicalEpisode':13,'hlsNegotiated':args.hls,'defaultLanguage':'vo','frenchAvailabilityDoesNotSelectLanguage':True,'explicitFrenchStillSupported':True,'tvPlayer':{'anchoredMenusKeepChrome':True,'proposedTimelineUntilConfirmed':True,'cancelSeekKeepsPosition':True,'cancelResolutionIgnoresLateResponse':True,'strictSourceReaderVariant':True,'strictRetry401And200KeepsChoice':True,'failedChangeKeepsOldVideo':True,'pausedQualityAndVersionKeepPositionAndIntent':True,'episodesOverlayKeepsVideoAndSeasonBrowsing':True,'firstBackHidesHudWithoutClosing':True,'episodeJumpPreservesCurrentPlayback':True,'sourceReachableAfterNativeFailure':True,'episodeArtworkIdentityChecked':True,'missingCapabilityUnavailable':True,'perSessionProgressSequence':True},'lang':'vo','defaultSoundOnAndLabelled':True,'infoSelectionPreserved':True,'search':{'remoteKeyboard':True,'staleIgnored':True,'selectionAndBack':True},'profile':{'publicProfileWithoutOAuth':True,'statsScaleChecked':True,'selectionAndBack':True},'lateTrailerDoesNotChangeSelection':True,'silentGainZero':True,'bannerErrorUsesPoster':True,'artworkQueue':{'maxConcurrent':2,'identityChecked':True,'deduplicated':True,'capabilityRequired':True,'warmWithoutResume':True},'events':events},indent=2),encoding='utf-8')
             app.quit()
         except Exception as error: messages.append(traceback.format_exc());app.exit(1)
-    QTimer.singleShot(600,check);QTimer.singleShot(60000 if args.follow_up else 25000,lambda:app.exit(2))
+    QTimer.singleShot(600,check);QTimer.singleShot(100000 if args.conversation_launch else 60000 if args.follow_up else 25000,lambda:app.exit(2))
     code=app.exec_()
     window.close();sip.delete(engine)
-    if code: raise AssertionError(messages)
+    if code: raise AssertionError([m for m in messages if m.startswith('Traceback')] or messages[-12:])
     print(json.dumps({'passed':True,'scope':'host, canonical target, resume, pause/seek/back, progress sequence; mocked decoder/API'}))
