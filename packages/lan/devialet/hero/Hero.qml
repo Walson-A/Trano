@@ -43,7 +43,8 @@ FocusScope {
     signal detailsRequested(var media)
     signal trailerRequested(string trailerKey)
     signal previewObserved(var observation)
-    signal artworkFailed(var media,string kind)
+    signal artworkFailed(var media,string kind,url failedSource)
+    signal artworkReady(var media,string kind,url loadedSource)
     signal searchRequested()
     signal profileRequested()
     signal libraryRequested()
@@ -185,7 +186,8 @@ FocusScope {
     Item {
         id: backdrop; anchors.fill: parent
         HeroArtwork { width: 1280; height: 620; requestedSource: scene.art(scene.displayedMedia,'banner'); fallbackSource:scene.art(scene.displayedMedia,'poster'); reducedMotion: scene.reducedMotion; soften: !!scene.displayedMedia && !scene.displayedMedia.banniere
-            onFailed:scene.artworkFailed(scene.displayedMedia,poster ? 'poster' : 'banner')
+            onFailed:scene.artworkFailed(scene.displayedMedia,poster ? 'poster' : 'banner',failedSource)
+            onImageReady:scene.artworkReady(scene.displayedMedia,poster ? 'poster' : 'banner',loadedSource)
         }
         Loader { id: preview; width: 1280; height: 620; source: scene.previewEnabled || scene.keepPreviewLoaded ? "Trailer.qml" : ""; opacity: scene.videoReady ? 1 : 0
             Behavior on opacity { enabled: !scene.reducedMotion; NumberAnimation { duration: Motion.ms('fade'); easing.type: Easing.Bezier; easing.bezierCurve: Motion.easeOut() } }

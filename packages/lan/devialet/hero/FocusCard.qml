@@ -16,7 +16,8 @@ Item {
     property real surfaceScale: surface.scale
     property real artworkWidth: 238
     signal activated()
-    signal artworkFailed(bool poster)
+    signal artworkFailed(bool poster,url failedSource)
+    signal artworkReady(bool poster,url loadedSource)
     width: artworkWidth+28; height: 205; z: focused ? 10 : 0
     Accessible.role: Accessible.Button
     Accessible.name: title
@@ -33,9 +34,9 @@ Item {
             id: picture; anchors.fill: parent
             Rectangle { anchors.fill: parent; radius: 11; color: '#1a1c22' }
             Image { id: cardImage; objectName: "heroArtwork"; anchors.fill: parent; source: card.artwork; fillMode: Image.PreserveAspectCrop; asynchronous: true; visible: false; clip: true
-                onStatusChanged: if(status===Image.Error) {
-                    card.artworkFailed(source===card.fallbackArtwork);
-                    if(card.fallbackArtwork && source!==card.fallbackArtwork) source=card.fallbackArtwork;
+                onStatusChanged: if(status===Image.Ready)card.artworkReady(String(source)===String(card.fallbackArtwork),source);else if(status===Image.Error) {
+                    var failedUrl=source;card.artworkFailed(String(source)===String(card.fallbackArtwork),failedUrl);
+                    if(status===Image.Error && String(source)===String(failedUrl) && card.fallbackArtwork && source!==card.fallbackArtwork) source=card.fallbackArtwork;
                 }
             }
             OpacityMask { anchors.fill: parent; source: cardImage; maskSource: Rectangle { width: picture.width; height: picture.height; radius: 11 } }

@@ -189,7 +189,7 @@ Item {
  }
  function answerPlayback(body,done){playbackCount++;done(200,{id:'aaaaaaaa-aaaa-aaaa-aaaa-'+('000000000000'+playbackCount).slice(-12),anilist_id:body.anilist_id,episode:body.episode,lang:body.lang,source:body.source || 'voiranime',reader:body.source==='franime' ? 'Sendvid' : body.reader_id==='f'.repeat(64) ? 'YourUpload' : 'Mail.ru FHD1',reader_id:body.reader_id || 'e'.repeat(64),variant_id:body.variant_id || null,quality:body.variant_id ? {label:body.variant_id==='3'.repeat(64) ? 'Originale' : body.variant_id==='1'.repeat(64) ? '360p' : '1080p'} : null,stream:{path:'/tv/v1/episode-media/'+'a'.repeat(64)},resume:{position_ms:120000}});}
  function finishPlayback(index){var pending=pendingPlaybacks[index];answerPlayback(pending.body,pending.done);}
- function mediaUrl(path,kind) { return kind==='artwork' && path.indexOf('file:')===0 ? path : apiOrigin+path; }
+ function mediaUrl(path,kind) { if(kind==='artwork' && /^\/tv\/v1\/artwork-media\/[a-f0-9]{64}$/.test(path))return benchmarkArtworkGrant;return kind==='artwork' && path.indexOf('file:')===0 ? path : apiOrigin+path; }
  function inspectEpisode(path,done) {var status=mediaHeadStatus;Qt.callLater(function(){done(status,null);});}
  function finishPreview(id,key) { var done=pendingPreview; pendingPreview=null; done(200,{kind:'trailer',anilist_id:id,youtube_id:key,path:'/tv/v1/preview-media/'+'b'.repeat(64),expires_at:Date.now()/1000+900}); }
  function finishArtwork(index,id,kind) { pendingArtworks[index](200,{anilist_id:id,kind:kind,path:'/tv/v1/artwork-media/'+'c'.repeat(64),expires_at:Date.now()/1000+900}); }
@@ -204,6 +204,8 @@ Item {
 }''',encoding='utf-8')
     engine=QQmlApplicationEngine();engine.addImportPath(str(root))
     engine.rootContext().setContextProperty('benchmarkHlsEnabled',args.hls)
+    # Healthy fake grants use explicit local pixels; failure/retry cases have their own image bench.
+    engine.rootContext().setContextProperty('benchmarkArtworkGrant',next(args.assets.glob('*-banner.jpg')).resolve().as_uri())
     engine.rootContext().setContextProperty('benchmarkHome',snapshot)
     library_cards=[];library_ids=set()
     for card in snapshot['hero']+[c for row in snapshot.get('rangees',[]) for c in row.get('cartes',[])]:
@@ -505,7 +507,10 @@ Item {
             QTest.keyClick(window,Qt.Key_Return)
             assert detail.property('french') is True and 'VF' in window.findChild(QObject,'detailPlay').property('label')
             detail.setProperty('zone','actions')
-            spin(lambda:any(i.property('status')==1 and str(i.property('source').toString())==details['154587']['carte']['banniere'] for i in detail.findChildren(QObject,'heroBanner')))
+            try:
+                spin(lambda:any(i.property('status')==1 and str(i.property('source').toString())==details['154587']['carte']['banniere'] for i in detail.findChildren(QObject,'heroBanner')))
+            except AssertionError:
+                raise AssertionError({'expected':details['154587']['carte']['banniere'],'images':[{k:str(i.property(k)) for k in ['status','source','opacity']} for i in detail.findChildren(QObject,'heroBanner')],'artworkSources':cache.property('sources').toVariant()})
             QTest.qWait(300)
             assert window.grabWindow().save(str(args.evidence/'detail-top.png'))
             detail.setProperty('zone','episodes');detail.setProperty('episodeIndex',2);detail.scrollToZone();QTest.qWait(300)

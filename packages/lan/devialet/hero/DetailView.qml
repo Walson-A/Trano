@@ -74,6 +74,7 @@ FocusScope {
             else if(episodeData)for(var i=0;i<episodes.length;i++)if(episodes[i].numero===next)episodeIndex=i;
         }else loadEpisodes(start,next);
     }
+    function posterArt(c){var local=artworks && c ? artworks.sources[String(c.anilist_id)] : null;return local && local.poster || (c ? c.affiche || '' : '');}
     function art(c) {if(!c)return '';var local=artworks && artworks.sources[String(c.anilist_id)];return local && (local.banner || local.card || local.poster) || c.banniere || c.affiche || '';}
     function open(c) {stack=[];opened=true;load(c);forceActiveFocus();}
     function load(c) {
@@ -83,11 +84,12 @@ FocusScope {
         if(!key || !transport){state='error';return;}
         loadPersonal();
         prepareEpisodes();
+        artworks.request(c,'poster',true);
         artworks.request(c,'banner',true);
         transport.api('/tv/v1/catalog/detail',key,45000,function(status,value) {
             if(!opened || turn!==generation)return;
             if(status!==200 || !value || !value.carte || (key.anilist_id && value.carte.anilist_id!==key.anilist_id) || (key.franime_id && (!value.carte.franime || value.carte.franime.id!==key.franime_id))){state='error';episodeState='error';pendingEpisodesReady=null;return;}
-            detail=value;state='ready';seasonIndex=0;if(!key.anilist_id)loadPersonal();console.info('ATLAS_TV_DETAIL_READY',card.anilist_id || 0);
+            detail=value;state='ready';seasonIndex=0;if(!key.anilist_id){loadPersonal();artworks.request(card,'poster',true);artworks.request(card,'banner',true);}console.info('ATLAS_TV_DETAIL_READY',card.anilist_id || 0);
             for(var i=0;i<seasons.length;i++)if(card.anilist_id && seasons[i].anilist_id===card.anilist_id)seasonIndex=i;
             prepareEpisodes();
             if(value.complements_a_charger && key.anilist_id)transport.api('/tv/v1/catalog/detail-extras',key,45000,function(code,extra){
@@ -178,13 +180,13 @@ FocusScope {
         Behavior on contentY {enabled:!view.reducedMotion;NumberAnimation {duration:Motion.ms('scroll');easing.type:Easing.Bezier;easing.bezierCurve:Motion.easeOut()}}
         Column {id:content;width:1280;spacing:20
             Item {id:header;width:1280;height:Math.max(308,headerText.height+108)
-                HeroArtwork {x:620;y:0;width:660;height:header.height;retainPrevious:false;requestedSource:view.art(view.card);fallbackSource:view.card ? view.card.affiche || '' : '';onFailed:view.artworks.request(view.card,poster ? 'poster' : 'banner',true)}
+                HeroArtwork {x:620;y:0;width:660;height:header.height;retainPrevious:false;requestedSource:view.art(view.card);fallbackSource:view.posterArt(view.card);onFailed:view.artworks.failed(view.card,poster ? 'poster' : 'banner',failedSource);onImageReady:view.artworks.confirmed(view.card,poster ? 'poster' : 'banner',loadedSource)}
                 Rectangle {anchors.fill:parent;gradient:Gradient {orientation:Gradient.Horizontal;GradientStop {position:0;color:'#ff090a0d'} GradientStop {position:.45;color:'#dc090a0d'} GradientStop {position:1;color:'#20090a0d'}}}
                 Rectangle {anchors.fill:parent;gradient:Gradient {GradientStop {position:.4;color:'#00090a0d'} GradientStop {position:1;color:'#ff090a0d'}}}
                 HeroButton {x:64;y:28;width:138;iconKey:'arrow-left';label:'Retour';family:view.family;focused:view.zone==='back';onActivated:view.back()}
                 Text {x:236;y:43;text:'Épisodes et détails';color:'#c6c9d3';font.family:view.family;font.pixelSize:19}
                 Rectangle {x:64;y:100;width:140;height:196;radius:10;color:'#242731'
-                    Image {id:poster;anchors.fill:parent;source:{var local=view.artworks && view.card ? view.artworks.sources[String(view.card.anilist_id)] : null;return local && local.poster || (view.card ? view.card.affiche || '' : '');}asynchronous:true;fillMode:Image.PreserveAspectCrop;sourceSize.width:280;visible:false;onStatusChanged:if(status===Image.Error)view.artworks.request(view.card,'poster',true)}
+                    Image {id:poster;objectName:'detailPoster';anchors.fill:parent;source:view.posterArt(view.card);asynchronous:true;fillMode:Image.PreserveAspectCrop;sourceSize.width:280;visible:false;onStatusChanged:if(status===Image.Error)view.artworks.failed(view.card,'poster',source);else if(status===Image.Ready)view.artworks.confirmed(view.card,'poster',source)}
                     OpacityMask {anchors.fill:parent;source:poster;maskSource:Rectangle {width:140;height:196;radius:10}}
                 }
                 Column {id:headerText;x:236;y:100;width:944;spacing:10
@@ -250,7 +252,7 @@ FocusScope {
                 Text {x:14;text:'De la même histoire';color:'white';font.family:view.family;font.pixelSize:26;font.weight:Font.DemiBold}
                 ListView {id:relationRail;width:1180;height:245;orientation:ListView.Horizontal;spacing:8;clip:true;interactive:false;cacheBuffer:0;model:view.relations
                     delegate:Column {width:266;height:245
-                        FocusCard {title:modelData.carte.titre;family:view.family;artwork:view.art(modelData.carte);focused:view.zone==='relations' && view.relationIndex===index;onActivated:view.visit(modelData.carte);onArtworkFailed:view.artworks.request(modelData.carte,'banner',true)}
+                        FocusCard {title:modelData.carte.titre;family:view.family;artwork:view.art(modelData.carte);focused:view.zone==='relations' && view.relationIndex===index;onActivated:view.visit(modelData.carte);onArtworkFailed:view.artworks.failed(modelData.carte,poster ? 'poster' : 'banner',failedSource);onArtworkReady:view.artworks.confirmed(modelData.carte,poster ? 'poster' : 'banner',loadedSource)}
                         Text {x:14;width:238;text:modelData.lien || '';textFormat:Text.PlainText;color:'#aeb1bd';font.family:view.family;font.pixelSize:16;elide:Text.ElideRight}
                     }
                 }
@@ -272,7 +274,7 @@ FocusScope {
             Column {id:recommendationSection;x:50;width:1180;spacing:6;visible:view.recommendations.length>0
                 Text {x:14;text:'Dans le même esprit';color:'white';font.family:view.family;font.pixelSize:26;font.weight:Font.DemiBold}
                 ListView {id:recommendationRail;width:1180;height:215;orientation:ListView.Horizontal;spacing:8;clip:true;interactive:false;cacheBuffer:0;model:view.recommendations
-                    delegate:FocusCard {title:modelData.titre;family:view.family;artwork:view.art(modelData);focused:view.zone==='recommendations' && view.recommendationIndex===index;onActivated:view.visit(modelData);onArtworkFailed:view.artworks.request(modelData,'banner',true)}
+                    delegate:FocusCard {title:modelData.titre;family:view.family;artwork:view.art(modelData);focused:view.zone==='recommendations' && view.recommendationIndex===index;onActivated:view.visit(modelData);onArtworkFailed:view.artworks.failed(modelData,poster ? 'poster' : 'banner',failedSource);onArtworkReady:view.artworks.confirmed(modelData,poster ? 'poster' : 'banner',loadedSource)}
                 }
             }
             Column {id:aboutSection;x:64;width:1152;spacing:18

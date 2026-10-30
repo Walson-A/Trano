@@ -81,7 +81,8 @@ FocusScope {
         onCurrentIndexChanged:if(currentIndex>=0 && currentIndex<count)positionViewAtIndex(currentIndex,GridView.Contain)
         delegate:FocusCard {artworkWidth:214;title:modelData.titre;family:view.family;artwork:view.art(modelData);fallbackArtwork:modelData.affiche || '';focused:view.zone==='results' && view.resultIndex===index;selected:view.resultIndex===index
             onActivated:{view.zone='results';view.resultIndex=index;view.activate();}
-            onArtworkFailed:view.artworks.request(modelData,poster ? 'poster' : 'banner',true)
+            onArtworkFailed:view.artworks.failed(modelData,poster ? 'poster' : 'banner',failedSource)
+            onArtworkReady:view.artworks.confirmed(modelData,poster ? 'poster' : 'banner',loadedSource)
         }
     }
     Keys.onPressed: {

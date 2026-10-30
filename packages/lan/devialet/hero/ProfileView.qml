@@ -74,7 +74,8 @@ FocusScope {
         onCurrentIndexChanged:if(currentIndex>=0 && currentIndex<count)positionViewAtIndex(currentIndex,ListView.Contain)
         delegate:FocusCard {title:modelData.titre;family:view.family;artwork:view.art(modelData);fallbackArtwork:modelData.affiche || '';focused:view.zone==='cards' && view.index===index;selected:view.index===index
             onActivated:{view.zone='cards';view.index=index;view.activate();}
-            onArtworkFailed:view.artworks.request(modelData,poster ? 'poster' : 'banner',true)
+            onArtworkFailed:view.artworks.failed(modelData,poster ? 'poster' : 'banner',failedSource)
+            onArtworkReady:view.artworks.confirmed(modelData,poster ? 'poster' : 'banner',loadedSource)
         }
     }
     Text {x:64;y:662;width:1152;color:'#abadb8';font.family:view.family;font.pixelSize:19

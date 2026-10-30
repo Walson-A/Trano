@@ -1,0 +1,47 @@
+{
+  "scope": "native Qt image decode through real device artwork API; temporary diagnostic only",
+  "events": [
+    {
+      "event": "started"
+    },
+    {
+      "event": "ready",
+      "anilist_id": 195516,
+      "kind": "poster",
+      "width": 460,
+      "height": 652,
+      "elapsedMs": 1626
+    },
+    {
+      "event": "ready",
+      "anilist_id": 98460,
+      "kind": "poster",
+      "width": 460,
+      "height": 650,
+      "elapsedMs": 1829
+    },
+    {
+      "event": "ready",
+      "anilist_id": 195516,
+      "kind": "banner",
+      "width": 1900,
+      "height": 400,
+      "elapsedMs": 1983
+    },
+    {
+      "event": "ready",
+      "anilist_id": 98460,
+      "kind": "banner",
+      "width": 1900,
+      "height": 400,
+      "elapsedMs": 2031
+    },
+    {
+      "event": "done"
+    }
+  ],
+  "diagnosticRevoked": true,
+  "temporaryServerClosed": true,
+  "episodeStarted": false,
+  "accountMutations": false
+}

@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "scope": "real Qt images, local pixels and fake metadata API; no network/account",
+  "lowIdSurvivesFullCache": true,
+  "lruBound64": true,
+  "failedFreshGrantRecovered": true,
+  "staleFailureIgnored": true,
+  "sameUrlReloaded": true,
+  "rateLimitBackoff": true,
+  "retriesBounded": true,
+  "selectedJobPromoted": true,
+  "lateClearedResponseIgnored": true
+}

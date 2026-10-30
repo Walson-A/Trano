@@ -244,3 +244,10 @@ La carte fournit immédiatement titre, visuel et synopsis connus. Ma liste et
 Note gardent un libellé neutre jusqu’à confirmation privée. Les lectures sont
 parallèles et un suivi récent ne redevient pas un écran de chargement à chaque
 ouverture du panneau. Voir [mesures et parcours](research/2026-10-29-atlas-tv-detail-performance.md).
+
+## Fiabilité des visuels Atlas TV
+
+Les affiches gardent leur place dans la composition et le focus. Le cache évince
+les moins récemment utilisés, indépendamment du numéro AniList ; une image en
+erreur peut se réparer sans rouvrir la fiche. Les reprises sont bornées pour
+conserver une navigation réactive. Voir [preuves et limites](research/2026-10-30-atlas-tv-artwork.md).

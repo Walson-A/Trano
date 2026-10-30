@@ -34,7 +34,8 @@ Item {
             selected:row.selection===index; focused:row.current && selected && row.host.zone==='rail'; reducedMotion:row.host.reducedMotion
             progress:modelData.moi && modelData.episodes ? modelData.moi.progression/Math.max(1,modelData.episodes) : -1
             onActivated: { row.host.selectRow(row.rowIndex); row.host.zone='rail'; row.host.choose(index); row.host.forceActiveFocus(); }
-            onArtworkFailed:row.host.artworkFailed(modelData,poster ? 'poster' : 'banner')
+            onArtworkFailed:row.host.artworkFailed(modelData,poster ? 'poster' : 'banner',failedSource)
+            onArtworkReady:if(row.host.artworkReady)row.host.artworkReady(modelData,poster ? 'poster' : 'banner',loadedSource)
         }
     }
 }
