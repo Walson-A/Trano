@@ -304,4 +304,5 @@ secondaire ; la carte future garde la date et sa garde de lecture.
 action séparée du statut Abandonné, confirmation explicite et reprise sans rejeu ;
 le titre reste sous la navigation, le pseudo et l’avatar gardent des espacements
 constants. Publié dans hero-membership-5541d3b5f6e2 après vérification du backend,
-du gateway et du runtime ; réception physique encore attendue.
+du gateway et du runtime. Walson confirme le bouton, la confirmation et le haut
+de l’écran propres sur le Devialet ; aucune suppression réelle n’est déduite.

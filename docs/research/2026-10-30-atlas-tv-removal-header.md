@@ -88,9 +88,12 @@ indépendants : elles vérifient la composition, pas une association de médias 
   [session HTTP locale](2026-10-30-atlas-tv-removal-header/session-verification.json)
   (sept requêtes, rotation concurrente unique, runtime non fiable refusé).
 
-Aucun animé du compte réel n’est retiré pour ces tests. La réception physique
-de ces trois changements reste à confirmer ; elle est demandée à Walson avec
-un essai qui peut être annulé sans retirer d’entrée.
+Aucun animé du compte réel n’est retiré pour ces tests. Après publication,
+Walson confirme sur le Devialet : « Le bouton et la confirmation fonctionnent,
+le haut est propre ». La question de réception demandait d’ouvrir la confirmation
+puis de faire Retour, ainsi que de vérifier un titre long et le bloc Profil.
+Le bouton, la confirmation, son retour et le haut de l’écran sont donc reçus
+positivement. Ce retour ne prouve pas une suppression AniList réelle.
 
 ## Publication et ménage
 
