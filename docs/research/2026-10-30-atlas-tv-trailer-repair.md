@@ -94,3 +94,22 @@ de la nouvelle composition reste nécessaire après publication.
 
 Les preuves bornées et captures de cette passe sont conservées dans
 `2026-10-30-atlas-tv-trailer-repair/`. Aucun consommateur Oby n’est ajouté ici.
+
+## Publication de la correction
+
+La release **hero-trailer-root-2f6ddaaf5671**, 38 fichiers et 387994 octets,
+est publiée depuis le commit `8efcdd2`, poussé sur `feat/local-network`.
+La publication vérifie la release précédente et les empreintes du gateway avant
+de changer le paquet. La disponibilité confirme les 38 empreintes exactes.
+Le gateway reste au SHA256
+`3fe9b6eacd5baac82f110448439261962d7f2ff2f9b1eb389ed5c5cd39ea95c4` ;
+l’engine vérifié au prévol est `39cfb1c3e1af9c88e90730b78a0f0c6a8e902917`.
+Cette publication UI ne redémarre pas l’engine.
+
+Le lancement SDK `d33aa56aa9b1482f7b964c3b4ae79d2a` est accepté et le Player
+demande 35 assets, dont EpisodePlayer, PlayerControls, DetailView et TvPreviews.
+Aucun épisode n’est lancé. La question de réception physique du fond puis du
+plein écran Re:ZERO est envoyée ; **l’image native reste non confirmée**.
+Voir [publication](2026-10-30-atlas-tv-trailer-repair/publication.json),
+[paquet](2026-10-30-atlas-tv-trailer-repair/package.json) et
+[reçu SDK](2026-10-30-atlas-tv-trailer-repair/launch.json).
