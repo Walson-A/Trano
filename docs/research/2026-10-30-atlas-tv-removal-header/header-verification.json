@@ -1,0 +1,27 @@
+{
+  "validated": true,
+  "scope": "real QML; local images and synthetic boundary strings; no backend/native claim",
+  "cases": [
+    {
+      "case": "short",
+      "titleTop": 142.0,
+      "titleLines": 1,
+      "buttonTop": 298.0,
+      "profileWidth": 142.0
+    },
+    {
+      "case": "long",
+      "titleTop": 116.0,
+      "titleLines": 2,
+      "buttonTop": 298.0,
+      "profileWidth": 96.0
+    },
+    {
+      "case": "profile-long",
+      "titleTop": 142.0,
+      "titleLines": 1,
+      "buttonTop": 298.0,
+      "profileWidth": 260.0
+    }
+  ]
+}

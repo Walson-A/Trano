@@ -76,4 +76,8 @@ check(() => assert.equal(request.retrySeconds(429,{error:{code:'anilist_busy',de
 check(() => assert.equal(request.retrySeconds(429,{error:{details:{retry_after:999999}}}),0));
 check(() => assert.equal(request.retrySeconds(500,{error:{details:{retry_after:12}}}),0));
 check(() => assert.match(request.message(429,{error:{code:'anilist_busy'}},'fallback'),/très sollicité/));
+check(() => assert.equal(personal.removable({...entry,removable:true,removal_revision:'a'.repeat(64)}),true));
+check(() => assert.equal(personal.removable({...entry,removable:true,removal_revision:'bad'}),false));
+check(() => assert.equal(personal.removable({...entry,removable:false,removal_revision:'a'.repeat(64)}),false));
+check(() => assert.equal(personal.removable({...entry,presence:'absent',removable:true,removal_revision:'a'.repeat(64)}),false));
 console.log(JSON.stringify({passed:true,checks,scope:'episode certainty, compact counts, retry hints, canonical personal state; no network'}));

@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "scope": "real QML/fake account/API; no real removal or native playback",
+  "strictCapabilityGate": true,
+  "explicitConsent": true,
+  "defaultCancel": true,
+  "layeredBack": true,
+  "opaqueRemovalRevisionOnly": true,
+  "canonicalAbsencePropagated": true,
+  "duplicateWhileSavingIgnored": true,
+  "conflictFreshReadAndNewConsent": true,
+  "lostAppliedResponseReconciledWithoutReplay": true,
+  "lostUnappliedResponseNeverReplayed": true,
+  "missingNewRevisionForcesFreshRead": true,
+  "unconfirmedEntryCannotDelete": true
+}

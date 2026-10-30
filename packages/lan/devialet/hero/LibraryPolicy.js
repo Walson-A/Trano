@@ -18,3 +18,4 @@ function validEntry(value,id){
     var moi=value.moi;
     return !!moi && knownStatus(moi.statut) && Number.isInteger(moi.progression) && moi.progression>=0 && (moi.note===null || typeof moi.note==='number' && isFinite(moi.note) && moi.note>=0 && moi.note<=10);
 }
+function removable(entry){return !!entry && entry.presence==='present' && entry.editable===true && entry.removable===true && /^[a-f0-9]{64}$/.test(entry.removal_revision || '');}

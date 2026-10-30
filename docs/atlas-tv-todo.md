@@ -114,3 +114,11 @@ les vérifications après conflit ou réponse perdue restent fraîches.
 Voir [preuves et limites](research/2026-10-30-atlas-tv-loading-budget.md). La
 rapidité sur le Devialet est confirmée par Walson ; la latence sur une longue
 session reste à vérifier.
+
+## Retirer un animé — 30 octobre 2026
+
+Le retrait réel d’une entrée AniList est distinct du statut Abandonné. Le client
+TV utilise la capacité library_remove et une révision de retrait dédiée ; une
+réponse perdue impose une lecture fraîche, sans rejeu automatique. Le panneau
+annonce la perte du suivi AniList et la conservation de l’historique local.
+[Contrat, états et livraison](research/2026-10-30-atlas-tv-removal-header.md).

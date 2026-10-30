@@ -133,6 +133,9 @@ Item {
  property bool hlsEnabled:benchmarkHlsEnabled
  property bool libraryEnabled:false
  property bool libraryReadCacheEnabled:true
+ property bool libraryRemoveEnabled:true
+ property string removalFailure:""
+ property bool removalUnavailable:false
  property bool airingEnabled:false
  property bool followupAiring:false
  property bool franimeEnabled:false
@@ -171,10 +174,17 @@ Item {
   apiCalled(path,body);
   if(delayCollections && ['/tv/v1/library','/tv/v1/catalog/history'].indexOf(path)>=0){pendingCollections=pendingCollections.concat([{path:path,body:body,done:done}]);return;}
   if(path==='/tv/v1/library-entry'){if(delayLibrary){pendingLibrary=pendingLibrary.concat([{body:body,done:done}]);return;}Qt.callLater(function(){done(200,libraryEntry(body.anilist_id));});return;}
+  if(path==='/tv/v1/library-remove'){Qt.callLater(function(){
+   var mode=removalFailure;removalFailure='';
+   if(mode==='conflict'){var entry=libraryEntry(body.anilist_id);entry.moi.note=9;entry.revision='new-'+(++libraryRevision);seedLibrary(body.anilist_id,entry);done(409,{error:{code:'entry_conflict'}});return;}
+   if(mode==='timeout_present'){done(0,{});return;}
+   var value={anilist_id:body.anilist_id,presence:'absent',moi:null,editable:true,revision:'removed-'+(++libraryRevision),request_id:body.request_id};seedLibrary(body.anilist_id,value);
+   done(mode==='timeout' ? 0 : 200,mode==='timeout' ? {} : value);
+  });return;}
   if(path==='/tv/v1/library-update'){Qt.callLater(function(){
    var entry=libraryEntry(body.anilist_id),mode=libraryFailure;libraryFailure='';
    if(mode==='conflict'){entry.moi.statut='PAUSED';entry.moi.note=9;entry.revision='conflict-'+(++libraryRevision);seedLibrary(body.anilist_id,entry);done(409,{error:{code:'entry_conflict'}});return;}
-   var next=JSON.parse(JSON.stringify(entry));next.presence='present';next.moi=next.moi || {statut:'PLANNING',note:null,progression:0};['statut','note','progression'].forEach(function(k){if(Object.prototype.hasOwnProperty.call(body,k))next.moi[k]=body[k];});if(mode==='adjust_progress')next.moi.progression=12;next.revision='saved-'+(++libraryRevision);next.request_id=body.request_id;seedLibrary(body.anilist_id,next);libraryMutations++;
+   var next=JSON.parse(JSON.stringify(entry));next.presence='present';next.moi=next.moi || {statut:'PLANNING',note:null,progression:0};['statut','note','progression'].forEach(function(k){if(Object.prototype.hasOwnProperty.call(body,k))next.moi[k]=body[k];});if(mode==='adjust_progress')next.moi.progression=12;next.revision='saved-'+(++libraryRevision);next.request_id=body.request_id;delete next.removable;delete next.removal_revision;seedLibrary(body.anilist_id,next);libraryMutations++;
    done(mode==='timeout' ? 0 : 200,mode==='timeout' ? {} : next);
   });return;}
   if(path==='/tv/v1/library'){Qt.callLater(function(){var cards=benchmarkLibraryCards.filter(function(c){return !body.statut || c.moi.statut===body.statut;});if(trimLibrary)cards=cards.slice(0,24);done(200,{resultats:cards.slice((body.page-1)*24,body.page*24),page:body.page,total:cards.length,has_next_page:cards.length>body.page*24,presence_connue:true});});return;}
@@ -204,7 +214,7 @@ Item {
  function finishSearch(index) {var p=pendingSearches[index];p.done(200,{resultats:benchmarkHome.hero.slice(index%2,index%2+4),page:p.body.page,has_next_page:p.body.page===1});}
  function finishDetail(index,identity) {pendingDetails[index](200,benchmarkDetails[String(identity)]);}
  function finishLibrary(index){var pending=pendingLibrary[index];pending.done(200,libraryEntry(pending.body.anilist_id));}
- function libraryEntry(id){return JSON.parse(JSON.stringify(libraryEntries[String(id)] || {anilist_id:id,presence:'present',revision:'initial',editable:true,moi:{statut:'CURRENT',note:7.2,progression:5}}));}
+ function libraryEntry(id){var value=JSON.parse(JSON.stringify(libraryEntries[String(id)] || {anilist_id:id,presence:'present',revision:'initial',editable:true,moi:{statut:'CURRENT',note:7.2,progression:5}}));if(value.presence==='present' && value.editable){value.removable=!removalUnavailable;value.removal_revision=removalUnavailable ? null : ('0'.repeat(64)+String(libraryRevision)).slice(-64);}return value;}
  function seedLibrary(id,value){var next={};Object.keys(libraryEntries).forEach(function(k){next[k]=libraryEntries[k];});next[String(id)]=JSON.parse(JSON.stringify(value));libraryEntries=next;}
  function seedLibraryJson(id,text){seedLibrary(id,JSON.parse(text));}
  function upcomingEpisodes(id){var year=new Date().getFullYear()+1,rows=[];for(var n=1;n<=12;n++)rows.push({numero:n,titre:n<=5 ? 'Épisode '+n : '',vu:n<5,duree:n<=5 ? 24 : null,diffusion:{etat:n<=5 ? 'diffuse' : 'a_venir',date:n===6 ? {iso:year+'-01-03T20:00:00+01:00',precision:'instant',source:'anilist',libelle:'03/01/'+year+' à 20:00',fuseau:'Europe/Paris'} : null},lancable:n<=5});return {anilist_id:id,total:12,borne_connue:12,diffusion:{total_annonce:12,diffuses:5,statut:'RELEASING'},episodes:rows,complements_a_charger:true};}
@@ -636,6 +646,9 @@ Item {
                 loading_spec=importlib.util.spec_from_file_location('loading',pathlib.Path(__file__).with_name('atlas_tv_loading_bench.py'))
                 loading=importlib.util.module_from_spec(loading_spec);loading_spec.loader.exec_module(loading)
                 loading.run(window,session,screen,details,calls,QTest,Qt,QObject,spin,args.evidence)
+                removal_spec=importlib.util.spec_from_file_location('removal',pathlib.Path(__file__).with_name('atlas_tv_removal_bench.py'))
+                removal=importlib.util.module_from_spec(removal_spec);removal_spec.loader.exec_module(removal)
+                removal.run(window,session,screen,details,calls,QTest,Qt,QObject,spin,args.evidence)
             later_bad=[m for m in messages if any(s in m for s in ['ReferenceError','TypeError','Unable to assign','Cannot assign'])]
             assert not later_bad,later_bad
             negotiated=[body for path,body in calls if path in ['/tv/v1/playbacks','/tv/v1/readers','/tv/v1/variants']]

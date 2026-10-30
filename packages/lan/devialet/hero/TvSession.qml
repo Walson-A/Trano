@@ -14,6 +14,7 @@ Item {
     property bool hlsEnabled: false
     property bool libraryEnabled: false
     property bool libraryReadCacheEnabled:false
+    property bool libraryRemoveEnabled:false
     property bool airingEnabled: false
     property double expiresAt: 0
     property bool refreshing: false
@@ -73,6 +74,7 @@ Item {
             hlsEnabled=!!(runtime.capabilities && runtime.capabilities.hls===true);
             libraryEnabled=!!(runtime.capabilities && runtime.capabilities.library===true);
             libraryReadCacheEnabled=!!(runtime.capabilities && runtime.capabilities.library_read_cache===true);
+            libraryRemoveEnabled=!!(runtime.capabilities && runtime.capabilities.library_remove===true);
             airingEnabled=!!(runtime.capabilities && runtime.capabilities.airing===true);
             request(apiOrigin+'/tv/v1/session/activate',{code:runtime.activation.code},'',12000,function(code,value) {
                 if(code!==200 || !credentials(value)) { fail(); return; }

@@ -297,3 +297,10 @@ des épisodes, du suivi, du profil et des menus du lecteur. Ils sont décoratifs
 sans focus ni travail GPU continu. La diffusion partielle devient une métadonnée
 secondaire ; la carte future garde la date et sa garde de lecture.
 [Contrat, revue et limites](research/2026-10-30-atlas-tv-loading-budget.md).
+
+## Retrait et en-tête — 30 octobre 2026
+
+[Retrait de Ma liste, titre long et bloc Profil](research/2026-10-30-atlas-tv-removal-header.md) :
+action séparée du statut Abandonné, confirmation explicite et reprise sans rejeu ;
+le titre reste sous la navigation, le pseudo et l’avatar gardent des espacements
+constants. Préparé et vérifié au banc ; la publication est tracée dans ce rapport.

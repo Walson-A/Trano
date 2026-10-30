@@ -27,15 +27,15 @@ Item {
             Rectangle {x:42;y:48;width:80;height:3;radius:1.5;color:parent.focused ? '#15171c' : 'white';visible:nav.page==='library'}
         }
     }
-    Item {id:profile;objectName:'profileEntry';x:1216-width;y:24;width:Math.max(130,Math.min(260,name.implicitWidth+78));height:52
+    Item {id:profile;objectName:'profileEntry';x:1216-width;y:24;width:Math.max(96,Math.min(260,name.implicitWidth+80));height:52
         property bool targeted:nav.focused && nav.selectedIndex===1
-        Accessible.role:Accessible.Button;Accessible.name:'Profil'
+        Accessible.role:Accessible.Button;Accessible.name:nav.pseudo ? 'Profil de '+nav.pseudo : 'Profil'
         Rectangle {anchors.fill:parent;radius:12;color:profile.targeted ? '#f6f6f7' : '#7513161c';border.color:profile.targeted ? 'white' : '#30ffffff'}
-        Text {id:name;x:18;width:parent.width-78;anchors.verticalCenter:parent.verticalCenter;text:nav.pseudo || 'Profil';textFormat:Text.PlainText;elide:Text.ElideRight;color:profile.targeted ? '#121316' : 'white';font.family:nav.family;font.pixelSize:19;font.weight:Font.DemiBold}
-        Rectangle {x:18;y:47;width:parent.width-36;height:3;radius:1.5;color:profile.targeted ? '#15171c' : 'white';visible:nav.page==='profile'}
-        Rectangle {x:parent.width-50;y:6;width:40;height:40;radius:20;color:'#b32c3039'
-            Image {id:picture;anchors.fill:parent;anchors.margins:2;source:nav.avatar;sourceSize.width:80;fillMode:Image.PreserveAspectCrop;asynchronous:true;visible:false}
-            OpacityMask {anchors.fill:picture;source:picture;maskSource:Rectangle {width:36;height:36;radius:18}}
+        Text {id:name;objectName:'profileName';x:16;width:parent.width-80;anchors.verticalCenter:parent.verticalCenter;text:nav.pseudo || 'Profil';textFormat:Text.PlainText;elide:Text.ElideRight;color:profile.targeted ? '#121316' : 'white';font.family:nav.family;font.pixelSize:19;font.weight:Font.DemiBold}
+        Rectangle {x:16;y:47;width:parent.width-32;height:3;radius:1.5;color:profile.targeted ? '#15171c' : 'white';visible:nav.page==='profile'}
+        Rectangle {objectName:'profileAvatar';x:parent.width-52;y:8;width:36;height:36;radius:18;color:'#b32c3039'
+            Image {id:picture;anchors.fill:parent;source:nav.avatar;sourceSize.width:80;fillMode:Image.PreserveAspectCrop;asynchronous:true;visible:false}
+            OpacityMask {anchors.fill:picture;source:picture;maskSource:Rectangle {width:picture.width;height:picture.height;radius:width/2}}
             Icon {anchors.centerIn:parent;width:22;height:22;name:'user-round';visible:picture.status!==Image.Ready}
         }
         MouseArea {anchors.fill:parent;onClicked:nav.destinationRequested('profile')}

@@ -206,16 +206,17 @@ FocusScope {
         } }
     }
     Column {
-        x: 64; width: 630; anchors.bottom: parent.top; anchors.bottomMargin: -350; spacing: 16
+        objectName:'heroCopy'
+        x: 64; width: 630; anchors.bottom: parent.top; anchors.bottomMargin: -350; spacing: 12
         opacity: scene.contentVisible ? 1 : 0
         Behavior on opacity { enabled: !scene.reducedMotion; NumberAnimation { duration: scene.contentVisible ? Motion.ms('focus') : Motion.ms('settle'); easing.type: Easing.Bezier; easing.bezierCurve: Motion.easeOut() } }
-        Text { objectName: "heroTitle"; width: 630; text: scene.displayedMedia ? scene.displayedMedia.titre : "Aucun animé disponible";
-            color: "#fafafb"; font.family: scene.family; font.pixelSize: 50; font.weight: Font.Bold; font.letterSpacing: -1.6;
-            wrapMode: Text.WordWrap; maximumLineCount: 2; elide: Text.ElideRight; textFormat: Text.PlainText; lineHeight: 52; lineHeightMode: Text.FixedHeight }
+        Text { id:heroTitle; objectName: "heroTitle"; width: 630; text: scene.displayedMedia ? scene.displayedMedia.titre : "Aucun animé disponible";
+            color: "#fafafb"; font.family: scene.family; font.pixelSize: 48; font.weight: Font.Bold; font.letterSpacing: -1.3;
+            wrapMode: Text.Wrap; maximumLineCount: 2; elide: Text.ElideRight; textFormat: Text.PlainText; lineHeight: 50; lineHeightMode: Text.FixedHeight }
         Text { width: 650; text: scene.meta(scene.displayedMedia); color: "#d2d2d7"; font.family: scene.family; font.pixelSize: 17; elide: Text.ElideRight }
         Text { width: 600; text: scene.displayedMedia ? scene.displayedMedia.resume || "" : ""; textFormat: Text.PlainText; color: "#d0d0d6";
-            font.family: scene.family; font.pixelSize: 19; lineHeight: 27; lineHeightMode: Text.FixedHeight; wrapMode: Text.WordWrap; maximumLineCount: 2; elide: Text.ElideRight }
-        Item { width: 630; height: 64
+            font.family: scene.family; font.pixelSize: 19; lineHeight: 24; lineHeightMode: Text.FixedHeight; wrapMode: Text.WordWrap; maximumLineCount: heroTitle.lineCount>1 ? 1 : 2; elide: Text.ElideRight }
+        Item { width: 630; height: 52
             Row { anchors.bottom: parent.bottom; spacing: 14
                 HeroButton { objectName:'heroPlay'; width: scene.selected && scene.selected.a_lancer ? 244 : 174; iconKey: 'play'; reducedMotion: scene.reducedMotion; label: scene.selected && scene.selected.a_lancer ? "Reprendre · Ép. " + scene.selected.a_lancer.numero : "Lecture"; family: scene.family; primary: true; groupHasFocus:true; selected:scene.zone==='rail' && scene.actionIndex===0; focused: scene.zone==='actions' && scene.actionIndex===0; onActivated: { scene.zone='actions'; scene.actionIndex=0; scene.activate(); } }
                 HeroButton { objectName:'heroInfo'; width: 180; iconKey: 'info'; reducedMotion: scene.reducedMotion; label: "Plus d’infos"; family: scene.family; selected:scene.zone==='rail' && scene.actionIndex===1; backdrop: backdrop; sampleRect: Qt.rect(scene.selected && scene.selected.a_lancer ? 322 : 252,298,width,height); focused: scene.zone==='actions' && scene.actionIndex===1; onActivated: { scene.zone='actions'; scene.actionIndex=1; scene.activate(); } }

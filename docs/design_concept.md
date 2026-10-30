@@ -265,3 +265,17 @@ secondaire uniquement si la diffusion est incomplète. Une carte future reprend
 le visuel connu de la série, assombri, avec un petit repère À venir et sa date.
 Elle ne montre ni commande de lecture ni progression fictive. Voir
 [contrat et captures réelles](research/2026-10-30-atlas-tv-loading-budget.md).
+
+## Retrait de Ma liste et en-tête Atlas TV
+
+« Retirer de Ma liste » est une action distincte des six statuts de suivi. Elle
+ouvre une confirmation dont Annuler est sélectionné. Le panneau précise l’effet
+sur AniList (entrée, note, progression et notes personnelles) et la conservation
+de l’historique Atlas. Retour ferme d’abord cette confirmation. Une réponse
+perdue déclenche une vérification explicite ; aucun retrait n’est rejoué.
+
+Le héros garde ses boutons à y=298. Son titre de deux lignes réduit le résumé
+à une ligne plutôt que de remonter sous la navigation. Le bouton Profil garde
+16 px de marge intérieure, 12 px entre pseudo et avatar et une largeur naturelle
+bornée ; son avatar est circulaire sans étirement. Voir la
+[revue et les preuves](research/2026-10-30-atlas-tv-removal-header.md).
