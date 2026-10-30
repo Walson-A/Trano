@@ -1,0 +1,19 @@
+{
+  "temporaryStageRemoved": true,
+  "testSessionsFinished": [
+    77947,
+    34342,
+    44060,
+    50808
+  ],
+  "httpFixtureServerClosed": true,
+  "localBackgroundProcessesRetained": [],
+  "productionServiceRetained": "atlas-tv-launch",
+  "serviceReason": "Service Atlas TV demandé, à arrêter lors du retrait explicite de ce service",
+  "sharedCheckoutRetained": true,
+  "checkoutReason": "Checkout partagé existant, branche de livraison non intégrée et travaux tiers préexistants à préserver ; aucun nouveau worktree créé",
+  "preexistingUntrackedPreserved": [
+    "packages/lan/devialet/tv/",
+    "packages/lan/scripts/preview-atlas-tv-home.py"
+  ]
+}

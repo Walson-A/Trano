@@ -82,3 +82,32 @@ L’application doit être ouverte et connectée ; le poll ne réveille ni ne la
 l’application après arrêt, reboot ou ouverture d’une autre application.
 
 Les preuves sont dans `2026-10-30-atlas-tv-conversation/`.
+
+## Publication et présence réelle
+
+**hero-conversation-3493b637e5cb**, 39 fichiers et 399067 octets, est publié
+depuis `bc9bb56`, poussé sur `feat/local-network`. Le prévol confirme l’engine
+de référence et le gateway au SHA256
+`3fe9b6eacd5baac82f110448439261962d7f2ff2f9b1eb389ed5c5cd39ea95c4`.
+La publication atomique remplace hero-trailer-root-2f6ddaaf5671, vérifie les
+empreintes exactes et ne redémarre pas l’engine. Aucun serveur n’est modifié.
+
+Le lancement SDK `08241dec712f563dce6b7fe9ec30b4e1` est accepté. Le Player
+demande 36 assets, dont TvConversationLaunch, TvSession et EpisodePlayer.
+La lecture owner du statut confirme **primary online=true, request=null**.
+Cela prouve une présence admise du nouveau récepteur auprès de l’engine,
+au-delà du téléchargement du paquet. Aucune intention n’a été soumise et
+aucun épisode réel n’a été lancé pour cette vérification.
+
+Le chat backend confirme indépendamment l’enregistrement des deux outils,
+un appel réel readonly de `get_atlas_tv_launch_status` avec online=true et
+request=null, les refus 401 sans authentification et le refus 400 d’un corps
+owner vide. Aucun lancement valide n’est soumis par ce contrôle.
+[Reçu de cette vérification](2026-10-30-atlas-tv-conversation/backend-verification.json).
+
+Voir [publication](2026-10-30-atlas-tv-conversation/publication.json),
+[paquet](2026-10-30-atlas-tv-conversation/package.json),
+[reçu SDK](2026-10-30-atlas-tv-conversation/launch.json) et
+[présence en lecture seule](2026-10-30-atlas-tv-conversation/receiver-status.json).
+La réception physique des bandes-annonces reste distincte et non confirmée
+dans ce lot ; aucune nouvelle réussite d’image n’est déduite de ce statut.

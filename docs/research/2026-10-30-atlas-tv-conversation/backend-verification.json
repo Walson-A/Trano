@@ -1,0 +1,19 @@
+{
+  "provenance": "Vérification indépendante rapportée par le chat backend autorisé",
+  "sourceThread": "01a17981-e013-75e0-bfe1-f8593656c70f",
+  "engineCommit": "39cfb1c3e1af9c88e90730b78a0f0c6a8e902917",
+  "releaseId": "hero-conversation-3493b637e5cb",
+  "serverSha256": "3fe9b6eacd5baac82f110448439261962d7f2ff2f9b1eb389ed5c5cd39ea95c4",
+  "registeredTools": [
+    "play_anime_tv",
+    "get_atlas_tv_launch_status"
+  ],
+  "readonlyStatusToolCalled": true,
+  "primaryOnline": true,
+  "requestPresent": false,
+  "unauthenticatedRoutesChecked": 4,
+  "unauthenticatedStatus": 401,
+  "emptyOwnerSubmissionStatus": 400,
+  "validIntentSubmitted": false,
+  "episodeStarted": false
+}
