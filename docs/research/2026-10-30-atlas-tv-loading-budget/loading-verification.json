@@ -11,6 +11,7 @@
   "noInventedResults": true,
   "retryAfterHonoured": true,
   "lateSearchIgnored": true,
+  "missingImageStopsSkeleton": true,
   "deferredExtrasCancelledOnLeave": true,
   "extrasEventuallyLoadWhenStaying": true
 }

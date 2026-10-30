@@ -14,8 +14,16 @@ connexion Internet de Walson.
 Le backend passe à une admission immédiate et un refus 429 anilist_busy avec
 error.details.retry_after, plutôt qu’une attente destinée à expirer. Il partage
 les lectures publiques et minimales privées et réduit les enrichissements
-inutiles. Le quota amont n’est pas augmenté. Les mesures après déploiement et
-la référence exacte du backend seront ajoutées à la livraison.
+inutiles. Le quota amont n’est pas augmenté. Le moteur ec1216adc4e3f0f6c3f633f5b1a7a6fd5ff8ce5b
+est réellement servi après le workflow 40981766771. Le
+[diagnostic backend](2026-10-30-atlas-tv-loading-budget/backend-measures.json),
+révoqué après lecture seule, mesure : Death Note détail/épisodes 718/717 ms,
+My Hero Academia 291/289 ms, One Piece 659/658 ms. Les neuf lectures TV ont
+coûté huit départs AniList, avec douze cache hits et aucun refus ni attente
+résiduelle. Ma liste (24 cartes) prend 293 ms ; Recherche Death Note 170 ms.
+Une lecture privée normale réutilisée prend 22 ms ; sa vérification explicite
+fraîche 156 ms, avec un départ privé supplémentaire effectivement mesuré.
+Cela vérifie un petit parcours réel, pas une session soutenue.
 
 ## Contrat client
 
@@ -41,7 +49,9 @@ Après 160 ms, un squelette statique remplit le véritable emplacement vide. Il
 ne contient aucun titre, statut ou résultat inventé, ne reçoit pas le focus et
 ne maintient ni scintillement ni shader. Les données connues restent visibles.
 Après quatre secondes, Recherche/Ma liste indiquent que le chargement se prolonge.
-Une erreur remplace le squelette par une reprise explicite ; ce traitement ne
+Un visuel sans source dont les reprises sont terminées cesse aussi d’afficher
+un squelette : il indique son indisponibilité. Une erreur de lecture remplace
+le squelette par une reprise explicite ; ce traitement ne
 prétend pas accélérer l’amont.
 
 Revue des vrais composants QML à 1280×720, API/compte/décodeur **simulés** :
@@ -59,9 +69,9 @@ La [fiche prête](2026-10-30-atlas-tv-loading-budget/loading-ready-detail.png)
 porte seulement « 12 épisodes ». Une petite ligne « 5 diffusés sur 12 » apparaît
 quand utile ; une saison entièrement diffusée porte simplement « 9 épisodes ».
 Le [futur dans la fiche](2026-10-30-atlas-tv-loading-budget/followup-upcoming-detail.png)
-et le [sélecteur du lecteur](2026-10-30-atlas-tv-loading-budget/followup-upcoming-player.png)
-emploient un repère compact, le visuel de série déjà connu assombri et la date
-confirmée. Pas de lecture ni de progression fictive sur le futur. Le calendrier
+emploie un repère compact, le visuel de série déjà connu assombri et la date
+confirmée. Le [sélecteur du lecteur](2026-10-30-atlas-tv-loading-budget/followup-upcoming-player.png)
+garde ce repère et sa date, sans inventer une vignette d’épisode futur. Pas de lecture ni de progression fictive sur le futur. Le calendrier
 12/5 du banc est synthétique et n’est attribué à aucun titre réel.
 
 ## Vérifications
@@ -76,7 +86,8 @@ confirmée. Pas de lecture ni de progression fictive sur le futur. Le calendrier
   réponse perdue, relectures fraîches sans reuse_recent, cache normal opt-in,
   brouillon conservé, futurs bloqués et compléments incapables de les débloquer.
 - [Retards et admission](2026-10-30-atlas-tv-loading-budget/loading-verification.json) :
-  cinq squelettes, aucune donnée inventée, Retry-After respecté, réponse de
+  cinq squelettes, visuel absent sorti du chargement, aucune donnée inventée,
+  Retry-After respecté, réponse de
   Recherche ignorée après fermeture, complément annulé avant envoi ou chargé
   quand on reste sur la fiche.
 - [Session HTTP locale](2026-10-30-atlas-tv-loading-budget/session-verification.json) :

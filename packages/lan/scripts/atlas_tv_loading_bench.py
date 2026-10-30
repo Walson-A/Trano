@@ -10,6 +10,12 @@ def run(window, session, screen, details, calls, QTest, Qt, QObject, spin, evide
     def count(path):
         return len([1 for p, _ in calls if p == path])
 
+    def visual(item, name):
+        found = [item] if item.objectName() == name else []
+        for child in item.childItems():
+            found.extend(visual(child, name))
+        return found
+
     def skeleton(parent, name):
         item = parent.findChild(QObject, name)
         spin(lambda: item.property('visible'))
@@ -54,6 +60,16 @@ def run(window, session, screen, details, calls, QTest, Qt, QObject, spin, evide
     assert window.grabWindow().save(str(evidence / 'loading-library.png'))
     session.finishCollection(slot)
     spin(lambda: library.property('state') == 'ready')
+    # A missing image whose bounded retries ended is not an infinite skeleton.
+    cards = data(library, 'results')
+    missing = dict(cards[0]); missing.update(anilist_id=9876543, affiche='', banniere='')
+    artworks = window.findChild(QObject, 'artworkCache')
+    enabled = session.property('artworkEnabled'); session.setProperty('artworkEnabled', False)
+    artworks.remember('9876543:poster', {'retryAt': 60000, 'automatic': False, 'failures': 3})
+    library.setProperty('results', [missing])
+    spin(lambda: any(i.property('visible') for i in visual(library, 'posterUnavailable')))
+    assert all(not i.property('active') for i in visual(library, 'posterSkeleton'))
+    library.setProperty('results', cards); session.setProperty('artworkEnabled', enabled)
 
     screen.navigate('profile')
     profile = window.findChild(QObject, 'atlasProfile')
@@ -111,5 +127,6 @@ def run(window, session, screen, details, calls, QTest, Qt, QObject, spin, evide
         'passed': True, 'scope': 'real QML, fake API/account/decoder; no native or live account writes',
         'staticSkeletons': ['search', 'library', 'profile', 'episodes', 'followup'],
         'noInventedResults': True, 'retryAfterHonoured': True, 'lateSearchIgnored': True,
+        'missingImageStopsSkeleton': True,
         'deferredExtrasCancelledOnLeave': True, 'extrasEventuallyLoadWhenStaying': True,
     }, indent=2), encoding='utf-8')

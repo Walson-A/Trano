@@ -1,0 +1,32 @@
+{
+  "source": "Backend chat, owner diagnostic after deployed ec1216ad; diagnostic revoked",
+  "backendCommit": "ec1216adc4e3f0f6c3f633f5b1a7a6fd5ff8ce5b",
+  "routes_ms": {
+    "1535": {
+      "detail": 718,
+      "episodes": 717,
+      "libraryEntry": 185
+    },
+    "21459": {
+      "detail": 291,
+      "episodes": 289,
+      "libraryEntry": 179
+    },
+    "21": {
+      "detail": 659,
+      "episodes": 658,
+      "libraryEntry": 200
+    }
+  },
+  "anilistDepartures": 8,
+  "publicDepartures": 4,
+  "privateDepartures": 4,
+  "cacheHits": 12,
+  "localOrUpstreamRefusals": 0,
+  "libraryNormalCachedMs": 22,
+  "libraryFreshExplicitMs": 156,
+  "freshPrivateDepartureDelta": 1,
+  "library24ResultsMs": 293,
+  "searchDeathNoteMs": 170,
+  "limit": "Bounded read-only sequence; no sustained-navigation or physical-render claim"
+}

@@ -140,6 +140,8 @@ FocusScope {
     GridView {id:grid;objectName:'discoveryGrid';x:56;y:view.denseLayout ? 256 : 310;width:view.denseLayout ? 1168 : 840;height:view.denseLayout ? 404 : 350;cellWidth:width/view.columns;cellHeight:view.denseLayout ? 310 : 336;clip:true;model:view.results;currentIndex:view.resultIndex;interactive:false;keyNavigationEnabled:false;visible:view.state!=='error';opacity:view.state==='loading' ? 0.55 : 1
         onCurrentIndexChanged:if(currentIndex>=0 && currentIndex<count)positionViewAtIndex(currentIndex,GridView.Beginning)
         delegate:Item {id:tile;width:grid.cellWidth;height:grid.cellHeight
+            readonly property var posterEntry:view.artworks ? view.artworks.entries[String(modelData.anilist_id)+':poster'] : null
+            readonly property bool posterUnavailable:poster.status===Image.Error || poster.status===Image.Null && !!posterEntry && posterEntry.retryAt>0 && !posterEntry.automatic
             property bool targeted:view.state==='ready' && view.zone==='results' && view.resultIndex===index && !view.overlay
             property bool chosen:view.resultIndex===index
             Item {x:8;y:7;width:view.denseLayout ? 174 : 190;height:300;scale:tile.targeted ? 1.025 : 1;transformOrigin:Item.Top
@@ -147,8 +149,8 @@ FocusScope {
                 Rectangle {id:frame;width:parent.width;height:view.denseLayout ? 242 : 264;radius:9;color:'#1b1e26';border.width:tile.targeted ? 3 : tile.chosen ? 1 : 0;border.color:tile.targeted ? 'white' : '#848994'}
                 Image {id:poster;objectName:'discoveryArtwork';x:4;y:4;width:frame.width-8;height:frame.height-8;source:view.art(modelData,'poster');fillMode:Image.PreserveAspectCrop;asynchronous:true;sourceSize.width:380;visible:false;onStatusChanged:if(view.artworks){if(status===Image.Error)view.artworks.failed(modelData,'poster',source);else if(status===Image.Ready)view.artworks.confirmed(modelData,'poster',source);}}
                 OpacityMask {x:4;y:4;width:frame.width-8;height:frame.height-8;source:poster;maskSource:Rectangle {width:poster.width;height:poster.height;radius:6}}
-                LoadingSkeleton {x:4;y:4;width:frame.width-8;height:frame.height-8;layout:'cover';active:poster.status===Image.Loading || poster.status===Image.Null}
-                Text {anchors.centerIn:frame;width:155;text:'Image indisponible';visible:poster.status===Image.Error;color:'#727783';font.family:view.family;font.pixelSize:18;horizontalAlignment:Text.AlignHCenter;wrapMode:Text.WordWrap}
+                LoadingSkeleton {objectName:'posterSkeleton';x:4;y:4;width:frame.width-8;height:frame.height-8;layout:'cover';active:!tile.posterUnavailable && (poster.status===Image.Loading || poster.status===Image.Null)}
+                Text {objectName:'posterUnavailable';anchors.centerIn:frame;width:155;text:'Image indisponible';visible:tile.posterUnavailable;color:'#727783';font.family:view.family;font.pixelSize:18;horizontalAlignment:Text.AlignHCenter;wrapMode:Text.WordWrap}
                 Text {y:frame.height+10;width:parent.width;height:46;text:modelData.titre || '';textFormat:Text.PlainText;wrapMode:Text.WordWrap;maximumLineCount:2;elide:Text.ElideRight;color:tile.targeted ? 'white' : '#bfc2ca';font.family:view.family;font.pixelSize:17;font.weight:tile.targeted ? Font.DemiBold : Font.Normal}
             }
             MouseArea {anchors.fill:parent;onClicked:{view.zone='results';view.resultIndex=index;view.activate();view.forceActiveFocus();}}
