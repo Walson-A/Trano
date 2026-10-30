@@ -121,7 +121,10 @@ le SDK accepté et 34 ressources demandées, dont RequestState.js et
 LoadingSkeleton.qml. Le runtime effectif, lu en mémoire avant ce lancement,
 annonce strictement library_read_cache:true. Aucun épisode n’est démarré
 automatiquement. Le téléchargement ne prouve pas le rendu physique ni une
-longue session : la réception de Walson est demandée et reste en attente.
+longue session. Walson confirme ensuite sur le Devialet : « Oui, c’est nettement
+plus rapide », en réponse au parcours fiches, Recherche et Ma liste. Cette
+réception valide l’amélioration perçue ; elle ne valide pas une longue session
+ni chaque titre ou chaque état visuel.
 
 [Nettoyage](2026-10-30-atlas-tv-loading-budget/cleanup.json) : les deux transferts
 distants sont retirés après vérification des empreintes ; le bundle actif et son
@@ -129,3 +132,6 @@ rollback privé 0600 restent disponibles. Les exports et paquets intermédiaires
 locaux sont retirés après archivage des preuves. Aucun serveur de test du lot
 ne reste actif. Le worktree partagé, les caches Qt/fonts/images communs et les
 deux éléments non suivis préexistants sont conservés pour la suite TV.
+
+Le [rapport backend final](https://github.com/Walson-A/Atlas/blob/399ce657d70a42b765d3bd2afa0c4daef601f16f/docs/research/atlas-tv-admission-2026-10-30.md)
+conserve les mesures agrégées, leur attribution aux binaires et le ménage serveur.

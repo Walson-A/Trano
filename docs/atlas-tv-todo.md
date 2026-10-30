@@ -112,4 +112,5 @@ et interrompt le préchargement des affiches d’accueil pendant les panneaux.
 La réutilisation privée de cinq secondes est un opt-in de lecture normale ;
 les vérifications après conflit ou réponse perdue restent fraîches.
 Voir [preuves et limites](research/2026-10-30-atlas-tv-loading-budget.md). La
-réception physique et la latence sur une longue session restent à vérifier.
+rapidité sur le Devialet est confirmée par Walson ; la latence sur une longue
+session reste à vérifier.
