@@ -44,5 +44,14 @@
   "gatewayPid": 3506189,
   "sdkAccepted": true,
   "episodeStarted": false,
-  "physicalReception": "pending"
+  "physicalReception": "confirmed_by_user",
+  "physicalReceptionEvidence": {
+    "date": "2026-10-31",
+    "source": "Walson: Oui, les deux sont bons",
+    "confirmed": [
+      "Menu opens on the currently playing episode",
+      "Watched episode markers visible"
+    ],
+    "scope": "User acceptance of the requested episode-menu scenario; not a claim covering every series"
+  }
 }

@@ -46,8 +46,8 @@ Les résultats et captures sont conservés dans `2026-10-31-atlas-tv-episode-con
 Les scénarios passent : écart au centre de 0 px contre 157 px avant, état vu
 explicite et position de lecture conservée. La revue des captures 1280×720
 confirme la lisibilité du badge, la distinction du focus et de « En lecture »
-et les cartes voisines visibles. La validation physique de cette passe reste
-à faire après publication.
+et les cartes voisines visibles. Après publication, Walson confirme sur la
+TV le centrage et les repères « Vu » par « Oui, les deux sont bons ».
 
 
 ## Publication et réception
@@ -61,8 +61,11 @@ service redémarre pour servir le nouveau paquet. La publication atomique
 vérifie les empreintes des 40 fichiers. L’engine n’est pas redémarré.
 
 Le SDK accepte `78fbde94b851cf55bd03d0ca1067f206`. Aucun épisode réel n’est
-lancé automatiquement. La confirmation physique du centrage et des badges
-reste demandée à Walson ; SDK accepté et téléchargements ne la remplacent pas.
+lancé automatiquement. Walson confirme ensuite les deux points du scénario
+sur la version relancée : ouverture sur l’épisode en cours et repères « Vu ».
+Cette réception physique est conservée dans le reçu, distinctement des tests
+simulés et de l’acceptation du SDK. Aucun nouveau paquet n’est publié pour
+enregistrer ce retour.
 [Paquet](2026-10-31-atlas-tv-episode-context/package.json),
 [publication](2026-10-31-atlas-tv-episode-context/publication.json),
 [lancement](2026-10-31-atlas-tv-episode-context/launch.json).
