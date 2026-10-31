@@ -1,0 +1,36 @@
+{
+  "localStageRemoved": ".local/atlas-tv-episode-context-20261031",
+  "removalVerified": true,
+  "testAndPublicationSessionsCompleted": [
+    33692,
+    39747,
+    32173,
+    26621,
+    12756,
+    53970
+  ],
+  "functionsCell177Completed": true,
+  "localTestProcessesKept": [],
+  "retained": [
+    {
+      "host": "server",
+      "service": "atlas-tv-launch",
+      "pid": 3506189,
+      "reason": "Serves the requested live app; retain while in use, stop on service retirement."
+    },
+    {
+      "host": "Devialet",
+      "launchId": "78fbde94b851cf55bd03d0ca1067f206",
+      "reason": "Requested app trial; keep unchanged during user QA, exit using the normal app controls."
+    }
+  ],
+  "checkoutRetained": {
+    "branch": "feat/local-network",
+    "reason": "Pre-existing shared checkout, ongoing user QA and unrelated work; no new checkout created."
+  },
+  "unrelatedUntrackedPreserved": [
+    "packages/lan/devialet/tv/",
+    "packages/lan/scripts/preview-atlas-tv-home.py"
+  ],
+  "intermediateBenchExportsRemoved": true
+}

@@ -48,3 +48,36 @@ explicite et position de lecture conservée. La revue des captures 1280×720
 confirme la lisibilité du badge, la distinction du focus et de « En lecture »
 et les cartes voisines visibles. La validation physique de cette passe reste
 à faire après publication.
+
+
+## Publication et réception
+
+À la demande de relance immédiate, la release **hero-episode-context-7c00657fd1ce**
+est publiée depuis `ce29a53` : 40 fichiers, 409903 octets. Le prévol confirme
+la release précédente `hero-preview-transitions-1dc4eb6a1d16` et l’engine
+`39cfb1c3e1af9c88e90730b78a0f0c6a8e902917`. Le gateway garde son code au SHA256
+`3fe9b6eacd5baac82f110448439261962d7f2ff2f9b1eb389ed5c5cd39ea95c4` ; seul son
+service redémarre pour servir le nouveau paquet. La publication atomique
+vérifie les empreintes des 40 fichiers. L’engine n’est pas redémarré.
+
+Le SDK accepte `78fbde94b851cf55bd03d0ca1067f206`. Aucun épisode réel n’est
+lancé automatiquement. La confirmation physique du centrage et des badges
+reste demandée à Walson ; SDK accepté et téléchargements ne la remplacent pas.
+[Paquet](2026-10-31-atlas-tv-episode-context/package.json),
+[publication](2026-10-31-atlas-tv-episode-context/publication.json),
+[lancement](2026-10-31-atlas-tv-episode-context/launch.json).
+
+Les captures avant/après finales utilisent une fixture de même taille, avec
+les compteurs de la carte alignés sur ses 85 épisodes synthétiques. Le parcours
+complet HLS et les bandes-annonces/intentions Oby passent ; la passe visuelle
+ciblée confirme séparément les captures du menu. Les prises précoces de
+chargement et les essais intermédiaires sont retirés.
+
+
+## Nettoyage
+
+Tous les processus de banc et de publication sont terminés. Le stage local
+et les exports intermédiaires sont supprimés. Le service serveur et l’app TV
+restent actifs pour l’usage et le contrôle demandés. Le checkout partagé et
+les travaux sans rapport sont conservés, sans créer de nouveau worktree.
+[Identifiants, raisons et conditions d’arrêt](2026-10-31-atlas-tv-episode-context/cleanup.json).
