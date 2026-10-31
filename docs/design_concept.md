@@ -323,3 +323,9 @@ fiche masque la composition de l’accueil, puis conserve ses propres textes et
 dégradés au-dessus de cette surface. Le plein écran superpose les commandes
 validées sans créer un second lecteur ni déplacer le parent du VideoOutput.
 [Réception en échec, diagnostic et reprise](research/2026-10-31-atlas-tv-shared-preview.md).
+
+La passe partagée régresse nativement et est retirée. Le correctif suivant
+garde les parents et coordonnées d’origine, masque les éléments de l’accueil
+individuellement et ne crée le lecteur d’épisode qu’à son lancement. La vidéo
+seule est confirmée dans les trois dimensions ; l’interface complète doit
+encore être confirmée. [Cycle de vie et preuves](research/2026-10-31-atlas-tv-native-lifecycle.md).

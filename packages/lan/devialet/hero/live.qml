@@ -220,7 +220,7 @@ Application {
             if(hero.trailerSources[hero.trailerId] && !previews.cachedSource(hero.selected))hero.trailerSources={};
         } }
         Hero {
-            id:hero; objectName:'atlasHero'; family:regular.name || 'sans-serif'; homeData:session.home; keepPreviewLoaded:true
+            id:hero; objectName:'atlasHero'; family:regular.name || 'sans-serif'; homeData:session.home; keepPreviewLoaded:!screen.playbackId
             previewExternal:screen.panel==='detail' && !screen.playbackId;previewExternalFullscreen:!!detailPanel.item && detailPanel.item.fullPreview;previewExternalHeight:detailPanel.item ? detailPanel.item.headerHeight : 308
             artworkMap:artworks.sources
             avatar:session.home.compte && session.home.compte.avatar ? session.home.compte.avatar : profilePanel.item ? profilePanel.item.avatar : ''
@@ -240,9 +240,10 @@ Application {
             onContextBackRequested:screen.openPanel(screen.returnPanel)
         }
         Connections { target:hero; function onSelectedChanged() { screen.cancelHomePreview();screen.warmArtwork(); } function onItemsChanged() { screen.warmArtwork(); } function onPreviewEnabledChanged(){if(!hero.previewEnabled)screen.cancelHomePreview();} }
+        Component {id:episodeComponent;EpisodePlayer {}}
         Loader {
-            // Load once during bootstrap: the asset ticket expires in ten minutes.
-            id:episode; objectName:'episodeLoader'; anchors.fill:parent; source:'EpisodePlayer.qml'; visible:!!screen.playbackId
+            // Keep code compiled at bootstrap; instantiate native media only for an episode.
+            id:episode; objectName:'episodeLoader'; anchors.fill:parent; active:!!screen.playbackId;source:"EpisodePlayer.qml";visible:!!screen.playbackId
             onLoaded: {
                 item.family=regular.name || 'sans-serif';
                 item.transport=session;item.current=Qt.binding(function(){return screen.pendingPlayback;});item.changing=Qt.binding(function(){return screen.resolving;});

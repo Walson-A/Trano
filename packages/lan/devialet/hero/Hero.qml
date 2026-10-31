@@ -194,6 +194,7 @@ FocusScope {
     Timer { id: delay; interval: 900; onTriggered: scene.startPreview() }
     Timer { id: heroSwap; interval: Motion.ms('settle'); onTriggered: { scene.displayedMedia=scene.selected; scene.contentVisible=true; } }
     Timer { id: previewTimeout; interval: 10000; onTriggered: { if(preview.item) preview.item.stop(); scene.previewState='error'; } }
+    Component {id:trailerComponent;Trailer {}}
     Rectangle { anchors.fill: parent; color: "#090a0d" }
     Item {
         id: backdrop; anchors.fill: parent
@@ -201,7 +202,7 @@ FocusScope {
             onFailed:scene.artworkFailed(scene.displayedMedia,poster ? 'poster' : 'banner',failedSource)
             onImageReady:scene.artworkReady(scene.displayedMedia,poster ? 'poster' : 'banner',loadedSource)
         }
-        Loader { id: preview; width: 1280; height:scene.previewExternal ? (scene.previewExternalFullscreen ? 720 : scene.previewExternalHeight) : 620; source: scene.previewEnabled || scene.keepPreviewLoaded ? "Trailer.qml" : ""; opacity:(scene.previewExternal ? !!preview.item && preview.item.ready : scene.videoReady) ? 1 : 0
+        Loader { id: preview; width: 1280; height:scene.previewExternal ? (scene.previewExternalFullscreen ? 720 : scene.previewExternalHeight) : 620; active:scene.previewEnabled || scene.keepPreviewLoaded;source:"Trailer.qml"; opacity:(scene.previewExternal ? !!preview.item && preview.item.ready : scene.videoReady) ? 1 : 0
             Behavior on opacity { enabled: !scene.reducedMotion; NumberAnimation { duration: Motion.ms('fade'); easing.type: Easing.Bezier; easing.bezierCurve: Motion.easeOut() } }
             onLoaded: { item.silent=Qt.binding(function(){return scene.muted;});item.fitFrame=Qt.binding(function(){return scene.previewExternalFullscreen;});item.gain=Qt.binding(function(){return scene.previewExternalFullscreen ? 1 : .35;}); item.observed.connect(scene.observePreview); scene.restartPreview(); }
         }
@@ -227,9 +228,8 @@ FocusScope {
             Behavior on opacity {enabled:!scene.reducedMotion;NumberAnimation {duration:Motion.ms('scroll');easing.type:Easing.Bezier;easing.bezierCurve:Motion.easeOut()}}
         }
     }
-    Item {anchors.fill:parent;visible:!scene.previewExternal
     Column {
-        objectName:'heroCopy'
+        objectName:'heroCopy';visible:!scene.previewExternal
         x: 64; width: 630; anchors.bottom: parent.top; anchors.bottomMargin: -350; spacing: 12
         transform: Translate { y:scene.browsingRows ? -152 : 0
             Behavior on y {enabled:!scene.reducedMotion;NumberAnimation {duration:Motion.ms('scroll');easing.type:Easing.Bezier;easing.bezierCurve:Motion.easeOut()}}
@@ -249,16 +249,16 @@ FocusScope {
             }
         }
     }
-    TvNavigation {id:navigation;family:scene.family;page:'home';libraryEnabled:scene.libraryEnabled;focused:scene.zone==='nav';selectedIndex:scene.navIndex;avatar:scene.avatar;pseudo:scene.homeData.compte ? scene.homeData.compte.pseudo || 'Profil' : 'Profil';reducedMotion:scene.reducedMotion
+    TvNavigation {id:navigation;visible:!scene.previewExternal;family:scene.family;page:'home';libraryEnabled:scene.libraryEnabled;focused:scene.zone==='nav';selectedIndex:scene.navIndex;avatar:scene.avatar;pseudo:scene.homeData.compte ? scene.homeData.compte.pseudo || 'Profil' : 'Profil';reducedMotion:scene.reducedMotion
         onDestinationRequested:{if(destination==='home'){scene.zone='actions';scene.navIndex=2;scene.forceActiveFocus();}else if(destination==='search'){scene.zone='nav';scene.navIndex=0;scene.searchRequested();}else if(destination==='library'){scene.zone='nav';scene.navIndex=3;scene.libraryRequested();}else {scene.zone='nav';scene.navIndex=1;scene.profileRequested();}}
     }
-    HeroButton { objectName:'heroSound'; x: 1036; y: 298; width: 180; visible:!scene.browsingRows; iconKey: scene.muted ? 'volume-x' : 'volume-2'; label:scene.muted ? 'Son coupé' : 'Son activé'; reducedMotion: scene.reducedMotion; family: scene.family; backdrop: backdrop; sampleRect: Qt.rect(x,y,width,height); focused: scene.zone==='sound'; onActivated: { scene.zone='sound'; scene.muted=!scene.muted; } }
+    HeroButton { objectName:'heroSound'; x: 1036; y: 298; width: 180; visible:!scene.browsingRows && !scene.previewExternal; iconKey: scene.muted ? 'volume-x' : 'volume-2'; label:scene.muted ? 'Son coupé' : 'Son activé'; reducedMotion: scene.reducedMotion; family: scene.family; backdrop: backdrop; sampleRect: Qt.rect(x,y,width,height); focused: scene.zone==='sound'; onActivated: { scene.zone='sound'; scene.muted=!scene.muted; } }
     Text { x: 870; y: 355; width: 346; horizontalAlignment: Text.AlignRight; color: '#b9bac3'; font.family: scene.family; font.pixelSize: 16
-        visible: scene.previewEnabled && !scene.detailOpen && !scene.browsingRows
+        visible: !scene.previewExternal && scene.previewEnabled && !scene.detailOpen && !scene.browsingRows
         text: scene.previewState==='loading' ? 'Chargement de la bande-annonce…' : scene.previewState==='unavailable' || scene.previewState==='error' ? 'Bande-annonce indisponible' : ''
     }
     ListView {
-        id:rowList; objectName:'heroRows'; x:0; y:380; width:1280; height:scene.browsingRows ? 498 : 340; clip:true
+        id:rowList; objectName:'heroRows';visible:!scene.previewExternal; x:0; y:380; width:1280; height:scene.browsingRows ? 498 : 340; clip:true
         transform: Translate { y:scene.browsingRows ? -158 : 0
             Behavior on y {enabled:!scene.reducedMotion;NumberAnimation {duration:Motion.ms('scroll');easing.type:Easing.Bezier;easing.bezierCurve:Motion.easeOut()}}
         }
@@ -268,15 +268,14 @@ FocusScope {
         delegate:MediaRow { host:scene; rowData:modelData; rowIndex:index }
     }
     Rectangle {
-        anchors.fill: parent; color: '#ed090a0d'; visible: scene.detailOpen
+        anchors.fill: parent; color: '#ed090a0d'; visible: scene.detailOpen && !scene.previewExternal
         Column { x: 96; y: 140; width: 920; spacing: 28
             Text { width: 920; text: scene.selected ? scene.selected.titre : ''; textFormat: Text.PlainText; wrapMode: Text.WordWrap; color: 'white'; font.family: scene.family; font.pixelSize: 44; font.weight: Font.Bold }
             Text { width: 900; text: scene.selected ? scene.selected.resume || '' : ''; textFormat: Text.PlainText; wrapMode: Text.WordWrap; color: '#d4d4dc'; font.family: scene.family; font.pixelSize: 24; lineHeight: 1.4 }
             Text { text: 'Retour pour revenir au héros'; color: '#a9a9b4'; font.family: scene.family; font.pixelSize: 19 }
         }
     }
-    Rectangle { anchors.horizontalCenter: parent.horizontalCenter; y: 465; width: noticeText.width+32; height: 38; radius: 8; color: '#dd13151a'; visible: !!scene.notice
+    Rectangle { anchors.horizontalCenter: parent.horizontalCenter; y: 465; width: noticeText.width+32; height: 38; radius: 8; color: '#dd13151a'; visible: !!scene.notice && !scene.previewExternal
         Text { id: noticeText; anchors.centerIn: parent; text: scene.notice; color: 'white'; font.family: scene.family; font.pixelSize: 16 }
-    }
     }
 }

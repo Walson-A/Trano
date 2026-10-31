@@ -1,5 +1,10 @@
 # Une seule instance vidéo pour les bandes-annonces
 
+**Version rejetée nativement :** Walson signale désormais le noir même sur le
+héros. Le paquet précédent est restauré et son image est confirmée. Voir la
+[restauration et le test d’un lecteur réellement seul](2026-10-31-atlas-tv-native-lifecycle.md).
+Les tests ci-dessous ne constituaient pas une validation matérielle.
+
 ## Réception et diagnostic
 
 Walson confirme Mob Psycho animé dans le héros, puis audio sans image dans sa

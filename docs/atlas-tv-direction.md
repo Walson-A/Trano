@@ -349,3 +349,10 @@ remplacé par un contrôleur des commandes : la fiche utilise désormais le
 Trailer natif du héros. La confirmation physique de cette nouvelle version
 reste distincte des tests simulés.
 [Diagnostic et preuves](research/2026-10-31-atlas-tv-shared-preview.md).
+
+La réception de cette passe régresse aussi sur le héros. Le paquet précédent
+est restauré, puis Walson confirme l’image revenue. Un test natif avec un
+Trailer réellement seul confirme ensuite héros, format fiche et plein écran.
+L’intégration suivante diffère la création du lecteur d’épisode et conserve
+les parents de la composition originale ; sa réception complète reste à vérifier.
+[Restauration, preuve native et cycle de vie](research/2026-10-31-atlas-tv-native-lifecycle.md).

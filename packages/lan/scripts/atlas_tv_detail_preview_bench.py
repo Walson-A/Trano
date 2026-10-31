@@ -45,6 +45,7 @@ def run(window,session,screen,details,calls,QTest,Qt,QObject,spin,evidence):
     assert window.grabWindow().save(str(evidence/'detail-trailer-background.png'))
     core=trailer.property('core');assert core is hero.property('previewPlayer'),'Hero/detail must use the exact same native player'
     assert len(window.findChildren(QObject,'trailerMedia'))==1,'Only one native trailer player exists'
+    assert not window.findChildren(QObject,'episodeMedia'),'Episode native player is not created for previews'
     assert not trailer.findChildren(QObject,'detailTrailerMedia'),'The detail controller never creates another decoder'
     media=core.findChild(QObject,'trailerMedia');surface=core.findChild(QObject,'trailerVideoOutput');source=str(media.property('source').toString());position=media.property('position')
     # Directional access to the secondary trailer action, without changing episodes.
