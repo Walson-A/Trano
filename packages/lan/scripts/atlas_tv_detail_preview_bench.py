@@ -48,6 +48,18 @@ def run(window,session,screen,details,calls,QTest,Qt,QObject,spin,evidence):
     assert not window.findChildren(QObject,'episodeMedia'),'Episode native player is not created for previews'
     assert not trailer.findChildren(QObject,'detailTrailerMedia'),'The detail controller never creates another decoder'
     media=core.findChild(QObject,'trailerMedia');surface=core.findChild(QObject,'trailerVideoOutput');source=str(media.property('source').toString());position=media.property('position')
+    # Header framing keeps aspect ratio and centers the same output, rather than relying on native Crop.
+    assert core.property('headerCrop') and core.property('clip')
+    assert abs(surface.parentItem().x()+surface.x()+surface.width()/2-core.width()/2)<1 and abs(surface.parentItem().y()+surface.y()+surface.height()/2-core.height()/2)<1
+    assert abs(surface.width()/surface.height()-16/9)<.001
+    assert surface.height()>core.height()
+    # Private/detail metadata refresh must retain the current source and position.
+    value=copy.deepcopy(data(detail,'detail'));value['carte']['titre']+=' '
+    detail.setProperty('detail',value);QTest.qWait(1100)
+    assert str(media.property('source').toString())==source and media.property('position')==position
+    assert not detail.findChild(QObject,'previewStartupTimeout').property('running')
+    media.error.emit(0);QTest.qWait(1600)
+    assert not trailer.property('failure') and detail.property('previewState')=='playing'
     # Directional access to the secondary trailer action, without changing episodes.
     detail.setProperty('zone','actions');detail.forceActiveFocus();QTest.keyClick(window,Qt.Key_Up);QTest.keyClick(window,Qt.Key_Right)
     assert detail.property('zone')=='trailer'
@@ -63,13 +75,28 @@ def run(window,session,screen,details,calls,QTest,Qt,QObject,spin,evidence):
     QTest.keyClick(window,Qt.Key_Return)
     QTest.keyClick(window,Qt.Key_Return);assert trailer.property('playing') is False and trailer.property('videoReady') is True
     QTest.keyClick(window,Qt.Key_Return);assert trailer.property('playing') is True
+    # A transient decoder notification during a seek must not poison a healthy grant.
     QTest.keyClick(window,Qt.Key_Right);assert trailer.property('proposedMs')==position+10000
+    assert trailer.property('timelinePositionMs')==position+10000
+    QTest.qWait(140);shot('detail-trailer-seek')
+    media.error.emit(1)
     assert trailer.property('positionMs')==position
     QTest.keyClick(window,Qt.Key_Return);spin(lambda:trailer.property('playing') is True)
     assert trailer.property('positionMs')==position+10000
+    QTest.qWait(1700);assert not trailer.property('failure') and detail.property('previewState')=='playing'
     QTest.keyClick(window,Qt.Key_Left);assert trailer.property('proposedMs')==position
+    media.error.emit(1)
     QTest.keyClick(window,Qt.Key_Return);spin(lambda:trailer.property('playing') is True)
     assert trailer.property('positionMs')==position
+    QTest.qWait(1700);assert not trailer.property('failure')
+    # A native seek may settle asynchronously; the cursor must retain the latest requested position.
+    media.setProperty('deferSeek',True)
+    for step in [1,2]:
+        QTest.keyClick(window,Qt.Key_Right);QTest.keyClick(window,Qt.Key_Return)
+        assert trailer.property('timelinePositionMs')==position+step*10000 and media.property('position')==position
+    media.finishSeek();spin(lambda:trailer.property('playing') is True)
+    assert trailer.property('positionMs')==position+20000 and core.property('pendingSeek')==-1
+    media.setProperty('deferSeek',False);trailer.propose(-20000);trailer.commitSeek();spin(lambda:trailer.property('playing') is True)
     QTest.keyClick(window,Qt.Key_Back)
     assert detail.property('fullPreview') is True and trailer.property('controlsVisible') is False
     QTest.keyClick(window,Qt.Key_Back)
@@ -77,9 +104,13 @@ def run(window,session,screen,details,calls,QTest,Qt,QObject,spin,evidence):
     assert detail.property('zone')=='trailer' and trailer.property('positionMs')==position and output_count()==1
     assert trailer.property('inlinePreview') and core.height()<720
     # A failed native grant must not remain a positive cache hit until its TTL.
-    media.error.emit(1);assert detail.property('previewState')=='unavailable' and not store.cachedSource(first)
+    media.error.emit(1);spin(lambda:detail.property('previewState')=='unavailable');assert not store.cachedSource(first)
     before=len(preview_calls());detail.startPreview();assert len(preview_calls())==before+1
+    media.setProperty('synchronousPreview',True)
     session.finishPreview(first['anilist_id'],first['bande_annonce']);spin(lambda:trailer.property('videoReady') and not trailer.property('failure'))
+    timeout=detail.findChild(QObject,'previewStartupTimeout');assert not timeout.property('running')
+    timeout.triggered.emit();assert trailer.property('videoReady') and trailer.property('hasSource') and detail.property('previewState')=='playing'
+    media.setProperty('synchronousPreview',False)
     # Scrolling below the header releases the decoder; returning reuses the grant.
     before=len(preview_calls());detail.setProperty('zone','episodes');detail.scrollToZone();QTest.qWait(300)
     assert not detail.property('previewWanted') and output_count()==0
@@ -126,5 +157,5 @@ def run(window,session,screen,details,calls,QTest,Qt,QObject,spin,evidence):
             'pauseResumeAndSeek':True,'backHidesHudThenReturnsToDetail':True,'scrollReleasesOutput':True,'freshCacheReused':True,'failedNativeGrantInvalidated':True,
             'episodeResolutionStopsPreviewFirst':True,'lateAnswerDoesNotReopen':True,'wrongTrailerRejected':True,'missingMetadataDoesNotInvent':True,
             'invalidatedEpochCannotRestoreGrant':True,'trailersDoNotCreateEpisodeSessions':True}
-    result.update(sameHeroTrailerInstance=True,oneNativeTrailerPlayer=True,sameSurfaceInFullscreen=True)
+    result.update(sameHeroTrailerInstance=True,oneNativeTrailerPlayer=True,sameSurfaceInFullscreen=True,explicitCenteredHeader=True,metadataRefreshKeepsSource=True,noErrorNotificationIgnored=True,transientSeekErrorRecovers=True,startupDeadlineStoppedWhenReady=True,lateStartupDeadlineDoesNotRetireHealthyVideo=True,asynchronousSeekRetainsLatestCursor=True)
     (evidence/'detail-preview-verification.json').write_text(json.dumps(result,indent=2),encoding='utf-8')

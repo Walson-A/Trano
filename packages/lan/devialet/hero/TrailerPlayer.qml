@@ -22,6 +22,7 @@ FocusScope {
     readonly property bool hasSource:!!core && core.hasSource
     readonly property int positionMs:core ? (revision,core.currentPosition()) : 0
     readonly property int durationMs:core ? core.durationMs : 0
+    readonly property int timelinePositionMs:proposedMs>=0 ? proposedMs : core && core.pendingSeek>=0 ? core.pendingSeek : positionMs
     readonly property bool menuOpened:false
     readonly property string menuName:''
     readonly property string episodeCountLabel:''
@@ -33,9 +34,9 @@ FocusScope {
     function retire(){if(core && core.hasSource)core.stop();proposedMs=-1;retrying=false;}
     function reveal(){controlsVisible=true;hide.restart();}
     function toggle(){if(retrying)return;if(failure)retryRequested();else if(core)core.toggle();reveal();}
-    function propose(delta){if(started && durationMs>0)proposedMs=Math.max(0,Math.min(durationMs-1000,(proposedMs>=0 ? proposedMs : positionMs)+delta));zone='seek';reveal();}
-    function commitSeek(){if(proposedMs<0){toggle();return;}var target=proposedMs;proposedMs=-1;zone='surface';if(core)core.seekBy(target-core.currentPosition());reveal();}
-    PlayerControls {anchors.fill:parent;player:parent;family:player.family;trailerMode:true;visible:!player.inlinePreview && player.controlsVisible}
+    function propose(delta){if(started && durationMs>0)proposedMs=Math.max(0,Math.min(durationMs-1000,timelinePositionMs+delta));zone='seek';reveal();}
+    function commitSeek(){if(proposedMs<0){toggle();return;}var target=proposedMs;if(core)core.seekBy(target-core.currentPosition());proposedMs=-1;zone='surface';reveal();}
+    PlayerControls {anchors.fill:parent;player:parent;family:player.family;trailerMode:true;reducedMotion:player.reducedMotion;visible:!player.inlinePreview && player.controlsVisible}
     Item {objectName:'playerPauseFeedback';anchors.centerIn:parent;width:80;height:80;visible:!player.inlinePreview && player.controlsVisible && player.started && !player.playing && !player.failure
         Rectangle {anchors.fill:parent;radius:40;color:'#a5202025';border.color:'#25ffffff'}
         Icon {anchors.centerIn:parent;width:32;height:32;name:'play'}
@@ -47,7 +48,7 @@ FocusScope {
         HeroButton {x:20;y:142;width:176;family:player.family;label:player.retrying ? 'Préparation…' : 'Réessayer';focused:true;onActivated:if(!player.retrying)player.retryRequested()}
     }
     Connections {target:player.core;ignoreUnknownSignals:true
-        function onObserved(observation){if(observation.event==='error')player.failure='La lecture a été interrompue.';else if(observation.event==='status' && observation.status===7)player.ended=true;}
+        function onObserved(observation){if(observation.event==='error' && observation.code>0)player.failure='La lecture a été interrompue.';else if(observation.event==='status' && observation.status===7)player.ended=true;}
     }
     Timer {interval:250;repeat:true;running:player.hasSource;onTriggered:player.revision++}
     Timer {id:hide;interval:2500;onTriggered:if(player.playing && player.zone==='surface')player.controlsVisible=false}

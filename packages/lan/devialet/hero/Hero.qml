@@ -204,7 +204,7 @@ FocusScope {
         }
         Loader { id: preview; width: 1280; height:scene.previewExternal ? (scene.previewExternalFullscreen ? 720 : scene.previewExternalHeight) : 620; active:scene.previewEnabled || scene.keepPreviewLoaded;source:"Trailer.qml"; opacity:(scene.previewExternal ? !!preview.item && preview.item.ready : scene.videoReady) ? 1 : 0
             Behavior on opacity { enabled: !scene.reducedMotion; NumberAnimation { duration: Motion.ms('fade'); easing.type: Easing.Bezier; easing.bezierCurve: Motion.easeOut() } }
-            onLoaded: { item.silent=Qt.binding(function(){return scene.muted;});item.fitFrame=Qt.binding(function(){return scene.previewExternalFullscreen;});item.gain=Qt.binding(function(){return scene.previewExternalFullscreen ? 1 : .35;}); item.observed.connect(scene.observePreview); scene.restartPreview(); }
+            onLoaded: { item.silent=Qt.binding(function(){return scene.muted;});item.fitFrame=Qt.binding(function(){return scene.previewExternalFullscreen;});item.headerCrop=Qt.binding(function(){return scene.previewExternal && !scene.previewExternalFullscreen;});item.gain=Qt.binding(function(){return scene.previewExternalFullscreen ? 1 : .35;}); item.observed.connect(scene.observePreview); scene.restartPreview(); }
         }
         Rectangle { width: 1280; height: 620; visible:!scene.previewExternal;gradient: Gradient { orientation: Gradient.Horizontal
             GradientStop { position: 0; color: "#eb090a0d" }

@@ -18,6 +18,7 @@ FocusScope {
     property bool previewSuspended:false
     property int previewGeneration:0
     property var previewLease:null
+    property string previewTargetKey:''
     property string previewState:'image'
     property bool fullPreview:false
     readonly property bool hasTrailer:!!(card && /^[A-Za-z0-9_-]{11}$/.test(card.bande_annonce || ''))
@@ -76,29 +77,33 @@ FocusScope {
     signal personalChanged(int identity,var value,bool refreshHome)
     signal closed()
     signal playRequested(var media,var target)
-    function stopPreview(){previewGeneration++;if(previewLease)previewLease.cancel();previewLease=null;if(previewDelay)previewDelay.stop();if(previewTimeout)previewTimeout.stop();if(trailerPlayer)trailerPlayer.retire();previewState='image';}
+    function stopPreview(){previewGeneration++;previewTargetKey='';if(previewLease)previewLease.cancel();previewLease=null;if(previewDelay)previewDelay.stop();if(previewTimeout)previewTimeout.stop();if(trailerPlayer)trailerPlayer.retire();previewState='image';}
     function suspendPreview(){previewSuspended=true;stopPreview();}
     function resumePreview(){previewSuspended=false;if(previewWanted)previewDelay.restart();}
     function openFullPreview(){if(!hasTrailer || !previews || !trailerPlayer || previewSuspended)return;fullPreview=true;trailerPlayer.zone='surface';trailerPlayer.reveal();trailerPlayer.forceActiveFocus();if(!trailerPlayer.hasSource)startPreview();}
     function closeFullPreview(){fullPreview=false;forceActiveFocus();}
+    function confirmPreview(){if(trailerPlayer && trailerPlayer.videoReady && !trailerPlayer.failure && previewWanted){previewState='playing';previewTimeout.stop();return true;}return false;}
     function startPreview(){
         if(!previewWanted)return;
+        var key=previews.identity(card);
+        if(previewTargetKey===key && trailerPlayer.hasSource && !trailerPlayer.failure){confirmPreview();return;}
         if(previewLease)previewLease.cancel();previewLease=null;
-        var turn=++previewGeneration,key=previews.identity(card);previewState='loading';
+        var turn=++previewGeneration;previewTargetKey=key;previewState='loading';
         previewLease=previews.resolve(card,function(status,url){
             if(turn!==previewGeneration || !previewWanted || previews.identity(card)!==key)return;
             trailerPlayer.retrying=false;
-            if(status===200 && url){trailerPlayer.play(url,true);previewTimeout.restart();}
+            if(status===200 && url){previewTimeout.restart();trailerPlayer.play(url,true);if(!confirmPreview())previewTimeout.restart();}
             else previewState='unavailable';
         });
     }
     onPreviewWantedChanged:{if(previewWanted)previewDelay.restart();else stopPreview();}
-    onCardChanged:{stopPreview();if(previewWanted)previewDelay.restart();}
+    onCardChanged:{var key=previews ? previews.identity(card) : '';if(key!==previewTargetKey){stopPreview();previewTargetKey=key;if(previewWanted)previewDelay.restart();}}
     onPreviewStateChanged:if(fullPreview && previewState==='unavailable' && trailerPlayer && !trailerPlayer.failure){trailerPlayer.failure='La bande-annonce est indisponible.';trailerPlayer.reveal();}
     Timer {id:previewDelay;interval:900;onTriggered:view.startPreview();}
-    Timer {id:previewTimeout;interval:10000;onTriggered:{if(view.trailerPlayer)view.trailerPlayer.retire();view.previewState='unavailable';}}
+    Timer {id:previewTimeout;objectName:'previewStartupTimeout';interval:10000;onTriggered:if(view.previewWanted && !view.confirmPreview()){if(view.trailerPlayer)view.trailerPlayer.retire();view.previewState='unavailable';}}
+    Timer {interval:100;repeat:true;running:previewTimeout.running;onTriggered:view.confirmPreview()}
     Connections {target:view.trailerPlayer;ignoreUnknownSignals:true
-        function onVideoReadyChanged(){if(view.previewReady){view.previewState='playing';previewTimeout.stop();}}
+        function onVideoReadyChanged(){view.confirmPreview();}
         function onFailureChanged(){if(view.trailerPlayer && view.trailerPlayer.failure){if(view.previews && view.previews.cachedSource(view.card))view.previews.invalidate(view.card);view.previewState='unavailable';previewTimeout.stop();}}
         function onEndedChanged(){if(view.trailerPlayer && view.trailerPlayer.ended){view.trailerPlayer.retire();view.previewState='ended';previewTimeout.stop();if(view.fullPreview)view.closeFullPreview();}}
     }

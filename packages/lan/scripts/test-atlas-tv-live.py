@@ -100,7 +100,7 @@ with tempfile.TemporaryDirectory(prefix='atlas-tv-live-',dir=args.evidence.paren
     # This suite checks host focus/identity/UI, not hardware decoding or upstream resolution.
     media=root/'TestMedia';media.mkdir()
     (media/'qmldir').write_text('module TestMedia\nMediaPlayer 5.0 MediaPlayer.qml\nVideoOutput 5.0 VideoOutput.qml\n')
-    (media/'VideoOutput.qml').write_text('import QtQuick 2.15\nItem { enum Mode { PreserveAspectFit, PreserveAspectCrop } property var source; property int fillMode;Image {anchors.fill:parent;source:benchmarkVideoFrame;fillMode:parent.fillMode===1 ? Image.PreserveAspectCrop : Image.PreserveAspectFit} }')
+    (media/'VideoOutput.qml').write_text('import QtQuick 2.15\nItem { enum Mode { PreserveAspectFit, PreserveAspectCrop } property var source; property int fillMode;property rect sourceRect:Qt.rect(0,0,640,360);Image {anchors.fill:parent;source:benchmarkVideoFrame;fillMode:parent.fillMode===1 ? Image.PreserveAspectCrop : Image.PreserveAspectFit} }')
     (media/'MediaPlayer.qml').write_text('''import QtQuick 2.15
 Item {
  enum State { StoppedState, PlayingState, PausedState }
@@ -116,11 +116,15 @@ Item {
  property bool seekable:true
  property int duration:1500095
  property int position:0
+ property bool synchronousPreview:false
+ property bool deferSeek:false
+ property int deferredSeek:-1
  signal error(int error)
- function play() {status=6;if(playbackState===2){playbackState=1;return;}duration=0;playbackState=1;position=1;Qt.callLater(function(){duration=String(source).indexOf('/preview-media/')>=0 ? 93000 : 1500095;position=1000;}); }
+ function play() {status=6;if(playbackState===2){playbackState=1;return;}duration=0;playbackState=1;position=1;var ready=function(){duration=String(source).indexOf('/preview-media/')>=0 ? 93000 : 1500095;position=1000;};if(synchronousPreview)ready();else Qt.callLater(ready); }
  function pause() { playbackState=2; }
  function stop() { playbackState=0; }
- function seek(value) {position=value;if(playbackState===1){playbackState=2;status=4;Qt.callLater(function(){status=6;});}}
+ function finishSeek(){var value=deferredSeek;deferredSeek=-1;position=value;status=6;}
+ function seek(value) {if(deferSeek){deferredSeek=value;playbackState=2;status=4;return;}position=value;if(playbackState===1){playbackState=2;status=4;Qt.callLater(function(){status=6;});}}
 }''')
     for name in ['EpisodePlayer.qml','Trailer.qml']:
         path=bundle/name

@@ -1,0 +1,25 @@
+{
+  "passed": true,
+  "scope": "real QML with fake API and decoder; no native image or motion claim",
+  "mp4FullHost": "mp4-final/verification.json",
+  "hlsFullHost": "hls-final/verification.json",
+  "hlsComponentFilesRemovedAfterBootstrap": true,
+  "finalVisualPass": "visual-final/verification.json",
+  "visualReview": {
+    "resolution": "1280x720",
+    "headerAspectAndCenter": true,
+    "pauseCentered": true,
+    "seekTimeDoesNotOverlapTitle": true
+  },
+  "physicalReception": "pending",
+  "processSessionsClosed": [
+    62616,
+    69292,
+    97280,
+    45534,
+    12833,
+    51570,
+    68111,
+    95417
+  ]
+}

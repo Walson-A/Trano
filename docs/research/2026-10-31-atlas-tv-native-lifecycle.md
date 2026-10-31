@@ -48,7 +48,8 @@ nouveau format vidéo, fournisseur, grant ou réglage sonore n’est introduit.
 
 Ces changements appliquent le cas natif positif à l’intégration, sans prétendre
 avoir prouvé une limite matérielle ou une cause interne du firmware.
-La réception physique de l’application complète reste nécessaire.
+Walson confirme ensuite l’image dans les trois vues de l’application complète.
+Le cadrage de la fiche et les erreurs transitoires restent à corriger.
 
 ## Vérifications
 
@@ -80,10 +81,11 @@ hero-restore-video-3493b637e5cb avant son remplacement, l’engine
 L’engine et le gateway ne sont pas modifiés par ce lot.
 
 Le SDK accepte le lancement `f21b122a3ac3349e614b5e2a8639dea1` de l’application
-normale. Aucun épisode réel n’est lancé. Walson est invité à vérifier le même
-animé dans le héros, la fiche et le plein écran ; **cette intégration complète
-n’est pas encore confirmée physiquement**. La version reste affichée jusqu’à
-son retour, au lieu d’alterner les applications pendant son contrôle.
+normale. Aucun épisode réel n’est lancé. **Walson confirme les images dans le
+héros, la fiche et le plein écran.** Il signale un mauvais cadrage en haut à
+gauche dans la fiche, une timeline peu fluide et des fausses indisponibilités
+lors des avances/reculs ou du passage en plein écran. Cette réception valide
+la présence des images, pas encore la qualité de ces interactions.
 Voir [publication](2026-10-31-atlas-tv-native-lifecycle/publication.json),
 [paquet](2026-10-31-atlas-tv-native-lifecycle/package.json) et
 [lancement](2026-10-31-atlas-tv-native-lifecycle/launch.json).

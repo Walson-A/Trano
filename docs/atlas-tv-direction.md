@@ -356,3 +356,17 @@ Trailer réellement seul confirme ensuite héros, format fiche et plein écran.
 L’intégration suivante diffère la création du lecteur d’épisode et conserve
 les parents de la composition originale ; sa réception complète reste à vérifier.
 [Restauration, preuve native et cycle de vie](research/2026-10-31-atlas-tv-native-lifecycle.md).
+
+
+## Cadrage et transitions des bandes-annonces — 31 octobre 2026
+
+Walson confirme la vidéo dans les trois vues de la vraie application après
+la création des lecteurs à la demande. Le correctif suivant garde cette
+instance native et son parent : crop centré explicite dans la fiche, délai
+de démarrage arrêté dès que la vidéo est prête, rafraîchissements de
+métadonnées sans relance et erreurs passagères distinguées des échecs
+persistants. La timeline de bande-annonce garde la dernière cible pendant
+un seek asynchrone ; curseur et progression se déplacent en 120 ms, sans
+animation si les mouvements sont réduits. Les commandes d’épisode et les
+règles de Retour restent celles du lecteur validé.
+[Contrat, captures et réception](research/2026-10-31-atlas-tv-preview-transitions.md).

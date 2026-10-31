@@ -3,7 +3,7 @@
   "launchId": "f21b122a3ac3349e614b5e2a8639dea1",
   "sdkAccepted": true,
   "episodeStarted": false,
-  "heroPictureConfirmed": false,
+  "heroPictureConfirmed": true,
   "state": "assets_requested",
   "requested": [
     "manifest.json",
@@ -43,5 +43,8 @@
     "LibraryEditor.qml",
     "bold.ttf",
     "regular.ttf"
-  ]
+  ],
+  "detailPictureConfirmed": true,
+  "fullscreenPictureConfirmed": true,
+  "physicalReception": "User confirms all three views; detail framing and transient errors need correction"
 }
