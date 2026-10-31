@@ -59,8 +59,11 @@ curseur sans retour à l’ancienne position au commit. L’image de banc est
 explicitement une image fixe ; elle ne valide ni fluidité native ni décodage.
 
 Preuves retenues dans `2026-10-31-atlas-tv-preview-transitions/`.
-La réception physique du nouveau cadrage et des seeks reste en attente.
-Une seule version doit être laissée affichée jusqu’au retour de Walson.
+Walson valide ensuite le scénario demandé sur la vraie version par « carré !! » :
+cadrage de la fiche, passage en plein écran et avances/reculs. Cette réception
+concerne le scénario Mob Psycho proposé, sans généraliser à tous les titres ni
+garantir l’absence de toute erreur réseau. La release devient la référence
+acceptée pour ce parcours.
 
 
 ## Publication de la version à tester
@@ -74,8 +77,8 @@ changent pas. Le service de lancement redémarre pour servir le nouveau paquet.
 
 Le SDK accepte `837b9776b9149d38a04bbf992a9538fe`. Aucun épisode réel n’est lancé.
 Cette acceptation et les fichiers demandés ne prouvent pas le nouveau rendu
-natif. La version reste affichée jusqu’au retour de Walson sur le cadrage,
-la transition et les seeks, sans alternance de diagnostics.
+natif. La confirmation physique vient du retour explicite de Walson, conservé
+dans les reçus ; aucun nouveau paquet n’est publié pour enregistrer ce retour.
 [Paquet](2026-10-31-atlas-tv-preview-transitions/package.json),
 [publication](2026-10-31-atlas-tv-preview-transitions/publication.json),
 [lancement](2026-10-31-atlas-tv-preview-transitions/launch.json).
@@ -86,7 +89,7 @@ la transition et les seeks, sans alternance de diagnostics.
 Les sessions de test et de publication sont terminées, le stage local et
 les captures intermédiaires inutiles sont retirés. Les captures de revue,
 vérifications, empreintes et reçus publics sont conservés. Le service Atlas TV
-et l’application sur le Devialet restent actifs pour l’essai demandé.
+et l’application sur le Devialet restent disponibles pour l’usage demandé.
 Le checkout préexistant est partagé avec d’autres travaux non suivis et la
 branche n’est pas intégrée : il est conservé, sans retirer leurs fichiers.
 [Processus, identifiants et conditions d’arrêt](2026-10-31-atlas-tv-preview-transitions/cleanup.json).

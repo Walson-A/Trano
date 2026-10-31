@@ -43,5 +43,11 @@
   ],
   "sdkAccepted": true,
   "episodeStarted": false,
-  "physicalReception": "pending"
+  "physicalReception": "confirmed_by_user",
+  "physicalReceptionEvidence": {
+    "date": "2026-10-31",
+    "source": "Walson replies « carré !! » to the published-version QA question",
+    "scenario": "Mob Psycho: detail background framing, fullscreen transition and repeated forward/back seeks",
+    "scope": "User acceptance of this scenario; not a claim covering every trailer or all network failures"
+  }
 }
