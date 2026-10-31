@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "scope": "Real QML host; explicit synthetic 85-episode fixture, fake API/decoder; no live episode played",
+  "episode11Centered": true,
+  "episode53PageAndCenter": true,
+  "explicitWatchedBadge": true,
+  "missingWatchedFlagNotInferred": true,
+  "modelRefreshKeepsCenter": true,
+  "reopenAndJumpKeepCurrent": true,
+  "browsingKeepsPlaybackAndPosition": true,
+  "endpointsVisible": true,
+  "centerErrorPx": 0.0
+}

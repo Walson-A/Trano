@@ -54,20 +54,29 @@ Item {
         id:shelf;objectName:'episodeShelf';x:16;y:68;width:1120;height:240
         orientation:ListView.Horizontal;spacing:16;clip:true;interactive:false
         model:view.episodes;currentIndex:view.selectedIndex
-        function revealCurrent(){if(!count)return;var wanted=Math.max(0,Math.min(count-1,view.selectedIndex));if(currentIndex!==wanted)currentIndex=wanted;if(wanted===0)positionViewAtBeginning();else positionViewAtIndex(Math.min(count-1,wanted+1),ListView.Contain);}
+        function revealCurrent(){if(!count || !visible || width<=0)return;var wanted=Math.max(0,Math.min(count-1,view.selectedIndex));if(currentIndex!==wanted)currentIndex=wanted;positionViewAtIndex(wanted,ListView.Center);}
         onCurrentIndexChanged:revealCurrent()
         onModelChanged:Qt.callLater(revealCurrent)
+        onCountChanged:Qt.callLater(revealCurrent)
+        onVisibleChanged:if(visible)Qt.callLater(revealCurrent)
+        onWidthChanged:Qt.callLater(revealCurrent)
         delegate:Item {
-            id:card;width:258;height:240
+            id:card;objectName:'playerEpisodeCard-'+modelData.numero;width:258;height:240
             readonly property bool targeted:index===view.selectedIndex && view.zone==='episodes'
             readonly property bool playing:modelData.numero===view.currentEpisode && view.sameSeries
             readonly property bool upcoming:Episode.future(modelData)
+            readonly property bool watched:modelData.vu===true && !upcoming
             Accessible.role:Accessible.Button
-            Accessible.name:'Épisode '+modelData.numero+(modelData.titre ? ', '+modelData.titre : '')+(playing ? ', en lecture' : '')
+            Accessible.name:'Épisode '+modelData.numero+(modelData.titre ? ', '+modelData.titre : '')+(playing ? ', en lecture' : '')+(watched ? ', déjà vu' : '')
             Rectangle {x:0;y:0;width:258;height:146;radius:8;color:'#25262e';border.width:card.targeted ? 3 : 0;border.color:'#f5f5f7'
                 Image {id:thumb;objectName:"episodeThumbnail";x:4;y:4;width:250;height:138;source:view.thumbnails && !card.upcoming ? modelData.vignette || '' : '';fillMode:Image.PreserveAspectCrop;asynchronous:true;sourceSize:Qt.size(500,276);onStatusChanged:if(status===Image.Error)view.thumbnailFailed(modelData.numero)}
                 Text {anchors.centerIn:parent;text:'Épisode '+modelData.numero;color:'#bfbfc8';font.family:view.family;font.pixelSize:22;visible:!card.upcoming && thumb.status!==Image.Ready}
                 Rectangle {x:150;y:12;width:94;height:26;radius:6;color:'#ba090a0d';visible:card.upcoming;Text {anchors.centerIn:parent;text:'À venir';font.family:view.family;font.pixelSize:15;color:'#d7dbe5'}}
+                Rectangle {x:174;y:12;width:70;height:28;radius:6;color:'#de101116';visible:card.watched
+                    Icon {x:9;y:7;width:14;height:14;name:'check'}
+                    Text {x:30;y:4;text:'Vu';font.family:view.family;font.pixelSize:16;font.weight:Font.DemiBold;color:'white'}
+                }
+                Rectangle {x:4;y:139;width:250;height:3;color:'#d8d8df';visible:card.watched && !card.playing}
                 Text {x:16;y:72;width:226;text:card.upcoming ? Episode.dateLabel(modelData.diffusion.date) : '';visible:card.upcoming;color:'#c6cbd5';font.family:view.family;font.pixelSize:17;wrapMode:Text.WordWrap;maximumLineCount:2;elide:Text.ElideRight}
                 Rectangle {x:4;y:112;width:250;height:30;color:'#d9000000';visible:card.playing
                     Text {x:10;y:5;text:'En lecture · '+view.clock(view.positionMs);color:'white';font.family:view.family;font.pixelSize:15}

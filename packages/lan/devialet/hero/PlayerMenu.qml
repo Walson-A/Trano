@@ -111,8 +111,9 @@ Item {
         transport.api('/tv/v1/catalog/episodes',key,45000,function(code,value){
             if(turn!==revision || kind!=='episodes')return;
             if(code!==200 || !value || value.anilist_id!==key.anilist_id || !Array.isArray(value.episodes)){failed('Impossible de charger les épisodes.');return;}
-            total=Number.isInteger(value.borne_connue) ? value.borne_connue : Number.isInteger(value.total) && value.total>=0 ? value.total : 0;airingData=value;entries=episodeEntries(value.episodes,key);
-            state='ready';index=0;for(var i=0;i<entries.length;i++)if(entries[i].numero===selected)index=i;
+            total=Number.isInteger(value.borne_connue) ? value.borne_connue : Number.isInteger(value.total) && value.total>=0 ? value.total : 0;airingData=value;
+            var rows=episodeEntries(value.episodes,key),selectedIndex=0;for(var i=0;i<rows.length;i++)if(rows[i].numero===selected)selectedIndex=i;
+            index=selectedIndex;entries=rows;state='ready';
             warmEpisodes();showIndex();
             if(value.complements_a_charger===true)transport.api('/tv/v1/catalog/episode-extras',key,45000,function(status,extra){
                 if(turn!==revision || kind!=='episodes' || status!==200 || !extra || extra.anilist_id!==key.anilist_id || !Array.isArray(extra.episodes))return;

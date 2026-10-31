@@ -370,3 +370,13 @@ un seek asynchrone ; curseur et progression se déplacent en 120 ms, sans
 animation si les mouvements sont réduits. Les commandes d’épisode et les
 règles de Retour restent celles du lecteur validé.
 [Contrat, captures et réception](research/2026-10-31-atlas-tv-preview-transitions.md).
+
+
+## Menu Épisodes : contexte de lecture — 31 octobre 2026
+
+Après préparation locale puis demande de relance immédiate de Walson, le menu
+s’ouvre centré sur l’épisode courant, y compris après chargement des images
+ou sur une page éloignée. « Vu » et son trait discret reposent uniquement
+sur le booléen serveur ; « En lecture » garde le numéro et la position actifs.
+Le focus blanc reste distinct de ces états. Aucun épisode n’est marqué vu
+sur la seule ouverture du menu. [Contrat et revue](research/2026-10-31-atlas-tv-episode-context.md).

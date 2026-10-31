@@ -11,6 +11,9 @@ import traceback
 import time
 
 parser=argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--episode-shelf-only',action='store_true',help='Run only the episode shelf scenarios and captures, skipping unrelated host checks')
+parser.add_argument('--episode-shelf',action='store_true',help='Check current episode centering and explicit watched flags in the real host')
+parser.add_argument('--episode-shelf-baseline',help='Explicit Git commit for before-captures of the two episode shelf components')
 parser.add_argument('--hls',action='store_true',help='Exercise negotiated HLS requests and quality menus with the fake decoder')
 parser.add_argument('--follow-up',action='store_true',help='Exercise library writes and the explicit 12 announced/5 aired fixture; no account')
 parser.add_argument('--detail-preview',action='store_true',help='Exercise background/fullscreen trailer ownership with fake API/decoder')
@@ -87,6 +90,11 @@ args.evidence.parent.mkdir(parents=True,exist_ok=True)
 with tempfile.TemporaryDirectory(prefix='atlas-tv-live-',dir=args.evidence.parent.resolve()) as temporary:
     root=pathlib.Path(temporary);bundle=root/'bundle'
     pack.build(bundle,args.regular,args.bold)
+    if args.episode_shelf_baseline:
+        import re,subprocess
+        assert re.fullmatch(r'[a-f0-9]{7,40}',args.episode_shelf_baseline)
+        for name in ['PlayerEpisodes.qml','PlayerMenu.qml']:
+            (bundle/name).write_bytes(subprocess.check_output(['git','show',args.episode_shelf_baseline+':packages/lan/devialet/hero/'+name]))
     # The Windows bench registers font bytes just like the existing hero bench.
     for font in [args.regular,args.bold]:
         font_id=QFontDatabase.addApplicationFontFromData(QByteArray(font.read_bytes()))
@@ -146,6 +154,7 @@ Item {
  property bool failNextLibraryRead:false
  property bool airingEnabled:false
  property bool followupAiring:false
+ property bool episodeShelfFixture:false
  property bool franimeEnabled:false
  property bool rejectNextUnaired:false
  property var libraryEntries:({})
@@ -230,7 +239,9 @@ Item {
   if(path==='/tv/v1/catalog/search') { pendingSearches=pendingSearches.concat([{done:done,body:body}]); return; }
   if(path==='/tv/v1/catalog/history') { Qt.callLater(function(){done(200,benchmarkHistory);});return; }
   if(path==='/tv/v1/catalog/detail') { if(delayDetails){pendingDetails=pendingDetails.concat([done]);return;}Qt.callLater(function(){var value=benchmarkDetails[String(body.anilist_id)];if(value && extrasEnabled){value=JSON.parse(JSON.stringify(value));value.complements_a_charger=true;}done(value ? 200 : 404,value || {});});return; }
-  if(path==='/tv/v1/catalog/episodes') { Qt.callLater(function(){var value=followupAiring ? upcomingEpisodes(body.anilist_id) : benchmarkEpisodes[String(body.anilist_id)];done(value ? 200 : 404,value || {});});return; }
+  if(path==='/tv/v1/catalog/episodes') { Qt.callLater(function(){var value=followupAiring ? upcomingEpisodes(body.anilist_id) : benchmarkEpisodes[String(body.anilist_id)];
+   if(value && episodeShelfFixture){value=JSON.parse(JSON.stringify(value));var template=value.episodes,rows=[];for(var n=body.debut;n<Math.min(86,body.debut+body.nombre);n++){var row=JSON.parse(JSON.stringify(template[(n-1)%template.length]));row.numero=n;row.vu=n===8 || n===10;if(n===9)delete row.vu;rows.push(row);}value.episodes=rows;value.total=85;value.borne_connue=85;}
+   done(value ? 200 : 404,value || {});});return; }
   if(path==='/tv/v1/readers') {Qt.callLater(function(){done(200,{anilist_id:body.anilist_id,episode:body.episode,lang:body.lang,readers:(franimeEnabled ? [{reader_id:'c'.repeat(64),source:'franime',provider:'franime',label:'Sendvid',supported:true}] : []).concat([{reader_id:'e'.repeat(64),source:'voiranime',provider:'mail',label:'Mail.ru FHD1',supported:true},{reader_id:'f'.repeat(64),source:'anime-sama',provider:'yourupload',label:'YourUpload',supported:true},{reader_id:'d'.repeat(64),source:'voiranime',provider:'other',label:'Incompatible',supported:false}]),limitations:['franime_browser_required']});});return;}
   if(path==='/tv/v1/variants') {if(failNextVariants){failNextVariants=false;Qt.callLater(function(){done(502,{});});return;}Qt.callLater(function(){done(200,{anilist_id:body.anilist_id,episode:body.episode,lang:body.lang,source:body.source,reader_id:body.reader_id,variants:body.source==='franime' ? [{variant_id:'3'.repeat(64),label:'Originale',container:hlsEnabled ? 'hls' : 'mp4'}] : [{variant_id:'1'.repeat(64),label:'360p',height:360,container:hlsEnabled ? 'hls' : 'mp4'},{variant_id:'2'.repeat(64),label:'1080p',height:1080,container:'mp4'}]});});return;}
   if(path==='/tv/v1/playbacks') {if(rejectNextUnaired){rejectNextUnaired=false;Qt.callLater(function(){done(409,{error:{code:'episode_not_aired',retryable:false,details:{episode:body.episode,diffusion:{etat:'a_venir',date:null}}}});});return;}if(failNextPlayback){failNextPlayback=false;Qt.callLater(function(){done(502,{});});return;}if(delayPlaybacks){pendingPlaybacks=pendingPlaybacks.concat([{body:body,done:done}]);return;}Qt.callLater(function(){answerPlayback(body,done);});}
@@ -287,11 +298,17 @@ Item {
         while not predicate() and time.monotonic()<deadline:QTest.qWait(25)
         assert predicate(),'Expected UI/API state did not settle'
     args.evidence.mkdir(parents=True,exist_ok=False)
+    def run_episode_shelf():
+        shelf_spec=importlib.util.spec_from_file_location('episode_shelf',pathlib.Path(__file__).with_name('atlas_tv_episode_shelf_bench.py'))
+        shelf_bench=importlib.util.module_from_spec(shelf_spec);shelf_spec.loader.exec_module(shelf_bench)
+        shelf_bench.run(window,session,screen,details,calls,QTest,Qt,QObject,spin,args.evidence,bool(args.episode_shelf_baseline))
     def check():
         try:
             if args.expire_component_files:
                 for name in ['Trailer.qml','EpisodePlayer.qml']:(bundle/name).rename(bundle/(name+'.expired'))
             window.requestActivate();hero.forceActiveFocus(Qt.OtherFocusReason);hero.setProperty('previewEnabled',False)
+            if args.episode_shelf_only:
+                run_episode_shelf();app.quit();return
             assert hero.property('muted') is False and window.findChild(QObject,'heroSound').property('label')=='Son activé'
             icons=window.findChildren(QObject,'iconPixels')
             assert len(icons)>=7 and not list(bundle.glob('icon-*.png'))
@@ -677,6 +694,8 @@ Item {
             session.finishDetail(1,154587) # wrong identity must not become the second season
             assert detail.property('state')=='error'
             QTest.keyClick(window,Qt.Key_Back);QTest.keyClick(window,Qt.Key_Back);QTest.qWait(80)
+            if args.episode_shelf:
+                run_episode_shelf()
             if args.follow_up:
                 follow_spec=importlib.util.spec_from_file_location('followup',pathlib.Path(__file__).with_name('atlas_tv_follow_up_bench.py'))
                 follow=importlib.util.module_from_spec(follow_spec);follow_spec.loader.exec_module(follow)
@@ -702,8 +721,8 @@ Item {
             (args.evidence/'verification.json').write_text(json.dumps({'passed':True,'scope':'real QML host/UI with fake API and fake decoder; no native playback claim','canonicalEpisode':13,'hlsNegotiated':args.hls,'defaultLanguage':'vo','frenchAvailabilityDoesNotSelectLanguage':True,'explicitFrenchStillSupported':True,'tvPlayer':{'anchoredMenusKeepChrome':True,'proposedTimelineUntilConfirmed':True,'cancelSeekKeepsPosition':True,'cancelResolutionIgnoresLateResponse':True,'strictSourceReaderVariant':True,'strictRetry401And200KeepsChoice':True,'failedChangeKeepsOldVideo':True,'pausedQualityAndVersionKeepPositionAndIntent':True,'episodesOverlayKeepsVideoAndSeasonBrowsing':True,'firstBackHidesHudWithoutClosing':True,'episodeJumpPreservesCurrentPlayback':True,'sourceReachableAfterNativeFailure':True,'episodeArtworkIdentityChecked':True,'missingCapabilityUnavailable':True,'perSessionProgressSequence':True},'lang':'vo','defaultSoundOnAndLabelled':True,'infoSelectionPreserved':True,'search':{'remoteKeyboard':True,'staleIgnored':True,'selectionAndBack':True},'profile':{'publicProfileWithoutOAuth':True,'statsScaleChecked':True,'selectionAndBack':True},'lateTrailerDoesNotChangeSelection':True,'silentGainZero':True,'bannerErrorUsesPoster':True,'artworkQueue':{'maxConcurrent':2,'identityChecked':True,'deduplicated':True,'capabilityRequired':True,'warmWithoutResume':True},'events':events},indent=2),encoding='utf-8')
             app.quit()
         except Exception as error: messages.append(traceback.format_exc());app.exit(1)
-    QTimer.singleShot(600,check);QTimer.singleShot(100000 if args.conversation_launch else 60000 if args.follow_up else 25000,lambda:app.exit(2))
+    QTimer.singleShot(600,check);QTimer.singleShot(100000 if args.conversation_launch else 60000 if args.follow_up or args.episode_shelf else 25000,lambda:app.exit(2))
     code=app.exec_()
     window.close();sip.delete(engine)
     if code: raise AssertionError([m for m in messages if m.startswith('Traceback')] or messages[-12:])
-    print(json.dumps({'passed':True,'scope':'host, canonical target, resume, pause/seek/back, progress sequence; mocked decoder/API'}))
+    print(json.dumps({'passed':True,'scope':'episode shelf only, fake API/media; no other host checks' if args.episode_shelf_only else 'host, canonical target, resume, pause/seek/back, progress sequence; mocked decoder/API'}))
