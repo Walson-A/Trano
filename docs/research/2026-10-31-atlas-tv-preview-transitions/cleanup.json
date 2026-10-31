@@ -1,0 +1,39 @@
+{
+  "localStageRemoved": ".local/atlas-tv-transitions-20261031",
+  "localStageRemovalVerified": true,
+  "testAndPublicationSessionsCompleted": [
+    62616,
+    69292,
+    97280,
+    45534,
+    12833,
+    51570,
+    68111,
+    95417,
+    69098
+  ],
+  "localTestProcessesKept": [],
+  "retainedServices": [
+    {
+      "host": "server",
+      "pid": 3469727,
+      "service": "atlas-tv-launch",
+      "reason": "Serves the requested live Atlas TV release; keep while used, stop only on explicit service retirement."
+    },
+    {
+      "host": "Devialet",
+      "launchId": "837b9776b9149d38a04bbf992a9538fe",
+      "role": "Atlas TV user trial",
+      "reason": "Keep the same release on screen until user feedback; no diagnostic replacement during trial."
+    }
+  ],
+  "checkoutRetained": {
+    "branch": "feat/local-network",
+    "reason": "Existing shared checkout, ongoing physical QA, unintegrated feature and unrelated untracked work. No new worktree created."
+  },
+  "unrelatedUntrackedPreserved": [
+    "packages/lan/devialet/tv/",
+    "packages/lan/scripts/preview-atlas-tv-home.py"
+  ],
+  "proofsPreserved": "Final verification JSON and relevant actual-component screenshots; failed intermediate bench exports removed."
+}

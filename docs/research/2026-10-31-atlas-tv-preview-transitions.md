@@ -61,3 +61,32 @@ explicitement une image fixe ; elle ne valide ni fluidité native ni décodage.
 Preuves retenues dans `2026-10-31-atlas-tv-preview-transitions/`.
 La réception physique du nouveau cadrage et des seeks reste en attente.
 Une seule version doit être laissée affichée jusqu’au retour de Walson.
+
+
+## Publication de la version à tester
+
+La release **hero-preview-transitions-1dc4eb6a1d16**, 40 fichiers / 409127 octets,
+provient de `10c8333` sur `feat/local-network`. Le prévol confirme la release
+native-lifecycle avant remplacement, l’engine `39cfb1c3e1af9c88e90730b78a0f0c6a8e902917`
+et le gateway SHA256 `3fe9b6eacd5baac82f110448439261962d7f2ff2f9b1eb389ed5c5cd39ea95c4`.
+La publication atomique vérifie les 40 empreintes ; engine et code gateway ne
+changent pas. Le service de lancement redémarre pour servir le nouveau paquet.
+
+Le SDK accepte `837b9776b9149d38a04bbf992a9538fe`. Aucun épisode réel n’est lancé.
+Cette acceptation et les fichiers demandés ne prouvent pas le nouveau rendu
+natif. La version reste affichée jusqu’au retour de Walson sur le cadrage,
+la transition et les seeks, sans alternance de diagnostics.
+[Paquet](2026-10-31-atlas-tv-preview-transitions/package.json),
+[publication](2026-10-31-atlas-tv-preview-transitions/publication.json),
+[lancement](2026-10-31-atlas-tv-preview-transitions/launch.json).
+
+
+## Nettoyage
+
+Les sessions de test et de publication sont terminées, le stage local et
+les captures intermédiaires inutiles sont retirés. Les captures de revue,
+vérifications, empreintes et reçus publics sont conservés. Le service Atlas TV
+et l’application sur le Devialet restent actifs pour l’essai demandé.
+Le checkout préexistant est partagé avec d’autres travaux non suivis et la
+branche n’est pas intégrée : il est conservé, sans retirer leurs fichiers.
+[Processus, identifiants et conditions d’arrêt](2026-10-31-atlas-tv-preview-transitions/cleanup.json).
