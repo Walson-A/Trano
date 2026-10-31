@@ -63,3 +63,27 @@ compte ni épisode réel.
 Les captures des vrais composants sont revues en 1280×720 pour conserver la
 composition acceptée. Elles ne valident pas le décodeur matériel. Les preuves
 sont dans `2026-10-31-atlas-tv-native-lifecycle/`.
+
+Un contrôle supplémentaire retire Trailer.qml et EpisodePlayer.qml du banc
+après le bootstrap, puis rejoue tous les scénarios. Ils passent : les Component
+conservent le code compilé nécessaire à la recréation des objets, sans relire
+ces fichiers. Cela teste le cache de composants Qt du banc, pas une expiration
+HTTP réellement attendue sur la TV.
+
+## Version complète en contrôle
+
+La release **hero-native-lifecycle-00ca5c573eed**, 40 fichiers et 405125 octets,
+est publiée depuis `e542b92` sur `feat/local-network`. Le prévol confirme
+hero-restore-video-3493b637e5cb avant son remplacement, l’engine
+`39cfb1c3e1af9c88e90730b78a0f0c6a8e902917` et le gateway au SHA256
+`3fe9b6eacd5baac82f110448439261962d7f2ff2f9b1eb389ed5c5cd39ea95c4`.
+L’engine et le gateway ne sont pas modifiés par ce lot.
+
+Le SDK accepte le lancement `f21b122a3ac3349e614b5e2a8639dea1` de l’application
+normale. Aucun épisode réel n’est lancé. Walson est invité à vérifier le même
+animé dans le héros, la fiche et le plein écran ; **cette intégration complète
+n’est pas encore confirmée physiquement**. La version reste affichée jusqu’à
+son retour, au lieu d’alterner les applications pendant son contrôle.
+Voir [publication](2026-10-31-atlas-tv-native-lifecycle/publication.json),
+[paquet](2026-10-31-atlas-tv-native-lifecycle/package.json) et
+[lancement](2026-10-31-atlas-tv-native-lifecycle/launch.json).

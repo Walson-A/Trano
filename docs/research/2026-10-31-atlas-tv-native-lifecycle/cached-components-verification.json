@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "scope": "Qt host with fake transport and decoder",
+  "sourceFilesRemovedAfterBootstrap": [
+    "Trailer.qml",
+    "EpisodePlayer.qml"
+  ],
+  "fullHostScenariosPassed": true,
+  "nativeHttpExpiryTested": false
+}

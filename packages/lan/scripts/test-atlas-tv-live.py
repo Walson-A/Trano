@@ -15,6 +15,7 @@ parser.add_argument('--hls',action='store_true',help='Exercise negotiated HLS re
 parser.add_argument('--follow-up',action='store_true',help='Exercise library writes and the explicit 12 announced/5 aired fixture; no account')
 parser.add_argument('--detail-preview',action='store_true',help='Exercise background/fullscreen trailer ownership with fake API/decoder')
 parser.add_argument('--conversation-launch',action='store_true',help='Exercise primary conversation launch receiver with fake transport/media only')
+parser.add_argument('--expire-component-files',action='store_true',help='Remove cached player source URLs after bootstrap to verify native-player recreation needs no new download')
 parser.add_argument('--qt-path',type=pathlib.Path,required=True)
 parser.add_argument('--snapshot',type=pathlib.Path,required=True)
 parser.add_argument('--assets',type=pathlib.Path,required=True)
@@ -284,6 +285,8 @@ Item {
     args.evidence.mkdir(parents=True,exist_ok=False)
     def check():
         try:
+            if args.expire_component_files:
+                for name in ['Trailer.qml','EpisodePlayer.qml']:(bundle/name).rename(bundle/(name+'.expired'))
             window.requestActivate();hero.forceActiveFocus(Qt.OtherFocusReason);hero.setProperty('previewEnabled',False)
             assert hero.property('muted') is False and window.findChild(QObject,'heroSound').property('label')=='Son activé'
             icons=window.findChildren(QObject,'iconPixels')

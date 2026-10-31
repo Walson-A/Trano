@@ -1,0 +1,29 @@
+{
+  "temporaryStageRemoved": true,
+  "temporaryClipRemoved": true,
+  "allTemporaryHttpServersClosed": true,
+  "completedTestSessions": [
+    76581,
+    82640,
+    56566,
+    91082,
+    62811,
+    21278,
+    66538,
+    2747
+  ],
+  "localBackgroundProcessesRetained": [],
+  "activeNormalRelease": "hero-native-lifecycle-00ca5c573eed",
+  "versionKeptStableForUserTest": true,
+  "fullAppNativePictureConfirmed": false,
+  "standaloneThreeSizesPhysicallyConfirmed": true,
+  "restoredPreviousHeroPhysicallyConfirmed": true,
+  "sharedCheckoutRetained": true,
+  "checkoutReason": "Branche de livraison non intégrée et travaux tiers existants à préserver ; aucun nouveau worktree créé",
+  "preexistingUntrackedPreserved": [
+    "packages/lan/devialet/tv/",
+    "packages/lan/scripts/preview-atlas-tv-home.py"
+  ],
+  "productionServiceRetained": "atlas-tv-launch",
+  "serviceReason": "Service Atlas TV demandé ; arrêt lors du retrait explicite du service"
+}
