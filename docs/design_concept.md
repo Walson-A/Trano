@@ -368,3 +368,9 @@ par rangée et identifiant, si le titre existe toujours. La progression validée
 sur le serveur apparaît dès la prochaine réponse actualisée. La synchronisation
 AniList peut prendre un cycle supplémentaire. Le client ne déduit pas un épisode
 suivant de la seule fermeture du lecteur.
+
+Publication vérifiée sur le lanceur Linux sous `hero-home-refresh-b498250`
+(41 fichiers, 414003 octets). Le SDK a accepté la relance et le Devialet a
+demandé les composants du nouveau paquet, dont `live.qml` et `TvSession.qml`.
+Le récepteur Atlas TV répond ensuite au moteur. Le résultat visuel et la
+progression après un épisode restent à confirmer en usage réel.
