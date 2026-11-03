@@ -374,3 +374,10 @@ Publication vérifiée sur le lanceur Linux sous `hero-home-refresh-b498250`
 demandé les composants du nouveau paquet, dont `live.qml` et `TvSession.qml`.
 Le récepteur Atlas TV répond ensuite au moteur. Le résultat visuel et la
 progression après un épisode restent à confirmer en usage réel.
+
+Après un refus sur un lecteur choisi, le menu Sources se recalcule dès le
+retour aux choix. Une réponse « lecteur introuvable » ou « incompatible »
+peut viser directement le choix envoyé même sans détail par lecteur.
+Ce retrait est temporaire et limité à l’épisode et à la langue. Un échec
+de variante ne retire pas le lecteur entier. Les sources jamais essayées
+restent visibles, car leur disponibilité réelle est encore inconnue.

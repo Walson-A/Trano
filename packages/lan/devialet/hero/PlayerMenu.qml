@@ -8,6 +8,7 @@ Item {
     property var transport
     property var current:null
     property var readerFailures:({})
+    onReaderFailuresChanged: if(kind==='source' && state==='ready' && readers.length)filterReaders()
     property bool currentAlive:false
     property string family:'sans-serif'
     property string kind:''
@@ -71,19 +72,24 @@ Item {
         transport.api('/tv/v1/readers',key,110000,function(code,value){
             if(turn!==revision || kind!=='source')return;
             if(code!==200 || !matches(value,key) || !Array.isArray(value.readers)){failed('Lecteurs indisponibles.');return;}
-            readers=value.readers.slice(0,128).filter(function(r){return Readers.usable(r,key,menu.readerFailures,Date.now(),menu.currentAlive ? menu.current : null) && validId(r.reader_id) && !!sourceName(r.source) && typeof r.label==='string' && r.label.length<=160;});
-            if(!readers.length){failed('Aucun lecteur compatible disponible pour cet épisode.');return;}
-            var list=[{id:'',label:'Automatique'}];['voiranime','anime-sama','franime'].forEach(function(s){if(readers.some(function(r){return r.source===s;}))list.push({id:s,label:sourceName(s)});});sources=list;
+            readers=value.readers.slice(0,128).filter(function(r){return r && validId(r.reader_id) && !!sourceName(r.source) && typeof r.label==='string' && r.label.length<=160;});
             state='ready';filterReaders();
         });
     }
     function filterReaders(){
+        var previous=entries[index], key=identity(), now=Date.now();
+        var usable=readers.filter(function(r){return Readers.usable(r,key,readerFailures,now,currentAlive ? current : null);});
+        if(!usable.length){failed('Aucun lecteur compatible disponible pour cet épisode.');return;}
+        sources=[{id:'',label:'Automatique'}].concat(['voiranime','anime-sama','franime']
+            .filter(function(s){return usable.some(function(r){return r.source===s;});})
+            .map(function(s){return {id:s,label:sourceName(s)};}));
         var list=[{label:'Automatique',readerId:'',source:'',available:true}];
         sources.slice(1).forEach(function(site){
             list.push({label:site.label+' · Automatique',readerId:'',source:site.id,available:true});
-            readers.filter(function(r){return r.source===site.id;}).forEach(function(r){list.push({label:r.label,readerId:r.reader_id,source:r.source,available:r.supported===true,detail:site.label+(current.readerId===r.reader_id && current.source===r.source ? ' · En lecture' : r.supported ? '' : ' · Non pris en charge')});});
+            usable.filter(function(r){return r.source===site.id;}).forEach(function(r){list.push({label:r.label,readerId:r.reader_id,source:r.source,available:r.supported===true,detail:site.label+(current.readerId===r.reader_id && current.source===r.source ? ' · En lecture' : '')});});
         });entries=list;
-        index=0;for(var i=0;i<entries.length;i++)if(entries[i].readerId===(current.choice.readerId || '') && entries[i].source===(current.choice.source || ''))index=i;
+        var selected=previous || current.choice;
+        index=0;for(var i=0;i<entries.length;i++)if(entries[i].readerId===(selected.readerId || '') && entries[i].source===(selected.source || ''))index=i;
     }
     function loadVariants(){
         if(!transport.variantsEnabled || !validId(current.readerId) || !sourceName(current.source)){failed('Choix indisponible ici.',false);return;}

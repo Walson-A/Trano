@@ -1,9 +1,14 @@
 .pragma library
 function identity(t,source,id){return t && Number.isInteger(t.anilist_id) && t.anilist_id>0 && Number.isInteger(t.episode) && t.episode>0 && ['vo','vf'].indexOf(t.lang)>=0 && ['voiranime','anime-sama','franime'].indexOf(source)>=0 && /^[a-f0-9]{64}$/.test(id || '') ? t.anilist_id+':'+t.episode+':'+t.lang+':'+source+':'+id : '';}
-function remember(previous,target,attempts,now){
+function remember(previous,target,attempts,now,code){
     var next={},keys=Object.keys(previous || {});
     for(var i=Math.max(0,keys.length-120);i<keys.length;i++)if(previous[keys[i]]>now)next[keys[i]]=previous[keys[i]];
-    if(!Array.isArray(attempts))return next;
+    attempts=Array.isArray(attempts) ? attempts : [];
+    if(!target.variant_id && (code==='reader_not_found' || code==='reader_unsupported' || code==='no_compatible_reader' && !attempts.length)){
+        var selected=identity(target,target.source,target.reader_id);
+        if(selected)next[selected]=now+60000;
+    }
+    if(target.variant_id)return next;
     attempts.slice(-8).forEach(function(a){
         if(!a || ['source_missing','source_denied','format_unsupported','reader_unsupported','reader_unavailable'].indexOf(a.code)<0)return;
         var key=identity(target,a.source,a.reader_id);if(key)next[key]=now+(a.code==='source_missing' ? 300000 : 60000);

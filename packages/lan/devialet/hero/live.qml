@@ -182,7 +182,8 @@ Application {
             session.api('/tv/v1/playbacks',body,110000,function(status,value){
                 if(turn!==generation || replacing && playbackId!==oldId)return;
                 resolving=false;
-                readerFailures=Readers.remember(readerFailures,body,value && value.error && value.error.details ? value.error.details.attempts : value && value.attempts,Date.now());
+                var rejection=value && value.error;
+                readerFailures=Readers.remember(readerFailures,body,rejection && rejection.details ? rejection.details.attempts : value && value.attempts,Date.now(),rejection && rejection.code);
                 var url=value && value.stream ? session.mediaUrl(value.stream.path,'episode') : '';
                 if(status!==200 || !value || value.anilist_id!==body.anilist_id || value.episode!==body.episode || value.lang!==body.lang || !/^[a-f0-9-]{36}$/.test(value.id || '') || !url || choice.readerId && value.reader_id!==choice.readerId || choice.source && value.source!==choice.source || choice.variantId && value.variant_id!==choice.variantId){
                     logResolveFailure(status,value);
