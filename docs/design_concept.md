@@ -357,3 +357,14 @@ sur la seule ouverture du menu. [Contrat et revue](research/2026-10-31-atlas-tv-
 ## Lecteurs et qualité — 2 novembre 2026
 
 Le menu Source masque les incompatibilités et les refus récents déterminés pour le même épisode et la même langue. Il conserve le lecteur actif. Qualité peut préciser le débit annoncé sans le présenter comme une note d’image. Barre de transport et Retour inchangés. [Contrat et vérifications](research/2026-11-02-atlas-tv-readers.md).
+
+## Actualisation de l’accueil — 3 novembre 2026
+
+Le retour à l’accueil demande une nouvelle lecture du catalogue après 750 ms.
+L’accueil visible relit aussi ses données toutes les 35 secondes, sans requête
+concurrente et sans interrompre un épisode, une fiche ou la confirmation de
+sortie. Les cartes restent affichées en cas d’erreur. La sélection est restaurée
+par rangée et identifiant, si le titre existe toujours. La progression validée
+sur le serveur apparaît dès la prochaine réponse actualisée. La synchronisation
+AniList peut prendre un cycle supplémentaire. Le client ne déduit pas un épisode
+suivant de la seule fermeture du lecteur.

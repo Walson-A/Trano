@@ -23,9 +23,12 @@ Item {
     property var requests: []
     property var home: ({})
     property int homeGeneration:0
+    property bool homeRefreshAllowed:false
+    property bool homeRefreshing:false
     property string state: "connecting"
     property string message: "Connexion à Atlas…"
     signal homeLoaded()
+    signal homeUpdating()
     signal unavailable()
 
     function fail() {
@@ -120,17 +123,35 @@ Item {
         });}
         attempt(false);
     }
-    function loadHome() {
+    function applyHome(value) {
+        if(JSON.stringify(home)===JSON.stringify(value))return;
+        homeUpdating();
+        home=value;
+        homeLoaded();
+    }
+    function loadHome(quiet) {
+        if(quiet && (!homeRefreshAllowed || homeRefreshing || state!=='ready'))return;
+        homeRefreshing=true;
         var turn=++homeGeneration;
         api('/tv/v1/catalog/home',{},45000,function(status,value) {
             if(!accessToken || turn!==homeGeneration) return;
+            if(quiet && !homeRefreshAllowed){homeRefreshing=false;return;}
             if(status!==200 || !value || !Array.isArray(value.hero) || !Array.isArray(value.rangees)) {
+                homeRefreshing=false;
+                if(quiet)return;
                 state='error'; message=RequestState.message(status,value,'Le catalogue est indisponible. OK pour réessayer.'); return;
             }
-            home=value; state='ready'; message=''; homeLoaded();
+            state='ready'; message='';
+            // Keep the current rows while a partial background response is enriched.
+            if(!quiet || !value.complements_a_charger)applyHome(value);
             if(value.complements_a_charger) api('/tv/v1/catalog/home-extras',{},45000,function(code,complete) {
-                if(turn===homeGeneration && code===200 && complete && Array.isArray(complete.hero) && Array.isArray(complete.rangees)) home=complete;
+                if(turn!==homeGeneration)return;
+                homeRefreshing=false;
+                if(quiet && !homeRefreshAllowed)return;
+                if(code===200 && complete && Array.isArray(complete.hero) && Array.isArray(complete.rangees))applyHome(complete);
+                else if(quiet && (!home.rangees || !home.rangees.length))applyHome(value);
             });
+            else homeRefreshing=false;
         });
     }
     function mediaUrl(path,kind) {

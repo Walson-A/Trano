@@ -10,7 +10,12 @@ Application {
     FontLoader { source: "bold.ttf" }
     property bool firstHome: true
     property var homeContext:null
-    TvSession { id: session; objectName:'tvSession'; onHomeLoaded: {
+    TvSession { id: session; objectName:'tvSession'
+        homeRefreshAllowed: !screen.panel && !screen.playbackId && !screen.resolving && !screen.exitVisible
+        onHomeUpdating: {
+            if(!app.firstHome)app.homeContext={identity:hero.selected ? hero.selected.anilist_id : 0,rowId:hero.currentRow ? hero.currentRow.id : ''};
+        }
+        onHomeLoaded: {
         if(app.firstHome){hero.muted=false;app.firstHome=false;console.info('ATLAS_TV_HOME_SOUND',hero.muted);}
         var context=app.homeContext;app.homeContext=null;var restored=false;
         if(context)for(var pass=0;pass<2 && !restored;pass++)for(var r=0;r<hero.rows.length && !restored;r++){
@@ -70,11 +75,11 @@ Application {
         function closeDetail() {
             panel='';
             if(detailOrigin==='search' || detailOrigin==='profile' || detailOrigin==='library')openPanel(detailOrigin);
-            else {hero.detailOpen=false;hero.zone='actions';hero.actionIndex=1;hero.previewEnabled=true;hero.forceActiveFocus();}
+            else {hero.detailOpen=false;hero.zone='actions';hero.actionIndex=1;hero.previewEnabled=true;hero.forceActiveFocus();homeReturnRefresh.restart();}
         }
         function returnFromPlayback() {
             if(panel==='detail'){hero.previewEnabled=false;detailPanel.item.resumeExtras();detailPanel.item.resumePreview();detailPanel.item.forceActiveFocus();}
-            else {hero.previewEnabled=true;hero.forceActiveFocus();}
+            else {hero.previewEnabled=true;hero.forceActiveFocus();homeReturnRefresh.restart();}
         }
         function playbackError(message) {
             hero.notice=message;
@@ -111,6 +116,7 @@ Application {
             Qt.callLater(function(){
                 for(var i=0;i<hero.rows.length;i++)if(hero.rows[i].id===homeRowId){hero.selectRow(i);break;}
                 hero.zone='nav';hero.navIndex=destination==='home' ? 2 : name==='profile' ? 1 : name==='library' ? 3 : 0;hero.previewEnabled=true;hero.forceActiveFocus();
+                homeReturnRefresh.restart();
             });
         }
         function selectPanelResult(cards,index,title) {
@@ -219,6 +225,8 @@ Application {
                 if(status!==200) hero.notice='La progression n’a pas pu être synchronisée.';
             });
         }
+        Timer { id:homeReturnRefresh; interval:750; onTriggered:session.loadHome(true) }
+        Timer { interval:35000; repeat:true; running:session.state==='ready' && session.homeRefreshAllowed; onTriggered:session.loadHome(true) }
         Timer { interval:30000; repeat:true; running:session.state==='ready' && !screen.panel && !screen.playbackId && !screen.resolving; onTriggered: {
             screen.warmArtwork();
             if(hero.trailerSources[hero.trailerId] && !previews.cachedSource(hero.selected))hero.trailerSources={};

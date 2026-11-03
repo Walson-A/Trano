@@ -164,6 +164,8 @@ Item {
  property int libraryMutations:0
  property int libraryRevision:0
  property int homeReloads:0
+ property int quietHomeReloads:0
+ property bool homeRefreshAllowed:false
  property bool trimLibrary:false
  property bool delayPlaybacks:false
  property var pendingPlaybacks:[]
@@ -213,7 +215,8 @@ Item {
  signal unavailable()
  signal apiCalled(string path,var body)
  function start(url) { home=benchmarkHome; state='ready'; homeLoaded(); }
- function loadHome(){homeReloads++;Qt.callLater(function(){homeLoaded();});}
+ signal homeUpdating()
+ function loadHome(quiet){if(quiet){if(homeRefreshAllowed)quietHomeReloads++;return;}homeReloads++;Qt.callLater(function(){homeLoaded();});}
  function api(path,body,timeout,done) {
   apiCalled(path,body);
   if(delayCollections && ['/tv/v1/library','/tv/v1/catalog/history'].indexOf(path)>=0){pendingCollections=pendingCollections.concat([{path:path,body:body,done:done}]);return;}
@@ -432,11 +435,12 @@ Item {
             player.setProperty('zone','surface');QTest.keyClick(window,Qt.Key_Back)
             assert screen.property('playbackId') and not player.property('controlsVisible'), 'First Back hides controls without leaving playback'
             QTest.keyClick(window,Qt.Key_Back)
-            QTimer.singleShot(400,returned)
+            QTimer.singleShot(900,returned)
         except Exception as error: messages.append(traceback.format_exc());app.exit(1)
     def returned():
         try:
             assert screen.property('playbackId')==''
+            assert session.property('quietHomeReloads')>=1, 'Returning from playback must refresh the home catalogue'
             assert not window.findChildren(QObject,'episodeVideoOutput'), 'Closing the episode must release its video output'
             assert hero.property('activeFocus')
             events=[body for path,body in calls if path.endswith('/progress')]
