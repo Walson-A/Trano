@@ -2,6 +2,7 @@ import QtQuick 2.15
 import fbx.application 1.0
 import "."
 import "EpisodePolicy.js" as Episode
+import "ReaderPolicy.js" as Readers
 
 Application {
     id: app
@@ -31,6 +32,7 @@ Application {
         property int generation: 0
         property string playbackId: ""
         property var pendingPlayback: null
+        property var readerFailures:({})
         property int sequence: 0
         property bool retryInspectBusy:false
         property var homePreviewLease:null
@@ -174,6 +176,7 @@ Application {
             session.api('/tv/v1/playbacks',body,110000,function(status,value){
                 if(turn!==generation || replacing && playbackId!==oldId)return;
                 resolving=false;
+                readerFailures=Readers.remember(readerFailures,body,value && value.error && value.error.details ? value.error.details.attempts : value && value.attempts,Date.now());
                 var url=value && value.stream ? session.mediaUrl(value.stream.path,'episode') : '';
                 if(status!==200 || !value || value.anilist_id!==body.anilist_id || value.episode!==body.episode || value.lang!==body.lang || !/^[a-f0-9-]{36}$/.test(value.id || '') || !url || choice.readerId && value.reader_id!==choice.readerId || choice.source && value.source!==choice.source || choice.variantId && value.variant_id!==choice.variantId){
                     logResolveFailure(status,value);
@@ -182,6 +185,7 @@ Application {
                     rejectConversation(requestId,error.code==='episode_not_aired' ? 'episode_not_aired' : 'resolution_failed');
                     if(replacing)episode.item.changeFailed(message);else {playbackError(message);returnFromPlayback();}return;
                 }
+                readerFailures=Readers.recovered(readerFailures,body,value.source,value.reader_id);
                 var sameEpisode=replacing && old.media.anilist_id===media.anilist_id && old.target.numero===target.numero;
                 var resume=typeof resumeOverride==='number' && isFinite(resumeOverride) && resumeOverride>=0 ? resumeOverride : sameEpisode ? episode.item.positionMs : value.resume ? value.resume.position_ms || 0 : 0;
                 var intent=requestId ? true : replacing ? episode.item.failure ? true : episode.item.wantsPlaying : true;
@@ -246,6 +250,7 @@ Application {
             id:episode; objectName:'episodeLoader'; anchors.fill:parent; active:!!screen.playbackId;source:"EpisodePlayer.qml";visible:!!screen.playbackId
             onLoaded: {
                 item.family=regular.name || 'sans-serif';
+                item.readerFailures=Qt.binding(function(){return screen.readerFailures;});
                 item.transport=session;item.current=Qt.binding(function(){return screen.pendingPlayback;});item.changing=Qt.binding(function(){return screen.resolving;});
                 item.interaction.connect(conversation.localAction);item.progress.connect(screen.progress);item.changeRequested.connect(screen.changeEpisode);item.cancelChangeRequested.connect(screen.cancelChange);item.retryRequested.connect(screen.retryEpisode);
                 item.closed.connect(function() { screen.playbackId='';screen.pendingPlayback=null;screen.cancelChange();screen.returnFromPlayback(); });

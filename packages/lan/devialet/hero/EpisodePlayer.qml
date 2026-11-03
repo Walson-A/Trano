@@ -7,6 +7,7 @@ FocusScope {
     property string title:''
     property string chapter:''
     property string family:'sans-serif'
+    property var readerFailures:({})
     property var transport
     property var current:null
     property bool trailerMode:false
@@ -107,7 +108,7 @@ FocusScope {
         Rectangle {anchors.fill:parent;radius:40;color:'#a5202025';border.color:'#25ffffff'}
         Icon {anchors.centerIn:parent;width:32;height:32;name:'play'}
     }
-    PlayerMenu {id:menu;objectName:player.trailerMode ? 'detailTrailerMenu' : 'playerMenu';anchors.fill:parent;current:player.current;transport:player.transport;family:player.family;busy:player.changing || player.retrying;positionMs:player.positionMs;durationMs:player.durationMs
+    PlayerMenu {id:menu;objectName:player.trailerMode ? 'detailTrailerMenu' : 'playerMenu';anchors.fill:parent;current:player.current;transport:player.transport;readerFailures:player.readerFailures;currentAlive:player.started && !player.failure;family:player.family;busy:player.changing || player.retrying;positionMs:player.positionMs;durationMs:player.durationMs
         onChangeRequested:player.changeRequested(media,target,choice)
         onCancelRequested:player.cancelChangeRequested()
         onDismissed:{player.zone=player.menuOrigin;player.reveal();player.forceActiveFocus();}

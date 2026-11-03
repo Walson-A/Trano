@@ -353,3 +353,7 @@ ou sur une page éloignée. « Vu » et son trait discret reposent uniquement
 sur le booléen serveur ; « En lecture » garde le numéro et la position actifs.
 Le focus blanc reste distinct de ces états. Aucun épisode n’est marqué vu
 sur la seule ouverture du menu. [Contrat et revue](research/2026-10-31-atlas-tv-episode-context.md).
+
+## Lecteurs et qualité — 2 novembre 2026
+
+Le menu Source masque les incompatibilités et les refus récents déterminés pour le même épisode et la même langue. Il conserve le lecteur actif. Qualité peut préciser le débit annoncé sans le présenter comme une note d’image. Barre de transport et Retour inchangés. [Contrat et vérifications](research/2026-11-02-atlas-tv-readers.md).

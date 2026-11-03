@@ -1,11 +1,14 @@
 import QtQuick 2.15
 import "EpisodePolicy.js" as Episode
+import "ReaderPolicy.js" as Readers
 
 // One overlay, owned by the episode player. Catalogs never contain provider URLs.
 Item {
     id:menu;objectName:'playerMenu'
     property var transport
     property var current:null
+    property var readerFailures:({})
+    property bool currentAlive:false
     property string family:'sans-serif'
     property string kind:''
     property string state:'ready'
@@ -68,7 +71,8 @@ Item {
         transport.api('/tv/v1/readers',key,110000,function(code,value){
             if(turn!==revision || kind!=='source')return;
             if(code!==200 || !matches(value,key) || !Array.isArray(value.readers)){failed('Lecteurs indisponibles.');return;}
-            readers=value.readers.slice(0,128).filter(function(r){return validId(r.reader_id) && !!sourceName(r.source) && typeof r.label==='string' && r.label.length<=160;});
+            readers=value.readers.slice(0,128).filter(function(r){return Readers.usable(r,key,menu.readerFailures,Date.now(),menu.currentAlive ? menu.current : null) && validId(r.reader_id) && !!sourceName(r.source) && typeof r.label==='string' && r.label.length<=160;});
+            if(!readers.length){failed('Aucun lecteur compatible disponible pour cet épisode.');return;}
             var list=[{id:'',label:'Automatique'}];['voiranime','anime-sama','franime'].forEach(function(s){if(readers.some(function(r){return r.source===s;}))list.push({id:s,label:sourceName(s)});});sources=list;
             state='ready';filterReaders();
         });
@@ -89,7 +93,7 @@ Item {
             if(turn!==revision || kind!=='quality')return;
             if(code!==200 || !matches(value,key) || value.source!==key.source || value.reader_id!==key.reader_id || !Array.isArray(value.variants)){failed('Qualités indisponibles.');return;}
             variants=value.variants.slice(0,16).filter(function(v){return validId(v.variant_id) && (v.container==='mp4' || transport.hlsEnabled && v.container==='hls') && typeof v.label==='string' && v.label.length<=80;});
-            entries=(variants.length ? [{label:'Automatique',variantId:''}] : []).concat(variants.map(function(v){return {label:v.label,variantId:v.variant_id};}));
+            entries=(variants.length ? [{label:'Automatique',variantId:''}] : []).concat(variants.map(function(v){return {label:v.label,variantId:v.variant_id,detail:Readers.bitrate(v.bitrate_kbps)};}));
             index=0;for(var i=0;i<entries.length;i++)if(entries[i].variantId===(current.choice.variantId || ''))index=i;
             state='ready';if(!variants.length)message=transport.hlsEnabled ? 'Aucune qualité compatible n’est annoncée pour ce lecteur.' : 'Aucune variante MP4 compatible n’est annoncée pour ce lecteur.';
         });
