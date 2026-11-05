@@ -381,3 +381,12 @@ peut viser directement le choix envoyé même sans détail par lecteur.
 Ce retrait est temporaire et limité à l’épisode et à la langue. Un échec
 de variante ne retire pas le lecteur entier. Les sources jamais essayées
 restent visibles, car leur disponibilité réelle est encore inconnue.
+
+## Reprise après interruption d’un épisode
+
+Le lecteur garde le dernier repère confirmé. Si le décodeur remet son temps à
+zéro avant de signaler une erreur, le message et la barre de lecture affichent
+le repère conservé. Le lecteur le transmet au serveur avec la durée mesurée. Réessayer ou changer
+de source pour le même épisode repart de ce repère. Un retour explicite au
+début reste possible. La lecture suivante attend de pouvoir atteindre le
+repère avant d’envoyer sa propre progression.

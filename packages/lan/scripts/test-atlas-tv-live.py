@@ -417,7 +417,11 @@ Item {
             assert screen.property('playbackId')==old_id and player.property('playing') and menu.property('opened')
             assert menu.property('message')=='Ce flux est indisponible pour le moment.'
             QTest.keyClick(window,Qt.Key_Return) # acknowledge failure, keep choices
-            QTest.keyClick(window,Qt.Key_Return);spin(lambda:screen.property('playbackId')!=old_id and player.property('playing'))
+            decoder=window.findChild(QObject,'episodeMedia')
+            decoder.setProperty('position',175000)
+            decoder.setProperty('position',0);decoder.setProperty('duration',0);decoder.error.emit(1)
+            QTest.keyClick(window,Qt.Key_Return)
+            spin(lambda:screen.property('playbackId')!=old_id and player.property('playing') and player.property('positionMs')==175000)
             request=[body for path,body in calls if path=='/tv/v1/playbacks'][-1]
             assert request['source']=='anime-sama' and request['reader_id']=='f'*64 and 'variant_id' not in request
             # A catalog failure offers a retry inside the same anchored menu.
@@ -644,11 +648,23 @@ Item {
             QTest.keyClick(window,Qt.Key_Back)
             episode_player.setProperty('zone','surface');QTest.keyClick(window,Qt.Key_Return)
             spin(lambda:episode_player.property('playing'))
-            window.findChild(QObject,'episodeMedia').setProperty('position',0)
-            window.findChild(QObject,'episodeMedia').error.emit(1)
+            decoder=window.findChild(QObject,'episodeMedia')
+            decoder.setProperty('position',185000)
+            decoder.setProperty('position',0)
+            decoder.setProperty('duration',0)
+            decoder.error.emit(1)
             assert episode_player.property('failure')
+            assert episode_player.property('checkpointMs')==185000, 'A decoder reset must keep the last confirmed position'
+            assert episode_player.property('positionMs')==185000 and episode_player.property('durationMs')==1500095, 'The timeline and error must agree'
+            assert any(path.endswith('/progress') and body['state']=='stopped' and body['position_ms']==185000 for path,body in calls)
+            assert window.grabWindow().save(str(args.evidence/'player-recovery-position.png'))
             QTest.keyClick(window,Qt.Key_Return);QTest.qWait(200)
             assert [body for path,body in calls if path=='/tv/v1/playbacks'][-1]['exclude_readers']==['e'*64], 'Retry excludes only the failed canonical reader'
+            spin(lambda:episode_player.property('playing') is True)
+            assert episode_player.property('positionMs')==185000
+            episode_player.setProperty('proposedMs',0);episode_player.commitSeek()
+            assert episode_player.property('checkpointMs')==0, 'A confirmed seek to the start must remain valid'
+            decoder.error.emit(1);QTest.keyClick(window,Qt.Key_Return);QTest.qWait(200)
             spin(lambda:episode_player.property('playing') is True)
             assert episode_player.property('resumeMs')==0 and episode_player.property('positionMs')<2000, 'Explicit position zero must override an older backend resume'
             previous=[format(i,'064x') for i in range(1,9)]

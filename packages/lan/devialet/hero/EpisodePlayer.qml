@@ -31,8 +31,10 @@ FocusScope {
     property int seekTarget:-1
     property int proposedMs:-1
     property int observationResumeTarget:-1
-    readonly property int positionMs:media.position
-    readonly property int durationMs:media.duration
+    property int checkpointMs:0
+    property int checkpointDurationMs:0
+    readonly property int positionMs:failure ? checkpointMs : media.position
+    readonly property int durationMs:failure && checkpointDurationMs>0 ? checkpointDurationMs : media.duration
     readonly property bool playing:media.playbackState===MediaPlayer.PlayingState
     readonly property bool videoReady:media.hasVideo && media.position>400 && (playing || media.playbackState===MediaPlayer.PausedState)
     readonly property bool hasSource:!!String(media.source)
@@ -49,13 +51,42 @@ FocusScope {
     signal interaction()
     function clock(ms){var s=Math.floor(Math.max(0,ms)/1000);return Math.floor(s/60)+':'+('0'+s%60).slice(-2);}
     function knownEpisode(identity,number){if(menu.episodeCard && menu.episodeCard.anilist_id===identity)for(var i=0;i<menu.entries.length;i++)if(menu.entries[i].numero===number)return menu.entries[i];return null;}
-    function report(state){if(!trailerMode && started && media.duration>0)progress({position_ms:media.position,duration_ms:media.duration,state:state});}
+    function rememberPosition(allowZero){
+        if(media.duration<=0 || media.position<0 || media.position>media.duration || !allowZero && media.position===0)return;
+        checkpointMs=media.position;checkpointDurationMs=media.duration;
+    }
+    function report(state){
+        if(!trailerMode && checkpointDurationMs>0)
+            progress({position_ms:checkpointMs,duration_ms:checkpointDurationMs,state:state});
+    }
+    function resumeWhenReady(){
+        if(resumed || !started || failure || media.duration<=0 || resumeMs>0 && !media.seekable)return;
+        resumed=true;console.info('ATLAS_TV_EPISODE_READY',media.hasVideo,media.hasAudio,media.duration);
+        if(resumeMs>0){
+            observationResumeTarget=Math.min(resumeMs,Math.max(0,media.duration-1000));
+            restoreAfterSeek=wantsPlaying;media.seek(observationResumeTarget);
+        }
+        if(!wantsPlaying)media.pause();
+        if(observationResumeTarget<0 && checkpointDurationMs===0){rememberPosition(false);report(wantsPlaying ? 'playing' : 'paused');}
+    }
+    function confirmSeek(){
+        if(seekTarget<0)return;
+        var toStart=seekTarget===0;
+        if(toStart ? media.position!==0 : media.position<=0 || Math.abs(media.position-seekTarget)>=2000)return;
+        rememberPosition(toStart);seekTarget=-1;report(wantsPlaying ? 'playing' : 'paused');
+    }
+    function interrupted(message){
+        if(failure || ended)return;
+        report('stopped');started=false;wantsPlaying=false;restoreAfterSeek=false;
+        failure=message;controlsVisible=true;
+    }
     function play(url,desiredPlaying){
         var returnZone=menu.opened ? menuOrigin : 'surface';
-        resumed=false;started=false;ended=false;failure='';errorIndex=0;observationResumeTarget=resumeMs>0 ? resumeMs : -1;wantsPlaying=desiredPlaying!==false;restoreAfterSeek=false;zone=returnZone;seekTarget=-1;proposedMs=-1;menu.revision++;menu.kind='';menu.message='';media.source=url;media.play();reveal();if(!inlinePreview)forceActiveFocus();
+        resumed=false;started=false;ended=false;failure='';errorIndex=0;checkpointMs=resumeMs;checkpointDurationMs=0;observationResumeTarget=resumeMs>0 ? resumeMs : -1;wantsPlaying=desiredPlaying!==false;restoreAfterSeek=false;zone=returnZone;seekTarget=-1;proposedMs=-1;menu.revision++;menu.kind='';menu.message='';media.source=url;media.play();reveal();if(!inlinePreview)forceActiveFocus();
     }
     function retire(){
-        report('stopped');started=false;wantsPlaying=false;restoreAfterSeek=false;retrying=false;proposedMs=-1;seekTarget=-1;media.stop();media.source='';
+        if(started && !ended)report('stopped');
+        started=false;wantsPlaying=false;restoreAfterSeek=false;retrying=false;proposedMs=-1;seekTarget=-1;media.stop();media.source='';
     }
     function close(){menu.revision++;menu.kind='';cancelChangeRequested();retire();closed();}
     function toggle(){
@@ -75,7 +106,7 @@ FocusScope {
         if(proposedMs<0){toggle();return;}
         var target=proposedMs;proposedMs=-1;zone='surface';seekTarget=target;restoreAfterSeek=wantsPlaying;media.seek(target);
         console.info('ATLAS_TV_EPISODE_SEEK_COMMIT',target);
-        if(Math.abs(media.position-target)<2000){seekTarget=-1;report(wantsPlaying ? 'playing' : 'paused');}reveal();
+        confirmSeek();reveal();
     }
     function reveal(){controlsVisible=true;hide.restart();}
     Rectangle {anchors.fill:parent;color:'black'}
@@ -83,22 +114,32 @@ FocusScope {
         id:media;objectName:player.trailerMode ? 'detailTrailerMedia' : 'episodeMedia';muted:player.muted;volume:player.muted ? 0 : player.inlinePreview ? .35 : 1
         onPlaybackStateChanged:{
             console.info('ATLAS_TV_EPISODE_STATE',playbackState,status,position,duration);
-            if(playbackState===MediaPlayer.PausedState && player.started){player.report('paused');player.reveal();}
+            if(playbackState===MediaPlayer.PausedState && player.started && !player.failure){
+                if(player.seekTarget<0 && player.observationResumeTarget<0)player.report('paused');
+                player.reveal();
+            }
         }
         onPositionChanged:{
+            if(player.failure || player.ended)return;
             if(playbackState===MediaPlayer.PlayingState && hasVideo && position>0){
                 player.started=true;
-                if(!player.resumed && duration>0){
-                    player.resumed=true;console.info('ATLAS_TV_EPISODE_READY',hasVideo,hasAudio,duration);
-                    if(player.resumeMs>0 && seekable){player.observationResumeTarget=Math.min(player.resumeMs,Math.max(0,duration-1000));player.restoreAfterSeek=player.wantsPlaying;media.seek(player.observationResumeTarget);}else player.observationResumeTarget=-1;
-                    if(!player.wantsPlaying)media.pause();player.report(player.wantsPlaying ? 'playing' : 'paused');
-                }
+                player.resumeWhenReady();
             }
-            if(player.seekTarget>=0 && Math.abs(position-player.seekTarget)<2000){player.seekTarget=-1;player.report(player.wantsPlaying ? 'playing' : 'paused');}
-            if(player.observationResumeTarget>=0 && Math.abs(position-player.observationResumeTarget)<2000)player.observationResumeTarget=-1;
+            if(player.observationResumeTarget>=0){
+                if(player.resumed && position>0 && Math.abs(position-player.observationResumeTarget)<2000){
+                    player.observationResumeTarget=-1;player.rememberPosition(false);player.report(player.wantsPlaying ? 'playing' : 'paused');
+                }
+                return;
+            }
+            if(player.seekTarget>=0)player.confirmSeek();
+            else if(player.started && player.resumed && (playbackState===MediaPlayer.PlayingState || playbackState===MediaPlayer.PausedState))player.rememberPosition(false);
         }
-        onStatusChanged:{console.info('ATLAS_TV_EPISODE_STATUS',status);if(status===MediaPlayer.EndOfMedia){player.report('ended');player.started=false;player.wantsPlaying=false;player.ended=true;player.controlsVisible=true;}}
-        onError:{console.info('ATLAS_TV_EPISODE_ERROR',error);player.report('error');player.started=false;player.wantsPlaying=false;player.failure='La lecture a été interrompue.';player.controlsVisible=true;}
+        onSeekableChanged:player.resumeWhenReady()
+        onStatusChanged:{console.info('ATLAS_TV_EPISODE_STATUS',status);if(status===MediaPlayer.EndOfMedia && !player.failure){player.report('ended');player.started=false;player.wantsPlaying=false;player.ended=true;player.controlsVisible=true;}}
+        onError:{
+            console.info('ATLAS_TV_EPISODE_ERROR',error,status,position,player.checkpointMs);
+            player.interrupted('La lecture a été interrompue.');
+        }
     }
     Loader {anchors.fill:parent;active:!!String(media.source);sourceComponent:Component {
         VideoOutput {objectName:player.trailerMode ? 'detailTrailerVideoOutput' : 'episodeVideoOutput';anchors.fill:parent;source:media;fillMode:player.inlinePreview ? VideoOutput.PreserveAspectCrop : VideoOutput.PreserveAspectFit}
@@ -117,7 +158,7 @@ FocusScope {
     Text {anchors.centerIn:parent;width:1000;visible:!player.inlinePreview;horizontalAlignment:Text.AlignHCenter;wrapMode:Text.WordWrap;text:!player.failure && !menu.opened ? (player.ended ? (player.trailerMode ? 'Bande-annonce terminée' : 'Épisode terminé') : !player.started ? 'Chargement…' : '') : '';color:'white';font.family:player.family;font.pixelSize:26}
     Rectangle {x:344;y:238;width:592;height:224;radius:14;color:'#ee1b1c21';border.color:'#28ffffff';visible:!player.inlinePreview && !!player.failure && !menu.opened
         Text {x:28;y:26;text:player.trailerMode ? 'Bande-annonce indisponible' : 'La lecture s’est interrompue';color:'white';font.family:player.family;font.pixelSize:27;font.weight:Font.DemiBold}
-        Text {x:28;y:76;text:player.trailerMode ? 'Le chargement de la vidéo a échoué.' : 'Ta position est conservée à '+player.clock(player.positionMs)+'.';color:'#c6c6ce';font.family:player.family;font.pixelSize:20}
+        Text {x:28;y:76;text:player.trailerMode ? 'Le chargement de la vidéo a échoué.' : 'Ta position est conservée à '+player.clock(player.checkpointMs)+'.';color:'#c6c6ce';font.family:player.family;font.pixelSize:20}
         Row {x:20;y:142;spacing:12
             Repeater {model:player.trailerMode ? ['Réessayer'] : ['Réessayer','Changer de source']
                 Rectangle {width:index===0 ? 176 : 344;height:56;radius:10;color:player.errorIndex===index ? '#f5f5f7' : '#20ffffff'
@@ -128,7 +169,10 @@ FocusScope {
         }
     }
     Timer {interval:250;running:player.restoreAfterSeek && player.wantsPlaying && media.playbackState===MediaPlayer.PausedState && media.status===MediaPlayer.Buffered;onTriggered:{player.restoreAfterSeek=false;media.play();}}
-    Timer {interval:15000;repeat:true;running:player.started && media.playbackState===MediaPlayer.PlayingState;onTriggered:player.report('playing')}
+    Timer {interval:15000;repeat:true;running:player.started && !player.failure && player.observationResumeTarget<0 && player.seekTarget<0 && media.playbackState===MediaPlayer.PlayingState;onTriggered:player.report('playing')}
+    Timer {interval:8000;running:player.started && !player.failure && player.observationResumeTarget>=0;onTriggered:{
+        player.interrupted('Cette source ne peut pas reprendre à la bonne position.');media.stop();
+    }}
     Timer {id:hide;interval:2500;onTriggered:if(player.playing && player.zone==='surface' && !menu.opened)player.controlsVisible=false}
     Keys.onPressed:{
         interaction();

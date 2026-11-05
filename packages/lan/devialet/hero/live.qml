@@ -194,7 +194,7 @@ Application {
                 }
                 readerFailures=Readers.recovered(readerFailures,body,value.source,value.reader_id);
                 var sameEpisode=replacing && old.media.anilist_id===media.anilist_id && old.target.numero===target.numero;
-                var resume=typeof resumeOverride==='number' && isFinite(resumeOverride) && resumeOverride>=0 ? resumeOverride : sameEpisode ? episode.item.positionMs : value.resume ? value.resume.position_ms || 0 : 0;
+                var resume=typeof resumeOverride==='number' && isFinite(resumeOverride) && resumeOverride>=0 ? resumeOverride : sameEpisode ? episode.item.checkpointMs : value.resume ? value.resume.position_ms || 0 : 0;
                 var intent=requestId ? true : replacing ? episode.item.failure ? true : episode.item.wantsPlaying : true;
                 // This reports the old session before installing the new identity/sequence.
                 if(replacing)episode.item.retire();
@@ -209,7 +209,7 @@ Application {
         }
         function retryEpisode(){
             var current=pendingPlayback,id=playbackId;if(!current || !id || retryInspectBusy || resolving)return;
-            var position=episode.item ? episode.item.positionMs : 0,turn=++retrySerial;retryInspectBusy=true;episode.item.retrying=true;
+            var position=episode.item.checkpointMs,turn=++retrySerial;retryInspectBusy=true;episode.item.retrying=true;
             session.inspectEpisode(current.path,function(status,value){
                 if(screen.playbackId!==id || turn!==screen.retrySerial)return;
                 screen.retryInspectBusy=false;episode.item.retrying=false;
