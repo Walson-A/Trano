@@ -94,9 +94,29 @@ le profil le dit.
    requis. Le banc PC ne dit rien du GPU du Player.
 4. **Recherches récentes durables** : en mémoire pendant la séance ; l'engine n'a
    pas de route pour elles, et le stockage local du Player n'est pas prouvé.
-5. **Publication** : le gateway doit d'abord ouvrir les préférences (branche Atlas
-   `feat/atlas-tv-preferences-gateway`, `upgrade.py`), puis le paquet QML se publie.
-   Ni l'un ni l'autre n'a été fait : accord de Walson requis.
+5. **Réception physique** : rien n'a été lancé sur le Player. Voir *Publication*.
+
+## Publication — 9 novembre 2026, sur accord de Walson
+
+Entre-temps, la session des versions avait publié son gateway (`dev` `44014adc`) et
+son paquet `hero-versions-340d221`. L'ajout des préférences a donc été reposé sur
+`dev` (conflit attendu sur la liste blanche : `versions|version-episodes` gardés).
+
+1. **Gateway** : `upgrade.py --execute` depuis `5e6cc2bc` (branche Atlas
+   `feat/atlas-tv-preferences-dev`), attendu `8efa9a6d…`, publié `bdb1dd1b…`. Le
+   prévol a vu les deux routes de l'engine (401 sans jeton) ; retour arrière gardé
+   sous `server-8efa9a6d….mjs`.
+2. **Paquet QML** : `hero-parite-36023f9`, 42 fichiers, 460 162 octets, construit
+   depuis le commit propre `36023f9` avec les polices du paquet précédent (mêmes
+   empreintes), empreintes comparées sur le serveur avant publication ;
+   `publish-atlas-tv-ui.py` attendu `hero-versions-340d221`, sauvegarde
+   `config-before-hero-parite-36023f9.json`.
+3. **Contrôle public** : `/tv/v1/availability` par `tranoserver…:10000` rend
+   `hero-parite-36023f9`, 42 fichiers, `preferences: true`, `UpNext.qml` présent,
+   `SearchView.qml` absent.
+
+Aucun lancement SDK, aucun appel au Player : le paquet est pris au prochain
+lancement depuis le téléphone.
 
 ## Preuves
 

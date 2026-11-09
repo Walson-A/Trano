@@ -5,9 +5,11 @@ Carte « À suivre », préférences communes (langue par série, lecteur retenu
 automatique, son), barre Reprendre, épisodes au premier écran de la fiche, synopsis
 unique, progression modifiable, accents et recherches récentes, profil enrichi et
 réglages, avance 10/30/60 s, coche et pastille « En lecture », avis fugaces en bas,
-mouvements réduits branchés, code mort retiré. Banc seulement : rien de publié ni
-lancé sur le Player. Restent la session après fermeture (l’appareil ne s’y prête pas),
-l’avis privé (décision engine), la mesure du flou sur le Player et la publication.
+mouvements réduits branchés, code mort retiré. **Publié le 9 novembre** :
+gateway `5e6cc2bc` (préférences) puis paquet `hero-parite-36023f9`, contrôlés par
+l’entrée publique ; aucun lancement sur le Player. Restent la réception physique, la
+session après fermeture (l’appareil ne s’y prête pas), l’avis privé (décision engine)
+et la mesure du flou sur le Player.
 
 [Fiche : bande-annonce automatique et plein écran](research/2026-10-30-atlas-tv-detail-previews.md).
 L’accueil compact est accepté pendant l’exploration, avec grand héros à

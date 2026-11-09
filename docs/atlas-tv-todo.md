@@ -160,7 +160,7 @@ La matrice TV de l’audit passe à « oui » au banc, sauf :
   exprès des réponses TV. À trancher par Walson.
 - **Flou des boutons** — sonde `devialet/blur-probe.qml` prête (`devialet-check.py --blur`),
   à lancer avec l’accord de Walson.
-- **Publication** — gateway (`/tv/v1/preferences`, capacité `preferences`) puis paquet
-  QML ; puis réception physique : carte « À suivre » en fin d’épisode réelle, langue
+- **Réception physique** — publié le 9 novembre (gateway `5e6cc2bc`, paquet
+  `hero-parite-36023f9`), jamais lancé par la session. À observer sur le Player : carte « À suivre » en fin d’épisode réelle, langue
   retenue d’un écran à l’autre, lecteur retenu qui retombe en Automatique s’il échoue.
 - **Recherches récentes** — en mémoire pendant la séance seulement.
