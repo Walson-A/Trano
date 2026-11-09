@@ -33,6 +33,14 @@ FocusScope {
     property int observationResumeTarget:-1
     property int checkpointMs:0
     property int checkpointDurationMs:0
+    // Avance : 10 s par appui, puis 30 s et 60 s quand on insiste dans le même sens.
+    property int seekStreak:0
+    property int seekDirection:0
+    property double lastSeekAt:0
+    readonly property int seekStepMs:seekStreak>=8 ? 60000 : seekStreak>=3 ? 30000 : 10000
+    property bool upNextAutomatic:true
+    property bool upNextPrepared:false
+    property string notice:''
     readonly property int positionMs:failure ? checkpointMs : media.position
     readonly property int durationMs:failure && checkpointDurationMs>0 ? checkpointDurationMs : media.duration
     readonly property bool playing:media.playbackState===MediaPlayer.PlayingState
@@ -82,13 +90,19 @@ FocusScope {
     }
     function play(url,desiredPlaying){
         var returnZone=menu.opened ? menuOrigin : 'surface';
-        resumed=false;started=false;ended=false;failure='';errorIndex=0;checkpointMs=resumeMs;checkpointDurationMs=0;observationResumeTarget=resumeMs>0 ? resumeMs : -1;wantsPlaying=desiredPlaying!==false;restoreAfterSeek=false;zone=returnZone;seekTarget=-1;proposedMs=-1;menu.revision++;menu.kind='';menu.message='';media.source=url;media.play();reveal();if(!inlinePreview)forceActiveFocus();
+        upNext.close();upNextPrepared=false;notice='';seekStreak=0;resumed=false;started=false;ended=false;failure='';errorIndex=0;checkpointMs=resumeMs;checkpointDurationMs=0;observationResumeTarget=resumeMs>0 ? resumeMs : -1;wantsPlaying=desiredPlaying!==false;restoreAfterSeek=false;zone=returnZone;seekTarget=-1;proposedMs=-1;menu.revision++;menu.kind='';menu.message='';media.source=url;media.play();reveal();if(!inlinePreview)forceActiveFocus();
     }
     function retire(){
         if(started && !ended)report('stopped');
         started=false;wantsPlaying=false;restoreAfterSeek=false;retrying=false;proposedMs=-1;seekTarget=-1;media.stop();media.source='';
     }
-    function close(){menu.revision++;menu.kind='';cancelChangeRequested();retire();closed();}
+    function launchNext(){
+        var s=current && current.suivant;if(!s || changing)return;
+        var card=s.anilist_id===current.media.anilist_id ? current.media : {anilist_id:s.anilist_id,titre:s.titre || current.media.titre};
+        // L'épisode suivant démarre : l'intention de lecture revient, la fin ne la garde pas.
+        wantsPlaying=true;changeRequested(card,{numero:s.episode,vf:current.target.vf},{});
+    }
+    function close(){upNext.close();menu.revision++;menu.kind='';cancelChangeRequested();retire();closed();}
     function toggle(){
         if(retrying || changing)return;
         if(failure){retryRequested();return;}
@@ -98,13 +112,14 @@ FocusScope {
     }
     function openMenu(name){if(changing || trailerMode)return;proposedMs=-1;menuOrigin=name==='episodes' ? 'content' : 'actions';zone=menuOrigin;if(name!=='episodes')controlIndex=Math.max(0,['version','source','quality'].indexOf(name));menu.open(name);reveal();}
     function activateControl(){openMenu(['version','source','quality'][controlIndex]);}
-    function propose(delta){
-        if(media.seekable && started && media.duration>0){proposedMs=Math.max(0,Math.min(media.duration-1000,(proposedMs>=0 ? proposedMs : media.position)+delta));zone='seek';}
+    function propose(direction){
+        var now=Date.now();if(direction===seekDirection && now-lastSeekAt<900)seekStreak++;else seekStreak=0;seekDirection=direction;lastSeekAt=now;
+        if(media.seekable && started && media.duration>0){proposedMs=Math.max(0,Math.min(media.duration-1000,(proposedMs>=0 ? proposedMs : media.position)+direction*seekStepMs));zone='seek';}
         reveal();
     }
     function commitSeek(){
         if(proposedMs<0){toggle();return;}
-        var target=proposedMs;proposedMs=-1;zone='surface';seekTarget=target;restoreAfterSeek=wantsPlaying;media.seek(target);
+        var target=proposedMs;proposedMs=-1;seekStreak=0;zone='surface';seekTarget=target;restoreAfterSeek=wantsPlaying;media.seek(target);
         console.info('ATLAS_TV_EPISODE_SEEK_COMMIT',target);
         confirmSeek();reveal();
     }
@@ -131,11 +146,12 @@ FocusScope {
                 }
                 return;
             }
+            if(!player.upNextPrepared && !player.trailerMode && duration>0 && position>duration*.7 && player.current && player.current.suivant && !player.current.target.version){player.upNextPrepared=true;upNext.prepare();}
             if(player.seekTarget>=0)player.confirmSeek();
             else if(player.started && player.resumed && (playbackState===MediaPlayer.PlayingState || playbackState===MediaPlayer.PausedState))player.rememberPosition(false);
         }
         onSeekableChanged:player.resumeWhenReady()
-        onStatusChanged:{console.info('ATLAS_TV_EPISODE_STATUS',status);if(status===MediaPlayer.EndOfMedia && !player.failure){player.report('ended');player.started=false;player.wantsPlaying=false;player.ended=true;player.controlsVisible=true;}}
+        onStatusChanged:{console.info('ATLAS_TV_EPISODE_STATUS',status);if(status===MediaPlayer.EndOfMedia && !player.failure){player.report('ended');player.started=false;player.wantsPlaying=false;player.ended=true;player.controlsVisible=true;if(!player.trailerMode && upNext.next){if(!player.upNextPrepared){player.upNextPrepared=true;upNext.prepare();}menu.revision++;menu.kind='';upNext.open();upNext.forceActiveFocus();player.forceActiveFocus();}}}
         onError:{
             console.info('ATLAS_TV_EPISODE_ERROR',error,status,position,player.checkpointMs);
             player.interrupted('La lecture a été interrompue.');
@@ -154,8 +170,8 @@ FocusScope {
         onCancelRequested:player.cancelChangeRequested()
         onDismissed:{player.zone=player.menuOrigin;player.reveal();player.forceActiveFocus();}
     }
-    function changeFailed(message){retrying=false;menu.message=message;menu.changeError=true;reveal();}
-    Text {anchors.centerIn:parent;width:1000;visible:!player.inlinePreview;horizontalAlignment:Text.AlignHCenter;wrapMode:Text.WordWrap;text:!player.failure && !menu.opened ? (player.ended ? (player.trailerMode ? 'Bande-annonce terminée' : 'Épisode terminé') : !player.started ? 'Chargement…' : '') : '';color:'white';font.family:player.family;font.pixelSize:26}
+    function changeFailed(message){retrying=false;if(!menu.opened){notice=message;reveal();return;}menu.message=message;menu.changeError=true;reveal();}
+    Text {anchors.centerIn:parent;width:1000;visible:!player.inlinePreview;horizontalAlignment:Text.AlignHCenter;wrapMode:Text.WordWrap;text:!player.failure && !menu.opened && !upNext.visible ? (player.ended ? (player.trailerMode ? 'Bande-annonce terminée' : player.changing ? 'Préparation de l’épisode suivant…' : 'Épisode terminé\nRetour pour revenir à la fiche') : !player.started ? 'Chargement…' : '') : '';color:'white';font.family:player.family;font.pixelSize:26}
     Rectangle {x:344;y:238;width:592;height:224;radius:14;color:'#ee1b1c21';border.color:'#28ffffff';visible:!player.inlinePreview && !!player.failure && !menu.opened
         Text {x:28;y:26;text:player.trailerMode ? 'Bande-annonce indisponible' : 'La lecture s’est interrompue';color:'white';font.family:player.family;font.pixelSize:27;font.weight:Font.DemiBold}
         Text {x:28;y:76;text:player.trailerMode ? 'Le chargement de la vidéo a échoué.' : 'Ta position est conservée à '+player.clock(player.checkpointMs)+'.';color:'#c6c6ce';font.family:player.family;font.pixelSize:20}
@@ -168,6 +184,12 @@ FocusScope {
             }
         }
     }
+    UpNext {id:upNext;anchors.fill:parent;z:5;transport:player.transport;family:player.family;reducedMotion:player.reducedMotion;automatic:player.upNextAutomatic;seriesTitle:player.title
+        next:!player.trailerMode && player.current && player.current.suivant && !player.current.target.version ? player.current.suivant : null
+        onLaunchRequested:player.launchNext()
+        onDismissed:{player.controlsVisible=true;player.forceActiveFocus();}
+    }
+    Toast {objectName:'playerNotice';text:player.notice;family:player.family;reducedMotion:player.reducedMotion;y:40;onExpired:player.notice=''}
     Timer {interval:250;running:player.restoreAfterSeek && player.wantsPlaying && media.playbackState===MediaPlayer.PausedState && media.status===MediaPlayer.Buffered;onTriggered:{player.restoreAfterSeek=false;media.play();}}
     Timer {interval:15000;repeat:true;running:player.started && !player.failure && player.observationResumeTarget<0 && player.seekTarget<0 && media.playbackState===MediaPlayer.PlayingState;onTriggered:player.report('playing')}
     Timer {interval:8000;running:player.started && !player.failure && player.observationResumeTarget>=0;onTriggered:{
@@ -180,12 +202,13 @@ FocusScope {
             if(event.isAutoRepeat && (event.key===Qt.Key_Back || event.key===Qt.Key_Escape)){event.accepted=true;return;}
             if(event.key===Qt.Key_Back || event.key===Qt.Key_Escape){if(!started || failure)inlineRequested();else if(proposedMs>=0){proposedMs=-1;zone='surface';reveal();}else if(controlsVisible){controlsVisible=false;hide.stop();}else inlineRequested();}
             else if(event.key===Qt.Key_Return || event.key===Qt.Key_Enter || event.key===Qt.Key_Select){if(proposedMs>=0)commitSeek();else toggle();}
-            else if(event.key===Qt.Key_Right || event.key===Qt.Key_Left){if(!failure)propose(event.key===Qt.Key_Right ? 10000 : -10000);}
+            else if(event.key===Qt.Key_Right || event.key===Qt.Key_Left){if(!failure)propose(event.key===Qt.Key_Right ? 1 : -1);}
             else if(event.key===Qt.Key_Up || event.key===Qt.Key_Down){zone='seek';reveal();}
             else return;
             event.accepted=true;return;
         }
         if((event.key===Qt.Key_Back || event.key===Qt.Key_Escape) && event.isAutoRepeat){event.accepted=true;return;}
+        if(upNext.visible){upNext.key(event.key);event.accepted=true;return;}
         if(menu.opened){menu.key(event.key);event.accepted=true;return;}
         if(event.key===Qt.Key_Back || event.key===Qt.Key_Escape){
             if(player.changing || player.retrying){cancelChangeRequested();retrying=false;}
@@ -200,7 +223,7 @@ FocusScope {
             if(zone==='actions')activateControl();else if(zone==='content')openMenu('episodes');else if(zone==='seek')commitSeek();else toggle();
         }else if(event.key===Qt.Key_Right || event.key===Qt.Key_Left){
             var delta=event.key===Qt.Key_Right ? 1 : -1;
-            if(zone==='actions')controlIndex=Math.max(0,Math.min(2,controlIndex+delta));else if(zone!=='content')propose(delta*10000);reveal();
+            if(zone==='actions')controlIndex=Math.max(0,Math.min(2,controlIndex+delta));else if(zone!=='content')propose(delta);reveal();
         }else if(event.key===Qt.Key_Up || event.key===Qt.Key_Down){
             var up=event.key===Qt.Key_Up;
             if(proposedMs>=0)proposedMs=-1;

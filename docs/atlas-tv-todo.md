@@ -147,3 +147,20 @@ les [bandes-annonces de fiche](research/2026-10-30-atlas-tv-detail-previews.md),
 automatiques en fond et accessibles en plein écran. Bancs passés, paquet
 hero-detail-preview-390d8b68e685 publié et relancé par SDK. La réception physique
 est suivie séparément dans le rapport dédié.
+
+## Parité avec l’audit du 9 novembre 2026
+
+[Livraison au banc](research/2026-11-09-atlas-tv-parite.md), branche `feat/atlas-tv-parite`.
+La matrice TV de l’audit passe à « oui » au banc, sauf :
+
+- **Session après fermeture** — l’appareil ne s’y prête pas : aucune installation
+  persistante hors FreeStore, toute ouverture passe par le SDK depuis le réseau local.
+  Piste : un lanceur LifeOS sur le PC de l’appartement (hors QML).
+- **Avis privé** — la TV l’affiche dans « Mon suivi » s’il arrive ; l’engine le retire
+  exprès des réponses TV. À trancher par Walson.
+- **Flou des boutons** — sonde `devialet/blur-probe.qml` prête (`devialet-check.py --blur`),
+  à lancer avec l’accord de Walson.
+- **Publication** — gateway (`/tv/v1/preferences`, capacité `preferences`) puis paquet
+  QML ; puis réception physique : carte « À suivre » en fin d’épisode réelle, langue
+  retenue d’un écran à l’autre, lecteur retenu qui retombe en Automatique s’il échoue.
+- **Recherches récentes** — en mémoire pendant la séance seulement.

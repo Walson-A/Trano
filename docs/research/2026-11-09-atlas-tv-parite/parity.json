@@ -1,0 +1,13 @@
+{
+  "resumeBar": "Épisode 13 · reste 9 min",
+  "episodesFirstScreenBottom": 620.5184719934907,
+  "preferredReaderFallback": true,
+  "readerRemembered": true,
+  "upNext": {
+    "countdown": true,
+    "cancel": true,
+    "launch": true
+  },
+  "progressEdited": true,
+  "passed": true
+}

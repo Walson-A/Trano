@@ -42,6 +42,7 @@ def visual(name):
   stack.extend(item.childItems())
  raise RuntimeError('Visual item not found: '+name)
 hero.playRequested.connect(lambda media,target:requests.append(target.toVariant()))
+details=[];hero.detailsRequested.connect(lambda media:details.append(media.toVariant()))
 motion_samples=[]
 if args.captures:
  QTimer.singleShot(20000,lambda:app.exit(2))
@@ -97,11 +98,10 @@ if args.captures:
   shot('motion/04-settled');selected_detail()
  def selected_detail():
   QTest.keyClick(window,Qt.Key_Escape);QTest.keyClick(window,Qt.Key_Right);QTest.keyClick(window,Qt.Key_Return)
-  assert hero.property('detailOpen')
+  # La fiche appartient à l'hôte (DetailView) ; le héros ne fait que la demander.
+  assert details and details[-1]['anilist_id']==hero.property('selected').toVariant()['anilist_id']
   after(detail)
  def detail():
-  shot('03-infos');QTest.keyClick(window,Qt.Key_Escape)
-  assert not hero.property('detailOpen')
   QTest.keyClick(window,Qt.Key_Down);QTest.keyClick(window,Qt.Key_Right);QTest.keyClick(window,Qt.Key_Right)
   after(long_title)
  def long_title():

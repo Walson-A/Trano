@@ -23,21 +23,29 @@ FocusScope {
     property int removeChoice:0
     property string originalStatus:'PLANNING'
     property var originalNote:null
+    // Où tu en es : la progression AniList, modifiable à la main comme sur le PC.
+    property int draftProgress:0
+    property int originalProgress:0
+    property int total:0
     readonly property var entry:store ? store.entry(identity) : null
     readonly property string phase:store ? store.phase(identity) : 'error'
     readonly property bool editable:!!(entry && entry.editable && phase==='ready' && !waiting)
     readonly property bool busy:phase==='loading' || phase==='saving'
     readonly property bool removalVisible:!!(store && store.removalAvailable && entry && entry.presence==='present')
     readonly property bool recover:['conflict','uncertain','error'].indexOf(phase)>=0
-    readonly property bool dirty:!!entry && (entry.presence==='absent' || draftStatus!==(entry.moi ? entry.moi.statut : 'PLANNING') || (draftNote || null)!==(entry.moi ? entry.moi.note || null : null))
+    readonly property bool dirty:!!entry && (entry.presence==='absent' || draftStatus!==(entry.moi ? entry.moi.statut : 'PLANNING') || (draftNote || null)!==(entry.moi ? entry.moi.note || null : null) || draftProgress!==(entry.moi ? entry.moi.progression || 0 : 0))
+    // L'avis reste privé : l'engine ne le transmet à la TV que si Walson l'a voulu ; s'il arrive, on le montre.
+    readonly property string review:entry && entry.moi && typeof entry.moi.avis==='string' ? entry.moi.avis.trim().slice(0,600) : ''
     signal closed()
-    function hydrate(keep){var e=entry;if(!e)return;var changedStatus=draftStatus!==originalStatus,changedNote=(draftNote || null)!==(originalNote || null);originalStatus=e.moi ? e.moi.statut : 'PLANNING';originalNote=e.moi ? e.moi.note || null : null;if(!keep || !changedStatus)draftStatus=originalStatus;if(!keep || !changedNote)draftNote=originalNote;statusIndex=0;for(var i=0;i<Library.statuses.length;i++)if(Library.statuses[i][0]===draftStatus)statusIndex=i;}
-    function open(id,name,note){waiting=true;identity=id;title=name || '';draftStatus='PLANNING';draftNote=null;statusIndex=0;preserveDraft=false;ownSave=false;ownRemove=false;removeOpen=false;removeChoice=0;zone=note ? 'note' : 'status';actionIndex=0;opened=true;store.ensure(id);refresh();forceActiveFocus();}
+    function hydrate(keep){var e=entry;if(!e)return;var changedStatus=draftStatus!==originalStatus,changedNote=(draftNote || null)!==(originalNote || null),changedProgress=draftProgress!==originalProgress;originalStatus=e.moi ? e.moi.statut : 'PLANNING';originalNote=e.moi ? e.moi.note || null : null;originalProgress=e.moi ? e.moi.progression || 0 : 0;if(!keep || !changedStatus)draftStatus=originalStatus;if(!keep || !changedNote)draftNote=originalNote;if(!keep || !changedProgress)draftProgress=originalProgress;statusIndex=0;for(var i=0;i<Library.statuses.length;i++)if(Library.statuses[i][0]===draftStatus)statusIndex=i;}
+    function open(id,name,note,episodes){waiting=true;identity=id;title=name || '';total=episodes>0 ? episodes : 0;draftStatus='PLANNING';draftNote=null;draftProgress=0;originalProgress=0;statusIndex=0;preserveDraft=false;ownSave=false;ownRemove=false;removeOpen=false;removeChoice=0;zone=note ? 'note' : 'status';actionIndex=0;opened=true;store.ensure(id);refresh();forceActiveFocus();}
     function close(){focus=false;opened=false;removeOpen=false;closed();}
     function reload(){waiting=true;preserveDraft=true;store.load(identity);}
     function refresh(){if(!opened || !waiting || phase!=='ready')return;hydrate(preserveDraft);waiting=false;if(removeOpen)removeChoice=0;}
     function chooseStatus(index){if(!editable)return;statusIndex=index;draftStatus=Library.statuses[index][0];}
     function changeNote(delta){if(editable)draftNote=Library.step(draftNote,delta);}
+    function changeProgress(delta){if(editable)draftProgress=Math.max(0,Math.min(total>0 ? total : 100000,draftProgress+delta));}
+    function progressLabel(n){return n>0 ? 'Épisode '+n+(total>0 ? ' sur '+total : '') : 'Aucun épisode vu';}
     function askRemoval(){
         if(!editable || !removalVisible)return;
         removeOpen=true;removeChoice=0;
@@ -58,9 +66,10 @@ FocusScope {
         var patch={},moi=entry.moi;
         if(entry.presence==='absent' || draftStatus!==moi.statut)patch.statut=draftStatus;
         if((draftNote || null)!==(moi ? moi.note || null : null))patch.note=draftNote;
+        if(draftProgress!==(moi ? moi.progression || 0 : 0))patch.progression=draftProgress;
         ownRemove=false;ownSave=true;if(!store.save(identity,patch))ownSave=false;
     }
-    function activate(){if(zone==='remove')askRemoval();else if(zone==='status')chooseStatus(statusIndex);else if(zone==='note'){zone='actions';actionIndex=0;}else if(zone==='clear'){if(editable){draftNote=null;zone='note';}}else if(zone==='actions'){if(actionIndex===1)close();else save();}}
+    function activate(){if(zone==='remove')askRemoval();else if(zone==='status')chooseStatus(statusIndex);else if(zone==='note'){zone='progress';}else if(zone==='progress'){zone='actions';actionIndex=0;}else if(zone==='actions'){if(actionIndex===1)close();else save();}}
     function key(value){
         if(removeOpen){
             if(value===Qt.Key_Back || value===Qt.Key_Escape){cancelRemoval();return;}
@@ -69,9 +78,9 @@ FocusScope {
         }
         if(value===Qt.Key_Back || value===Qt.Key_Escape){close();return;}
         if(value===Qt.Key_Return || value===Qt.Key_Enter || value===Qt.Key_Select){activate();return;}
-        if(value===Qt.Key_Left || value===Qt.Key_Right){var d=value===Qt.Key_Right ? 1 : -1;if(zone==='status'){var first=Math.floor(statusIndex/2)*2;statusIndex=Math.max(first,Math.min(first+1,statusIndex+d));}else if(zone==='note')changeNote(d);else if(zone==='actions')actionIndex=d>0 ? 1 : 0;return;}
-        if(value===Qt.Key_Up){if(zone==='status' && statusIndex>=2)statusIndex-=2;else if(zone==='status' && removalVisible)zone='remove';else if(zone==='note')zone='status';else if(zone==='clear')zone='note';else if(zone==='actions')zone=draftNote ? 'clear' : 'note';}
-        if(value===Qt.Key_Down){if(zone==='remove')zone='status';else if(zone==='status' && statusIndex<4)statusIndex+=2;else if(zone==='status')zone='note';else if(zone==='note')zone=draftNote ? 'clear' : 'actions';else if(zone==='clear')zone='actions';}
+        if(value===Qt.Key_Left || value===Qt.Key_Right){var d=value===Qt.Key_Right ? 1 : -1;if(zone==='status'){var first=Math.floor(statusIndex/2)*2;statusIndex=Math.max(first,Math.min(first+1,statusIndex+d));}else if(zone==='note')changeNote(d);else if(zone==='progress')changeProgress(d);else if(zone==='actions')actionIndex=d>0 ? 1 : 0;return;}
+        if(value===Qt.Key_Up){if(zone==='status' && statusIndex>=2)statusIndex-=2;else if(zone==='status' && removalVisible)zone='remove';else if(zone==='note')zone='status';else if(zone==='progress')zone='note';else if(zone==='actions')zone='progress';}
+        if(value===Qt.Key_Down){if(zone==='remove')zone='status';else if(zone==='status' && statusIndex<4)statusIndex+=2;else if(zone==='status')zone='note';else if(zone==='note')zone='progress';else if(zone==='progress')zone='actions';}
     }
     Connections {target:editor.store;function onChanged(id){if(id===editor.identity)editor.refresh();}function onSaved(id,value){if(editor.opened && id===editor.identity){if(editor.ownSave || editor.removeOpen && value.presence==='absent')editor.close();else editor.refresh();}}}
     visible:opened
@@ -79,25 +88,35 @@ FocusScope {
     Rectangle {x:568;y:0;width:712;height:720;color:'#f5161920'
         Rectangle {width:1;height:parent.height;color:'#35ffffff'}
         MouseArea {anchors.fill:parent}
-        Text {x:40;y:32;text:'Mon suivi';font.family:editor.family;font.pixelSize:34;font.weight:Font.Bold;color:'white'}
-        Text {x:40;y:82;width:624;height:52;text:editor.title;textFormat:Text.PlainText;maximumLineCount:2;wrapMode:Text.WordWrap;elide:Text.ElideRight;font.family:editor.family;font.pixelSize:21;color:'#c5c9d3'}
-        Text {x:40;y:149;text:'Ma liste';font.family:editor.family;font.pixelSize:20;font.weight:Font.DemiBold;color:'white'}
-        HeroButton {objectName:'libraryRemove';x:380;y:133;width:284;height:44;label:'Retirer de Ma liste';family:editor.family;flat:true;visible:editor.removalVisible;focused:editor.zone==='remove';opacity:editor.editable ? 1 : .4;onActivated:editor.askRemoval()}
-        LoadingSkeleton {objectName:'followupSkeleton';x:40;y:184;width:624;height:306;layout:'followup';active:editor.opened && editor.phase==='loading'}
-        Grid {x:40;y:184;columns:2;spacing:10;opacity:editor.phase==='loading' ? 0 : 1
+        Text {x:40;y:26;text:'Mon suivi';font.family:editor.family;font.pixelSize:32;font.weight:Font.Bold;color:'white'}
+        Text {x:40;y:70;width:624;text:editor.title;textFormat:Text.PlainText;maximumLineCount:1;elide:Text.ElideRight;font.family:editor.family;font.pixelSize:20;color:'#c5c9d3'}
+        Text {x:40;y:118;text:'Ma liste';font.family:editor.family;font.pixelSize:19;font.weight:Font.DemiBold;color:'white'}
+        HeroButton {objectName:'libraryRemove';x:380;y:106;width:284;height:42;label:'Retirer de Ma liste';family:editor.family;flat:true;visible:editor.removalVisible;focused:editor.zone==='remove';reducedMotion:editor.reducedMotion;opacity:editor.editable ? 1 : .4;onActivated:editor.askRemoval()}
+        LoadingSkeleton {objectName:'followupSkeleton';x:40;y:154;width:624;height:356;layout:'followup';active:editor.opened && editor.phase==='loading'}
+        Grid {x:40;y:154;columns:2;spacing:8;opacity:editor.phase==='loading' ? 0 : 1
             Repeater {model:Library.statuses
-                HeroButton {width:306;height:50;family:editor.family;label:modelData[1];selected:editor.editable && editor.draftStatus===modelData[0];focused:editor.zone==='status' && editor.statusIndex===index;iconKey:editor.editable && editor.draftStatus===modelData[0] ? 'check' : '';reducedMotion:editor.reducedMotion;opacity:editor.editable ? 1 : .45;onActivated:{editor.zone='status';editor.chooseStatus(index)}}
+                HeroButton {width:308;height:44;family:editor.family;label:modelData[1];selected:editor.editable && editor.draftStatus===modelData[0];focused:editor.zone==='status' && editor.statusIndex===index;iconKey:editor.editable && editor.draftStatus===modelData[0] ? 'check' : '';reducedMotion:editor.reducedMotion;opacity:editor.editable ? 1 : .45;onActivated:{editor.zone='status';editor.chooseStatus(index)}}
             }
         }
-        Text {x:40;y:374;text:'Ta note';font.family:editor.family;font.pixelSize:20;font.weight:Font.DemiBold;color:'white'}
-        Rectangle {x:40;y:410;width:624;height:80;radius:12;color:'#292e39';border.width:editor.zone==='note' ? 2 : 1;border.color:editor.zone==='note' ? 'white' : '#45ffffff';opacity:editor.phase==='loading' ? 0 : editor.editable ? 1 : .45
-            HeroButton {x:8;y:14;width:64;label:'−';family:editor.family;flat:true;onActivated:{editor.zone='note';editor.changeNote(-1)}}
-            Text {anchors.centerIn:parent;text:Library.score(editor.draftNote)+(editor.draftNote ? ' / 10' : '');font.family:editor.family;font.pixelSize:editor.draftNote ? 38 : 26;font.weight:Font.DemiBold;color:'white'}
-            HeroButton {x:552;y:14;width:64;label:'+';family:editor.family;flat:true;onActivated:{editor.zone='note';editor.changeNote(1)}}
+        Text {x:40;y:318;text:'Ta note';font.family:editor.family;font.pixelSize:19;font.weight:Font.DemiBold;color:'white'}
+        Text {x:364;y:320;width:300;horizontalAlignment:Text.AlignRight;text:'− sous 0,5 pour retirer la note';visible:editor.zone==='note' && !!editor.draftNote;color:'#8f95a3';font.family:editor.family;font.pixelSize:15}
+        Rectangle {objectName:'libraryNote';x:40;y:348;width:624;height:60;radius:12;color:'#292e39';border.width:editor.zone==='note' ? 2 : 1;border.color:editor.zone==='note' ? 'white' : '#45ffffff';opacity:editor.phase==='loading' ? 0 : editor.editable ? 1 : .45
+            HeroButton {x:8;y:6;width:60;height:48;label:'−';family:editor.family;flat:true;onActivated:{editor.zone='note';editor.changeNote(-1)}}
+            Text {anchors.centerIn:parent;text:Library.score(editor.draftNote)+(editor.draftNote ? ' / 10' : '');font.family:editor.family;font.pixelSize:editor.draftNote ? 32 : 22;font.weight:Font.DemiBold;color:'white'}
+            HeroButton {x:556;y:6;width:60;height:48;label:'+';family:editor.family;flat:true;onActivated:{editor.zone='note';editor.changeNote(1)}}
         }
-        HeroButton {x:40;y:499;width:180;height:44;label:'Retirer la note';family:editor.family;flat:true;focused:editor.zone==='clear';opacity:editor.draftNote && editor.editable ? 1 : .4;onActivated:{editor.zone='clear';editor.activate()}}
-        Text {objectName:'libraryFeedback';x:40;y:552;width:624;height:58;text:editor.busy ? (editor.phase==='saving' ? (editor.ownRemove ? 'Retrait en cours…' : 'Enregistrement…') : 'Chargement de ton suivi…') : editor.recover || !editor.editable ? (editor.store ? editor.store.message(editor.identity) : 'Suivi indisponible') : editor.entry && editor.entry.presence==='absent' ? 'Cet animé sera ajouté à « '+Library.statusLabel(editor.draftStatus)+' ».' : editor.preserveDraft ? (editor.dirty ? 'Suivi actuel : '+Library.statusLabel(editor.originalStatus)+' · '+Library.score(editor.originalNote)+'. Tes choix restent préparés.' : 'Ton choix est bien enregistré.') : editor.entry && editor.entry.moi && editor.entry.moi.progression>0 ? 'Progression actuelle : épisode '+editor.entry.moi.progression : 'Aucun épisode marqué vu.';textFormat:Text.PlainText;wrapMode:Text.WordWrap;maximumLineCount:2;color:editor.recover ? '#e9c38f' : '#aeb5c3';font.family:editor.family;font.pixelSize:18}
-        Row {x:40;y:632;spacing:14
+        Text {x:40;y:424;text:'Où tu en es';font.family:editor.family;font.pixelSize:19;font.weight:Font.DemiBold;color:'white'}
+        Rectangle {objectName:'libraryProgress';x:40;y:454;width:624;height:60;radius:12;color:'#292e39';border.width:editor.zone==='progress' ? 2 : 1;border.color:editor.zone==='progress' ? 'white' : '#45ffffff';opacity:editor.phase==='loading' ? 0 : editor.editable ? 1 : .45
+            HeroButton {x:8;y:6;width:60;height:48;label:'−';family:editor.family;flat:true;onActivated:{editor.zone='progress';editor.changeProgress(-1)}}
+            Text {anchors.centerIn:parent;text:editor.progressLabel(editor.draftProgress);font.family:editor.family;font.pixelSize:22;font.weight:Font.DemiBold;color:'white'}
+            HeroButton {x:556;y:6;width:60;height:48;label:'+';family:editor.family;flat:true;onActivated:{editor.zone='progress';editor.changeProgress(1)}}
+        }
+        Column {x:40;y:528;width:624;spacing:2;visible:!!editor.review
+            Text {text:'Ton avis · privé';font.family:editor.family;font.pixelSize:15;font.weight:Font.DemiBold;color:'#8f95a3'}
+            Text {objectName:'libraryReview';width:624;text:'« '+editor.review+' »';textFormat:Text.PlainText;wrapMode:Text.WordWrap;maximumLineCount:2;elide:Text.ElideRight;font.family:editor.family;font.pixelSize:17;font.italic:true;color:'#d9dbe2'}
+        }
+        Text {objectName:'libraryFeedback';x:40;y:editor.review ? 596 : 534;width:624;height:editor.review ? 30 : 80;text:editor.busy ? (editor.phase==='saving' ? (editor.ownRemove ? 'Retrait en cours…' : 'Enregistrement…') : 'Chargement de ton suivi…') : editor.recover || !editor.editable ? (editor.store ? editor.store.message(editor.identity) : 'Suivi indisponible') : editor.entry && editor.entry.presence==='absent' ? 'Cet animé sera ajouté à « '+Library.statusLabel(editor.draftStatus)+' ».' : editor.preserveDraft ? (editor.dirty ? 'Suivi actuel : '+Library.statusLabel(editor.originalStatus)+' · '+Library.score(editor.originalNote)+'. Tes choix restent préparés.' : 'Ton choix est bien enregistré.') : editor.dirty ? 'Rien n’est écrit sur AniList avant « Enregistrer ».' : '';textFormat:Text.PlainText;wrapMode:Text.WordWrap;maximumLineCount:editor.review ? 1 : 2;elide:Text.ElideRight;color:editor.recover ? '#e9c38f' : '#aeb5c3';font.family:editor.family;font.pixelSize:17}
+        Row {x:40;y:636;spacing:14
             HeroButton {objectName:'librarySave';width:306;height:52;label:editor.recover ? 'Vérifier mon suivi' : editor.phase==='saving' ? (editor.ownRemove ? 'Retrait…' : 'Enregistrement…') : 'Enregistrer';family:editor.family;primary:true;groupHasFocus:true;focused:editor.zone==='actions' && editor.actionIndex===0;opacity:editor.recover || editor.editable && editor.dirty ? 1 : .4;onActivated:editor.save()}
             HeroButton {width:306;height:52;label:'Annuler';family:editor.family;focused:editor.zone==='actions' && editor.actionIndex===1;onActivated:editor.close()}
         }

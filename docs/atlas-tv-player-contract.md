@@ -38,7 +38,7 @@ une seule cible de focus lisible, mêmes panneaux et mêmes retours.
 | État | Flèches / OK | Retour |
 | --- | --- | --- |
 | Lecture | OK pause/reprise ; Haut/Bas affiche le HUD | Revenir à la fiche |
-| Timeline | Gauche/Droite déplace un curseur avec temps cible ; OK confirme | Annuler la position proposée |
+| Timeline | Gauche/Droite déplace un curseur avec temps cible et écart (« +1:00 ») : 10 s par appui, 30 s puis 60 s quand on insiste dans le même sens (9 novembre) ; OK confirme | Annuler la position proposée |
 | Rangée d’actions | Gauche/Droite choisit ; OK ouvre son panneau | Revenir à la vidéo |
 | Panneau | Choisir une option réelle ; OK confirme | Fermer le panneau sans quitter l’épisode |
 
@@ -61,6 +61,16 @@ publier de fausse progression, puis remplacer l’unique sortie vidéo quand
 il est prêt. Échec ou annulation laisse retrouver la lecture précédente.
 La valeur demandée et celle réellement jouée restent distinctes jusqu’au succès.
 
+## Fin d’épisode (9 novembre 2026)
+
+À la fin réelle du média, la carte « À suivre » remplace « Épisode terminé » quand
+`/tv/v1/playbacks` a rendu `suivant` : vignette, titre de l’épisode (chargés à 70 %
+de la lecture), passage de saison nommé, décompte de 8 s annulable (Rester) si
+« épisode suivant automatique » est actif, sinon une attente sans décompte. Lancer
+passe par le changement d’épisode normal (résolution, reprise, comptage à 80 %),
+dans la même langue. Retour ou Rester laisse l’épisode fini à l’écran. Les versions
+d’une saison n’ont pas de carte (leur suite n’est pas canonique).
+
 ## Source, lecteur, version et qualité
 
 Source désigne le site (ex. Voiranime). Lecteur désigne l’hébergeur proposé
@@ -68,7 +78,10 @@ par ce site (ex. YourUpload/Mail.ru). Les choix viennent des références
 canoniques pour l’identité/épisode/langue ; pas d’URL saisie par la TV.
 
 Le backend prépare `/tv/v1/readers` et un `reader_id` opaque exact. Un choix
-explicite sera strict : aucun autre lecteur lancé silencieusement. Le mode
+explicite sera strict : aucun autre lecteur lancé silencieusement. Le lecteur
+**retenu** pour une série (préférence commune, 9 novembre) n’est pas un choix
+explicite : il demande sa source et retombe en Automatique s’il échoue. Le menu
+distingue le choix (coche) de ce qui joue (pastille « En lecture »), comme le PC. Le mode
 automatique reste identifiable. Une nouvelle langue/épisode recharge ses
 choix ; les identifiants d’un autre épisode ne sont pas réutilisés. Les
 sources non portables ne deviennent pas des boutons actifs fictifs.

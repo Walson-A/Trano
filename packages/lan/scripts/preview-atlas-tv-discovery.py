@@ -40,7 +40,6 @@ import "'''+source.as_uri()+'''"
 import "'''+(source/'Discovery.js').as_uri()+'''" as Catalog
 Window {
     id:host;width:1280;height:720;visible:true
-    property bool showOld:false
     property var chosenCard:null
     property var calls:[]
     function finish(index,status){session.finish(index,status);}
@@ -64,8 +63,7 @@ Window {
             request.callback(200,{resultats:rows.slice((page-1)*24,page*24),page:page,has_next_page:rows.length>page*24});
         }
     }
-    DiscoveryView {id:candidate;anchors.fill:parent;visible:!host.showOld;family:benchFamily;transport:session;denseLayout:benchDense;onChosen:{host.chosenCard=cards[index];opened=false;}}
-    SearchView {anchors.fill:parent;visible:host.showOld;family:benchFamily;transport:session}
+    DiscoveryView {id:candidate;anchors.fill:parent;family:benchFamily;transport:session;denseLayout:benchDense;onChosen:{host.chosenCard=cards[index];opened=false;}}
 }''').encode())
 assert engine.rootObjects(), messages
 window = engine.rootObjects()[0]
@@ -115,9 +113,6 @@ def finish(status=200, index=None):
 def run():
     try:
         window.requestActivate()
-        window.setProperty('showOld', True)
-        capture('00-before')
-        window.setProperty('showOld', False)
         view.open()
         expect(value(window, 'calls')[-1]['body']=={'page':1}, 'entry browses catalog without a query')
         finish()

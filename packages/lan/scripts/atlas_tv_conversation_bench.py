@@ -52,7 +52,8 @@ def run(window,session,screen,details,calls,QTest,Qt,QObject,spin,evidence):
     player().toggle();assert not player().property('playing')
     changed=intent(episode=4,lang='vf');offer(changed)
     spin(lambda:screen.property('playbackId')!=first_id and player().property('playing'))
-    assert data(screen,'pendingPlayback')['target']=={'numero':4,'vf':True}
+    # `version` (null hors Director's Cut) vient des versions d'une saison : seul l'épisode compte ici.
+    assert {k:v for k,v in data(screen,'pendingPlayback')['target'].items() if v is not None}=={'numero':4,'vf':True}
     move();idle();assert playbacks()[-1]['lang']=='vf'
     # Local Return during delayed resolution invalidates its late stream callback.
     session.setProperty('delayPlaybacks',True);cancelled=intent(episode=5);offer(cancelled)

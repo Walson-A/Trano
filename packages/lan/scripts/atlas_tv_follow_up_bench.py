@@ -136,8 +136,12 @@ def run(window, session, screen, details, calls, QTest, Qt, QObject, spin, evide
     QTest.keyClick(window, Qt.Key_Back)
     detail.personalAction(True)
     spin(lambda: editor.property('editable'))
-    editor.setProperty('zone', 'clear')
-    QTest.keyClick(window, Qt.Key_Return)
+    # Retirer la note = descendre sous 0,5 : le bas de l'échelle, plus un bouton à part.
+    editor.setProperty('zone', 'note')
+    for _ in range(30):
+        if editor.property('draftNote') is None: break
+        QTest.keyClick(window, Qt.Key_Left)
+    assert editor.property('draftNote') is None
     editor.setProperty('zone', 'actions')
     QTest.keyClick(window, Qt.Key_Return)
     spin(lambda: not editor.property('opened'))

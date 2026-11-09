@@ -17,6 +17,14 @@ Item {
         else if(right>next+rail.width-rail.rightMargin) next=right-rail.width+rail.rightMargin;
         rail.contentX=Math.max(rail.originX,Math.min(Math.max(0,rail.contentWidth-rail.width+rail.rightMargin),next));
     }
+    // La carte Reprendre porte l'épisode et la barre (`reprise` de catalog/home, partagée avec
+    // le PC et le mobile). Sans reprise, l'épisode seul : rien d'inventé.
+    function resumeRatio(c){var r=c && c.reprise;return r && r.duration_ms>0 && r.position_ms>=0 ? Math.min(1,r.position_ms/r.duration_ms) : -1;}
+    function resumeLabel(c){
+        var r=c && c.reprise,n=r && r.episode>0 ? r.episode : c && c.a_lancer && c.a_lancer.numero>0 ? c.a_lancer.numero : 0;if(!n)return '';
+        var left=r && r.duration_ms>0 && r.position_ms>=0 ? Math.round((r.duration_ms-r.position_ms)/60000) : -1;
+        return 'Épisode '+n+(left>0 ? ' · reste '+left+' min' : '');
+    }
     onSelectionChanged: if(alignTimer) alignTimer.restart()
     onCurrentChanged: if(current && alignTimer) alignTimer.restart()
     Timer { id:alignTimer; interval:0; onTriggered:row.align(row.selection) }
@@ -31,7 +39,8 @@ Item {
         delegate:FocusCard {
             objectName:row.current ? 'heroCard'+index : 'row'+row.rowIndex+'Card'+index
             title:modelData.titre; artwork:row.host.art(modelData,'card'); fallbackArtwork:row.host.art(modelData,'poster'); family:row.host.family
-            subtitle:row.rowData.id==='reprendre' && modelData.a_lancer && modelData.a_lancer.numero>0 ? 'Épisode '+modelData.a_lancer.numero : ''
+            subtitle:row.rowData.id==='reprendre' ? row.resumeLabel(modelData) : ''
+            progress:row.rowData.id==='reprendre' ? row.resumeRatio(modelData) : -1
             selected:row.current && row.selection===index; focused:selected && row.host.zone==='rail'; reducedMotion:row.host.reducedMotion
             onActivated: { row.host.selectRow(row.rowIndex); row.host.zone='rail'; row.host.choose(index); row.host.forceActiveFocus(); }
             onArtworkFailed:row.host.artworkFailed(modelData,poster ? 'poster' : 'banner',failedSource)

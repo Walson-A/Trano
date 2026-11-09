@@ -86,7 +86,7 @@ Item {
         var list=[{label:'Automatique',readerId:'',source:'',available:true}];
         sources.slice(1).forEach(function(site){
             list.push({label:site.label+' · Automatique',readerId:'',source:site.id,available:true});
-            usable.filter(function(r){return r.source===site.id;}).forEach(function(r){list.push({label:r.label,readerId:r.reader_id,source:r.source,available:r.supported===true,detail:site.label+(current.readerId===r.reader_id && current.source===r.source ? ' · En lecture' : '')});});
+            usable.filter(function(r){return r.source===site.id;}).forEach(function(r){list.push({label:r.label,readerId:r.reader_id,source:r.source,provider:typeof r.provider==='string' ? r.provider.slice(0,64) : '',available:r.supported===true,detail:site.label,playing:currentAlive && current.readerId===r.reader_id && current.source===r.source});});
         });entries=list;
         var selected=previous || current.choice;
         index=0;for(var i=0;i<entries.length;i++)if(entries[i].readerId===(selected.readerId || '') && entries[i].source===(selected.source || ''))index=i;
@@ -99,7 +99,7 @@ Item {
             if(turn!==revision || kind!=='quality')return;
             if(code!==200 || !matches(value,key) || value.source!==key.source || value.reader_id!==key.reader_id || !Array.isArray(value.variants)){failed('Qualités indisponibles.');return;}
             variants=value.variants.slice(0,16).filter(function(v){return validId(v.variant_id) && (v.container==='mp4' || transport.hlsEnabled && v.container==='hls') && typeof v.label==='string' && v.label.length<=80;});
-            entries=(variants.length ? [{label:'Automatique',variantId:''}] : []).concat(variants.map(function(v){return {label:v.label,variantId:v.variant_id,detail:Readers.bitrate(v.bitrate_kbps)};}));
+            entries=(variants.length ? [{label:'Automatique',variantId:''}] : []).concat(variants.map(function(v){return {label:v.label,variantId:v.variant_id,detail:Readers.bitrate(v.bitrate_kbps),playing:currentAlive && current.variantId===v.variant_id};}));
             index=0;for(var i=0;i<entries.length;i++)if(entries[i].variantId===(current.choice.variantId || ''))index=i;
             state='ready';if(!variants.length)message=transport.hlsEnabled ? 'Aucune qualité compatible n’est annoncée pour ce lecteur.' : 'Aucune variante MP4 compatible n’est annoncée pour ce lecteur.';
         });
@@ -170,7 +170,7 @@ Item {
         if(kind==='seasons'){episodeCard=entry.card;kind='episodes';pageStart=1;loadEpisodes(0);return;}
         if(selected(entry)){close();return;}
         var choice={},target={numero:current.target.numero,vf:current.target.vf,version:current.target.version || null},card=current.media;
-        if(kind==='source'){if(entry.source)choice.source=entry.source;if(entry.readerId)choice.readerId=entry.readerId;}
+        if(kind==='source'){if(entry.source)choice.source=entry.source;if(entry.readerId)choice.readerId=entry.readerId;if(entry.provider)choice.provider=entry.provider;choice.explicit=true;}
         else if(kind==='quality'){choice.source=current.source;choice.readerId=current.readerId;if(entry.variantId)choice.variantId=entry.variantId;}
         else if(kind==='version')target.vf=entry.vf;
         else {card=episodeCard;target.numero=entry.numero;}
@@ -195,10 +195,10 @@ Item {
         if(code===Qt.Key_Up || code===Qt.Key_Down){index=Math.max(0,Math.min(entries.length-1,index+(code===Qt.Key_Up ? -1 : 1)));showIndex();}
     }
     visible:opened
-    Rectangle {id:surface;x:menu.episodeMenu ? 64 : Math.min(1216-width,688+(menu.kind==='version' ? 0 : menu.kind==='source' ? 1 : 2)*180);y:(menu.kind==='episodes' ? 474 : 486)-height;width:menu.kind==='episodes' ? 1152 : menu.kind==='version' ? 396 : menu.kind==='source' ? 380 : 304;height:menu.state==='loading' && !menu.busy && !menu.changeError ? (menu.kind==='episodes' ? 322 : 248) : menu.kind==='episodes' && menu.state==='ready' && !menu.busy && !menu.changeError ? 322 : menu.busy || menu.changeError || menu.state!=='ready' ? 184 : 72+menu.listHeight;radius:14;color:'#ee1b1c21';border.color:'#28ffffff'
+    Rectangle {id:surface;x:menu.episodeMenu ? 64 : Math.min(1216-width,688+(menu.kind==='version' ? 0 : menu.kind==='source' ? 1 : 2)*180);y:(menu.kind==='episodes' ? 474 : 486)-height;width:menu.kind==='episodes' ? 1152 : menu.kind==='version' ? 396 : menu.kind==='source' ? 440 : 340;height:menu.state==='loading' && !menu.busy && !menu.changeError ? (menu.kind==='episodes' ? 322 : 248) : menu.kind==='episodes' && menu.state==='ready' && !menu.busy && !menu.changeError ? 322 : menu.busy || menu.changeError || menu.state!=='ready' ? 184 : 72+menu.listHeight;radius:14;color:'#ee1b1c21';border.color:'#28ffffff'
         Text {x:24;y:19;width:parent.width-48;text:menu.heading;color:'#f5f5f7';font.family:menu.family;font.pixelSize:23;font.weight:Font.DemiBold;visible:menu.kind!=='episodes' || menu.state!=='ready' || menu.busy || menu.changeError}
         ListView {id:list;objectName:'playerMenuList';x:8;y:64;width:surface.width-16;height:menu.listHeight;clip:true;interactive:false;spacing:4;model:menu.entries;currentIndex:menu.index;onCurrentIndexChanged:if(menu.kind!=='episodes')positionViewAtIndex(currentIndex,ListView.Contain);visible:menu.kind!=='episodes' && menu.state==='ready' && !menu.busy && !menu.changeError
-            delegate:PlayerChoice {width:list.width;height:64;family:menu.family;label:modelData.label || '';detail:modelData.detail || '';available:modelData.available!==false;focused:menu.index===index;selected:menu.selected(modelData);onActivated:{menu.index=index;menu.column='items';menu.activate();}}
+            delegate:PlayerChoice {width:list.width;height:64;family:menu.family;label:modelData.label || '';detail:modelData.detail || '';available:modelData.available!==false;playing:modelData.playing===true;focused:menu.index===index;selected:menu.selected(modelData);onActivated:{menu.index=index;menu.column='items';menu.activate();}}
         }
         PlayerEpisodes {family:menu.family;episodes:menu.episodeRows;selectedIndex:menu.index;currentEpisode:menu.current ? menu.current.target.numero : 0;sameSeries:menu.current && menu.episodeCard && menu.episodeCard.anilist_id===menu.current.media.anilist_id;seasonLabel:menu.episodeCard && menu.episodeCard.franime && menu.episodeCard.franime.saison ? 'Saison '+menu.episodeCard.franime.saison : 'Épisodes';total:menu.total;airingSummary:menu.airingData && menu.airingData.diffusion ? Episode.count(menu.airingData,true) : '';pageStart:menu.pageStart;previousAvailable:menu.previousAvailable;nextAvailable:menu.nextAvailable;positionMs:menu.positionMs;durationMs:menu.durationMs;zone:menu.column==='items' ? 'episodes' : menu.column==='header' ? 'season' : menu.column;visible:menu.kind==='episodes' && menu.state==='ready' && !menu.busy && !menu.changeError
             onSelectEpisode:menu.index=index

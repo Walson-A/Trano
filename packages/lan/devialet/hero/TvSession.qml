@@ -17,6 +17,12 @@ Item {
     property bool libraryRemoveEnabled:false
     property bool airingEnabled: false
     property bool conversationLaunchEnabled:false
+    // Préférences communes aux trois écrans (engine) : langue par série, lecteur retenu,
+    // épisode suivant automatique, son des bandes-annonces. Défauts de l'engine sans gateway.
+    property bool preferencesEnabled:false
+    property var preferences:({suivant_auto:true,son_bandes_annonces:true})
+    property var seriesPreferences:({})
+    signal preferencesLoaded()
     property double expiresAt: 0
     property bool refreshing: false
     property var waiters: []
@@ -81,9 +87,10 @@ Item {
             libraryRemoveEnabled=!!(runtime.capabilities && runtime.capabilities.library_remove===true);
             airingEnabled=!!(runtime.capabilities && runtime.capabilities.airing===true);
             conversationLaunchEnabled=!!(runtime.capabilities && runtime.capabilities.conversation_launch===true);
+            preferencesEnabled=!!(runtime.capabilities && runtime.capabilities.preferences===true);
             request(apiOrigin+'/tv/v1/session/activate',{code:runtime.activation.code},'',12000,function(code,value) {
                 if(code!==200 || !credentials(value)) { fail(); return; }
-                loadHome();
+                loadHome();loadPreferences(0,function(){});
             });
         });
     }
@@ -153,6 +160,34 @@ Item {
             });
             else homeRefreshing=false;
         });
+    }
+    // Lit les préférences, globales et pour une série. `done(serie)` reçoit
+    // {langue:'vo'|'vf', langue_choisie, lecteur:{source,provider}|null} ou null.
+    function acceptPreferences(value,id){
+        if(!value || !value.global)return null;
+        var g=value.global;preferences={suivant_auto:g.suivant_auto!==false,son_bandes_annonces:g.son_bandes_annonces!==false};
+        var s=value.serie,serie=null;
+        if(id>0 && s && s.anilist_id===id){
+            var l=s.lecteur && typeof s.lecteur.source==='string' && typeof s.lecteur.provider==='string' ? {source:s.lecteur.source.slice(0,64),provider:s.lecteur.provider.slice(0,64)} : null;
+            serie={langue:s.langue==='vf' ? 'vf' : 'vo',langue_choisie:s.langue_choisie===true,lecteur:l};
+            var copy={};Object.keys(seriesPreferences).slice(-199).forEach(function(k){copy[k]=seriesPreferences[k];});copy[String(id)]=serie;seriesPreferences=copy;
+        }
+        preferencesLoaded();return serie;
+    }
+    function loadPreferences(id,done){
+        if(!preferencesEnabled || state!=='ready' && !accessToken){done(null);return;}
+        api('/tv/v1/preferences',id>0 ? {anilist_id:id} : {},12000,function(status,value){done(status===200 ? acceptPreferences(value,id) : null);});
+    }
+    // Une préférence absente de l'engine garde son défaut : la lecture n'attend jamais l'écriture.
+    function savePreferences(patch,done){
+        // Sans gateway à jour, le choix vaut pour la séance : on le garde en mémoire, sans écrire.
+        var id=patch.anilist_id || 0;
+        if(id>0){var current=seriesPreferences[String(id)] || {langue:'vo',langue_choisie:false,lecteur:null},next={langue:current.langue,langue_choisie:current.langue_choisie,lecteur:current.lecteur};
+            if(patch.langue){next.langue=patch.langue;next.langue_choisie=true;}if(patch.hasOwnProperty('lecteur'))next.lecteur=patch.lecteur;
+            var copy={};Object.keys(seriesPreferences).forEach(function(k){copy[k]=seriesPreferences[k];});copy[String(id)]=next;seriesPreferences=copy;}
+        if(patch.hasOwnProperty('suivant_auto') || patch.hasOwnProperty('son_bandes_annonces')){var g={suivant_auto:preferences.suivant_auto,son_bandes_annonces:preferences.son_bandes_annonces};if(patch.hasOwnProperty('suivant_auto'))g.suivant_auto=patch.suivant_auto;if(patch.hasOwnProperty('son_bandes_annonces'))g.son_bandes_annonces=patch.son_bandes_annonces;preferences=g;}
+        if(!preferencesEnabled){if(done)done(false);return;}
+        api('/tv/v1/preferences-update',patch,12000,function(status,value){if(status===200 && value && value.global)acceptPreferences(value,id);if(done)done(status===200);});
     }
     function mediaUrl(path,kind) {
         var pattern=kind==='trailer' ? /^\/tv\/v1\/preview-media\/[a-f0-9]{64}$/ : kind==='artwork' ? /^\/tv\/v1\/artwork-media\/[a-f0-9]{64}$/ : /^\/tv\/v1\/episode-media\/[a-f0-9]{64}$/;

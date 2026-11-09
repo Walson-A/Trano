@@ -17,6 +17,7 @@ parser.add_argument('--episode-shelf-baseline',help='Explicit Git commit for bef
 parser.add_argument('--hls',action='store_true',help='Exercise negotiated HLS requests and quality menus with the fake decoder')
 parser.add_argument('--follow-up',action='store_true',help='Exercise library writes and the explicit 12 announced/5 aired fixture; no account')
 parser.add_argument('--detail-preview',action='store_true',help='Exercise background/fullscreen trailer ownership with fake API/decoder')
+parser.add_argument('--parity',action='store_true',help='Exercise the 9 November parity pass: shared preferences, up next, seek steps, progress edit, review, keyboard, profile; fake API only')
 parser.add_argument('--conversation-launch',action='store_true',help='Exercise primary conversation launch receiver with fake transport/media only')
 parser.add_argument('--expire-component-files',action='store_true',help='Remove cached player source URLs after bootstrap to verify native-player recreation needs no new download')
 parser.add_argument('--qt-path',type=pathlib.Path,required=True)
@@ -174,6 +175,17 @@ Item {
  property string apiOrigin:"https://test.invalid"
  property var pendingPreviews:({})
  property bool conversationLaunchEnabled:false
+ property bool preferencesEnabled:false
+ property var preferences:({suivant_auto:true,son_bandes_annonces:true})
+ property var seriesPreferences:({})
+ property var fakePreferences:({global:{suivant_auto:true,son_bandes_annonces:true},series:{}})
+ property var nextSuivant:null
+ property var preferenceWrites:[]
+ signal preferencesLoaded()
+ function preferenceView(id){var v={global:JSON.parse(JSON.stringify(fakePreferences.global))};if(id>0){var s=fakePreferences.series[String(id)];v.serie={anilist_id:id,langue:s && s.langue || 'vo',langue_choisie:!!(s && s.langue),lecteur:s && s.lecteur || null};}return v;}
+ function acceptPreferences(value,id){if(!value || !value.global)return null;preferences={suivant_auto:value.global.suivant_auto!==false,son_bandes_annonces:value.global.son_bandes_annonces!==false};var serie=null;if(id>0 && value.serie){serie={langue:value.serie.langue,langue_choisie:value.serie.langue_choisie,lecteur:value.serie.lecteur};var copy={};Object.keys(seriesPreferences).forEach(function(k){copy[k]=seriesPreferences[k];});copy[String(id)]=serie;seriesPreferences=copy;}preferencesLoaded();return serie;}
+ function loadPreferences(id,done){if(!preferencesEnabled){done(null);return;}api('/tv/v1/preferences',id>0 ? {anilist_id:id} : {},12000,function(status,value){done(status===200 ? acceptPreferences(value,id) : null);});}
+ function savePreferences(patch,done){var id=patch.anilist_id || 0;if(id>0){var c=seriesPreferences[String(id)] || {langue:'vo',langue_choisie:false,lecteur:null},n={langue:c.langue,langue_choisie:c.langue_choisie,lecteur:c.lecteur};if(patch.langue){n.langue=patch.langue;n.langue_choisie=true;}if(patch.hasOwnProperty('lecteur'))n.lecteur=patch.lecteur;var copy={};Object.keys(seriesPreferences).forEach(function(k){copy[k]=seriesPreferences[k];});copy[String(id)]=n;seriesPreferences=copy;}if(patch.hasOwnProperty('suivant_auto') || patch.hasOwnProperty('son_bandes_annonces')){var g={suivant_auto:preferences.suivant_auto,son_bandes_annonces:preferences.son_bandes_annonces};if(patch.hasOwnProperty('suivant_auto'))g.suivant_auto=patch.suivant_auto;if(patch.hasOwnProperty('son_bandes_annonces'))g.son_bandes_annonces=patch.son_bandes_annonces;preferences=g;}if(!preferencesEnabled){if(done)done(false);return;}api('/tv/v1/preferences-update',patch,12000,function(status,value){if(status===200)acceptPreferences(value,id);if(done)done(status===200);});}
  property var intentPoll:null
  readonly property bool intentPollPending:!!intentPoll
  property int intentPollCount:0
@@ -220,6 +232,8 @@ Item {
  function api(path,body,timeout,done) {
   apiCalled(path,body);
   if(delayCollections && ['/tv/v1/library','/tv/v1/catalog/history'].indexOf(path)>=0){pendingCollections=pendingCollections.concat([{path:path,body:body,done:done}]);return;}
+  if(path==='/tv/v1/preferences'){var view=preferenceView(body.anilist_id || 0);Qt.callLater(function(){done(200,view);});return;}
+  if(path==='/tv/v1/preferences-update'){preferenceWrites=preferenceWrites.concat([JSON.parse(JSON.stringify(body))]);var st=JSON.parse(JSON.stringify(fakePreferences));['suivant_auto','son_bandes_annonces'].forEach(function(k){if(body.hasOwnProperty(k))st.global[k]=body[k];});if(body.anilist_id){var se=st.series[String(body.anilist_id)] || {};if(body.langue)se.langue=body.langue;if(body.hasOwnProperty('lecteur')){if(body.lecteur)se.lecteur=body.lecteur;else delete se.lecteur;}st.series[String(body.anilist_id)]=se;}fakePreferences=st;var after=preferenceView(body.anilist_id || 0);Qt.callLater(function(){done(200,after);});return;}
   if(path==='/tv/v1/library-entry'){if(failNextLibraryRead){failNextLibraryRead=false;Qt.callLater(function(){done(503,{});});return;}if(delayLibrary){pendingLibrary=pendingLibrary.concat([{body:body,done:done}]);return;}Qt.callLater(function(){done(200,libraryEntry(body.anilist_id));});return;}
   if(path==='/tv/v1/library-remove'){Qt.callLater(function(){
    var mode=removalFailure;removalFailure='';
@@ -251,7 +265,7 @@ Item {
 
   else Qt.callLater(function(){done(200,{});});
  }
- function answerPlayback(body,done){playbackCount++;done(200,{id:'aaaaaaaa-aaaa-aaaa-aaaa-'+('000000000000'+playbackCount).slice(-12),anilist_id:body.anilist_id,episode:body.episode,lang:body.lang,source:body.source || 'voiranime',reader:body.source==='franime' ? 'Sendvid' : body.reader_id==='f'.repeat(64) ? 'YourUpload' : 'Mail.ru FHD1',reader_id:body.reader_id || 'e'.repeat(64),variant_id:body.variant_id || null,quality:body.variant_id ? {label:body.variant_id==='3'.repeat(64) ? 'Originale' : body.variant_id==='1'.repeat(64) ? '360p' : '1080p'} : null,stream:{path:'/tv/v1/episode-media/'+'a'.repeat(64)},resume:{position_ms:120000}});}
+ function answerPlayback(body,done){playbackCount++;done(200,{id:'aaaaaaaa-aaaa-aaaa-aaaa-'+('000000000000'+playbackCount).slice(-12),anilist_id:body.anilist_id,episode:body.episode,lang:body.lang,source:body.source || 'voiranime',reader:body.source==='franime' ? 'Sendvid' : body.reader_id==='f'.repeat(64) ? 'YourUpload' : 'Mail.ru FHD1',reader_id:body.reader_id || 'e'.repeat(64),variant_id:body.variant_id || null,quality:body.variant_id ? {label:body.variant_id==='3'.repeat(64) ? 'Originale' : body.variant_id==='1'.repeat(64) ? '360p' : '1080p'} : null,stream:{path:'/tv/v1/episode-media/'+'a'.repeat(64)},resume:{position_ms:120000},suivant:nextSuivant ? JSON.parse(JSON.stringify(nextSuivant)) : null});}
  function finishPlayback(index){var pending=pendingPlaybacks[index];answerPlayback(pending.body,pending.done);}
  function mediaUrl(path,kind) { if(kind==='artwork' && /^\/tv\/v1\/artwork-media\/[a-f0-9]{64}$/.test(path))return benchmarkArtworkGrant;return kind==='artwork' && path.indexOf('file:')===0 ? path : apiOrigin+path; }
  function inspectEpisode(path,done) {var status=mediaHeadStatus;Qt.callLater(function(){done(status,null);});}
@@ -347,7 +361,7 @@ Item {
             assert len(window.findChildren(QObject,'episodeVideoOutput'))==1 and not window.findChildren(QObject,'trailerVideoOutput'), 'Only the episode owns a video output'
             assert window.grabWindow().save(str(args.evidence/'episode-controls.png'))
             QTest.keyClick(window,Qt.Key_Return) # pause
-            QTest.qWait(350);assert player.property('playing') is False, 'A finished seek must not override a later explicit pause'
+            QTest.qWait(350);assert player.property('playing') is False, ('A finished seek must not override a later explicit pause',{k:player.property(k) for k in ['zone','wantsPlaying','menuOpened','activeFocus','controlsVisible','started','restoreAfterSeek','seekTarget','observationResumeTarget','proposedMs']},window.activeFocusItem().objectName() if window.activeFocusItem() else None,str(window.activeFocusItem()))
             QTest.keyClick(window,Qt.Key_Back)
             assert not player.property('controlsVisible') and screen.property('playbackId') and not player.property('playing'), 'Back also hides the HUD while paused'
             QTest.keyClick(window,Qt.Key_Right)
@@ -517,7 +531,7 @@ Item {
             QTest.keyClick(window,Qt.Key_Up);QTest.keyClick(window,Qt.Key_Up);QTest.keyClick(window,Qt.Key_Return)
             assert search.property('overlay')=='keyboard'
             QTest.keyClick(window,Qt.Key_F);QTest.keyClick(window,Qt.Key_R)
-            for _ in range(4):QTest.keyClick(window,Qt.Key_Down)
+            for _ in range(search.property('keyRows')):QTest.keyClick(window,Qt.Key_Down)
             QTest.keyClick(window,Qt.Key_Right);QTest.keyClick(window,Qt.Key_Right);QTest.keyClick(window,Qt.Key_Return)
             assert search.property('query')=='fr'
             search.openKeyboard();QTest.keyClick(window,Qt.Key_A)
@@ -734,6 +748,10 @@ Item {
                 spec=importlib.util.spec_from_file_location('conversation',pathlib.Path(__file__).with_name('atlas_tv_conversation_bench.py'))
                 consumer=importlib.util.module_from_spec(spec);spec.loader.exec_module(consumer)
                 consumer.run(window,session,screen,details,calls,QTest,Qt,QObject,spin,args.evidence)
+            if args.parity:
+                parity_spec=importlib.util.spec_from_file_location('parity',pathlib.Path(__file__).with_name('atlas_tv_parity_bench.py'))
+                parity=importlib.util.module_from_spec(parity_spec);parity_spec.loader.exec_module(parity)
+                parity.run(window,session,screen,hero,details,calls,QTest,Qt,QObject,spin,args.evidence,snapshot)
             later_bad=[m for m in messages if any(s in m for s in ['ReferenceError','TypeError','Unable to assign','Cannot assign'])]
             assert not later_bad,later_bad
             negotiated=[body for path,body in calls if path in ['/tv/v1/playbacks','/tv/v1/readers','/tv/v1/variants']]
@@ -741,8 +759,9 @@ Item {
             (args.evidence/'verification.json').write_text(json.dumps({'passed':True,'scope':'real QML host/UI with fake API and fake decoder; no native playback claim','canonicalEpisode':13,'hlsNegotiated':args.hls,'defaultLanguage':'vo','frenchAvailabilityDoesNotSelectLanguage':True,'explicitFrenchStillSupported':True,'tvPlayer':{'anchoredMenusKeepChrome':True,'proposedTimelineUntilConfirmed':True,'cancelSeekKeepsPosition':True,'cancelResolutionIgnoresLateResponse':True,'strictSourceReaderVariant':True,'strictRetry401And200KeepsChoice':True,'failedChangeKeepsOldVideo':True,'pausedQualityAndVersionKeepPositionAndIntent':True,'episodesOverlayKeepsVideoAndSeasonBrowsing':True,'firstBackHidesHudWithoutClosing':True,'episodeJumpPreservesCurrentPlayback':True,'sourceReachableAfterNativeFailure':True,'episodeArtworkIdentityChecked':True,'missingCapabilityUnavailable':True,'perSessionProgressSequence':True},'lang':'vo','defaultSoundOnAndLabelled':True,'infoSelectionPreserved':True,'search':{'remoteKeyboard':True,'staleIgnored':True,'selectionAndBack':True},'profile':{'publicProfileWithoutOAuth':True,'statsScaleChecked':True,'selectionAndBack':True},'lateTrailerDoesNotChangeSelection':True,'silentGainZero':True,'bannerErrorUsesPoster':True,'artworkQueue':{'maxConcurrent':2,'identityChecked':True,'deduplicated':True,'capabilityRequired':True,'warmWithoutResume':True},'events':events},indent=2),encoding='utf-8')
             app.quit()
         except Exception as error: messages.append(traceback.format_exc());app.exit(1)
-    QTimer.singleShot(600,check);QTimer.singleShot(100000 if args.conversation_launch else 60000 if args.follow_up or args.episode_shelf else 25000,lambda:app.exit(2))
+    QTimer.singleShot(600,check);QTimer.singleShot(100000 if args.conversation_launch else 60000 if args.follow_up or args.episode_shelf or args.parity else 25000,lambda:app.exit(2))
     code=app.exec_()
     window.close();sip.delete(engine)
-    if code: raise AssertionError([m for m in messages if m.startswith('Traceback')] or messages[-12:])
+    # Les avertissements QML disent souvent la vraie cause d'un échec de parcours.
+    if code: raise AssertionError(([m for m in messages if m.startswith('Traceback')] or messages[-12:])+[m for m in messages if '.qml:' in m][-12:])
     print(json.dumps({'passed':True,'scope':'episode shelf only, fake API/media; no other host checks' if args.episode_shelf_only else 'host, canonical target, resume, pause/seek/back, progress sequence; mocked decoder/API'}))

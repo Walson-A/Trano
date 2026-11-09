@@ -51,7 +51,12 @@ FocusScope {
     property int keyIndex:0
     property int toolIndex:0
     property string keyboardZone:'keys'
-    readonly property var letters:'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.split('')
+    // Quatre rangées A–Z/0–9, puis les accents et la ponctuation des titres (« Re:Zero », « Kaguya-sama »).
+    readonly property var letters:'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.split('').concat(['É','È','Ê','À','Ç','Ô',"'",'-',':'])
+    readonly property int keyRows:Math.ceil(letters.length/9)
+    // Recherches récentes : en mémoire pendant la session (la TV n'a pas de stockage durable prouvé).
+    property var recentQueries:[]
+    property int recentIndex:0
     readonly property var filterNames:libraryMode ? ['Statut'] : ['Genres','Format','Année','Diffusion','Trier']
     readonly property var filterFields:libraryMode ? ['statut'] : ['genres','format','annee','statut','tri']
     readonly property var options:libraryMode ? [['','Tous mes animés']].concat(Personal.statuses) : multiGenre ? Catalog.genres : filterIndex===1 ? Catalog.formats : filterIndex===2 ? Catalog.years() : filterIndex===3 ? Catalog.statuses : Catalog.sorts
@@ -108,12 +113,13 @@ FocusScope {
         else {copy[filterFields[filterIndex]]=value;draft=copy;applyFilter();}
     }
     function applyFilter(){var changed=JSON.stringify(filters)!==JSON.stringify(draft);filters=Catalog.clone(draft);overlay='';zone='filters';if(changed)restart();}
-    function openKeyboard(){if(libraryMode)return;draftQuery=query;overlay='keyboard';keyboardZone='keys';keyIndex=0;toolIndex=2;}
-    function submitQuery(){var changed=query!==draftQuery.trim();query=draftQuery.trim().slice(0,60);overlay='';zone='results';if(changed)restart();else if(state==='error')search(true,page);else zone=results.length ? 'results' : 'filters';}
+    function openKeyboard(){if(libraryMode)return;draftQuery=query;overlay='keyboard';keyboardZone='keys';keyIndex=0;toolIndex=2;recentIndex=0;}
+    function remember(text){var value=text.trim();if(!value)return;var next=[value].concat(recentQueries.filter(function(q){return q.toLowerCase()!==value.toLowerCase();}));recentQueries=next.slice(0,6);}
+    function submitQuery(){var changed=query!==draftQuery.trim();query=draftQuery.trim().slice(0,60);remember(query);overlay='';zone='results';if(changed)restart();else if(state==='error')search(true,page);else zone=results.length ? 'results' : 'filters';}
     function append(text){draftQuery=(draftQuery+text).slice(0,60);}
     function activate(){
         if(overlay==='filter'){if(applyFocused)applyFilter();else chooseOption();return;}
-        if(overlay==='keyboard'){if(keyboardZone==='keys')append(letters[keyIndex]);else if(toolIndex===0)append(' ');else if(toolIndex===1)draftQuery=draftQuery.slice(0,-1);else submitQuery();return;}
+        if(overlay==='keyboard'){if(keyboardZone==='recent'){if(recentQueries[recentIndex]){draftQuery=recentQueries[recentIndex];submitQuery();}return;}if(keyboardZone==='keys')append(letters[keyIndex]);else if(toolIndex===0)append(' ');else if(toolIndex===1)draftQuery=draftQuery.slice(0,-1);else submitQuery();return;}
         if(zone==='nav')navigateRequested(navigation.destination(navIndex));
         else if(zone==='search')openKeyboard();
         else if(zone==='filters'){if(filterIndex<filterNames.length)openFilter(filterIndex);else {filters=Catalog.defaults();query='';restart();}}
@@ -193,16 +199,25 @@ FocusScope {
         }
         HeroButton {x:24;y:414;width:352;height:46;label:'Appliquer'+(view.draft.genres.length ? ' · '+view.draft.genres.length+(view.draft.genres.length>1 ? ' genres' : ' genre') : '');family:view.family;visible:view.multiGenre;focused:view.applyFocused;onActivated:{view.applyFilter();view.forceActiveFocus();}}
     }
-    Rectangle {x:246;y:142;width:788;height:510;radius:22;color:'#f020232c';border.color:'#606773';visible:view.overlay==='keyboard';z:11
-        Text {x:30;y:24;text:'Rechercher un animé';color:'white';font.family:view.family;font.pixelSize:28;font.weight:Font.DemiBold}
-        Rectangle {x:30;y:80;width:728;height:60;radius:10;color:'#12151c';border.color:'#6e7685';Text {x:18;width:692;anchors.verticalCenter:parent.verticalCenter;text:view.draftQuery || 'Un titre…';color:view.draftQuery ? 'white' : '#8c93a1';textFormat:Text.PlainText;elide:Text.ElideLeft;font.family:view.family;font.pixelSize:26}}
-        Grid {x:30;y:164;columns:9;spacing:8;Repeater {model:view.letters
-            Rectangle {width:74;height:54;radius:9;color:view.keyboardZone==='keys' && view.keyIndex===index ? 'white' : '#353a46'
+    Rectangle {objectName:'discoveryKeyboard';x:246;y:52;width:788;height:keyGrid.y+keyGrid.height+86;radius:22;color:'#f020232c';border.color:'#606773';visible:view.overlay==='keyboard';z:11
+        Text {x:30;y:22;text:'Rechercher un animé';color:'white';font.family:view.family;font.pixelSize:26;font.weight:Font.DemiBold}
+        Rectangle {x:30;y:70;width:728;height:56;radius:10;color:'#12151c';border.color:'#6e7685';Text {x:18;width:692;anchors.verticalCenter:parent.verticalCenter;text:view.draftQuery || 'Un titre…';color:view.draftQuery ? 'white' : '#8c93a1';textFormat:Text.PlainText;elide:Text.ElideLeft;font.family:view.family;font.pixelSize:25}}
+        Row {objectName:'recentSearches';x:30;y:138;spacing:10;visible:view.recentQueries.length>0;height:visible ? 40 : 0
+            Text {height:40;verticalAlignment:Text.AlignVCenter;text:'Récentes';color:'#8c93a1';font.family:view.family;font.pixelSize:16}
+            Repeater {model:view.recentQueries
+                Rectangle {height:40;width:Math.min(220,recentLabel.implicitWidth+32);radius:20;color:view.keyboardZone==='recent' && view.recentIndex===index ? 'white' : '#353a46'
+                    Text {id:recentLabel;anchors.centerIn:parent;width:Math.min(implicitWidth,parent.width-24);text:modelData;textFormat:Text.PlainText;elide:Text.ElideRight;color:view.keyboardZone==='recent' && view.recentIndex===index ? '#13161d' : 'white';font.family:view.family;font.pixelSize:17}
+                    MouseArea {anchors.fill:parent;onClicked:{view.recentIndex=index;view.keyboardZone='recent';view.activate();view.forceActiveFocus();}}
+                }
+            }
+        }
+        Grid {id:keyGrid;x:30;y:view.recentQueries.length ? 190 : 142;columns:9;spacing:8;Repeater {model:view.letters
+            Rectangle {width:74;height:52;radius:9;color:view.keyboardZone==='keys' && view.keyIndex===index ? 'white' : index>=36 ? '#2b3039' : '#353a46'
                 Text {anchors.centerIn:parent;text:modelData;color:view.keyboardZone==='keys' && view.keyIndex===index ? '#13161d' : 'white';font.family:view.family;font.pixelSize:24}
                 MouseArea {anchors.fill:parent;onClicked:{view.keyIndex=index;view.keyboardZone='keys';view.activate();view.forceActiveFocus();}}
             }
         }}
-        Row {x:30;y:425;spacing:12;Repeater {model:['Espace','Effacer','Rechercher'];HeroButton {width:index===2 ? 284 : 210;height:52;label:modelData;family:view.family;focused:view.keyboardZone==='tools' && view.toolIndex===index;onActivated:{view.toolIndex=index;view.keyboardZone='tools';view.activate();view.forceActiveFocus();}}}}
+        Row {x:30;y:keyGrid.y+keyGrid.height+16;spacing:12;Repeater {model:['Espace','Effacer','Rechercher'];HeroButton {width:index===2 ? 284 : 210;height:52;label:modelData;family:view.family;reducedMotion:view.reducedMotion;focused:view.keyboardZone==='tools' && view.toolIndex===index;onActivated:{view.toolIndex=index;view.keyboardZone='tools';view.activate();view.forceActiveFocus();}}}}
     }
     Keys.onPressed:{
         interaction();
@@ -215,10 +230,10 @@ FocusScope {
             else if(key===Qt.Key_Right && multiGenre)applyFocused=true;else if(key===Qt.Key_Left && multiGenre)applyFocused=false;else return;
         }else if(overlay==='keyboard'){
             if(key===Qt.Key_Backspace)draftQuery=draftQuery.slice(0,-1);
-            else if(key===Qt.Key_Left){if(keyboardZone==='keys')keyIndex=Math.max(Math.floor(keyIndex/9)*9,keyIndex-1);else toolIndex=Math.max(0,toolIndex-1);}
-            else if(key===Qt.Key_Right){if(keyboardZone==='keys')keyIndex=Math.min(Math.floor(keyIndex/9)*9+8,keyIndex+1);else toolIndex=Math.min(2,toolIndex+1);}
-            else if(key===Qt.Key_Down){if(keyboardZone==='keys'){if(keyIndex>=27){keyboardZone='tools';toolIndex=Math.floor((keyIndex%9)/3);}else keyIndex+=9;}}
-            else if(key===Qt.Key_Up){if(keyboardZone==='tools'){keyboardZone='keys';keyIndex=27+toolIndex*3;}else keyIndex=Math.max(0,keyIndex-9);}
+            else if(key===Qt.Key_Left){if(keyboardZone==='recent')recentIndex=Math.max(0,recentIndex-1);else if(keyboardZone==='keys')keyIndex=Math.max(Math.floor(keyIndex/9)*9,keyIndex-1);else toolIndex=Math.max(0,toolIndex-1);}
+            else if(key===Qt.Key_Right){if(keyboardZone==='recent')recentIndex=Math.min(recentQueries.length-1,recentIndex+1);else if(keyboardZone==='keys')keyIndex=Math.min(Math.floor(keyIndex/9)*9+8,letters.length-1,keyIndex+1);else toolIndex=Math.min(2,toolIndex+1);}
+            else if(key===Qt.Key_Down){if(keyboardZone==='recent')keyboardZone='keys';else if(keyboardZone==='keys'){if(keyIndex>=(keyRows-1)*9){keyboardZone='tools';toolIndex=Math.floor((keyIndex%9)/3);}else keyIndex=Math.min(letters.length-1,keyIndex+9);}}
+            else if(key===Qt.Key_Up){if(keyboardZone==='tools'){keyboardZone='keys';keyIndex=Math.min(letters.length-1,(keyRows-1)*9+toolIndex*3);}else if(keyboardZone==='keys' && keyIndex<9 && recentQueries.length){keyboardZone='recent';recentIndex=Math.min(recentIndex,recentQueries.length-1);}else if(keyboardZone==='keys')keyIndex=Math.max(0,keyIndex-9);}
             else if(!libraryMode && event.text && event.text.length===1 && event.text.charCodeAt(0)>=32)append(event.text);else return;
         }else if(key===Qt.Key_Left || key===Qt.Key_Right){
             var delta=key===Qt.Key_Left ? -1 : 1;

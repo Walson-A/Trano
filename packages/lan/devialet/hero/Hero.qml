@@ -12,7 +12,7 @@ FocusScope {
     property string family: "Segoe UI"
     property string mode: currentRow && currentRow.id==='reprendre' ? 'resume' : currentRow && currentRow.id==='featured' ? 'featured' : currentRow ? currentRow.id : ''
     property string zone: "actions"
-    readonly property bool browsingRows: zone==='rail' && !detailOpen
+    readonly property bool browsingRows: zone==='rail'
     property int actionIndex: 0
     property int navIndex: 0
     property string avatar: ''
@@ -32,7 +32,6 @@ FocusScope {
     property bool reducedMotion: false
     property var displayedMedia: null
     property bool contentVisible: true
-    property bool detailOpen: false
     property string previewState: "image"
     property string notice: ""
     property var resumeItems: row("reprendre")
@@ -55,6 +54,7 @@ FocusScope {
     signal profileRequested()
     signal libraryRequested()
     signal contextBackRequested()
+    signal soundChosen(bool muted)
     function row(id) {
         var rows=homeData.rangees || [];
         for(var i=0;i<rows.length;i++) if(rows[i].id===id) return rows[i].cartes || [];
@@ -102,7 +102,6 @@ FocusScope {
         var targetRow=rows[selectedRow],cards=targetRow.cartes || [];
         selectedRowId=targetRow.id;
         selectedIndex=Math.max(0,Math.min(cards.length-1,rowPositions[selectedRowId] || 0));
-        detailOpen=false;
         Qt.callLater(alignRail);
     }
     function remember() {
@@ -126,11 +125,11 @@ FocusScope {
         playingTrailerKey='';
         if(preview.item) preview.item.stop(); delay.stop(); previewTimeout.stop();
         previewState='image';
-        if (previewEnabled && trailerId && !detailOpen) delay.restart();
+        if (previewEnabled && trailerId) delay.restart();
     }
     function startPreview() {
         if(previewExternal)return;
-        if (!trailerId || !previewEnabled || detailOpen) return;
+        if (!trailerId || !previewEnabled) return;
         var url=trailerSources[trailerId];
         if (url && preview.item) { playingTrailerKey=trailerId; previewState='loading'; previewTimeout.restart(); preview.item.play(url); }
         else { previewState='unavailable'; trailerRequested(trailerId); }
@@ -146,8 +145,8 @@ FocusScope {
     function activate() {
         if(zone==='nav') { if(navIndex===0) searchRequested();else if(navIndex===1) profileRequested();else if(navIndex===3 && libraryEnabled)libraryRequested();else zone='actions'; }
         else if(zone==='rail') { zone='actions'; }
-        else if(zone==='sound') muted=!muted;
-        else if(actionIndex===1) { if(preview.item) preview.item.pause(); detailOpen=true; detailsRequested(selected); }
+        else if(zone==='sound') { muted=!muted; soundChosen(muted); }
+        else if(actionIndex===1) { if(preview.item) preview.item.pause(); detailsRequested(selected); }
         else if(selected && target(selected)) { if(preview.item) preview.item.stop(); playRequested(selected,target(selected)); }
     }
     onSelectedChanged: { notice=""; queueHero(); restartPreview(); }
@@ -164,22 +163,20 @@ FocusScope {
     onPreviewExternalChanged:{if(previewExternal){delay.stop();previewTimeout.stop();}else if(previewEnabled)restartPreview();}
     onMutedChanged:console.info('ATLAS_TV_SOUND_STATE',muted,zone)
     onReducedMotionChanged: { heroSwap.stop(); displayedMedia=selected; contentVisible=true; alignRail(); }
-    onDetailOpenChanged: { if(!detailOpen) restartPreview(); }
     Component.onCompleted: { selectRow(0); forceActiveFocus(); restartPreview(); }
     Keys.onPressed: {
         interaction();
         if(event.key===Qt.Key_Back || event.key===Qt.Key_Escape) {
-            if(detailOpen) { detailOpen=false; restartPreview(); }
-            else if(zone==='rail') zone='actions';
+            if(zone==='rail') zone='actions';
             else if(currentRow && currentRow.id==='context_selection') contextBackRequested();
             else { if(preview.item) preview.item.stop(); dismissed(); }
         } else if(event.key===Qt.Key_Return || event.key===Qt.Key_Enter || event.key===Qt.Key_Select) {
-            if(detailOpen) detailOpen=false; else activate();
-        } else if(!detailOpen && event.key===Qt.Key_Down) {
+            activate();
+        } else if(event.key===Qt.Key_Down) {
             if(zone==='nav') zone='actions';else if(zone==='rail') selectRow(selectedRow+1); else zone='rail';
-        } else if(!detailOpen && event.key===Qt.Key_Up) {
+        } else if(event.key===Qt.Key_Up) {
             if(zone==='rail' && selectedRow>0) selectRow(selectedRow-1);else if(zone==='rail')zone='actions';else if(zone==='actions' || zone==='sound')zone='nav';
-        } else if(!detailOpen && (event.key===Qt.Key_Right || event.key===Qt.Key_Left)) {
+        } else if(event.key===Qt.Key_Right || event.key===Qt.Key_Left) {
             var right=event.key===Qt.Key_Right;
             if(zone==='rail') choose(selectedIndex+(right ? 1 : -1));
             else if(zone==='nav')navIndex=navigation.step(navIndex,right ? 1 : -1);
@@ -252,9 +249,9 @@ FocusScope {
     TvNavigation {id:navigation;visible:!scene.previewExternal;family:scene.family;page:'home';libraryEnabled:scene.libraryEnabled;focused:scene.zone==='nav';selectedIndex:scene.navIndex;avatar:scene.avatar;pseudo:scene.homeData.compte ? scene.homeData.compte.pseudo || 'Profil' : 'Profil';reducedMotion:scene.reducedMotion
         onDestinationRequested:{if(destination==='home'){scene.zone='actions';scene.navIndex=2;scene.forceActiveFocus();}else if(destination==='search'){scene.zone='nav';scene.navIndex=0;scene.searchRequested();}else if(destination==='library'){scene.zone='nav';scene.navIndex=3;scene.libraryRequested();}else {scene.zone='nav';scene.navIndex=1;scene.profileRequested();}}
     }
-    HeroButton { objectName:'heroSound'; x: 1036; y: 298; width: 180; visible:!scene.browsingRows && !scene.previewExternal; iconKey: scene.muted ? 'volume-x' : 'volume-2'; label:scene.muted ? 'Son coupé' : 'Son activé'; reducedMotion: scene.reducedMotion; family: scene.family; backdrop: backdrop; sampleRect: Qt.rect(x,y,width,height); focused: scene.zone==='sound'; onActivated: { scene.zone='sound'; scene.muted=!scene.muted; } }
+    HeroButton { objectName:'heroSound'; x: 1036; y: 298; width: 180; visible:!scene.browsingRows && !scene.previewExternal; iconKey: scene.muted ? 'volume-x' : 'volume-2'; label:scene.muted ? 'Son coupé' : 'Son activé'; reducedMotion: scene.reducedMotion; family: scene.family; backdrop: backdrop; sampleRect: Qt.rect(x,y,width,height); focused: scene.zone==='sound'; onActivated: { scene.zone='sound'; scene.muted=!scene.muted; scene.soundChosen(scene.muted); } }
     Text { x: 870; y: 355; width: 346; horizontalAlignment: Text.AlignRight; color: '#b9bac3'; font.family: scene.family; font.pixelSize: 16
-        visible: !scene.previewExternal && scene.previewEnabled && !scene.detailOpen && !scene.browsingRows
+        visible: !scene.previewExternal && scene.previewEnabled && !scene.browsingRows
         text: scene.previewState==='loading' ? 'Chargement de la bande-annonce…' : scene.previewState==='unavailable' || scene.previewState==='error' ? 'Bande-annonce indisponible' : ''
     }
     ListView {
@@ -267,15 +264,6 @@ FocusScope {
         Behavior on contentY { enabled:!scene.reducedMotion; NumberAnimation { duration:Motion.ms('scroll'); easing.type:Easing.Bezier; easing.bezierCurve:Motion.easeOut() } }
         delegate:MediaRow { host:scene; rowData:modelData; rowIndex:index }
     }
-    Rectangle {
-        anchors.fill: parent; color: '#ed090a0d'; visible: scene.detailOpen && !scene.previewExternal
-        Column { x: 96; y: 140; width: 920; spacing: 28
-            Text { width: 920; text: scene.selected ? scene.selected.titre : ''; textFormat: Text.PlainText; wrapMode: Text.WordWrap; color: 'white'; font.family: scene.family; font.pixelSize: 44; font.weight: Font.Bold }
-            Text { width: 900; text: scene.selected ? scene.selected.resume || '' : ''; textFormat: Text.PlainText; wrapMode: Text.WordWrap; color: '#d4d4dc'; font.family: scene.family; font.pixelSize: 24; lineHeight: 1.4 }
-            Text { text: 'Retour pour revenir au héros'; color: '#a9a9b4'; font.family: scene.family; font.pixelSize: 19 }
-        }
-    }
-    Rectangle { anchors.horizontalCenter: parent.horizontalCenter; y: 465; width: noticeText.width+32; height: 38; radius: 8; color: '#dd13151a'; visible: !!scene.notice && !scene.previewExternal
-        Text { id: noticeText; anchors.centerIn: parent; text: scene.notice; color: 'white'; font.family: scene.family; font.pixelSize: 16 }
-    }
+    // Avis fugace : en bas, sous les rangées et hors du héros, et il s'efface seul.
+    Toast { objectName:'heroNotice'; text: scene.notice; family: scene.family; reducedMotion: scene.reducedMotion; visible: !scene.previewExternal; onExpired: scene.notice='' }
 }

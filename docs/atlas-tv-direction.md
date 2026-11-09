@@ -1,5 +1,14 @@
 # Atlas sur la télévision : base réutilisable et premier parcours
 
+[Parité avec l’audit PC / mobile / TV du 9 novembre](research/2026-11-09-atlas-tv-parite.md).
+Carte « À suivre », préférences communes (langue par série, lecteur retenu, suivant
+automatique, son), barre Reprendre, épisodes au premier écran de la fiche, synopsis
+unique, progression modifiable, accents et recherches récentes, profil enrichi et
+réglages, avance 10/30/60 s, coche et pastille « En lecture », avis fugaces en bas,
+mouvements réduits branchés, code mort retiré. Banc seulement : rien de publié ni
+lancé sur le Player. Restent la session après fermeture (l’appareil ne s’y prête pas),
+l’avis privé (décision engine), la mesure du flou sur le Player et la publication.
+
 [Fiche : bande-annonce automatique et plein écran](research/2026-10-30-atlas-tv-detail-previews.md).
 L’accueil compact est accepté pendant l’exploration, avec grand héros à
 l’arrivée. La fiche partage désormais la résolution et le cache des previews ;

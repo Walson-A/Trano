@@ -10,9 +10,10 @@ Item {
     readonly property int displayPositionMs:trailerMode ? player.timelinePositionMs : player.positionMs
     readonly property real timelineRatio:player.durationMs>0 ? Math.max(0,Math.min(1,displayPositionMs/player.durationMs)) : 0
     readonly property var settings:trailerMode ? [] : [{label:'Version',value:player.current && player.current.target.vf ? 'VF' : 'VOSTFR',icon:'captions',menu:'version'},{label:'Source',value:player.current && player.current.readerLabel || 'Automatique',icon:'monitor-play',menu:'source'},{label:'Qualité',value:player.current && player.current.qualityLabel || 'Automatique',icon:'settings',menu:'quality'}]
+    function seekDelta(){if(trailerMode || player.proposedMs<0)return '';var d=player.proposedMs-player.positionMs;return (d<0 ? '−' : '+')+player.clock(Math.abs(d));}
     Rectangle {anchors.bottom:parent.bottom;width:1280;height:360;gradient:Gradient {GradientStop {position:0;color:'#00000000'} GradientStop {position:.35;color:'#a8000000'} GradientStop {position:.72;color:'#e8000000'} GradientStop {position:1;color:'#f8000000'}}}
-    Text {x:64;y:500;width:535;height:48;visible:!chrome.trailerMode || chrome.player.proposedMs<0;text:chrome.player.title;textFormat:Text.PlainText;color:'white';font.family:chrome.family;font.pixelSize:34;font.weight:Font.Bold;elide:Text.ElideRight}
-    Text {x:64;y:548;width:535;visible:!chrome.trailerMode || chrome.player.proposedMs<0;text:chrome.player.chapter;textFormat:Text.PlainText;color:'#dedee5';font.family:chrome.family;font.pixelSize:20;elide:Text.ElideRight}
+    Text {x:64;y:500;width:535;height:48;visible:chrome.player.proposedMs<0;text:chrome.player.title;textFormat:Text.PlainText;color:'white';font.family:chrome.family;font.pixelSize:34;font.weight:Font.Bold;elide:Text.ElideRight}
+    Text {x:64;y:548;width:535;visible:chrome.player.proposedMs<0;text:chrome.player.chapter;textFormat:Text.PlainText;color:'#dedee5';font.family:chrome.family;font.pixelSize:20;elide:Text.ElideRight}
     Row {x:688;y:506;spacing:12;visible:!chrome.player.failure || chrome.player.menuOpened
         Repeater {model:chrome.settings
             PlayerSetting {family:chrome.family;label:modelData.label;value:modelData.value;icon:modelData.icon;focused:!chrome.player.menuOpened && chrome.player.zone==='actions' && chrome.player.controlIndex===index;opened:chrome.player.menuName===modelData.menu;onActivated:chrome.player.openMenu(modelData.menu)}
@@ -25,8 +26,11 @@ Item {
         Rectangle {x:-width/2;y:parent.height/2-height/2;width:chrome.player.zone==='seek' ? 22 : 14;height:width;radius:width/2;color:'white';transform:Translate {x:track.width*(chrome.trailerMode ? chrome.timelineRatio : chrome.player.durationMs>0 ? Math.min(1,(chrome.player.proposedMs>=0 ? chrome.player.proposedMs : chrome.player.positionMs)/chrome.player.durationMs) : 0)
             Behavior on x {enabled:chrome.trailerMode && !chrome.reducedMotion;NumberAnimation {duration:Motion.ms('press');easing.type:Easing.Bezier;easing.bezierCurve:Motion.easeOut()}}
         }}
-        Rectangle {x:Math.max(0,Math.min(parent.width-width,parent.width*(chrome.player.durationMs>0 ? chrome.player.proposedMs/chrome.player.durationMs : 0)-width/2));y:-66;width:104;height:42;radius:10;color:'#eb1b1d24';border.color:'#35ffffff';visible:chrome.player.proposedMs>=0
-            Text {anchors.centerIn:parent;text:chrome.player.clock(chrome.player.proposedMs);color:'white';font.family:chrome.family;font.pixelSize:23;font.weight:Font.DemiBold}
+        // Le temps visé et l'écart avec la position : on sait de combien on saute, et le pas
+        // (10, 30 ou 60 s) se lit dans l'écart quand on insiste.
+        Rectangle {objectName:'seekBubble';x:Math.max(0,Math.min(parent.width-width,parent.width*(chrome.player.durationMs>0 ? chrome.player.proposedMs/chrome.player.durationMs : 0)-width/2));y:chrome.trailerMode ? -66 : -84;width:chrome.trailerMode ? 104 : 120;height:chrome.trailerMode ? 42 : 62;radius:10;color:'#eb1b1d24';border.color:'#35ffffff';visible:chrome.player.proposedMs>=0
+            Text {anchors.horizontalCenter:parent.horizontalCenter;y:chrome.trailerMode ? 7 : 5;text:chrome.player.clock(chrome.player.proposedMs);color:'white';font.family:chrome.family;font.pixelSize:23;font.weight:Font.DemiBold}
+            Text {objectName:'seekDelta';anchors.horizontalCenter:parent.horizontalCenter;y:35;visible:!chrome.trailerMode;text:chrome.seekDelta();color:'#c9cbd4';font.family:chrome.family;font.pixelSize:16}
         }
     }
     Text {x:64;y:620;text:chrome.player.clock(chrome.displayPositionMs);color:'#ededf2';font.family:chrome.family;font.pixelSize:18}

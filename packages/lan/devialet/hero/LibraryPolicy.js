@@ -4,7 +4,8 @@ var statuses=[['PLANNING','À voir'],['CURRENT','En cours'],['COMPLETED','Termin
 function knownStatus(value){return statuses.some(function(s){return s[0]===value;});}
 function statusLabel(value){for(var i=0;i<statuses.length;i++)if(statuses[i][0]===value)return statuses[i][1];return 'Suivi à confirmer';}
 function score(value){return typeof value==='number' && isFinite(value) && value>0 ? String(value).replace('.',',') : 'Non noté';}
-function step(value,direction){if(!(value>0))return .5;return Math.max(.5,Math.min(10,(direction>0 ? Math.floor(value*2+1.000001) : Math.ceil(value*2-1.000001))/2));}
+// Sous 0,5, la note est retirée (null) : « Retirer la note » est le bas de l'échelle, pas un bouton à part.
+function step(value,direction){if(!(value>0))return direction>0 ? .5 : null;if(direction<0 && value<=.5)return null;return Math.max(.5,Math.min(10,(direction>0 ? Math.floor(value*2+1.000001) : Math.ceil(value*2-1.000001))/2));}
 function uuid(){return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){var r=Math.floor(Math.random()*16);return (c==='x' ? r : (r&3)|8).toString(16);});}
 function matches(entry,patch){
     if(!entry || entry.presence!=='present' || !entry.moi)return false;
