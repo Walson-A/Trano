@@ -162,7 +162,8 @@ Application {
             if(app.homeContext && !replacing){playbackError('Actualisation de ton suivi…');rejectConversation(requestId);return;}
             if(episode.status===Loader.Error){playbackError('Le lecteur n’a pas pu être chargé. Relance Atlas TV.');rejectConversation(requestId);return;}
             if(!media || !(media.anilist_id>0) || !target || !(target.numero>0)){playbackError('Cet épisode ne dispose pas d’une identité de lecture compatible TV.');return;}
-            var known=knownEpisode(media,target.numero);
+            var version=target.version && /^[a-z0-9-]{1,40}$/.test(target.version.cle || '') ? target.version : null;
+            var known=version ? null : knownEpisode(media,target.numero);
             if(Episode.blocked(known)){
                 var blocked=Episode.notice(known);
                 if(replacing)episode.item.changeFailed(blocked);else playbackError(blocked);rejectConversation(requestId,'episode_not_aired');return;
@@ -176,6 +177,7 @@ Application {
             for(var i=0;excluded && i<excluded.length;i++)if(/^[a-f0-9]{64}$/.test(excluded[i]) && excluded[i]!==choice.readerId && readers.indexOf(excluded[i])<0)readers.push(excluded[i]);
             readers=readers.slice(-8);
             var body={anilist_id:media.anilist_id,episode:target.numero,lang:target.vf ? 'vf' : 'vo',exclude_readers:readers};
+            if(version)body.version=version.cle;
             if(session.hlsEnabled)body.accept_hls=true;
             if(choice.source)body.source=choice.source;if(choice.readerId)body.reader_id=choice.readerId;if(choice.variantId)body.variant_id=choice.variantId;if(forceRefresh)body.force_refresh=true;
             hero.previewEnabled=false;if(!replacing)waiting.forceActiveFocus();
@@ -185,7 +187,7 @@ Application {
                 var rejection=value && value.error;
                 readerFailures=Readers.remember(readerFailures,body,rejection && rejection.details ? rejection.details.attempts : value && value.attempts,Date.now(),rejection && rejection.code);
                 var url=value && value.stream ? session.mediaUrl(value.stream.path,'episode') : '';
-                if(status!==200 || !value || value.anilist_id!==body.anilist_id || value.episode!==body.episode || value.lang!==body.lang || !/^[a-f0-9-]{36}$/.test(value.id || '') || !url || choice.readerId && value.reader_id!==choice.readerId || choice.source && value.source!==choice.source || choice.variantId && value.variant_id!==choice.variantId){
+                if(status!==200 || !value || value.anilist_id!==body.anilist_id || value.episode!==body.episode || value.lang!==body.lang || (value.version || '')!==(body.version || '') || !/^[a-f0-9-]{36}$/.test(value.id || '') || !url || choice.readerId && value.reader_id!==choice.readerId || choice.source && value.source!==choice.source || choice.variantId && value.variant_id!==choice.variantId){
                     logResolveFailure(status,value);
                     var error=value && value.error || {};
                     var message=error.code==='episode_not_aired' ? Episode.notice({diffusion:error.details && error.details.diffusion || {etat:'a_venir'},lancable:false}) : error.code==='episode_out_of_range' ? 'Cet épisode ne fait pas partie de cette saison.' : error.code==='airing_unavailable' ? 'Le calendrier est temporairement indisponible. Réessaie dans un instant.' : status===429 ? 'Une vidéo est en cours de préparation. Réessaie dans un instant.' : 'Ce flux est indisponible pour le moment.';
@@ -193,13 +195,13 @@ Application {
                     if(replacing)episode.item.changeFailed(message);else {playbackError(message);returnFromPlayback();}return;
                 }
                 readerFailures=Readers.recovered(readerFailures,body,value.source,value.reader_id);
-                var sameEpisode=replacing && old.media.anilist_id===media.anilist_id && old.target.numero===target.numero;
+                var sameEpisode=replacing && old.media.anilist_id===media.anilist_id && old.target.numero===target.numero && (old.target.version ? old.target.version.cle : '')===(version ? version.cle : '');
                 var resume=typeof resumeOverride==='number' && isFinite(resumeOverride) && resumeOverride>=0 ? resumeOverride : sameEpisode ? episode.item.checkpointMs : value.resume ? value.resume.position_ms || 0 : 0;
                 var intent=requestId ? true : replacing ? episode.item.failure ? true : episode.item.wantsPlaying : true;
                 // This reports the old session before installing the new identity/sequence.
                 if(replacing)episode.item.retire();
                 playbackId=value.id;sequence=0;
-                pendingPlayback={remoteRequestId:requestId || '',url:url,path:value.stream.path,title:media.titre,chapter:'Épisode '+target.numero+' · '+(target.vf ? 'VF' : 'VOSTFR'),resume:resume,playingIntent:intent,media:media,target:{numero:target.numero,vf:!!target.vf},readerId:/^[a-f0-9]{64}$/.test(value.reader_id || '') ? value.reader_id : '',source:['voiranime','anime-sama','franime'].indexOf(value.source)>=0 ? value.source : '',readerLabel:typeof value.reader==='string' ? (value.source==='franime' ? 'FrAnime · ' : '')+value.reader.slice(0,160) : '',qualityLabel:value.quality && typeof value.quality.label==='string' ? value.quality.label.slice(0,80) : '',choice:{source:choice.source || '',readerId:choice.readerId || '',variantId:choice.variantId || ''},excluded:readers};
+                pendingPlayback={remoteRequestId:requestId || '',url:url,path:value.stream.path,title:media.titre,chapter:(version ? version.libelle+' · ' : '')+'Épisode '+target.numero+' · '+(target.vf ? 'VF' : 'VOSTFR'),resume:resume,playingIntent:intent,media:media,target:{numero:target.numero,vf:!!target.vf,version:version},readerId:/^[a-f0-9]{64}$/.test(value.reader_id || '') ? value.reader_id : '',source:['voiranime','anime-sama','franime'].indexOf(value.source)>=0 ? value.source : '',readerLabel:typeof value.reader==='string' ? (value.source==='franime' ? 'FrAnime · ' : '')+value.reader.slice(0,160) : '',qualityLabel:value.quality && typeof value.quality.label==='string' ? value.quality.label.slice(0,80) : '',choice:{source:choice.source || '',readerId:choice.readerId || '',variantId:choice.variantId || ''},excluded:readers};
                 if(episode.status===Loader.Ready)startEpisode();
             });
         }

@@ -58,6 +58,12 @@ FocusScope {
     property bool french: false
     property int languageIndex: 0
     property var stack: []
+    // Les versions de la saison (Director's Cut…) : 0 = version TV, i>0 = versions[i-1].
+    property var versions: []
+    property int versionIndex: 0
+    property int versionChoice: 0
+    property int versionGeneration: 0
+    readonly property var activeVersion: versionIndex>0 && versionIndex<=versions.length ? versions[versionIndex-1] : null
     readonly property var card: detail && detail.carte ? detail.carte : media
     readonly property var episodes: episodeData && episodeData.episodes ? episodeData.episodes : []
     readonly property var seasons: detail && detail.saisons ? detail.saisons : []
@@ -67,7 +73,7 @@ FocusScope {
     readonly property var currentEpisode: episodes.length ? episodes[Math.min(episodeIndex,episodes.length-1)] : null
     readonly property bool canPrevious: pageStart>1
     readonly property bool canNext: !!episodeData && pageStart+episodes.length<=(Number.isInteger(episodeData.borne_connue) ? episodeData.borne_connue : episodeData.total)
-    readonly property bool hasFrench: episodes.some(function(e){return e.franime && e.franime.vf;}) || !!(card && card.franime && card.franime.vf)
+    readonly property bool hasFrench: activeVersion ? activeVersion.langues.indexOf('vf')>=0 : episodes.some(function(e){return e.franime && e.franime.vf;}) || !!(card && card.franime && card.franime.vf)
     readonly property int personalId:card && card.anilist_id>0 ? card.anilist_id : 0
     readonly property var personalEntry:library.entry(personalId)
     readonly property string personalPhase:library.phase(personalId)
@@ -173,7 +179,9 @@ FocusScope {
         var key=identity(c),turn=++generation;episodeGeneration++;media=c;detail=null;episodeData=null;extrasError='';state='loading';episodeState='loading';zone='actions';actionIndex=0;episodeIndex=0;relationIndex=0;castIndex=0;recommendationIndex=0;pageIndex=0;pageStart=1;
         french=false;languageIndex=0;viewport.contentY=0;
         episodeIdentity='';pendingEpisodesReady=null;
+        versions=[];versionIndex=0;versionChoice=0;versionGeneration++;
         if(!key || !transport){state='error';return;}
+        loadVersions(key);
         loadPersonal();
         prepareEpisodes();
         artworks.request(c,'poster',true);
@@ -187,7 +195,39 @@ FocusScope {
             if(value.complements_a_charger)scheduleDetailExtras(key,turn);
         });
     }
+    function versionLabel(v){return v ? v.libelle+(v.annee ? ' · '+v.annee : '') : (card && card.format==='ONA' ? 'Version originale' : 'Version TV')+(card && card.annee ? ' · '+card.annee : '');}
+    function versionStatus(v){if(!v || !v.progression)return '';var p=v.progression;return p.anilist==='saison_marquee_vue' ? 'Terminé · saison marquée vue sur AniList' : p.termine ? 'Terminé · AniList sera mis à jour' : p.vus+'/'+v.episodes+' vus · la saison sera marquée vue sur AniList à la fin';}
+    function loadVersions(key){
+        if(!key || !key.anilist_id || !transport)return;var turn=++versionGeneration;
+        transport.api('/tv/v1/catalog/versions',{anilist_id:key.anilist_id},45000,function(status,value){
+            if(!opened || turn!==versionGeneration || status!==200 || !value || value.anilist_id!==key.anilist_id || !Array.isArray(value.versions))return;
+            versions=value.versions.filter(function(v){return v && /^[a-z0-9-]{1,40}$/.test(v.cle || '') && Number.isInteger(v.episodes) && v.episodes>0 && Array.isArray(v.langues) && v.langues.length;}).slice(0,4);
+        });
+    }
+    function selectVersion(i){
+        if(i<0 || i>versions.length)return;
+        if(i===versionIndex){zone='episodes';scrollToZone();return;}
+        versionIndex=i;versionChoice=i;episodeIdentity='';episodeIndex=0;
+        if(activeVersion){if(french && activeVersion.langues.indexOf('vf')<0)french=false;if(!french && activeVersion.langues.indexOf('vo')<0)french=true;loadVersionEpisodes(0);}
+        else prepareEpisodes();
+    }
+    function loadVersionEpisodes(selectedNumber){
+        var v=activeVersion;if(!v || !card)return;episodeEnrichment.stop();pendingEpisodeExtras=null;
+        var key={anilist_id:card.anilist_id,version:v.cle,lang:french ? 'vf' : 'vo'},turn=++episodeGeneration,parentTurn=generation;
+        episodeError='';episodeRetrySeconds=0;episodeState='loading';episodeData=null;pageStart=1;episodeIndex=0;episodeIdentity='v:'+card.anilist_id+':'+v.cle+':'+key.lang;
+        transport.api('/tv/v1/catalog/version-episodes',key,45000,function(status,value){
+            if(!opened || turn!==episodeGeneration || parentTurn!==generation || !view.activeVersion || view.activeVersion.cle!==key.version)return;
+            if(status!==200 || !value || value.anilist_id!==key.anilist_id || !Array.isArray(value.episodes)){episodeError=RequestState.message(status,value,'Les épisodes de cette version sont momentanément indisponibles.');episodeState='error';return;}
+            if(value.version && value.version.cle===key.version){var copy=versions.slice();copy[versionIndex-1]=value.version;versions=copy;}
+            var rows=value.episodes.filter(function(e){return Number.isInteger(e.numero) && e.numero>0;}).map(function(e){return {numero:e.numero,titre:typeof e.titre==='string' ? e.titre : '',vu:e.vu===true,position_ms:e.position_ms || 0,duration_ms:e.duration_ms || 0};});
+            episodeData={episodes:rows,total:value.total};episodeState='ready';
+            var next=selectedNumber || (view.activeVersion.progression && view.activeVersion.progression.a_reprendre ? view.activeVersion.progression.a_reprendre.episode : 1);
+            for(var i=0;i<rows.length;i++)if(rows[i].numero===next)episodeIndex=i;
+            console.info('ATLAS_TV_VERSION_EPISODES_READY',key.anilist_id,key.version,rows.length);
+        });
+    }
     function loadEpisodes(start,selectedNumber) {
+        if(activeVersion){loadVersionEpisodes(selectedNumber);return;}
         episodeEnrichment.stop();pendingEpisodeExtras=null;
         var key=identity(card);if(episodeKey(card)===episodeIdentity && start===pageStart && episodeRetrySeconds>0)return;var turn=++episodeGeneration,parentTurn=generation;
         if(!key){episodeState='error';return;}
@@ -208,18 +248,24 @@ FocusScope {
         });
     }
     Timer {interval:1000;repeat:true;running:view.episodeRetrySeconds>0;onTriggered:view.episodeRetrySeconds=Math.max(0,Math.ceil((view.episodeRetryAt-Date.now())/1000))}
-    function remember() {return {media:media,detail:detail,episodeData:episodeData,zone:zone,actionIndex:actionIndex,episodeIndex:episodeIndex,seasonIndex:seasonIndex,relationIndex:relationIndex,castIndex:castIndex,recommendationIndex:recommendationIndex,pageStart:pageStart,french:french,languageIndex:languageIndex,scroll:viewport.contentY};}
+    function remember() {return {media:media,detail:detail,episodeData:episodeData,zone:zone,actionIndex:actionIndex,episodeIndex:episodeIndex,seasonIndex:seasonIndex,relationIndex:relationIndex,castIndex:castIndex,recommendationIndex:recommendationIndex,pageStart:pageStart,french:french,languageIndex:languageIndex,versions:versions,versionIndex:versionIndex,scroll:viewport.contentY};}
     function visit(c) {if(!identity(c))return;stack=stack.slice(-11).concat([remember()]);load(c);forceActiveFocus();}
     function back() {
         console.info('ATLAS_TV_DETAIL_BACK',card && card.anilist_id || 0,stack.length,zone);
         generation++;episodeGeneration++;pendingEpisodesReady=null;
         stopExtras();
         fullPreview=false;stopPreview();previewSuspended=false;
-        if(stack.length){var saved=stack[stack.length-1],turn=generation;stack=stack.slice(0,-1);media=saved.media;detail=saved.detail;episodeData=saved.episodeData;state=detail ? 'ready' : 'error';episodeState=episodeData ? 'ready' : 'error';zone=saved.zone;actionIndex=saved.actionIndex;episodeIndex=saved.episodeIndex;seasonIndex=saved.seasonIndex;relationIndex=saved.relationIndex;castIndex=saved.castIndex;recommendationIndex=saved.recommendationIndex;pageStart=saved.pageStart;french=saved.french;languageIndex=saved.languageIndex;forceActiveFocus();Qt.callLater(function(){if(view.opened && turn===view.generation){viewport.contentY=saved.scroll;view.resumeExtras();}});}
+        if(stack.length){var saved=stack[stack.length-1],turn=generation;stack=stack.slice(0,-1);media=saved.media;detail=saved.detail;episodeData=saved.episodeData;state=detail ? 'ready' : 'error';episodeState=episodeData ? 'ready' : 'error';zone=saved.zone;actionIndex=saved.actionIndex;episodeIndex=saved.episodeIndex;seasonIndex=saved.seasonIndex;relationIndex=saved.relationIndex;castIndex=saved.castIndex;recommendationIndex=saved.recommendationIndex;pageStart=saved.pageStart;french=saved.french;languageIndex=saved.languageIndex;versionGeneration++;versions=saved.versions || [];versionIndex=saved.versionIndex || 0;versionChoice=versionIndex;forceActiveFocus();Qt.callLater(function(){if(view.opened && turn===view.generation){viewport.contentY=saved.scroll;view.resumeExtras();}});}
         else {opened=false;closed();}
     }
     function launch(e) {
         if(!card || !e)return;
+        if(activeVersion){
+            // Un épisode de version se numérote dans la version ; il ne fait jamais avancer AniList.
+            if(!(card.anilist_id>0))return;
+            extrasError='';detailEnrichment.stop();episodeEnrichment.stop();
+            playRequested(card,{numero:e.numero,vf:french,version:{cle:activeVersion.cle,libelle:activeVersion.libelle,total:activeVersion.episodes}});return;
+        }
         if(Episode.due(e)){extrasError='Actualisation de la diffusion…';loadEpisodes(pageStart,e.numero);return;}
         if(Episode.blocked(e)){extrasError=Episode.notice(e);return;}
         if(french && !(transport && transport.airingEnabled) && !(e.franime && e.franime.vf)){extrasError='Cet épisode n’est pas disponible en VF. Choisis VOSTFR.';return;}
@@ -230,22 +276,26 @@ FocusScope {
         if(state==='error'){load(media);return;}
         if(episodeState==='error'){loadEpisodes(pageStart,0);return;}
         if(episodeState!=='ready')return;
+        if(activeVersion){var resume=activeVersion.progression && activeVersion.progression.a_reprendre ? activeVersion.progression.a_reprendre.episode : 1;for(var j=0;j<episodes.length;j++)if(episodes[j].numero===resume){launch(episodes[j]);return;}if(currentEpisode)launch(currentEpisode);return;}
         var number=card && card.a_lancer ? card.a_lancer.numero : card && card.moi ? (card.moi.progression || 0)+1 : 1;
         for(var i=0;i<episodes.length;i++)if(episodes[i].numero===number){launch(episodes[i]);return;}
         if(currentEpisode)launch(currentEpisode);
     }
-    function zones() {var list=['back','actions'];if(seasons.length>1)list.push('seasons');list.push('language');if(episodes.length)list.push('episodes');if(canPrevious || canNext)list.push('pages');if(relations.length)list.push('relations');if(cast.length)list.push('cast');if(recommendations.length)list.push('recommendations');list.push('about');return list;}
+    function zones() {var list=['back','actions'];if(seasons.length>1)list.push('seasons');if(versions.length)list.push('versions');list.push('language');if(episodes.length)list.push('episodes');if(canPrevious || canNext)list.push('pages');if(relations.length)list.push('relations');if(cast.length)list.push('cast');if(recommendations.length)list.push('recommendations');list.push('about');return list;}
     function scrollToZone() {
-        var item=zone==='seasons' ? seasonSection : zone==='language' || zone==='episodes' || zone==='pages' ? episodeSection : zone==='relations' ? relationSection : zone==='cast' ? castSection : zone==='recommendations' ? recommendationSection : zone==='about' ? aboutSection : null;
+        var item=zone==='seasons' ? seasonSection : zone==='versions' || zone==='language' || zone==='episodes' || zone==='pages' ? episodeSection : zone==='relations' ? relationSection : zone==='cast' ? castSection : zone==='recommendations' ? recommendationSection : zone==='about' ? aboutSection : null;
         viewport.contentY=item ? Math.min(item.y-16,Math.max(0,viewport.contentHeight-viewport.height)) : 0;
         if(zone==='episodes')episodeRail.positionViewAtIndex(episodeIndex,ListView.Contain);
     }
-    function move(direction) {var list=zones(),at=list.indexOf(zone==='trailer' ? 'back' : zone),next=Math.max(0,Math.min(list.length-1,at+direction));if(next!==at)zone=list[next];if(zone==='language')languageIndex=french ? 1 : 0;scrollToZone();}
+    function move(direction) {var list=zones(),at=list.indexOf(zone==='trailer' ? 'back' : zone),next=Math.max(0,Math.min(list.length-1,at+direction));if(next!==at)zone=list[next];if(zone==='language')languageIndex=french ? 1 : 0;if(zone==='versions')versionChoice=versionIndex;scrollToZone();}
     function activate() {
         if(zone==='back')back();else if(zone==='actions'){if(actionIndex===1){zone=episodes.length ? 'episodes' : 'language';scrollToZone();}else if(actionIndex>=2)personalAction(actionIndex===3);else primary();}
         else if(zone==='trailer')openFullPreview();
         else if(zone==='seasons') {var c=seasons[seasonIndex];if(c && (!card || c.anilist_id!==card.anilist_id))visit(c);}
-        else if(zone==='language'){if(languageIndex===0 || hasFrench || transport && transport.airingEnabled){french=languageIndex===1;extrasError='';}else extrasError='La VF n’est pas disponible pour cette saison.';}
+        else if(zone==='versions')selectVersion(versionChoice);
+        else if(zone==='language'){
+            if(activeVersion){var lang=languageIndex===1 ? 'vf' : 'vo';if(activeVersion.langues.indexOf(lang)<0){extrasError=lang==='vf' ? 'Cette version n’existe pas en VF.' : 'Cette version n’existe qu’en VF.';return;}if(french!==(languageIndex===1)){french=languageIndex===1;extrasError='';loadVersionEpisodes(currentEpisode ? currentEpisode.numero : 0);}return;}
+            if(languageIndex===0 || hasFrench || transport && transport.airingEnabled){french=languageIndex===1;extrasError='';}else extrasError='La VF n’est pas disponible pour cette saison.';}
         else if(zone==='episodes')launch(currentEpisode);
         else if(zone==='pages'){if(pageIndex===0 && canPrevious)loadEpisodes(Math.max(1,pageStart-40),0);else if(pageIndex===1 && canNext)loadEpisodes(pageStart+episodes.length,0);}
         else if(zone==='relations')visit(relations[relationIndex].carte);
@@ -256,6 +306,7 @@ FocusScope {
         else if(zone==='back' && delta>0 && hasTrailer)zone='trailer';
         else if(zone==='trailer' && delta<0)zone='back';
         else if(zone==='language')languageIndex=delta>0 ? 1 : 0;
+        else if(zone==='versions')versionChoice=Math.max(0,Math.min(versions.length,versionChoice+delta));
         else if(zone==='seasons')seasonIndex=Math.max(0,Math.min(seasons.length-1,seasonIndex+delta));
         else if(zone==='episodes'){episodeIndex=Math.max(0,Math.min(episodes.length-1,episodeIndex+delta));episodeRail.positionViewAtIndex(episodeIndex,ListView.Contain);}
         else if(zone==='pages')pageIndex=delta>0 ? 1 : 0;
@@ -304,8 +355,15 @@ FocusScope {
                 }
             }
             Column {id:episodeSection;x:64;width:1152;spacing:12
+                Row {objectName:'detailVersions';spacing:12;visible:view.versions.length>0;height:visible ? implicitHeight : 0
+                    Repeater {model:view.versions.length ? view.versions.length+1 : 0
+                        HeroButton {width:Math.max(220,versionText.implicitWidth+56);label:view.versionLabel(index>0 ? view.versions[index-1] : null);family:view.family;selected:view.versionIndex===index;focused:view.zone==='versions' && view.versionChoice===index;onActivated:{view.zone='versions';view.versionChoice=index;view.activate();}
+                            Text {id:versionText;visible:false;text:parent.label;font.family:view.family;font.pixelSize:19}
+                        }
+                    }
+                }
                 Row {width:1152;spacing:24
-                    Text {objectName:'detailEpisodeCount';width:760;anchors.verticalCenter:parent.verticalCenter;text:Episode.heading(view.episodeData || view.card);color:'white';font.family:view.family;font.pixelSize:26;font.weight:Font.DemiBold;elide:Text.ElideRight}
+                    Text {objectName:'detailEpisodeCount';width:760;anchors.verticalCenter:parent.verticalCenter;text:view.activeVersion ? view.activeVersion.libelle+' · '+view.activeVersion.episodes+' épisodes' : Episode.heading(view.episodeData || view.card);color:'white';font.family:view.family;font.pixelSize:26;font.weight:Font.DemiBold;elide:Text.ElideRight}
                     Row {spacing:10
                         HeroButton {objectName:'episodeLanguage';width:160;label:'VOSTFR';family:view.family;selected:!view.french;focused:view.zone==='language' && view.languageIndex===0;onActivated:{view.zone='language';view.languageIndex=0;view.activate();}
                             Rectangle {x:20;y:parent.height-5;width:parent.width-40;height:3;radius:1.5;color:view.zone==='language' && view.languageIndex===0 ? '#16181d' : 'white';visible:!view.french}
@@ -315,7 +373,7 @@ FocusScope {
                         }
                     }
                 }
-                Text {objectName:'detailAiringSummary';width:1152;text:Episode.airingDetail(view.episodeData);visible:!!text;color:'#969eaf';font.family:view.family;font.pixelSize:16}
+                Text {objectName:'detailAiringSummary';width:1152;text:view.activeVersion ? view.versionStatus(view.activeVersion) : Episode.airingDetail(view.episodeData);visible:!!text;color:'#969eaf';font.family:view.family;font.pixelSize:16}
                 Text {width:1152;text:view.french ? 'Version française sélectionnée pour la lecture' : 'Version originale sous-titrée en français sélectionnée';color:'#c1c5d0';font.family:view.family;font.pixelSize:17}
                 Text {height:visible ? implicitHeight : 0;visible:view.episodeState==='error' && view.state!=='error' || view.episodeState==='ready' && !view.episodes.length; text:view.episodeState==='error' ? view.episodeError || 'Les épisodes sont momentanément indisponibles.' : 'Aucun épisode à afficher.';color:'#b6b8c3';font.family:view.family;font.pixelSize:19}
                 Item {width:1152;height:visible ? 232 : 0;visible:view.episodeState==='loading';LoadingSkeleton {objectName:'episodeSkeleton';anchors.fill:parent;layout:'episodes';active:parent.visible && view.opened}}
@@ -331,7 +389,7 @@ FocusScope {
                             Rectangle {anchors.fill:parent;radius:12;color:'#20000000';border.width:2;border.color:parent.parent.targeted ? 'white' : 'transparent'}
                             Rectangle {x:12;y:12;width:38;height:30;radius:6;color:'#d0090a0d';Text {anchors.centerIn:parent;text:modelData.numero;color:'white';font.family:view.family;font.pixelSize:18;font.weight:Font.DemiBold}}
                             Rectangle {x:12;y:episodePicture.height-12;width:326;height:3;radius:1.5;color:modelData.vu ? 'white' : '#40ffffff';visible:!parent.parent.upcoming}
-                            Text {x:20;y:150;width:310;text:parent.parent.upcoming ? Episode.dateLabel(modelData.diffusion.date) : (modelData.vu ? 'Vu' : '')+(modelData.duree ? (modelData.vu ? '  ·  ' : '')+modelData.duree+' min' : '');color:'white';font.family:view.family;font.pixelSize:16;style:Text.Outline;styleColor:'#80000000';elide:Text.ElideRight}
+                            Text {x:20;y:150;width:310;text:parent.parent.upcoming ? Episode.dateLabel(modelData.diffusion.date) : (modelData.vu ? 'Vu' : !modelData.vu && modelData.position_ms>0 ? 'Repris à '+Math.round(modelData.position_ms/60000)+' min' : '')+(modelData.duree ? (modelData.vu ? '  ·  ' : '')+modelData.duree+' min' : '');color:'white';font.family:view.family;font.pixelSize:16;style:Text.Outline;styleColor:'#80000000';elide:Text.ElideRight}
                             Rectangle {x:242;y:12;width:94;height:28;radius:7;color:'#d9090a0d';visible:parent.parent.upcoming;Text {anchors.centerIn:parent;text:'À venir';font.family:view.family;font.pixelSize:15;font.weight:Font.DemiBold;color:'#d7dbe5'}}
                         }
                         MouseArea {anchors.fill:parent;onClicked:{view.zone='episodes';view.episodeIndex=index;view.launch(modelData);}}

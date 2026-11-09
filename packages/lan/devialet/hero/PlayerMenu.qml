@@ -53,8 +53,8 @@ Item {
     signal cancelRequested()
     function validId(value){return /^[a-f0-9]{64}$/.test(value || '');}
     function sourceName(value){return value==='voiranime' ? 'Voiranime' : value==='anime-sama' ? 'Anime-sama' : value==='franime' ? 'FrAnime' : '';}
-    function identity(){return {anilist_id:current.media.anilist_id,episode:current.target.numero,lang:current.target.vf ? 'vf' : 'vo'};}
-    function matches(value,key){return value && value.anilist_id===key.anilist_id && value.episode===key.episode && value.lang===key.lang;}
+    function identity(){var key={anilist_id:current.media.anilist_id,episode:current.target.numero,lang:current.target.vf ? 'vf' : 'vo'};if(current.target.version)key.version=current.target.version.cle;return key;}
+    function matches(value,key){return value && value.anilist_id===key.anilist_id && value.episode===key.episode && value.lang===key.lang && (value.version || '')===(key.version || '');}
     function close(){revision++;kind='';message='';cancelRequested();dismissed();}
     function open(name){
         if(!current || !transport)return;
@@ -62,7 +62,7 @@ Item {
         if(name==='source')loadReaders();else if(name==='quality')loadVariants();
         else if(name==='version'){
             entries=[{label:'VOSTFR',detail:'Version originale sous-titrée en français',vf:false},{label:'VF',detail:'Version française',vf:true}];index=current.target.vf ? 1 : 0;
-        }else {episodeCard=current.media;seasons=[];pageStart=Math.floor((current.target.numero-1)/40)*40+1;loadEpisodes(current.target.numero);loadSeasons();}
+        }else {episodeCard=current.media;seasons=[];pageStart=Math.floor((current.target.numero-1)/40)*40+1;loadEpisodes(current.target.numero);if(!current.target.version)loadSeasons();}
     }
     function failed(text,canRetry){state='error';message=text;retryAllowed=canRetry!==false;entries=[];}
     function loadReaders(){
@@ -117,6 +117,7 @@ Item {
     }
     function episodeEntries(rows,key){return rows.slice(0,40).filter(function(e){return Number.isInteger(e.numero) && e.numero>0;}).map(function(e){var row={};Object.keys(e).forEach(function(k){row[k]=e[k];});row.label='Épisode '+e.numero;row.titre=typeof e.titre==='string' ? e.titre : '';row.duree=typeof e.duree==='number' && e.duree>0 ? e.duree : 0;row.detail=Episode.notice(e) || (current.media.anilist_id===key.anilist_id && current.target.numero===e.numero ? 'En lecture' : e.titre || '');row.available=!Episode.blocked(e);return row;});}
     function loadEpisodes(selected){
+        if(current.target.version && episodeCard.anilist_id===current.media.anilist_id){loadVersionEpisodes(selected);return;}
         var turn=++revision,key={anilist_id:episodeCard.anilist_id,debut:pageStart,nombre:40};state='loading';entries=[];
         transport.api('/tv/v1/catalog/episodes',key,45000,function(code,value){
             if(turn!==revision || kind!=='episodes')return;
@@ -130,6 +131,18 @@ Item {
                 var rows=episodeEntries(extra.episodes,key),byNumber={};rows.forEach(function(e){byNumber[e.numero]=e;});
                 entries=episodeEntries(entries.map(function(e){return Episode.merge(e,byNumber[e.numero]);}),key);
             });
+        });
+    }
+    // Les épisodes d'une version (Director's Cut…) : numérotés dans la version, sans diffusion.
+    function loadVersionEpisodes(selected){
+        var v=current.target.version,turn=++revision,key={anilist_id:episodeCard.anilist_id,version:v.cle,lang:current.target.vf ? 'vf' : 'vo'};state='loading';entries=[];pageStart=1;
+        transport.api('/tv/v1/catalog/version-episodes',key,45000,function(code,value){
+            if(turn!==revision || kind!=='episodes')return;
+            if(code!==200 || !value || value.anilist_id!==key.anilist_id || !Array.isArray(value.episodes)){failed('Impossible de charger les épisodes de cette version.');return;}
+            total=value.episodes.length;airingData=null;
+            var rows=value.episodes.slice(0,40).filter(function(e){return Number.isInteger(e.numero) && e.numero>0;}).map(function(e){return {numero:e.numero,label:'Épisode '+e.numero,titre:typeof e.titre==='string' ? e.titre : '',duree:0,vu:e.vu===true,available:true,detail:current.target.numero===e.numero ? 'En lecture' : e.vu===true ? 'Vu' : v.libelle};});
+            var selectedIndex=0;for(var i=0;i<rows.length;i++)if(rows[i].numero===selected)selectedIndex=i;
+            index=selectedIndex;entries=rows;state='ready';showIndex();
         });
     }
     function selected(entry){
@@ -156,7 +169,7 @@ Item {
         var entry=entries[index];if(!entry)return;if(kind==='episodes' && Episode.due(entry)){loadEpisodes(entry.numero);return;}if(entry.available===false)return;
         if(kind==='seasons'){episodeCard=entry.card;kind='episodes';pageStart=1;loadEpisodes(0);return;}
         if(selected(entry)){close();return;}
-        var choice={},target={numero:current.target.numero,vf:current.target.vf},card=current.media;
+        var choice={},target={numero:current.target.numero,vf:current.target.vf,version:current.target.version || null},card=current.media;
         if(kind==='source'){if(entry.source)choice.source=entry.source;if(entry.readerId)choice.readerId=entry.readerId;}
         else if(kind==='quality'){choice.source=current.source;choice.readerId=current.readerId;if(entry.variantId)choice.variantId=entry.variantId;}
         else if(kind==='version')target.vf=entry.vf;
