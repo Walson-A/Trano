@@ -82,7 +82,8 @@ le profil le dit.
    téléphone, et chaque lancement réappaire déjà le Player. La seule piste réelle
    est un *autre lanceur* sur le réseau de l'appartement — LifeOS, sur le PC, qui a
    le JWT propriétaire et le même réseau. C'est une fonction LifeOS, hors de ce lot.
-2. **L'avis privé.** La TV l'affiche s'il arrive, mais l'engine le retire exprès de
+2. **L'avis privé** — *tranché le 10 novembre : la note s'affiche, l'avis jamais ;
+   le chemin d'affichage décrit ci-dessous est retiré.* La TV l'affiche s'il arrive, mais l'engine le retire exprès de
    toutes les réponses TV (test `private_reviews_never_leave_tv_catalogues`). Le
    laisser passer vers « Mon suivi » seulement est une décision de Walson : c'est un
    texte privé sur l'écran du salon.

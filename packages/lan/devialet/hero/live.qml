@@ -184,7 +184,8 @@ Application {
         }
         function dispatchConversation(media,intent){
             var target={numero:intent.episode,vf:intent.lang==='vf'};
-            if(playbackId)resolvePlayback(media,target,{},[],undefined,true,false,intent.request_id);else launchRequested(media,target,undefined,undefined,intent.request_id);
+            var at=Number.isInteger(intent.position_ms) && intent.position_ms>=0 ? intent.position_ms : undefined;
+            if(playbackId)resolvePlayback(media,target,{},[],at,true,false,intent.request_id);else launchRequested(media,target,undefined,at,intent.request_id);
         }
         function rejectConversation(id,code){if(id)conversation.failed(id,code || 'resolution_failed');}
         function resolvePlayback(media,target,choice,excluded,resumeOverride,replacing,forceRefresh,requestId) {
@@ -279,6 +280,7 @@ Application {
             onInteraction:conversation.localAction()
             reducedMotion:screen.reducedMotion
             onSoundChosen:session.savePreferences({son_bandes_annonces:!muted})
+            onPosterWanted:artworks.request(media,'poster',false)
             onTrailerRequested: screen.preview()
             onPlayRequested: screen.launch(media,target)
             onDetailsRequested:screen.openDetail(media)

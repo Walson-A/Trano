@@ -55,6 +55,17 @@ def run(window,session,screen,details,calls,QTest,Qt,QObject,spin,evidence):
     # `version` (null hors Director's Cut) vient des versions d'une saison : seul l'épisode compte ici.
     assert {k:v for k,v in data(screen,'pendingPlayback')['target'].items() if v is not None}=={'numero':4,'vf':True}
     move();idle();assert playbacks()[-1]['lang']=='vf'
+    # « Envoyer vers la TV » en plein épisode : position_ms passe avant media_resume (120 s dans le faux API).
+    assert receiver.valid(dict(intent(),position_ms=754000)) and receiver.valid(dict(intent(),position_ms=None)) and receiver.valid(intent())
+    assert not receiver.valid(dict(intent(),position_ms=-1)) and not receiver.valid(dict(intent(),position_ms=1.5)) and not receiver.valid(dict(intent(),position_ms=86400001))
+    here=dict(intent(episode=4,lang='vf'),position_ms=754000);kept=screen.property('playbackId');offer(here)
+    spin(lambda:abs(player().property('positionMs')-754000)<2000)
+    assert screen.property('playbackId')==kept,'Same episode: seek in place, no new stream'
+    move();idle()
+    elsewhere=dict(intent(episode=6,lang='vo'),position_ms=421000);offer(elsewhere)
+    spin(lambda:screen.property('playbackId')!=kept and player().property('playing'))
+    assert data(screen,'pendingPlayback')['resume']==421000 and abs(player().property('positionMs')-421000)<2000,(data(screen,'pendingPlayback')['resume'],player().property('positionMs'))
+    move();idle()
     # Local Return during delayed resolution invalidates its late stream callback.
     session.setProperty('delayPlaybacks',True);cancelled=intent(episode=5);offer(cancelled)
     spin(lambda:screen.property('resolving'));pending=len(data(session,'pendingPlaybacks'))-1;kept=screen.property('playbackId')

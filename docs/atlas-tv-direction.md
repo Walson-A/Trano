@@ -1,5 +1,9 @@
 # Atlas sur la télévision : base réutilisable et premier parcours
 
+[Top 10, note sans avis, position envoyée](research/2026-11-10-atlas-tv-top10-note-position.md).
+Le Top 10 du PC avec ses grands rangs, lisibles à 3 m ; la note visible dans Ma liste et
+l’avis jamais affiché (décision de Walson) ; `position_ms` dans les intentions de lecture.
+
 [Parité avec l’audit PC / mobile / TV du 9 novembre](research/2026-11-09-atlas-tv-parite.md).
 Carte « À suivre », préférences communes (langue par série, lecteur retenu, suivant
 automatique, son), barre Reprendre, épisodes au premier écran de la fiche, synopsis

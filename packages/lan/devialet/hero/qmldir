@@ -27,3 +27,4 @@ EpisodeArtworkCache EpisodeArtworkCache.qml
 TrailerPlayer TrailerPlayer.qml
 Toast Toast.qml
 UpNext UpNext.qml
+Top10Card Top10Card.qml

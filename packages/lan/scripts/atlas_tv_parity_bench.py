@@ -67,6 +67,22 @@ def run(window, session, screen, hero, details, calls, QTest, Qt, QObject, spin,
     shot('home-resume-bar')
     report['resumeBar'] = card.property('subtitle')
 
+    # 1b. Le Top 10 du moment, comme sur le PC : rang en grand derrière l'affiche, rangée qui défile.
+    rows = [r['id'] for r in data(hero, 'rows')]
+    assert 'top10' in rows, rows
+    hero.selectRow(rows.index('top10')); hero.setProperty('zone', 'rail'); hero.choose(0); QTest.qWait(400)
+    first = visual('heroTop10Card0')
+    assert first is not None and first.property('rank') == 1 and first.property('focused') is True
+    shot('home-top10')
+    for _ in range(9):
+        QTest.keyClick(window, Qt.Key_Right)
+    QTest.qWait(500)
+    last = visual('heroTop10Card9')
+    assert last is not None and last.property('rank') == 10 and last.property('focused') is True
+    assert data(hero, 'selected')['anilist_id'] == data(hero, 'rows')[rows.index('top10')]['cartes'][9]['anilist_id']
+    shot('home-top10-dix')
+    hero.selectMode('resume'); hero.setProperty('zone', 'actions')
+
     # 2. Avis fugace : en bas, il s'efface seul.
     hero.setProperty('zone', 'actions')
     hero.setProperty('notice', 'La progression n’a pas pu être synchronisée.')
@@ -146,6 +162,8 @@ def run(window, session, screen, hero, details, calls, QTest, Qt, QObject, spin,
 
     # 7. Avance plus fine : 10 s, puis 30 s quand on insiste dans le même sens.
     p = player()
+    # La reprise doit être faite (position réelle, plus de saut en attente) avant de viser.
+    spin(lambda: p.property('resumed') and p.property('observationResumeTarget') < 0 and p.property('positionMs') > 1000)
     position = p.property('positionMs')
     p.setProperty('controlsVisible', True); p.setProperty('zone', 'seek')
     for _ in range(4):
@@ -162,9 +180,13 @@ def run(window, session, screen, hero, details, calls, QTest, Qt, QObject, spin,
     screen.launch(details['154587']['carte'], {'numero': 1, 'vf': True, 'explicitLanguage': True}, [], None)
     spin(lambda: player() is not None and player().property('playing') is True)
     decoder = player().findChild(QObject, 'episodeMedia')
-    decoder.setProperty('position', int(decoder.property('duration') * 0.9))
-    QTest.qWait(100)
-    assert player().property('upNextPrepared') is True, {'suivant': data(screen, 'pendingPlayback').get('suivant'), 'observation': player().property('observationResumeTarget'), 'seek': player().property('seekTarget'), 'position': decoder.property('position'), 'ended': player().property('ended'), 'failure': player().property('failure')}
+    def near_end():
+        d = player().findChild(QObject, 'episodeMedia')
+        if d.property('position') < d.property('duration') * 0.8:
+            d.setProperty('position', int(d.property('duration') * 0.9))
+        return player().property('upNextPrepared') is True
+    spin(near_end)
+    decoder = player().findChild(QObject, 'episodeMedia')
     decoder.setProperty('status', 7)
     upnext = player().findChild(QObject, 'upNext')
     spin(lambda: upnext.property('visible') is True)
@@ -204,7 +226,8 @@ def run(window, session, screen, hero, details, calls, QTest, Qt, QObject, spin,
     session.setProperty('nextSuivant', None)
     close_player()
 
-    # 9. Mon suivi : la progression se modifie ; la note descend jusqu'à « Non noté » ; l'avis s'affiche s'il arrive.
+    # 9. Mon suivi : la progression se modifie ; la note est visible ; l'avis écrit ne s'affiche jamais,
+    #    même si une réponse le portait (décision de Walson, 10 novembre).
     session.setProperty('libraryEnabled', True)
     session.seedLibraryJson(154587, json.dumps({'anilist_id': 154587, 'presence': 'present', 'revision': 'r1', 'editable': True,
                                                 'moi': {'statut': 'CURRENT', 'note': 8, 'progression': 5,
@@ -217,18 +240,36 @@ def run(window, session, screen, hero, details, calls, QTest, Qt, QObject, spin,
     editor = window.findChild(QObject, 'libraryEditor')
     detail.personalAction(True)
     spin(lambda: editor.property('editable'))
-    assert editor.property('review').startswith('Une lenteur'), 'The private review is shown when the engine provides it'
+    assert '8' in window.findChild(QObject, 'detailRate').property('label'), 'The rating is visible on the detail page'
+    def texts(item):
+        out = []
+        for child in item.childItems():
+            value = child.property('text')
+            if isinstance(value, str) and child.property('visible'):
+                out.append(value)
+            out.extend(texts(child))
+        return out
+    assert not any('lenteur' in t for t in texts(window.contentItem())), 'A written review must never reach the TV screen'
     assert editor.property('total') == 28
     editor.setProperty('zone', 'progress')
     QTest.keyClick(window, Qt.Key_Right); QTest.keyClick(window, Qt.Key_Right)
     assert editor.property('draftProgress') == 7 and editor.property('dirty')
-    shot('followup-progress-review')
+    shot('followup-progress-note')
     editor.setProperty('zone', 'actions'); editor.setProperty('actionIndex', 0)
     QTest.keyClick(window, Qt.Key_Return)
     spin(lambda: not editor.property('opened'))
     write = [b for path, b in calls if path == '/tv/v1/library-update'][-1]
     assert write['progression'] == 7 and 'note' not in write and 'statut' not in write, write
     report['progressEdited'] = True
+    QTest.keyClick(window, Qt.Key_Back); QTest.qWait(80)
+
+    # 9b. Ma liste : ta note sur chaque affiche notée, lisible sans focus.
+    screen.openPanel('library')
+    library = window.findChild(QObject, 'atlasLibrary')
+    spin(lambda: library.property('state') == 'ready' and len(data(library, 'results')) > 0)
+    QTest.qWait(300)
+    assert visual('posterNote') is not None, 'The rating badge is shown on Ma liste posters'
+    shot('library-notes')
     QTest.keyClick(window, Qt.Key_Back); QTest.qWait(80)
 
     # 10. Recherche : accents au clavier et recherches récentes.

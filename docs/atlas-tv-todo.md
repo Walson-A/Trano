@@ -156,11 +156,18 @@ La matrice TV de l’audit passe à « oui » au banc, sauf :
 - **Session après fermeture** — l’appareil ne s’y prête pas : aucune installation
   persistante hors FreeStore, toute ouverture passe par le SDK depuis le réseau local.
   Piste : un lanceur LifeOS sur le PC de l’appartement (hors QML).
-- **Avis privé** — la TV l’affiche dans « Mon suivi » s’il arrive ; l’engine le retire
-  exprès des réponses TV. À trancher par Walson.
+- **Avis privé** — tranché le 10 novembre : la note s’affiche, l’avis écrit jamais
+  ([Top 10, note, position](research/2026-11-10-atlas-tv-top10-note-position.md)).
 - **Flou des boutons** — sonde `devialet/blur-probe.qml` prête (`devialet-check.py --blur`),
   à lancer avec l’accord de Walson.
 - **Réception physique** — publié le 9 novembre (gateway `5e6cc2bc`, paquet
   `hero-parite-36023f9`), jamais lancé par la session. À observer sur le Player : carte « À suivre » en fin d’épisode réelle, langue
   retenue d’un écran à l’autre, lecteur retenu qui retombe en Automatique s’il échoue.
 - **Recherches récentes** — en mémoire pendant la séance seulement.
+
+## Top 10, note sans avis, position envoyée — 10 novembre 2026
+
+[Livraison](research/2026-11-10-atlas-tv-top10-note-position.md) : rangée Top 10 du PC
+adaptée au canapé, note en pastille dans Ma liste, avis jamais affiché, et `position_ms`
+accepté dans les intentions de lecture (prêt pour « Envoyer vers la TV » en plein
+épisode ; l’engine doit encore l’émettre).

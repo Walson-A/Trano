@@ -157,6 +157,9 @@ FocusScope {
                 Image {id:poster;objectName:'discoveryArtwork';x:4;y:4;width:frame.width-8;height:frame.height-8;source:view.art(modelData,'poster');fillMode:Image.PreserveAspectCrop;asynchronous:true;sourceSize.width:380;visible:false;onStatusChanged:if(view.artworks){if(status===Image.Error)view.artworks.failed(modelData,'poster',source);else if(status===Image.Ready)view.artworks.confirmed(modelData,'poster',source);}}
                 OpacityMask {x:4;y:4;width:frame.width-8;height:frame.height-8;source:poster;maskSource:Rectangle {width:poster.width;height:poster.height;radius:6}}
                 LoadingSkeleton {objectName:'posterSkeleton';x:4;y:4;width:frame.width-8;height:frame.height-8;layout:'cover';active:!tile.posterUnavailable && (poster.status===Image.Loading || poster.status===Image.Null)}
+                Rectangle {objectName:'posterNote';x:12;y:frame.height-height-12;width:noteText.implicitWidth+20;height:30;radius:15;color:'#e6090a0d';border.color:'#40ffffff';visible:view.libraryMode && !!modelData.moi && modelData.moi.note>0
+                    Text {id:noteText;anchors.centerIn:parent;text:'★ '+(modelData.moi && modelData.moi.note ? Personal.score(modelData.moi.note) : '');color:'white';font.family:view.family;font.pixelSize:16;font.weight:Font.DemiBold}
+                }
                 Text {objectName:'posterUnavailable';anchors.centerIn:frame;width:155;text:'Image indisponible';visible:tile.posterUnavailable;color:'#727783';font.family:view.family;font.pixelSize:18;horizontalAlignment:Text.AlignHCenter;wrapMode:Text.WordWrap}
                 Text {y:frame.height+10;width:parent.width;height:46;text:modelData.titre || '';textFormat:Text.PlainText;wrapMode:Text.WordWrap;maximumLineCount:2;elide:Text.ElideRight;color:tile.targeted ? 'white' : '#bfc2ca';font.family:view.family;font.pixelSize:17;font.weight:tile.targeted ? Font.DemiBold : Font.Normal}
             }

@@ -117,6 +117,8 @@ FocusScope {
         if(media.seekable && started && media.duration>0){proposedMs=Math.max(0,Math.min(media.duration-1000,(proposedMs>=0 ? proposedMs : media.position)+direction*seekStepMs));zone='seek';}
         reveal();
     }
+    // Aller à une position imposée de l'extérieur (envoi depuis le PC ou le téléphone).
+    function seekTo(ms){if(!(media.seekable && started && media.duration>0))return false;proposedMs=Math.max(0,Math.min(media.duration-1000,ms));commitSeek();return true;}
     function commitSeek(){
         if(proposedMs<0){toggle();return;}
         var target=proposedMs;proposedMs=-1;seekStreak=0;zone='surface';seekTarget=target;restoreAfterSeek=wantsPlaying;media.seek(target);

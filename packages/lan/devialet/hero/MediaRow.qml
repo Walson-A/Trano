@@ -8,14 +8,19 @@ Item {
     property int rowIndex: 0
     property bool current: host.selectedRow===rowIndex
     property int selection: current ? host.selectedIndex : host.rowPositions[rowData.id] || 0
+    // Le Top 10 du moment (forme `top10` de catalog/home, comme sur le PC) : rang et affiche.
+    readonly property bool top10: rowData.forme==='top10' || rowData.id==='top10'
+    readonly property int cardWidth: top10 ? 272 : 266
+    readonly property var activeRail: top10 ? top10Rail : rail
     width:1280; height:252
     function align(index) {
-        rail.currentIndex=index;
-        var left=index*(266+rail.spacing),right=left+266,next=rail.contentX;
-        if(index===0) next=rail.originX;
+        var list=activeRail;list.currentIndex=index;
+        // Le 10e du Top 10 a deux chiffres : sa carte est plus large (comme sur le PC).
+        var left=index*(cardWidth+list.spacing),right=left+(top10 && index===9 ? 336 : cardWidth),next=list.contentX;
+        if(index===0) next=list.originX;
         else if(left<next) next=left;
-        else if(right>next+rail.width-rail.rightMargin) next=right-rail.width+rail.rightMargin;
-        rail.contentX=Math.max(rail.originX,Math.min(Math.max(0,rail.contentWidth-rail.width+rail.rightMargin),next));
+        else if(right>next+list.width-list.rightMargin) next=right-list.width+list.rightMargin;
+        list.contentX=Math.max(list.originX,Math.min(Math.max(0,list.contentWidth-list.width+list.rightMargin),next));
     }
     // La carte Reprendre porte l'épisode et la barre (`reprise` de catalog/home, partagée avec
     // le PC et le mobile). Sans reprise, l'épisode seul : rien d'inventé.
@@ -33,7 +38,7 @@ Item {
     ListView {
         id:rail; objectName:row.current ? 'heroRail' : 'heroRail'+row.rowIndex
         x:50; y:32; width:1230; height:220; orientation:ListView.Horizontal; spacing:8; clip:true
-        model:row.rowData.cartes || []; currentIndex:row.selection; highlightRangeMode:ListView.NoHighlightRange
+        model:row.top10 ? [] : row.rowData.cartes || []; currentIndex:row.selection; highlightRangeMode:ListView.NoHighlightRange
         keyNavigationEnabled:false; boundsBehavior:Flickable.StopAtBounds; rightMargin:64; interactive:false; cacheBuffer:0
         Behavior on contentX { enabled:!row.host.reducedMotion; NumberAnimation { duration:Motion.ms('scroll'); easing.type:Easing.Bezier; easing.bezierCurve:Motion.easeOut() } }
         delegate:FocusCard {
@@ -45,6 +50,22 @@ Item {
             onActivated: { row.host.selectRow(row.rowIndex); row.host.zone='rail'; row.host.choose(index); row.host.forceActiveFocus(); }
             onArtworkFailed:row.host.artworkFailed(modelData,poster ? 'poster' : 'banner',failedSource)
             onArtworkReady:if(row.host.artworkReady)row.host.artworkReady(modelData,poster ? 'poster' : 'banner',loadedSource)
+        }
+    }
+    ListView {
+        id:top10Rail; objectName:row.current ? 'heroTop10Rail' : 'top10Rail'+row.rowIndex; visible:row.top10
+        x:50; y:32; width:1230; height:220; orientation:ListView.Horizontal; spacing:14; clip:true
+        model:row.top10 ? (row.rowData.cartes || []).slice(0,10) : []; currentIndex:row.selection; highlightRangeMode:ListView.NoHighlightRange
+        keyNavigationEnabled:false; boundsBehavior:Flickable.StopAtBounds; rightMargin:64; interactive:false; cacheBuffer:4000 // dix cartes toutes créées : largeur exacte, le 10e se cale au bord
+        Behavior on contentX { enabled:!row.host.reducedMotion; NumberAnimation { duration:Motion.ms('scroll'); easing.type:Easing.Bezier; easing.bezierCurve:Motion.easeOut() } }
+        delegate:Top10Card {
+            objectName:row.current ? 'heroTop10Card'+index : 'row'+row.rowIndex+'Top10Card'+index
+            rank:index+1; title:modelData.titre; artwork:row.host.art(modelData,'poster'); family:row.host.family
+            selected:row.current && row.selection===index; focused:selected && row.host.zone==='rail'; reducedMotion:row.host.reducedMotion
+            Component.onCompleted:if(row.host.posterWanted)row.host.posterWanted(modelData)
+            onActivated: { row.host.selectRow(row.rowIndex); row.host.zone='rail'; row.host.choose(index); row.host.forceActiveFocus(); }
+            onArtworkFailed:row.host.artworkFailed(modelData,'poster',failedSource)
+            onArtworkReady:if(row.host.artworkReady)row.host.artworkReady(modelData,'poster',loadedSource)
         }
     }
 }

@@ -302,6 +302,14 @@ Item {
     window=engine.rootObjects()[0]
     hero=window.findChild(QObject,'atlasHero');session=window.findChild(QObject,'tvSession');screen=window.findChild(QObject,'tvScreen')
     calls=[];session.apiCalled.connect(lambda path,body:calls.append((path,body.toVariant())))
+    # Sur un PC partagé, une autre fenêtre peut prendre l'activation : la touche simulée part alors
+    # dans le vide (activeFocusItem nul) et le parcours échoue sans défaut du QML. On réactive d'abord.
+    _key_click=QTest.keyClick
+    def _active_key_click(target,*rest,**named):
+        if hasattr(target,'isActive') and not target.isActive():
+            target.requestActivate();QTest.qWaitForWindowActive(target,1500)
+        _key_click(target,*rest,**named)
+    QTest.keyClick=_active_key_click
     def visual_items(item):
         result=[]
         for child in item.childItems():

@@ -55,6 +55,7 @@ FocusScope {
     signal libraryRequested()
     signal contextBackRequested()
     signal soundChosen(bool muted)
+    signal posterWanted(var media)
     function row(id) {
         var rows=homeData.rangees || [];
         for(var i=0;i<rows.length;i++) if(rows[i].id===id) return rows[i].cartes || [];

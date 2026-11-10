@@ -14,7 +14,10 @@ Item {
     property var active:null
     property var recent:[]
     readonly property bool receiving:!!(primary && !blocked && transport && transport.state==='ready' && transport.conversationLaunchEnabled===true)
-    function valid(value){return value && /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(value.request_id || '') && Number.isInteger(value.anilist_id) && value.anilist_id>0 && value.anilist_id<=2147483647 && Number.isInteger(value.episode) && value.episode>0 && value.episode<=100000 && ['vo','vf'].indexOf(value.lang)>=0 && Number.isInteger(value.expires_at) && value.expires_at>0 && Number.isInteger(value.ttl_ms) && value.ttl_ms>0 && value.ttl_ms<=90000;}
+    function valid(value){return value && /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(value.request_id || '') && Number.isInteger(value.anilist_id) && value.anilist_id>0 && value.anilist_id<=2147483647 && Number.isInteger(value.episode) && value.episode>0 && value.episode<=100000 && ['vo','vf'].indexOf(value.lang)>=0 && Number.isInteger(value.expires_at) && value.expires_at>0 && Number.isInteger(value.ttl_ms) && value.ttl_ms>0 && value.ttl_ms<=90000 && (value.position_ms===undefined || value.position_ms===null || Number.isInteger(value.position_ms) && value.position_ms>=0 && value.position_ms<=86400000);}
+    // « Envoyer vers la TV » en plein épisode : `position_ms`, facultatif, est la position exacte où
+    // reprendre ; elle passe avant `media_resume`. Absente, la TV reprend comme avant.
+    function position(value){return value && Number.isInteger(value.position_ms) ? value.position_ms : -1;}
     function identity(value){return value.anilist_id+':'+value.episode+':'+value.lang;}
     function matches(value,item){return value && value.request_id===item.intent.request_id && value.anilist_id===item.intent.anilist_id && value.episode===item.intent.episode && value.lang===item.intent.lang;}
     function remember(item){recent=recent.filter(function(v){return v.until>Date.now() && v.id!==item.intent.request_id;}).slice(-31).concat([{id:item.intent.request_id,until:Date.now()+600000}]);}
@@ -48,7 +51,10 @@ Item {
         if(Date.now()>=item.deadline){finish('intent_expired');return;}
         var current=host.pendingPlayback;
         if(current && host.playbackId && current.media.anilist_id===item.intent.anilist_id && current.target.numero===item.intent.episode && (current.target.vf ? 'vf' : 'vo')===item.intent.lang && player && player.observationReady){
-            item.same=true;item.expectedId=host.playbackId;item.phase='observing';return;
+            item.same=true;item.expectedId=host.playbackId;item.phase='observing';
+            // Même épisode déjà en lecture : on va à la position envoyée si elle diffère vraiment.
+            var target=position(item.intent);if(target>=0 && Math.abs(player.positionMs-target)>3000)player.seekTo(target);
+            return;
         }
         if(host.resolving){finish('cancelled');return;}
         item.phase='detail';
