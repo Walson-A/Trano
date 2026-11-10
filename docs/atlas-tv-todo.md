@@ -171,3 +171,9 @@ La matrice TV de l’audit passe à « oui » au banc, sauf :
 adaptée au canapé, note en pastille dans Ma liste, avis jamais affiché, et `position_ms`
 accepté dans les intentions de lecture (prêt pour « Envoyer vers la TV » en plein
 épisode ; l’engine doit encore l’émettre).
+
+## Accueil mis à plat — 10 novembre 2026
+
+[Adaptation](research/2026-11-10-atlas-tv-top10-note-position.md#laccueil-mis-à-plat-engine-743fa4c0)
+au nouvel accueil de l'engine (`743fa4c0`) : « +N » sur Reprendre, « Sortis cette semaine »,
+lancement par `moi.progression + 1` sans `a_lancer`.

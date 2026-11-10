@@ -55,6 +55,26 @@ def run(window, session, screen, hero, details, calls, QTest, Qt, QObject, spin,
             for card in row['cartes']:
                 episode = card.get('a_lancer', {}).get('numero', 1) or 1
                 card['reprise'] = {'episode': episode, 'position_ms': 900000, 'duration_ms': 1440000}
+    # L'accueil du 10 novembre (engine 743fa4c0, anime.md § rangées) : « nouveaux » fondue dans
+    # Reprendre (« +N »), « sortis » à la place de « ajouts », plus de « populaires » ni « deja_vus ».
+    import time
+    ids = [r['id'] for r in home['rangees']]
+    if 'nouveaux' in ids:
+        reprendre = home['rangees'][ids.index('reprendre')]
+        for card in home['rangees'][ids.index('nouveaux')]['cartes']:
+            card = copy.deepcopy(card)
+            card['nouveaux'] = 3
+            card['a_lancer'] = None  # Franime n'a pas l'épisode : lancement par anilist_id
+            card['franime'] = None
+            card['moi'] = dict(card.get('moi') or {}, statut='PAUSED', progression=5)
+            card.pop('reprise', None)
+            reprendre['cartes'].append(card)
+        now = int(time.time())
+        sortis = [dict(copy.deepcopy(c), sortie={'episode': 7 + i, 'le': now - [2 * 3600, 26 * 3600, 2 * 86400 + 600, 5 * 86400][i % 4]})
+                  for i, c in enumerate(home['rangees'][ids.index('ajouts')]['cartes'][:8])] if 'ajouts' in ids else []
+        home['rangees'] = [r for r in home['rangees'] if r['id'] not in ('nouveaux', 'ajouts', 'populaires', 'deja_vus')]
+        at = [r['id'] for r in home['rangees']].index('top10') + 1
+        home['rangees'].insert(at, {'id': 'sortis', 'titre': 'Sortis cette semaine', 'forme': 'affiche', 'cartes': sortis})
     session.setProperty('home', home)
     hero.selectMode('resume')
     hero.setProperty('zone', 'rail')
@@ -81,6 +101,29 @@ def run(window, session, screen, hero, details, calls, QTest, Qt, QObject, spin,
     assert last is not None and last.property('rank') == 10 and last.property('focused') is True
     assert data(hero, 'selected')['anilist_id'] == data(hero, 'rows')[rows.index('top10')]['cartes'][9]['anilist_id']
     shot('home-top10-dix')
+    # 1c. Reprendre : « +3 » sur la carte d'une série en pause ; sans `a_lancer`, la suite de
+    # sa liste (épisode 6), jamais l'épisode 1.
+    hero.selectMode('resume'); hero.setProperty('zone', 'rail'); hero.choose(1); QTest.qWait(400)
+    shot('home-reprendre-nouveaux')
+    paused = visual('heroCard1')
+    assert paused is not None and paused.property('badge') == '+3', paused and paused.property('badge')
+    assert visual('heroCard0').property('badge') == ''
+    assert paused.property('subtitle') == 'Épisode 6', paused.property('subtitle')
+    media = data(hero, 'selected')
+    assert data(hero, 'selected')['nouveaux'] == 3
+    target = hero.target(media)
+    target = target.toVariant() if hasattr(target, 'toVariant') else target
+    assert target == {'numero': 6, 'vf': False}, target
+    assert window.findChild(QObject, 'heroPlay').property('label') == 'Reprendre · Ép. 6', window.findChild(QObject, 'heroPlay').property('label')
+    report['reprendreNouveaux'] = {'badge': '+3', 'target': target}
+    # 1d. Sortis cette semaine : « Ép. N · il y a … » sous chaque carte.
+    rows = [r['id'] for r in data(hero, 'rows')]
+    assert rows[:3] == ['reprendre', 'featured', 'pour_toi'] and 'sortis' in rows and not {'nouveaux', 'ajouts', 'populaires', 'deja_vus'} & set(rows), rows
+    hero.selectRow(rows.index('sortis')); hero.setProperty('zone', 'rail'); hero.choose(0); QTest.qWait(400)
+    shot('home-sortis')
+    labels = [visual('heroCard%d' % i).property('subtitle') for i in range(4)]
+    assert labels == ['Ép. 7 · il y a 2 h', 'Ép. 8 · hier', 'Ép. 9 · il y a 2 j', 'Ép. 10 · il y a 5 j'], labels
+    report['sortis'] = labels
     hero.selectMode('resume'); hero.setProperty('zone', 'actions')
 
     # 2. Avis fugace : en bas, il s'efface seul.

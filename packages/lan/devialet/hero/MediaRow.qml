@@ -26,10 +26,20 @@ Item {
     // le PC et le mobile). Sans reprise, l'épisode seul : rien d'inventé.
     function resumeRatio(c){var r=c && c.reprise;return r && r.duration_ms>0 && r.position_ms>=0 ? Math.min(1,r.position_ms/r.duration_ms) : -1;}
     function resumeLabel(c){
-        var r=c && c.reprise,n=r && r.episode>0 ? r.episode : c && c.a_lancer && c.a_lancer.numero>0 ? c.a_lancer.numero : 0;if(!n)return '';
+        var r=c && c.reprise,n=r && r.episode>0 ? r.episode : row.host.resumeNumber ? row.host.resumeNumber(c) : 0;if(!n)return '';
         var left=r && r.duration_ms>0 && r.position_ms>=0 ? Math.round((r.duration_ms-r.position_ms)/60000) : -1;
         return 'Épisode '+n+(left>0 ? ' · reste '+left+' min' : '');
     }
+    // « +N » : épisodes sortis et pas vus d'une série encore diffusée (`nouveaux`, Reprendre).
+    function newLabel(c){return row.rowData.id==='reprendre' && c && c.nouveaux>0 ? '+'+c.nouveaux : '';}
+    // Sortis cette semaine : `sortie {episode, le}`, `le` en secondes.
+    function releasedLabel(c,now){
+        var s=c && c.sortie;if(!s || !(s.episode>0))return '';
+        var label='Ép. '+s.episode;if(!(s.le>0))return label;
+        var hours=Math.floor((now/1000-s.le)/3600),days=Math.floor(hours/24);
+        return label+' · '+(hours<1 ? 'à l’instant' : hours<24 ? 'il y a '+hours+' h' : days===1 ? 'hier' : 'il y a '+days+' j');
+    }
+    function subtitleFor(c){return row.rowData.id==='reprendre' ? row.resumeLabel(c) : row.rowData.id==='sortis' ? row.releasedLabel(c,Date.now()) : '';}
     onSelectionChanged: if(alignTimer) alignTimer.restart()
     onCurrentChanged: if(current && alignTimer) alignTimer.restart()
     Timer { id:alignTimer; interval:0; onTriggered:row.align(row.selection) }
@@ -44,7 +54,7 @@ Item {
         delegate:FocusCard {
             objectName:row.current ? 'heroCard'+index : 'row'+row.rowIndex+'Card'+index
             title:modelData.titre; artwork:row.host.art(modelData,'card'); fallbackArtwork:row.host.art(modelData,'poster'); family:row.host.family
-            subtitle:row.rowData.id==='reprendre' ? row.resumeLabel(modelData) : ''
+            subtitle:row.subtitleFor(modelData); badge:row.newLabel(modelData)
             progress:row.rowData.id==='reprendre' ? row.resumeRatio(modelData) : -1
             selected:row.current && row.selection===index; focused:selected && row.host.zone==='rail'; reducedMotion:row.host.reducedMotion
             onActivated: { row.host.selectRow(row.rowIndex); row.host.zone='rail'; row.host.choose(index); row.host.forceActiveFocus(); }

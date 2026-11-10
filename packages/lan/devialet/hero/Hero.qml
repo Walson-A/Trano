@@ -73,9 +73,14 @@ FocusScope {
         if (!media) return null;
         // Availability and a backend resume hint are not a language preference.
         if (media.a_lancer) { var next=JSON.parse(JSON.stringify(media.a_lancer)); next.vf=false; return next; }
+        // Sans `a_lancer` (Franime n'a pas l'épisode), la suite de sa liste se lance par
+        // `anilist_id` et le numéro : jamais l'épisode 1 d'une série commencée.
+        var p=media.moi && media.moi.statut!=='COMPLETED' && media.moi.progression>0 ? media.moi.progression : 0;
+        if(p && media.anilist_id>0 && !(media.episodes>0 && p>=media.episodes)) return {numero:p+1,vf:false};
         var f=media.franime;
         return f ? {franime_titre:f.titre,saison:f.saison,episode:f.episode,numero:1,vf:false} : media.anilist_id>0 ? {numero:1,vf:false} : null;
     }
+    function resumeNumber(media){var t=target(media);return media && media.a_lancer ? media.a_lancer.numero : t && t.numero>1 ? t.numero : 0;}
     function art(media,kind) {
         if (!media) return "";
         var local=artworkMap[String(media.anilist_id)];
@@ -242,8 +247,8 @@ FocusScope {
             font.family: scene.family; font.pixelSize: 19; lineHeight: 24; lineHeightMode: Text.FixedHeight; wrapMode: Text.WordWrap; maximumLineCount: heroTitle.lineCount>1 ? 1 : 2; elide: Text.ElideRight }
         Item { width: 630; height: 52; visible:!scene.browsingRows
             Row { anchors.bottom: parent.bottom; spacing: 14
-                HeroButton { objectName:'heroPlay'; width: scene.selected && scene.selected.a_lancer ? 244 : 174; iconKey: 'play'; reducedMotion: scene.reducedMotion; label: scene.selected && scene.selected.a_lancer ? "Reprendre · Ép. " + scene.selected.a_lancer.numero : "Lecture"; family: scene.family; primary: true; groupHasFocus:true; selected:scene.zone==='rail' && scene.actionIndex===0; focused: scene.zone==='actions' && scene.actionIndex===0; onActivated: { scene.zone='actions'; scene.actionIndex=0; scene.activate(); } }
-                HeroButton { objectName:'heroInfo'; width: 180; iconKey: 'info'; reducedMotion: scene.reducedMotion; label: "Plus d’infos"; family: scene.family; selected:scene.zone==='rail' && scene.actionIndex===1; backdrop: backdrop; sampleRect: Qt.rect(scene.selected && scene.selected.a_lancer ? 322 : 252,298,width,height); focused: scene.zone==='actions' && scene.actionIndex===1; onActivated: { scene.zone='actions'; scene.actionIndex=1; scene.activate(); } }
+                HeroButton { objectName:'heroPlay'; width: scene.resumeNumber(scene.selected) ? 244 : 174; iconKey: 'play'; reducedMotion: scene.reducedMotion; label: scene.resumeNumber(scene.selected) ? "Reprendre · Ép. " + scene.resumeNumber(scene.selected) : "Lecture"; family: scene.family; primary: true; groupHasFocus:true; selected:scene.zone==='rail' && scene.actionIndex===0; focused: scene.zone==='actions' && scene.actionIndex===0; onActivated: { scene.zone='actions'; scene.actionIndex=0; scene.activate(); } }
+                HeroButton { objectName:'heroInfo'; width: 180; iconKey: 'info'; reducedMotion: scene.reducedMotion; label: "Plus d’infos"; family: scene.family; selected:scene.zone==='rail' && scene.actionIndex===1; backdrop: backdrop; sampleRect: Qt.rect(scene.resumeNumber(scene.selected) ? 322 : 252,298,width,height); focused: scene.zone==='actions' && scene.actionIndex===1; onActivated: { scene.zone='actions'; scene.actionIndex=1; scene.activate(); } }
             }
         }
     }

@@ -56,6 +56,31 @@ autre épisode → résolution puis départ à 421 000 ms alors que le faux API 
 120 000 ms. Côté engine, l'intention ne porte pas encore ce champ : le contrat reste à
 écrire par la session PC (`Atlas/engine/docs/atlas-tv.md` § conversation).
 
+## L'accueil mis à plat (engine `743fa4c0`)
+
+L'engine change les rangées de `anime/accueil` (donc de `catalog/home`) pour les trois écrans :
+règles dans `Atlas/engine/docs/anime.md` § rangées. La TV garde son ordre : « À reprendre »
+d'abord, puis « À la une » (le héros), puis les rangées de l'engine dans leur ordre.
+
+- **« +N » sur les cartes de Reprendre** : `nouveaux` (épisodes sortis et pas vus d'une série
+  encore diffusée) en pastille blanche en haut à droite de l'image, 18 px gras, lisible à 3 m.
+  Reprendre accueille aussi les séries en pause ; la rangée `nouveaux` n'existe plus.
+- **« Sortis cette semaine »** (`sortis`) : chaque carte porte `sortie {episode, le}` (`le` en
+  secondes) ; sous le titre, « Ép. 7 · il y a 2 h », « hier », « il y a 3 j ».
+- **Lancer sans Franime** : une carte de Reprendre sans `a_lancer` (Franime n'a pas l'épisode)
+  se lance par `anilist_id` et **`moi.progression + 1`**, plus par l'épisode 1. Le bouton du héros
+  dit « Reprendre · Ép. 6 » et la carte « Épisode 6 ». Une entrée terminée, ou dont la
+  progression atteint le total connu, garde le départ à l'épisode 1. La fiche le faisait déjà.
+- `ajouts`, `populaires` et `deja_vus` disparaissent sans code : la TV affiche les rangées
+  qu'on lui donne.
+
+Banc `--parity` (scénarios 1c et 1d) : l'accueil du banc est converti à la nouvelle forme
+(`nouveaux` fondue dans Reprendre, carte en pause sans `a_lancer` à la progression 5, `sortis`
+après le Top 10), puis vérifiés : pastille « +3 », sous-titre « Épisode 6 », cible
+`{numero: 6}`, bouton « Reprendre · Ép. 6 », ordre des rangées, quatre libellés de sortie.
+Captures `avant-reprendre-nouveaux`, `apres-reprendre-nouveaux`, `avant-sortis`, `apres-sortis`
+(les cartes de Sortis n'ont pas d'images au banc : ses fixtures n'en ont pas pour ces titres).
+
 ## Publication — 10 novembre 2026, sur accord de Walson
 
 Paquet `hero-top10-a3032f0` (43 fichiers, 467 467 octets), construit depuis `a3032f0`,

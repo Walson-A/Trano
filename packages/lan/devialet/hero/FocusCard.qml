@@ -5,6 +5,7 @@ Item {
     id: card
     property string title: ""
     property string subtitle: ""
+    property string badge: ""
     property url artwork: ""
     property url fallbackArtwork: ""
     onArtworkChanged: cardImage.source=artwork
@@ -48,6 +49,9 @@ Item {
             Rectangle { anchors.bottom: parent.bottom; anchors.left: parent.left; anchors.right: parent.right; anchors.margins: 10; height: 3; radius: 1.5; color: '#60ffffff'; visible: card.progress>=0
                 Rectangle { width: parent.width*Math.max(0,Math.min(1,card.progress)); height: 3; radius: 1.5; color: 'white' }
             }
+        }
+        Rectangle { objectName:'cardBadge'; visible:!!card.badge; anchors.top:parent.top; anchors.right:parent.right; anchors.margins:10; height:30; radius:15; width:badgeText.implicitWidth+22; color:'#f5f5f7'
+            Text { id:badgeText; anchors.centerIn:parent; text:card.badge; textFormat:Text.PlainText; color:'#0b0c10'; font.family:card.family; font.pixelSize:18; font.weight:Font.Bold }
         }
         Rectangle { anchors.fill: parent; radius: 11; color: 'transparent'; border.width: 2; border.color: 'white'; opacity: card.focused ? 1 : card.selected ? 0.4 : 0
             Behavior on opacity { enabled: !card.reducedMotion; NumberAnimation { duration: Motion.ms('focus') } }
