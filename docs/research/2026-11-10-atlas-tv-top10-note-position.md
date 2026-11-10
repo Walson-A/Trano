@@ -56,6 +56,14 @@ autre épisode → résolution puis départ à 421 000 ms alors que le faux API 
 120 000 ms. Côté engine, l'intention ne porte pas encore ce champ : le contrat reste à
 écrire par la session PC (`Atlas/engine/docs/atlas-tv.md` § conversation).
 
+## Publication — 10 novembre 2026, sur accord de Walson
+
+Paquet `hero-top10-a3032f0` (43 fichiers, 467 467 octets), construit depuis `a3032f0`,
+empreintes comparées sur le serveur, puis `publish-atlas-tv-ui.py` (attendu
+`hero-parite-36023f9`, gateway inchangé `bdb1dd1b…`). Contrôle public : release active,
+`preferences: true`, `Top10Card.qml` présent. Mémoire du serveur à 8 Go disponibles avant
+et après, VM `haos` en marche. Rien n'a été lancé sur le Player.
+
 ## Banc
 
 Le banc complet échouait par moments, base comprise : le diagnostic montre
