@@ -89,6 +89,13 @@ empreintes comparées sur le serveur, puis `publish-atlas-tv-ui.py` (attendu
 `preferences: true`, `Top10Card.qml` présent. Mémoire du serveur à 8 Go disponibles avant
 et après, VM `haos` en marche. Rien n'a été lancé sur le Player.
 
+**Accueil mis à plat publié le même jour**, sur accord de Walson : paquet `hero-accueil-8623e87`
+(43 fichiers, 469 942 octets, depuis `8623e87`, qui contient aussi `0f472fa` des versions),
+attendu `hero-versions-lancement-0f472fa`, gateway inchangé `bdb1dd1b…`, engine `743fa4c0`
+noté comme backend. Contrôle public : release active, `preferences: true`. 9 Go disponibles
+avant et après, VM `haos` en marche ; un déploiement engine (`919baafd`) compilait alors sur le
+runner GitHub, pas sur le serveur. Rien n'a été lancé sur le Player.
+
 ## Banc
 
 Le banc complet échouait par moments, base comprise : le diagnostic montre
