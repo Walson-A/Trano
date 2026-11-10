@@ -81,7 +81,9 @@ FocusScope {
     readonly property var personalEntry:library.entry(personalId)
     readonly property string personalPhase:library.phase(personalId)
     readonly property bool personalPending:personalPhase==='loading' || personalPhase==='idle'
-    readonly property bool personalEnabled:library.available && personalId>0
+    // Catalogue privé : fiche et épisodes demandés avec `prive`, aucun suivi AniList.
+    readonly property bool privateCard:isPrivate(media)
+    readonly property bool personalEnabled:library.available && personalId>0 && !privateCard
     signal interaction()
     signal personalChanged(int identity,var value,bool refreshHome)
     signal closed()
@@ -127,7 +129,8 @@ FocusScope {
         if(!note && personalPhase==='ready' && personalEntry && personalEntry.editable && personalEntry.presence==='absent')library.save(personalId,{statut:'PLANNING'});
         else followup.open(personalId,card.titre,note,episodeData && Number.isInteger(episodeData.total) && episodeData.total>0 ? episodeData.total : card.episodes || 0);
     }
-    function identity(c) {return c && c.anilist_id>0 ? {anilist_id:c.anilist_id} : c && c.franime && c.franime.id>0 ? {franime_id:c.franime.id} : null;}
+    function identity(c) {var key=c && c.anilist_id>0 ? {anilist_id:c.anilist_id} : c && c.franime && c.franime.id>0 ? {franime_id:c.franime.id} : null;if(key && isPrivate(c))key.prive=true;return key;}
+    function isPrivate(c){return !!(c && (c.prive===true || transport && transport.isPrivate && transport.isPrivate(c.anilist_id)));}
     function episodeKey(c){var key=identity(c);return !key ? '' : key.anilist_id ? 'a:'+key.anilist_id : 'f:'+key.franime_id+':'+(c.franime.saison || 1);}
     function prepareEpisodes(){
         var next=card.a_lancer ? card.a_lancer.numero : (card.moi ? card.moi.progression+1 : 1),start=Math.max(1,Math.floor((Math.max(1,next)-1)/40)*40+1);
@@ -224,7 +227,7 @@ FocusScope {
     function versionLabel(v){return v ? v.libelle+(v.annee ? ' · '+v.annee : '') : (card && card.format==='ONA' ? 'Version originale' : 'Version TV')+(card && card.annee ? ' · '+card.annee : '');}
     function versionStatus(v){if(!v || !v.progression)return '';var p=v.progression;return p.anilist==='saison_marquee_vue' ? 'Terminé · saison marquée vue sur AniList' : p.termine ? 'Terminé · AniList sera mis à jour' : p.vus+'/'+v.episodes+' vus · la saison sera marquée vue sur AniList à la fin';}
     function loadVersions(key){
-        if(!key || !key.anilist_id || !transport)return;var turn=++versionGeneration;
+        if(!key || !key.anilist_id || !transport || key.prive)return;var turn=++versionGeneration;
         transport.api('/tv/v1/catalog/versions',{anilist_id:key.anilist_id},45000,function(status,value){
             if(!opened || turn!==versionGeneration || status!==200 || !value || value.anilist_id!==key.anilist_id || !Array.isArray(value.versions))return;
             versions=value.versions.filter(function(v){return v && /^[a-z0-9-]{1,40}$/.test(v.cle || '') && Number.isInteger(v.episodes) && v.episodes>0 && Array.isArray(v.langues) && v.langues.length;}).slice(0,4);
@@ -275,7 +278,7 @@ FocusScope {
     }
     Timer {interval:1000;repeat:true;running:view.episodeRetrySeconds>0;onTriggered:view.episodeRetrySeconds=Math.max(0,Math.ceil((view.episodeRetryAt-Date.now())/1000))}
     function remember() {return {media:media,detail:detail,episodeData:episodeData,zone:zone,actionIndex:actionIndex,episodeIndex:episodeIndex,seasonIndex:seasonIndex,relationIndex:relationIndex,castIndex:castIndex,recommendationIndex:recommendationIndex,pageStart:pageStart,french:french,languageIndex:languageIndex,versions:versions,versionIndex:versionIndex,scroll:viewport.contentY};}
-    function visit(c) {if(!identity(c))return;stack=stack.slice(-11).concat([remember()]);load(c);forceActiveFocus();}
+    function visit(c) {if(!identity(c))return;if(privateCard){c=JSON.parse(JSON.stringify(c));c.prive=true;if(transport.markPrivate)transport.markPrivate(c.anilist_id);}stack=stack.slice(-11).concat([remember()]);load(c);forceActiveFocus();}
     function back() {
         console.info('ATLAS_TV_DETAIL_BACK',card && card.anilist_id || 0,stack.length,zone);
         generation++;episodeGeneration++;pendingEpisodesReady=null;
