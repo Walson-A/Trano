@@ -117,6 +117,12 @@ FocusScope {
         if(media.seekable && started && media.duration>0){proposedMs=Math.max(0,Math.min(media.duration-1000,(proposedMs>=0 ? proposedMs : media.position)+direction*seekStepMs));zone='seek';}
         reveal();
     }
+    // Pilotage depuis le PC (TvCommands.qml) : les mêmes gestes que la télécommande, refusés
+    // pendant un changement, une erreur ou un épisode terminé.
+    function remotePlay(){if(failure || ended || retrying || changing || trailerMode)return false;if(!wantsPlaying)toggle();return true;}
+    function remotePause(){if(failure || ended || retrying || changing || trailerMode)return false;if(wantsPlaying)toggle();return true;}
+    // Le PC relit « ce qui joue » dans les secondes qui suivent : on n'attend pas le battement de 15 s.
+    function reportNow(){if(failure || ended || !started)return;rememberPosition(false);report(playing ? 'playing' : 'paused');}
     // Aller à une position imposée de l'extérieur (envoi depuis le PC ou le téléphone).
     function seekTo(ms){if(!(media.seekable && started && media.duration>0))return false;proposedMs=Math.max(0,Math.min(media.duration-1000,ms));commitSeek();return true;}
     function commitSeek(){

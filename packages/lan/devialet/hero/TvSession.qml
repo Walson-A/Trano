@@ -17,6 +17,8 @@ Item {
     property bool libraryRemoveEnabled:false
     property bool airingEnabled: false
     property bool conversationLaunchEnabled:false
+    // Pilotage depuis le PC (lecture, pause, position, suivant, arrêt) : TvCommands.qml.
+    property bool tvCommandsEnabled:false
     // Préférences communes aux trois écrans (engine) : langue par série, lecteur retenu,
     // épisode suivant automatique, son des bandes-annonces. Défauts de l'engine sans gateway.
     property bool preferencesEnabled:false
@@ -87,6 +89,7 @@ Item {
             libraryRemoveEnabled=!!(runtime.capabilities && runtime.capabilities.library_remove===true);
             airingEnabled=!!(runtime.capabilities && runtime.capabilities.airing===true);
             conversationLaunchEnabled=!!(runtime.capabilities && runtime.capabilities.conversation_launch===true);
+            tvCommandsEnabled=!!(runtime.capabilities && runtime.capabilities.tv_commands===true);
             preferencesEnabled=!!(runtime.capabilities && runtime.capabilities.preferences===true);
             request(apiOrigin+'/tv/v1/session/activate',{code:runtime.activation.code},'',12000,function(code,value) {
                 if(code!==200 || !credentials(value)) { fail(); return; }
@@ -117,9 +120,9 @@ Item {
             });
         });
     }
-    // Only receiver next/ack are idempotent across a single access refresh.
+    // Only receiver next/ack (launch intents, PC commands) are idempotent across a single access refresh.
     function conversationApi(path,body,timeout,done){
-        if(path!=='/tv/v1/launch-intents/next' && !/^\/tv\/v1\/launch-intents\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\/ack$/.test(path)){done(400,null);return;}
+        if(!/^\/tv\/v1\/(?:launch-intents|commands)\/(?:next|[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\/ack)$/.test(path)){done(400,null);return;}
         function attempt(retried){withAccess(function(ok){
             if(!ok){done(401,null);return;}
             var admitted=accessToken;

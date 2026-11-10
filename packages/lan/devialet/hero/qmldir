@@ -8,6 +8,7 @@ Icon Icon.qml
 TvSession TvSession.qml
 TvPreviews TvPreviews.qml
 TvConversationLaunch TvConversationLaunch.qml
+TvCommands TvCommands.qml
 EpisodePlayer EpisodePlayer.qml
 ArtworkCache ArtworkCache.qml
 MediaRow MediaRow.qml

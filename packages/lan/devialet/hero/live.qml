@@ -33,6 +33,7 @@ Application {
     ArtworkCache { id:artworks; objectName:'artworkCache'; transport:session }
     TvPreviews {id:previews;objectName:'tvPreviews';transport:session}
     TvConversationLaunch {id:conversation;transport:session;host:screen;player:episode.item;primary:true}
+    TvCommands {id:commands;objectName:'tvCommands';transport:session;host:screen;player:episode.item;primary:true}
     Item {
         id: screen; objectName:'tvScreen'
         width:1280; height:720; scale:Math.min(parent.width/1280,parent.height/720); transformOrigin:Item.TopLeft

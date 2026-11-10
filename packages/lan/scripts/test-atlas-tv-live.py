@@ -19,6 +19,8 @@ parser.add_argument('--follow-up',action='store_true',help='Exercise library wri
 parser.add_argument('--detail-preview',action='store_true',help='Exercise background/fullscreen trailer ownership with fake API/decoder')
 parser.add_argument('--parity',action='store_true',help='Exercise the 9 November parity pass: shared preferences, up next, seek steps, progress edit, review, keyboard, profile; fake API only')
 parser.add_argument('--conversation-launch',action='store_true',help='Exercise primary conversation launch receiver with fake transport/media only')
+parser.add_argument('--tv-commands',action='store_true',help='Exercise PC/phone remote commands (play, pause, seek, next, stop) with fake transport/media only')
+parser.add_argument('--tv-commands-only',action='store_true',help='Run only the remote command scenarios, skipping unrelated host checks')
 parser.add_argument('--expire-component-files',action='store_true',help='Remove cached player source URLs after bootstrap to verify native-player recreation needs no new download')
 parser.add_argument('--qt-path',type=pathlib.Path,required=True)
 parser.add_argument('--snapshot',type=pathlib.Path,required=True)
@@ -175,6 +177,14 @@ Item {
  property string apiOrigin:"https://test.invalid"
  property var pendingPreviews:({})
  property bool conversationLaunchEnabled:false
+ property bool tvCommandsEnabled:false
+ property var commandPoll:null
+ readonly property bool commandPollPending:!!commandPoll
+ property int commandPollCount:0
+ property var commandAcks:[]
+ property bool loseCommandAck:false
+ function deliverCommand(value){var done=commandPoll;commandPoll=null;done(200,{command:value,poll_after_ms:250});}
+ function finishCommandPoll(){if(!commandPoll)return;var done=commandPoll;commandPoll=null;done(200,{command:null,poll_after_ms:250});}
  property bool preferencesEnabled:false
  property var preferences:({suivant_auto:true,son_bandes_annonces:true})
  property var seriesPreferences:({})
@@ -197,6 +207,8 @@ Item {
  property var conversationAcks:[]
  function conversationApi(path,body,timeout,done){
   apiCalled(path,body);
+  if(path==='/tv/v1/commands/next'){commandPollCount++;commandPoll=done;return;}
+  if(path.indexOf('/tv/v1/commands/')===0){var cid=path.split('/')[4];commandAcks=commandAcks.concat([{id:cid,state:body.state,code:body.code || ''}]);var lost=loseCommandAck;loseCommandAck=false;Qt.callLater(function(){done(lost ? 0 : 200,lost ? {} : {request_id:cid,state:body.state,code:body.code || null});});return;}
   if(path==='/tv/v1/launch-intents/next'){openIntentPolls++;maxIntentPolls=Math.max(maxIntentPolls,openIntentPolls);intentPollCount++;intentPoll=done;return;}
   var id=path.split('/')[4],receipt=ackReceipts[id];conversationAcks=conversationAcks.concat([{id:id,state:body.state,code:body.code || ''}]);
   if(!receipt){Qt.callLater(function(){done(404,{});});return;}
@@ -327,6 +339,10 @@ Item {
         shelf_spec=importlib.util.spec_from_file_location('episode_shelf',pathlib.Path(__file__).with_name('atlas_tv_episode_shelf_bench.py'))
         shelf_bench=importlib.util.module_from_spec(shelf_spec);shelf_spec.loader.exec_module(shelf_bench)
         shelf_bench.run(window,session,screen,details,calls,QTest,Qt,QObject,spin,args.evidence,bool(args.episode_shelf_baseline))
+    def run_commands():
+        spec=importlib.util.spec_from_file_location('commands',pathlib.Path(__file__).with_name('atlas_tv_commands_bench.py'))
+        commands=importlib.util.module_from_spec(spec);spec.loader.exec_module(commands)
+        commands.run(window,session,screen,details,calls,QTest,Qt,QObject,spin,args.evidence)
     def check():
         try:
             if args.expire_component_files:
@@ -334,6 +350,8 @@ Item {
             window.requestActivate();hero.forceActiveFocus(Qt.OtherFocusReason);hero.setProperty('previewEnabled',False)
             if args.episode_shelf_only:
                 run_episode_shelf();app.quit();return
+            if args.tv_commands_only:
+                run_commands();app.quit();return
             assert hero.property('muted') is False and window.findChild(QObject,'heroSound').property('label')=='Son activé'
             icons=window.findChildren(QObject,'iconPixels')
             assert len(icons)>=7 and not list(bundle.glob('icon-*.png'))
@@ -756,6 +774,8 @@ Item {
                 spec=importlib.util.spec_from_file_location('conversation',pathlib.Path(__file__).with_name('atlas_tv_conversation_bench.py'))
                 consumer=importlib.util.module_from_spec(spec);spec.loader.exec_module(consumer)
                 consumer.run(window,session,screen,details,calls,QTest,Qt,QObject,spin,args.evidence)
+            if args.tv_commands:
+                run_commands()
             if args.parity:
                 parity_spec=importlib.util.spec_from_file_location('parity',pathlib.Path(__file__).with_name('atlas_tv_parity_bench.py'))
                 parity=importlib.util.module_from_spec(parity_spec);parity_spec.loader.exec_module(parity)
@@ -767,9 +787,9 @@ Item {
             (args.evidence/'verification.json').write_text(json.dumps({'passed':True,'scope':'real QML host/UI with fake API and fake decoder; no native playback claim','canonicalEpisode':13,'hlsNegotiated':args.hls,'defaultLanguage':'vo','frenchAvailabilityDoesNotSelectLanguage':True,'explicitFrenchStillSupported':True,'tvPlayer':{'anchoredMenusKeepChrome':True,'proposedTimelineUntilConfirmed':True,'cancelSeekKeepsPosition':True,'cancelResolutionIgnoresLateResponse':True,'strictSourceReaderVariant':True,'strictRetry401And200KeepsChoice':True,'failedChangeKeepsOldVideo':True,'pausedQualityAndVersionKeepPositionAndIntent':True,'episodesOverlayKeepsVideoAndSeasonBrowsing':True,'firstBackHidesHudWithoutClosing':True,'episodeJumpPreservesCurrentPlayback':True,'sourceReachableAfterNativeFailure':True,'episodeArtworkIdentityChecked':True,'missingCapabilityUnavailable':True,'perSessionProgressSequence':True},'lang':'vo','defaultSoundOnAndLabelled':True,'infoSelectionPreserved':True,'search':{'remoteKeyboard':True,'staleIgnored':True,'selectionAndBack':True},'profile':{'publicProfileWithoutOAuth':True,'statsScaleChecked':True,'selectionAndBack':True},'lateTrailerDoesNotChangeSelection':True,'silentGainZero':True,'bannerErrorUsesPoster':True,'artworkQueue':{'maxConcurrent':2,'identityChecked':True,'deduplicated':True,'capabilityRequired':True,'warmWithoutResume':True},'events':events},indent=2),encoding='utf-8')
             app.quit()
         except Exception as error: messages.append(traceback.format_exc());app.exit(1)
-    QTimer.singleShot(600,check);QTimer.singleShot(100000 if args.conversation_launch else 60000 if args.follow_up or args.episode_shelf or args.parity else 25000,lambda:app.exit(2))
+    QTimer.singleShot(600,check);QTimer.singleShot(100000 if args.conversation_launch or args.tv_commands or args.tv_commands_only else 60000 if args.follow_up or args.episode_shelf or args.parity else 25000,lambda:app.exit(2))
     code=app.exec_()
     window.close();sip.delete(engine)
     # Les avertissements QML disent souvent la vraie cause d'un échec de parcours.
     if code: raise AssertionError(([m for m in messages if m.startswith('Traceback')] or messages[-12:])+[m for m in messages if '.qml:' in m][-12:])
-    print(json.dumps({'passed':True,'scope':'episode shelf only, fake API/media; no other host checks' if args.episode_shelf_only else 'host, canonical target, resume, pause/seek/back, progress sequence; mocked decoder/API'}))
+    print(json.dumps({'passed':True,'scope':'episode shelf only, fake API/media; no other host checks' if args.episode_shelf_only else 'remote commands only, fake API/media; no other host checks' if args.tv_commands_only else 'host, canonical target, resume, pause/seek/back, progress sequence; mocked decoder/API'}))
