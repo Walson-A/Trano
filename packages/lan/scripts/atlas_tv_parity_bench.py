@@ -75,6 +75,12 @@ def run(window, session, screen, hero, details, calls, QTest, Qt, QObject, spin,
         home['rangees'] = [r for r in home['rangees'] if r['id'] not in ('nouveaux', 'ajouts', 'populaires', 'deja_vus')]
         at = [r['id'] for r in home['rangees']].index('top10') + 1
         home['rangees'].insert(at, {'id': 'sortis', 'titre': 'Sortis cette semaine', 'forme': 'affiche', 'cartes': sortis})
+    # `serie {saisons, episodes}` (engine ab6eff69) : la série entière sur chaque carte.
+    for row in home['rangees']:
+        if row['id'] == 'pour_toi':
+            for card, serie in zip(row['cartes'], [{'saisons': 3, 'episodes': 75}, {'saisons': 1, 'episodes': 24}, None]):
+                card['serie'] = serie
+                card['format'] = 'TV'
     session.setProperty('home', home)
     hero.selectMode('resume')
     hero.setProperty('zone', 'rail')
@@ -124,6 +130,14 @@ def run(window, session, screen, hero, details, calls, QTest, Qt, QObject, spin,
     labels = [visual('heroCard%d' % i).property('subtitle') for i in range(4)]
     assert labels == ['Ép. 7 · il y a 2 h', 'Ép. 8 · hier', 'Ép. 9 · il y a 2 j', 'Ép. 10 · il y a 5 j'], labels
     report['sortis'] = labels
+    # 1e. Saisons et épisodes avant d'ouvrir la fiche : en haut pour la carte ciblée, sous la carte.
+    hero.selectRow(rows.index('pour_toi')); hero.setProperty('zone', 'rail'); hero.choose(0); QTest.qWait(400)
+    shot('home-serie')
+    labels = [visual('heroCard%d' % i).property('subtitle') for i in range(3)]
+    assert labels == ['3 saisons · 75 ép.', '24 ép.', ''], labels
+    meta = hero.meta(data(hero, 'selected'))
+    assert '3 saisons · 75 ép.' in meta and 'Série' not in meta, meta
+    report['serie'] = {'cards': labels, 'meta': meta}
     hero.selectMode('resume'); hero.setProperty('zone', 'actions')
 
     # 2. Avis fugace : en bas, il s'efface seul.
@@ -363,6 +377,63 @@ def run(window, session, screen, hero, details, calls, QTest, Qt, QObject, spin,
     profile.setProperty('settingIndex', 2); QTest.keyClick(window, Qt.Key_Return)
     assert screen.property('reducedMotion') is False
     QTest.keyClick(window, Qt.Key_Back); QTest.qWait(80)
+    # 9. Catalogue privé : une suite de touches depuis « Genres », pour la séance seulement.
+    def searches():
+        return [body for path, body in calls if path == '/tv/v1/catalog/search']
+    def finish_last():
+        session.finishSearch(len(data(session, 'pendingSearches')) - 1)
+    count = len(searches())
+    screen.openPanel('search')
+    search = window.findChild(QObject, 'atlasDiscovery')
+    spin(lambda: len(searches()) > count)
+    finish_last(); spin(lambda: search.property('state') == 'ready')
+    search.setProperty('zone', 'filters'); search.setProperty('filterIndex', 0); search.forceActiveFocus()
+    assert 'Hentai' not in [o[0] for o in data(search, 'genreOptions')]
+    keys = [Qt.Key_Up, Qt.Key_Up, Qt.Key_Down, Qt.Key_Down, Qt.Key_Left, Qt.Key_Right, Qt.Key_Left, Qt.Key_Right]
+    for key in keys[:7]:
+        QTest.keyClick(window, key)
+    assert session.property('privateCatalog') is False and search.property('zone') == 'filters' and search.property('filterIndex') == 0
+    for key in keys:
+        QTest.keyClick(window, key)
+    assert session.property('privateCatalog') is True, data(search, 'sequence')
+    assert search.property('zone') == 'filters' and search.property('filterIndex') == 0 and not search.property('overlay')
+    shot('search-private-unlocked')
+    QTest.keyClick(window, Qt.Key_Return)
+    options = data(search, 'options')
+    assert search.property('overlay') == 'filter' and options[-1] == ['Hentai', 'H'], options[-3:]
+    search.setProperty('optionIndex', len(options) - 1); QTest.qWait(200)
+    shot('search-private-chip')
+    search.chooseOption(); search.applyFilter()
+    spin(lambda: searches()[-1].get('prive') is True)
+    assert searches()[-1]['prive'] is True and 'Hentai' in searches()[-1]['genres'], searches()[-1]
+    finish_last(); spin(lambda: search.property('state') == 'ready')
+    found = data(search, 'results')
+    assert found and all(c['prive'] is True and session.isPrivate(c['anilist_id']) for c in found)
+    search.setProperty('zone', 'results'); search.setProperty('resultIndex', 0); search.forceActiveFocus()
+    before = len(calls)
+    QTest.keyClick(window, Qt.Key_Return)
+    spin(lambda: screen.property('panel') == 'detail')
+    detail = window.findChild(QObject, 'atlasDetail')
+    spin(lambda: any(path == '/tv/v1/catalog/episodes' for path, _ in calls[before:]))
+    opened = [(path, body) for path, body in calls[before:] if path.startswith('/tv/v1/catalog/')]
+    assert opened and all(body.get('prive') is True for path, body in opened), opened
+    assert not any(path == '/tv/v1/catalog/versions' for path, _ in opened)
+    assert detail.property('privateCard') is True and detail.property('personalEnabled') is False
+    assert not window.findChild(QObject, 'detailList').property('visible') and not window.findChild(QObject, 'detailRate').property('visible')
+    writes = len(prefs())
+    session.savePreferences({'anilist_id': found[0]['anilist_id'], 'langue': 'vf'}, None)
+    assert len(prefs()) == writes
+    # Une fiche privée complète (fixture du banc) : ni « Ma liste » ni « Noter ».
+    QTest.keyClick(window, Qt.Key_Back); QTest.qWait(80)
+    card = copy.deepcopy(details['154587']['carte']); card['prive'] = True
+    screen.openDetail(card)
+    spin(lambda: detail.property('state') == 'ready' and detail.property('episodeState') == 'ready')
+    assert detail.property('personalEnabled') is False and not window.findChild(QObject, 'detailList').property('visible')
+    shot('detail-private')
+    report['privateCatalog'] = {'search': searches()[-1], 'detailCalls': [p for p, _ in opened]}
+    QTest.keyClick(window, Qt.Key_Back); QTest.qWait(80)
+    QTest.keyClick(window, Qt.Key_Back); QTest.qWait(80)
+    session.setProperty('privateCatalog', False); session.setProperty('privateIds', {})
     session.setProperty('preferencesEnabled', False)
     report['passed'] = True
     (evidence / 'parity.json').write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding='utf-8')

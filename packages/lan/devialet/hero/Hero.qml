@@ -87,13 +87,20 @@ FocusScope {
         if(kind==='poster') return local && (local.poster || local.card) ? local.poster || local.card : (media.affiche || '');
         return local && local[kind] ? local[kind] : kind === "banner" ? (media.banniere || media.affiche || "") : (media.banniere || media.affiche || "");
     }
+    // `serie {saisons, episodes}` de catalog/home : la série entière, avant d'ouvrir la fiche.
+    function seriesLabel(media){
+        var s=media && media.serie;if(!s)return '';
+        var seasons=Number.isInteger(s.saisons) && s.saisons>1 ? s.saisons+' saisons' : '',episodes=Number.isInteger(s.episodes) && s.episodes>0 ? s.episodes+' ép.' : '';
+        return seasons && episodes ? seasons+' · '+episodes : seasons || episodes;
+    }
     function meta(media) {
         if(!media) return "";
         var parts=[];
         if(media.score) parts.push("★ " + (media.score/10).toFixed(1).replace('.',','));
         if(media.franime && media.franime.vf) parts.push("VF disponible");
         if(media.annee) parts.push(media.annee);
-        parts.push(media.format === "MOVIE" ? "Film" : "Série");
+        var series=media.format === "MOVIE" ? '' : seriesLabel(media);
+        parts.push(media.format === "MOVIE" ? "Film" : series || "Série");
         if(media.genres) parts.push(media.genres.slice(0,3).join(" · "));
         return parts.join("    ·    ");
     }

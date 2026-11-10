@@ -22,6 +22,12 @@ Item {
     // Préférences communes aux trois écrans (engine) : langue par série, lecteur retenu,
     // épisode suivant automatique, son des bandes-annonces. Défauts de l'engine sans gateway.
     property bool preferencesEnabled:false
+    // Catalogue privé : le temps de l'app seulement, jamais enregistré. Ses titres n'écrivent
+    // aucune préférence ; l'engine n'écrit rien sur AniList pour eux.
+    property bool privateCatalog:false
+    property var privateIds:({})
+    function markPrivate(id){if(!(id>0) || privateIds[String(id)])return;var copy={};Object.keys(privateIds).forEach(function(k){copy[k]=true;});copy[String(id)]=true;privateIds=copy;}
+    function isPrivate(id){return id>0 && privateIds[String(id)]===true;}
     property var preferences:({suivant_auto:true,son_bandes_annonces:true})
     property var seriesPreferences:({})
     signal preferencesLoaded()
@@ -185,6 +191,7 @@ Item {
     function savePreferences(patch,done){
         // Sans gateway à jour, le choix vaut pour la séance : on le garde en mémoire, sans écrire.
         var id=patch.anilist_id || 0;
+        if(isPrivate(id)){if(done)done(false);return;}
         if(id>0){var current=seriesPreferences[String(id)] || {langue:'vo',langue_choisie:false,lecteur:null},next={langue:current.langue,langue_choisie:current.langue_choisie,lecteur:current.lecteur};
             if(patch.langue){next.langue=patch.langue;next.langue_choisie=true;}if(patch.hasOwnProperty('lecteur'))next.lecteur=patch.lecteur;
             var copy={};Object.keys(seriesPreferences).forEach(function(k){copy[k]=seriesPreferences[k];});copy[String(id)]=next;seriesPreferences=copy;}

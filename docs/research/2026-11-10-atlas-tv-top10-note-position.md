@@ -88,6 +88,21 @@ après le Top 10), puis vérifiés : pastille « +3 », sous-titre « Épisode 6
 Captures `avant-reprendre-nouveaux`, `apres-reprendre-nouveaux`, `avant-sortis`, `apres-sortis`
 (les cartes de Sortis n'ont pas d'images au banc : ses fixtures n'en ont pas pour ces titres).
 
+## Saisons et épisodes avant d'ouvrir la fiche (engine `ab6eff69`)
+
+Chaque carte de `catalog/home` porte `serie {saisons, episodes}`, la série entière
+(`Atlas/engine/docs/anime.md`). La TV l'affiche :
+
+- dans les métadonnées du haut, pour la carte ciblée, à la place de « Série » :
+  « 3 saisons · 75 ép. », ou « 24 ép. » pour une seule saison ;
+- sous le titre des cartes paysage, sauf dans Reprendre (épisode et temps restant) et Sortis
+  cette semaine (épisode sorti), qui gardent leur ligne. Le Top 10 n'a pas de ligne libre.
+
+Un film garde « Film » ; sans `serie`, rien ne change. Banc `--parity` (scénario 1e) :
+« 3 saisons · 75 ép. », « 24 ép. », rien pour une carte sans `serie`, et le haut de l'écran.
+Le banc lit désormais une copie figée des fixtures de l'accueil PC d'avant `939a0792`, qui les
+a mises au nouvel accueil. Captures `avant-serie` et `apres-serie`.
+
 ## Publication — 10 novembre 2026, sur accord de Walson
 
 Paquet `hero-top10-a3032f0` (43 fichiers, 467 467 octets), construit depuis `a3032f0`,
@@ -107,6 +122,11 @@ runner GitHub, pas sur le serveur. Rien n'a été lancé sur le Player.
 `hero-envoi-5ad6090` (43 fichiers, 469 887 octets), attendu `hero-accueil-8623e87`, gateway
 inchangé `bdb1dd1b…`, engine `aca4d2f8` (contient le contrat `2f90c747`). Contrôle public :
 release active. 8 à 9 Go disponibles, VM `haos` en marche. Rien n'a été lancé sur le Player.
+
+**Saisons et épisodes publiés le même jour**, sur accord de Walson : paquet
+`hero-prive-f3d96e2` (43 fichiers, 472 993 octets), attendu `hero-envoi-5ad6090`, gateway
+inchangé `bdb1dd1b…`, engine `ab6eff69`. Contrôle public : release active. 8 Go disponibles,
+VM `haos` en marche. Rien n'a été lancé sur le Player.
 
 ## Banc
 

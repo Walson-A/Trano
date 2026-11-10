@@ -59,7 +59,11 @@ FocusScope {
     property int recentIndex:0
     readonly property var filterNames:libraryMode ? ['Statut'] : ['Genres','Format','Année','Diffusion','Trier']
     readonly property var filterFields:libraryMode ? ['statut'] : ['genres','format','annee','statut','tri']
-    readonly property var options:libraryMode ? [['','Tous mes animés']].concat(Personal.statuses) : multiGenre ? Catalog.genres : filterIndex===1 ? Catalog.formats : filterIndex===2 ? Catalog.years() : filterIndex===3 ? Catalog.statuses : Catalog.sorts
+    readonly property bool privateCatalog:!!(transport && transport.privateCatalog===true)
+    readonly property var genreOptions:privateCatalog ? Catalog.genres.concat([['Hentai','H']]) : Catalog.genres
+    readonly property var privateSequence:[Qt.Key_Up,Qt.Key_Up,Qt.Key_Down,Qt.Key_Down,Qt.Key_Left,Qt.Key_Right,Qt.Key_Left,Qt.Key_Right]
+    property var sequence:[]
+    readonly property var options:libraryMode ? [['','Tous mes animés']].concat(Personal.statuses) : multiGenre ? genreOptions : filterIndex===1 ? Catalog.formats : filterIndex===2 ? Catalog.years() : filterIndex===3 ? Catalog.statuses : Catalog.sorts
     signal interaction()
     signal closed()
     signal navigateRequested(string destination)
@@ -74,6 +78,7 @@ FocusScope {
         var target=nextPage || 1;
         if(libraryMode && !transport.libraryEnabled){state='error';return;}
         var body=libraryMode ? {page:target} : Catalog.body(query,filters,target);if(libraryMode && filters.statut)body.statut=filters.statut;
+        if(!libraryMode && body.genres && body.genres.indexOf('Hentai')>=0){if(privateCatalog)body.prive=true;else{body.genres=body.genres.filter(function(g){return g!=='Hentai';});if(!body.genres.length)delete body.genres;}}
         var signature=JSON.stringify(body);if(signature===retryBody && retrySeconds>0){state='error';return;}
         var turn=++generation;requestedPage=target;slowLoading=false;failureMessage='';state='loading';slowNotice.restart();
         transport.api(libraryMode ? '/tv/v1/library' : '/tv/v1/catalog/search',body,45000,function(status,value){
@@ -81,6 +86,7 @@ FocusScope {
             var rows=value && value.resultats;
             if(status!==200 || !value || libraryMode && value.presence_connue!==true || !Array.isArray(rows) || rows.length>24 || typeof value.page!=='number' || value.page%1 || value.page!==target || typeof value.has_next_page!=='boolean'){failureMessage=RequestState.message(status,value,libraryMode ? 'Ta liste est momentanément indisponible.' : 'Le catalogue est momentanément indisponible.');retryBody=signature;retrySeconds=RequestState.retrySeconds(status,value);retryAt=Date.now()+retrySeconds*1000;state='error';return;}
             if(libraryMode && !rows.length && target>1 && Number.isInteger(value.total) && value.total>=0 && Math.ceil(value.total/24)<target){search(focusResults,Math.max(1,Math.ceil(value.total/24)));return;}
+            if(body.prive)rows=rows.map(function(r){var c=Catalog.clone(r);c.prive=true;transport.markPrivate(c.anilist_id);return c;});
             retrySeconds=0;retryAt=0;retryBody='';page=value.page;hasNext=value.has_next_page && page<1000;results=rows;libraryTotal=libraryMode && Number.isInteger(value.total) && value.total>=0 ? value.total : null;
             resultIndex=Math.max(0,Math.min(results.length-1,pagePositions[String(page)] || 0));state='ready';
             if(focusResults)zone=results.length ? 'results' : 'filters';
@@ -94,7 +100,7 @@ FocusScope {
     }
     function valueLabel(index){
         if(libraryMode)return filters.statut ? Personal.statusLabel(filters.statut) : 'Tous mes animés';
-        if(index===0)return filters.genres.length ? Catalog.label(Catalog.genres,filters.genres[0])+(filters.genres.length>1 ? ' +'+(filters.genres.length-1) : '') : 'Genres';
+        if(index===0)return filters.genres.length ? Catalog.label(genreOptions,filters.genres[0])+(filters.genres.length>1 ? ' +'+(filters.genres.length-1) : '') : 'Genres';
         if(index===1)return filters.format ? Catalog.label(Catalog.formats,filters.format) : 'Format';
         if(index===2)return filters.annee || 'Année';
         if(index===3)return filters.statut ? Catalog.label(Catalog.statuses,filters.statut) : 'Diffusion';
@@ -117,6 +123,13 @@ FocusScope {
     function remember(text){var value=text.trim();if(!value)return;var next=[value].concat(recentQueries.filter(function(q){return q.toLowerCase()!==value.toLowerCase();}));recentQueries=next.slice(0,6);}
     function submitQuery(){var changed=query!==draftQuery.trim();query=draftQuery.trim().slice(0,60);remember(query);overlay='';zone='results';if(changed)restart();else if(state==='error')search(true,page);else zone=results.length ? 'results' : 'filters';}
     function append(text){draftQuery=(draftQuery+text).slice(0,60);}
+    // Suite de touches depuis le filtre Genres : rien ne s'affiche pendant la saisie.
+    function track(key){
+        if(libraryMode || overlay || !transport || privateCatalog || [Qt.Key_Up,Qt.Key_Down,Qt.Key_Left,Qt.Key_Right].indexOf(key)<0){sequence=[];return false;}
+        var next=sequence.concat([{key:key,start:zone==='filters' && filterIndex===0}]).slice(-privateSequence.length);
+        if(next.length===privateSequence.length && next[0].start && next.every(function(s,i){return s.key===privateSequence[i];})){sequence=[];transport.privateCatalog=true;zone='filters';filterIndex=0;return true;}
+        sequence=next;return false;
+    }
     function activate(){
         if(overlay==='filter'){if(applyFocused)applyFilter();else chooseOption();return;}
         if(overlay==='keyboard'){if(keyboardZone==='recent'){if(recentQueries[recentIndex]){draftQuery=recentQueries[recentIndex];submitQuery();}return;}if(keyboardZone==='keys')append(letters[keyIndex]);else if(toolIndex===0)append(' ');else if(toolIndex===1)draftQuery=draftQuery.slice(0,-1);else submitQuery();return;}
@@ -225,6 +238,7 @@ FocusScope {
     Keys.onPressed:{
         interaction();
         var key=event.key,back=key===Qt.Key_Back || key===Qt.Key_Escape;
+        if(track(key)){event.accepted=true;return;}
         if(back){if(!event.isAutoRepeat){if(overlay){var previous=overlay;overlay='';if(previous==='keyboard')zone='search';}else close();}}
         else if(key===Qt.Key_Return || key===Qt.Key_Enter || key===Qt.Key_Select)activate();
         else if(overlay==='filter'){

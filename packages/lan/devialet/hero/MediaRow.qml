@@ -39,7 +39,7 @@ Item {
         var hours=Math.floor((now/1000-s.le)/3600),days=Math.floor(hours/24);
         return label+' · '+(hours<1 ? 'à l’instant' : hours<24 ? 'il y a '+hours+' h' : days===1 ? 'hier' : 'il y a '+days+' j');
     }
-    function subtitleFor(c){return row.rowData.id==='reprendre' ? row.resumeLabel(c) : row.rowData.id==='sortis' ? row.releasedLabel(c,Date.now()) : '';}
+    function subtitleFor(c){return row.rowData.id==='reprendre' ? row.resumeLabel(c) : row.rowData.id==='sortis' ? row.releasedLabel(c,Date.now()) : c && c.format!=='MOVIE' && row.host.seriesLabel ? row.host.seriesLabel(c) : '';}
     onSelectionChanged: if(alignTimer) alignTimer.restart()
     onCurrentChanged: if(current && alignTimer) alignTimer.restart()
     Timer { id:alignTimer; interval:0; onTriggered:row.align(row.selection) }
