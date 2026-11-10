@@ -75,6 +75,12 @@ def run(window, session, screen, hero, details, calls, QTest, Qt, QObject, spin,
         home['rangees'] = [r for r in home['rangees'] if r['id'] not in ('nouveaux', 'ajouts', 'populaires', 'deja_vus')]
         at = [r['id'] for r in home['rangees']].index('top10') + 1
         home['rangees'].insert(at, {'id': 'sortis', 'titre': 'Sortis cette semaine', 'forme': 'affiche', 'cartes': sortis})
+    # `serie {saisons, episodes}` (engine ab6eff69) : la série entière sur chaque carte.
+    for row in home['rangees']:
+        if row['id'] == 'pour_toi':
+            for card, serie in zip(row['cartes'], [{'saisons': 3, 'episodes': 75}, {'saisons': 1, 'episodes': 24}, None]):
+                card['serie'] = serie
+                card['format'] = 'TV'
     session.setProperty('home', home)
     hero.selectMode('resume')
     hero.setProperty('zone', 'rail')
@@ -124,6 +130,14 @@ def run(window, session, screen, hero, details, calls, QTest, Qt, QObject, spin,
     labels = [visual('heroCard%d' % i).property('subtitle') for i in range(4)]
     assert labels == ['Ép. 7 · il y a 2 h', 'Ép. 8 · hier', 'Ép. 9 · il y a 2 j', 'Ép. 10 · il y a 5 j'], labels
     report['sortis'] = labels
+    # 1e. Saisons et épisodes avant d'ouvrir la fiche : en haut pour la carte ciblée, sous la carte.
+    hero.selectRow(rows.index('pour_toi')); hero.setProperty('zone', 'rail'); hero.choose(0); QTest.qWait(400)
+    shot('home-serie')
+    labels = [visual('heroCard%d' % i).property('subtitle') for i in range(3)]
+    assert labels == ['3 saisons · 75 ép.', '24 ép.', ''], labels
+    meta = hero.meta(data(hero, 'selected'))
+    assert '3 saisons · 75 ép.' in meta and 'Série' not in meta, meta
+    report['serie'] = {'cards': labels, 'meta': meta}
     hero.selectMode('resume'); hero.setProperty('zone', 'actions')
 
     # 2. Avis fugace : en bas, il s'efface seul.
