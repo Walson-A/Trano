@@ -184,6 +184,9 @@ Application {
         }
         function dispatchConversation(media,intent){
             var target={numero:intent.episode,vf:intent.lang==='vf'};
+            // Une version de la saison (Director's Cut…) demandée depuis Oby ou le téléphone.
+            var v=intent.version;
+            if(v && /^[a-z0-9-]{1,40}$/.test(v.cle || '') && typeof v.libelle==='string' && v.libelle.length<=40 && Number.isInteger(v.total) && v.total>=intent.episode)target.version={cle:v.cle,libelle:v.libelle,total:v.total};
             var at=Number.isInteger(intent.position_ms) && intent.position_ms>=0 ? intent.position_ms : undefined;
             if(playbackId)resolvePlayback(media,target,{},[],at,true,false,intent.request_id);else launchRequested(media,target,undefined,at,intent.request_id);
         }
