@@ -123,6 +123,11 @@ runner GitHub, pas sur le serveur. Rien n'a été lancé sur le Player.
 inchangé `bdb1dd1b…`, engine `aca4d2f8` (contient le contrat `2f90c747`). Contrôle public :
 release active. 8 à 9 Go disponibles, VM `haos` en marche. Rien n'a été lancé sur le Player.
 
+**Saisons et épisodes publiés le même jour**, sur accord de Walson : paquet
+`hero-prive-f3d96e2` (43 fichiers, 472 993 octets), attendu `hero-envoi-5ad6090`, gateway
+inchangé `bdb1dd1b…`, engine `ab6eff69`. Contrôle public : release active. 8 Go disponibles,
+VM `haos` en marche. Rien n'a été lancé sur le Player.
+
 ## Banc
 
 Le banc complet échouait par moments, base comprise : le diagnostic montre
