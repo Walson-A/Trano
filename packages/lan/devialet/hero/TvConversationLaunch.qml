@@ -14,10 +14,11 @@ Item {
     property var active:null
     property var recent:[]
     readonly property bool receiving:!!(primary && !blocked && transport && transport.state==='ready' && transport.conversationLaunchEnabled===true)
-    function valid(value){return value && /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(value.request_id || '') && Number.isInteger(value.anilist_id) && value.anilist_id>0 && value.anilist_id<=2147483647 && Number.isInteger(value.episode) && value.episode>0 && value.episode<=100000 && ['vo','vf'].indexOf(value.lang)>=0 && Number.isInteger(value.expires_at) && value.expires_at>0 && Number.isInteger(value.ttl_ms) && value.ttl_ms>0 && value.ttl_ms<=90000 && (value.position_ms===undefined || value.position_ms===null || Number.isInteger(value.position_ms) && value.position_ms>=0 && value.position_ms<=86400000);}
-    // « Envoyer vers la TV » en plein épisode : `position_ms`, facultatif, est la position exacte où
-    // reprendre ; elle passe avant `media_resume`. Absente, la TV reprend comme avant.
-    function position(value){return value && Number.isInteger(value.position_ms) ? value.position_ms : -1;}
+    function valid(value){return value && /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(value.request_id || '') && Number.isInteger(value.anilist_id) && value.anilist_id>0 && value.anilist_id<=2147483647 && Number.isInteger(value.episode) && value.episode>0 && value.episode<=100000 && ['vo','vf'].indexOf(value.lang)>=0 && Number.isInteger(value.expires_at) && value.expires_at>0 && Number.isInteger(value.ttl_ms) && value.ttl_ms>0 && value.ttl_ms<=90000 && (value.start_ms===undefined || value.start_ms===null || Number.isInteger(value.start_ms) && value.start_ms>=0 && value.start_ms<=43200000);}
+    // « Envoyer sur la TV, en pleine lecture » (Atlas/engine/docs/anime.md) : `start_ms`, absent
+    // ou entier de 0 à 12 h, est la seconde exacte où l'appareil a mis en pause ; elle passe avant
+    // `media_resume` (jusqu'à 10 s de retard). Absente, la TV reprend comme avant.
+    function position(value){return value && Number.isInteger(value.start_ms) ? value.start_ms : -1;}
     // Même épisode = même numéro ET même version (l'épisode 4 du Director's Cut n'est pas le 4 TV).
     function sameVersion(current,item){return (current.target.version ? current.target.version.cle : '')===(item.intent.version ? item.intent.version.cle : '');}
     function identity(value){return value.anilist_id+':'+value.episode+':'+value.lang;}

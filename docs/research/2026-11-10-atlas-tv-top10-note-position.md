@@ -41,20 +41,27 @@ La rangée est celle que `catalog/home` compose déjà (`id`/`forme` `top10`,
 
 ## Démarrer à une position envoyée
 
-« Envoyer vers la TV » en plein épisode, depuis le PC ou le téléphone, passera par les
-intentions de lecture (`/tv/v1/launch-intents/next`). **Champ attendu : `position_ms`**,
-entier facultatif, de 0 à 86 400 000, à côté de `anilist_id`, `episode` et `lang`.
+« Envoyer sur la TV » en plein épisode, depuis le PC ou le téléphone, passe par les
+intentions de lecture. Le contrat est côté engine (`2f90c747`,
+`Atlas/engine/docs/anime.md` § « Envoyer sur la TV, en pleine lecture ») :
+`selection.position_ms` devient **`intent.start_ms`** dans `/tv/v1/launch-intents/next`.
+C'est un entier, au plus 12 h, et il est **absent** quand il n'y a pas de position.
 
-- présent, il **passe avant `media_resume`** : la TV démarre l'épisode exactement là ;
-- si ce même épisode joue déjà sur la TV, elle **saute** à la position (écart > 3 s) sans
-  rouvrir de flux ;
-- absent ou `null`, rien ne change (reprise de `media_resume`) ;
-- négatif, décimal ou au-delà de 24 h : l'intention est refusée comme invalide.
+Ce que fait la TV :
 
-Le banc conversation le vérifie : même épisode → saut en place, sans nouveau flux ;
-autre épisode → résolution puis départ à 421 000 ms alors que le faux API propose
-120 000 ms. Côté engine, l'intention ne porte pas encore ce champ : le contrat reste à
-écrire par la session PC (`Atlas/engine/docs/atlas-tv.md` § conversation).
+- présent, il **passe avant `media_resume`**, qui peut avoir jusqu'à 10 s de retard. La TV
+  démarre l'épisode exactement là (`resumeOverride` de `launchRequested`/`resolvePlayback`) ;
+- si ce même épisode, dans la même version, joue déjà sur la TV, elle **saute** à la position
+  (écart > 3 s) sans rouvrir de flux, puis acquitte ;
+- absent (ou `null`, toléré), rien ne change : la reprise vient de `media_resume` ;
+- négatif, décimal ou au-delà de 12 h : l'intention est refusée comme invalide.
+
+Le premier récepteur, publié le 10 novembre sous le nom provisoire `position_ms`, attendait le
+contrat. Il lit `start_ms` depuis `hero-envoi-*`.
+
+Le banc conversation le vérifie. Pour le même épisode, la TV saute en place sans nouveau flux.
+Pour un autre épisode, elle résout puis démarre à 421 000 ms, alors que le faux API propose une
+reprise à 120 000 ms.
 
 ## L'accueil mis à plat (engine `743fa4c0`)
 

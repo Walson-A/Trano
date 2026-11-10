@@ -168,7 +168,7 @@ La matrice TV de l’audit passe à « oui » au banc, sauf :
 ## Top 10, note sans avis, position envoyée — 10 novembre 2026
 
 [Livraison](research/2026-11-10-atlas-tv-top10-note-position.md) : rangée Top 10 du PC
-adaptée au canapé, note en pastille dans Ma liste, avis jamais affiché, et `position_ms`
+adaptée au canapé, note en pastille dans Ma liste, avis jamais affiché, et `start_ms`
 accepté dans les intentions de lecture (prêt pour « Envoyer vers la TV » en plein
 épisode ; l’engine doit encore l’émettre).
 
