@@ -103,6 +103,11 @@ noté comme backend. Contrôle public : release active, `preferences: true`. 9 G
 avant et après, VM `haos` en marche ; un déploiement engine (`919baafd`) compilait alors sur le
 runner GitHub, pas sur le serveur. Rien n'a été lancé sur le Player.
 
+**Lecture de `start_ms` publiée le même jour**, sur accord de Walson : paquet
+`hero-envoi-5ad6090` (43 fichiers, 469 887 octets), attendu `hero-accueil-8623e87`, gateway
+inchangé `bdb1dd1b…`, engine `aca4d2f8` (contient le contrat `2f90c747`). Contrôle public :
+release active. 8 à 9 Go disponibles, VM `haos` en marche. Rien n'a été lancé sur le Player.
+
 ## Banc
 
 Le banc complet échouait par moments, base comprise : le diagnostic montre
