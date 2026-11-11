@@ -42,3 +42,14 @@ plus aux contrôles généraux du banc (épisode 13 attendu) : utiliser celle du
 charge du PC : relancer avant de conclure.
 
 Non vu sur le vrai Player. Volume : rien (aucun réglage vérifié depuis la scène).
+
+## Publication — 11 novembre 2026, sur accord de Walson
+
+Paquet `hero-pilotage-7bdebb3` (44 fichiers, 481 638 octets), construit depuis `7bdebb3`
+(`feat/atlas-tv-pilotage` fusionnée avec `feat/atlas-tv-parite` `6a40dac`, donc avec le catalogue
+privé) et les polices du paquet actif, empreintes comparées sur le serveur, puis
+`publish-atlas-tv-ui.py` (attendu `hero-prive-f3d96e2`, gateway `92ef766c…` publié juste avant
+avec `tv_commands`, engine `cc130231` déployé). Contrôle public HTTPS 10000 : release active,
+`TvCommands.qml` présent, `tv_commands: true`. Hors pilotage, seuls `ProfileView.qml`, `Toast.qml`
+et `TvConversationLaunch.qml` diffèrent du paquet précédent, par leurs fins de ligne (CRLF du
+checkout Windows), contenu identique. VM `haos` en marche. Rien n'a été lancé sur le Player.
