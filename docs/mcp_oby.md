@@ -116,6 +116,18 @@ couleur français (`setLight`, table `COLOR_MAP`), le second des valeurs exactes
 chromatique de traduire sa teinte en « turquoise » pour que le serveur la
 retraduise.
 
+**Le blanc (20 novembre 2026).** Oby ne savait pas remettre une lumière en blanc, alors que le
+widget le faisait. « Blanc » devenait `color_name: white`, un blanc RVB que refuse une lampe dont
+seul le blanc est réglable en température. `regler_lumiere` prend désormais `kelvin`, la nuance de
+blanc du curseur (2700 chaud, 4000 neutre, 6000 froid), et traduit les blancs nommés (« blanc
+chaud », « blanc », « blanc froid »… : `kelvinDuBlanc`). Comportement selon la lampe :
+- **Home Assistant, blanc réglable** (`supported_color_modes` contient `color_temp`) :
+  `color_temp_kelvin`, borné à la plage de la lampe.
+- **Home Assistant, couleur seulement** : un blanc RVB, faute de mieux.
+- **Home Assistant, ni l'un ni l'autre** : refus explicite.
+- **Tuya** : `work_mode: white`, plus la température si l'ampoule déclare `temp_value`. Les autres
+  couleurs nommées restent réservées à Home Assistant.
+
 ## Limites connues
 
 - **Résultats en texte seul.** Chaque outil renvoie une chaîne (souvent du JSON

@@ -133,7 +133,19 @@ export async function tuyaControl(home: HomeConfig, entity: string, action: stri
   }
   if (settings) {
     if (!entity.startsWith('light.')) throw new Error('Cet appareil n’est pas une lumière.');
-    if (settings.kelvin !== undefined) throw new Error('Le réglage en kelvins n’est pas déclaré par cette ampoule Tuya.');
+    if (settings.kelvin !== undefined) {
+      // Le blanc : mode blanc, et la température si l'ampoule la déclare (temp_value, du plus chaud
+      // au plus froid). Sans température, un blanc simple plutôt qu'un refus.
+      const mode = functions.find(dp => dp.code === 'work_mode');
+      const temp = functions.find(dp => dp.code === 'temp_value_v2' || dp.code === 'temp_value');
+      const plage = bounds(temp);
+      if (!mode && !plage) throw new Error('Le blanc n’est pas réglable sur cette ampoule Tuya.');
+      if (mode) commands.push({ code: 'work_mode', value: 'white' });
+      if (temp && plage) {
+        const t = Math.max(0, Math.min(1, (settings.kelvin - 2700) / (6500 - 2700)));
+        commands.push({ code: temp.code, value: Math.round(plage.min + t * (plage.max - plage.min)) });
+      }
+    }
     if (settings.brightness_pct !== undefined) {
       const bright = functions.find(dp => dp.code === 'bright_value_v2' || dp.code === 'bright_value');
       const range = bounds(bright);
