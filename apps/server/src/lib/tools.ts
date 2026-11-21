@@ -2,7 +2,7 @@ import { SHOPPING_CATEGORIES, SHOPPING_CATEGORY_LABELS } from '@trano/shared';
 import {
   getHouseSnapshot, controlDevice, listControllableDevices, getDeviceInfo,
   getWeatherDetail, getEnergyDetail, notifyPhone,
-  setLight, listScenes, activateScene, controlFreebox,
+  setLight, kelvinDuBlanc, listScenes, activateScene, controlFreebox,
 } from './ha.ts';
 import { db, newId } from '../db.ts';
 import { broadcast, broadcastMessage } from '../ws.ts';
@@ -91,11 +91,12 @@ export const TOOL_DEFS: ToolDef[] = [
     }, required: ['message'],
   },
   {
-    name: 'regler_lumiere', description: "Règle une lumière : luminosité (0-100 %) et/ou couleur (rouge, bleu, blanc chaud…). Trouve l'entity_id via lister_appareils.",
+    name: 'regler_lumiere', description: "Règle une lumière : luminosité (0-100 %), couleur (rouge, bleu…) ou blanc. Pour un blanc, préférer `kelvin` (ou couleur « blanc chaud », « blanc », « blanc froid ») : c'est la nuance de blanc, comme le curseur de Trano. Trouve l'entity_id via lister_appareils.",
     params: {
       entity_id: { type: 'string' },
       luminosite: { type: 'number', description: '0 à 100' },
-      couleur: { type: 'string', description: 'nom de couleur, ex "rouge", "bleu", "blanc"' },
+      couleur: { type: 'string', description: 'nom de couleur, ex "rouge", "bleu" ; ou un blanc : "blanc chaud", "blanc", "blanc froid"' },
+      kelvin: { type: 'number', description: 'température du blanc en kelvins : 2700 chaud, 4000 neutre, 6000 froid. Prioritaire sur couleur.' },
     }, required: ['entity_id'], oby: true,
   },
   { name: 'lister_scenes', description: 'Liste les scènes disponibles.', params: {}, oby: true },
@@ -155,8 +156,13 @@ export async function runTool(name: string, args: Record<string, unknown>, ctx: 
           if (!['turn_on', 'turn_off', 'toggle'].includes(String(args.action))) return 'Refusé : action invalide.';
           return tuyaControl(home, String(args.entity_id), String(args.action));
         }
-        if (name === 'regler_lumiere' && !args.couleur && typeof args.luminosite === 'number' && Number.isFinite(args.luminosite) && args.luminosite >= 0 && args.luminosite <= 100) {
-          return tuyaControl(home, String(args.entity_id), 'turn_on', { brightness_pct: args.luminosite });
+        if (name === 'regler_lumiere') {
+          // Le blanc passe aussi sur Tuya (température si l'ampoule la déclare, sinon blanc simple) ;
+          // les autres couleurs nommées restent réservées à Home Assistant.
+          const luminosite = typeof args.luminosite === 'number' && Number.isFinite(args.luminosite) && args.luminosite >= 0 && args.luminosite <= 100 ? args.luminosite : undefined;
+          const kelvin = typeof args.kelvin === 'number' && Number.isFinite(args.kelvin) ? args.kelvin : kelvinDuBlanc(args.couleur ? String(args.couleur) : undefined);
+          if (args.couleur && kelvin === undefined) return 'Couleur non disponible pour ce connecteur : seuls la luminosité et le blanc se règlent.';
+          if (luminosite !== undefined || kelvin !== undefined) return tuyaControl(home, String(args.entity_id), 'turn_on', { brightness_pct: luminosite, kelvin });
         }
         return 'Fonction non disponible pour ce connecteur. Les appareils de la maison familiale ne sont pas utilisés en remplacement.';
       }
@@ -236,7 +242,8 @@ async function runScopedTool(name: string, args: Record<string, unknown>, ctx: T
         return await setLight(
           String(args.entity_id),
           typeof args.luminosite === 'number' ? args.luminosite : undefined,
-          args.couleur ? String(args.couleur) : undefined
+          args.couleur ? String(args.couleur) : undefined,
+          typeof args.kelvin === 'number' ? args.kelvin : undefined
         );
       case 'lister_scenes':
         return JSON.stringify(await listScenes());

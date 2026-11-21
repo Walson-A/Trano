@@ -374,20 +374,58 @@ const COLOR_MAP: Record<string, string> = {
   cyan: 'cyan', magenta: 'magenta', or: 'gold', doré: 'gold', chaud: 'orange', froid: 'white',
 };
 
-/** Règle une lumière : luminosité (%) et/ou couleur (nom FR ou anglais). */
-export async function setLight(entityId: string, brightnessPct?: number, color?: string): Promise<string> {
+/**
+ * **Les blancs nommés, en kelvins** (2026-11-20). Oby parle en mots ; le widget, lui, règle le
+ * blanc en kelvins (`setLightState`). « Blanc » traduit en `color_name: white` donnait un blanc
+ * RVB, que refuse une lampe au blanc seulement réglable en température : Oby ne pouvait pas
+ * remettre le plafonnier en blanc, alors que le widget le faisait (Walson).
+ */
+const BLANCS: Record<string, number> = {
+  'blanc chaud': 2700, chaud: 2700, 'blanc doux': 2700,
+  blanc: 4000, 'blanc neutre': 4000, neutre: 4000, white: 4000,
+  'blanc froid': 6000, froid: 6000, 'lumière du jour': 6000,
+};
+
+/** La température d'un blanc nommé, ou `undefined` si la couleur n'est pas un blanc. */
+export function kelvinDuBlanc(couleur?: string): number | undefined {
+  return couleur ? BLANCS[couleur.trim().toLowerCase()] : undefined;
+}
+
+/**
+ * Règle une lumière : luminosité (%), couleur (nom FR ou anglais) ou blanc en kelvins. Un blanc
+ * nommé (« blanc », « blanc chaud »…) devient une température quand la lampe sait la régler.
+ */
+export async function setLight(entityId: string, brightnessPct?: number, color?: string, kelvin?: number): Promise<string> {
   if (!homeEntities([{ entity_id: entityId }]).length) return 'Refusé : appareil absent de ce logement.';
   if (!ENTITY_RE.test(entityId) || !entityId.startsWith('light.')) {
     return `Refusé : "${entityId}" n'est pas une lumière.`;
   }
   const body: Record<string, unknown> = { entity_id: entityId };
   if (typeof brightnessPct === 'number') body.brightness_pct = Math.max(0, Math.min(100, Math.round(brightnessPct)));
-  if (color) body.color_name = COLOR_MAP[color.toLowerCase()] ?? color.toLowerCase();
+  const blanc = typeof kelvin === 'number' && Number.isFinite(kelvin) ? kelvin : kelvinDuBlanc(color);
+  let reglage: string | null = null;
+  if (blanc !== undefined) {
+    const state = (await haFetch(`/api/states/${entityId}`)) as HAState;
+    const attrs = (state?.attributes ?? {}) as Record<string, unknown>;
+    const modes = Array.isArray(attrs.supported_color_modes) ? attrs.supported_color_modes as string[] : [];
+    if (modes.includes('color_temp')) {
+      const min = typeof attrs.min_color_temp_kelvin === 'number' ? attrs.min_color_temp_kelvin : 2200;
+      const max = typeof attrs.max_color_temp_kelvin === 'number' ? attrs.max_color_temp_kelvin : 6500;
+      body.color_temp_kelvin = Math.max(min, Math.min(max, Math.round(blanc)));
+      reglage = `blanc ${body.color_temp_kelvin} K`;
+    } else if (modes.some(m => ['hs', 'rgb', 'rgbw', 'rgbww', 'xy'].includes(m))) {
+      // Sans température réglable, un blanc RVB reste le plus proche de la demande.
+      body.color_name = 'white';
+      reglage = 'blanc';
+    } else {
+      return `Cette lumière ne règle pas le blanc (${entityId}).`;
+    }
+  } else if (color) {
+    body.color_name = COLOR_MAP[color.toLowerCase()] ?? color.toLowerCase();
+    reglage = `couleur ${color}`;
+  }
   await haFetch('/api/services/light/turn_on', { method: 'POST', body: JSON.stringify(body) });
-  const bits = [
-    typeof brightnessPct === 'number' ? `luminosité ${body.brightness_pct}%` : null,
-    color ? `couleur ${color}` : null,
-  ].filter(Boolean);
+  const bits = [typeof brightnessPct === 'number' ? `luminosité ${body.brightness_pct}%` : null, reglage].filter(Boolean);
   return `OK, ${entityId} réglée (${bits.join(', ') || 'allumée'}).`;
 }
 
