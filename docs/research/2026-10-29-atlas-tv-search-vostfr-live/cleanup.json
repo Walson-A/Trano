@@ -1,9 +1,0 @@
-{
-  "activeRelease": "hero-discovery-bea83d08cae6",
-  "filesVerified": 30,
-  "removed": [
-    "atlas-tv-ui-hero-discovery-bea83d08cae6.tar.gz",
-    "atlas-tv-publish-hero-discovery-bea83d08cae6.py"
-  ],
-  "privateRollbackBackupPreserved": true
-}

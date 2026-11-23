@@ -1,5 +1,0 @@
-{
-  "passed": true,
-  "checks": 53,
-  "scope": "Episode and personal-state certainty, compact counts, bounded retry hints; Node, no network"
-}

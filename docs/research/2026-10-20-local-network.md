@@ -362,7 +362,7 @@ trano-devialet-trial-47786210042a et de ses fichiers, sans changement du proxy 4
 Les contrats Atlas des animés ont été lus dans le code PC et dans le ref local
 origin/dev de l'engine. Cela prépare le portage sans prétendre que les appels
 Tauri, la résolution de flux sur PC ou le proxy localhost fonctionnent sur une TV.
-Voir [la direction Atlas TV](../atlas-tv-direction.md).
+Voir [la direction Atlas TV](https://github.com/Walson-A/Atlas/blob/dev/AtlasTV/docs/atlas-tv-direction.md).
 
 
 Validation hors ligne de cette suite : 36 tests Node réussis sur Windows et

@@ -197,11 +197,11 @@ démarrage protégé. L’import distant de RelayAgent exige cet index. Le compo
 il signale seulement la fin d'un diagnostic, que l'hôte peut traiter.
 
 La direction pour une application Atlas TV réutilisable, dont les animés,
-est documentée dans [atlas-tv-direction.md](atlas-tv-direction.md). La séparation
+est documentée dans [atlas-tv-direction.md](https://github.com/Walson-A/Atlas/blob/dev/AtlasTV/docs/atlas-tv-direction.md) (monorepo Atlas, `AtlasTV/`). La séparation
 est faite dans le code et a été retestée sur le vrai Player après correction
 de l’index qmldir. Les lectures ont traversé l’adaptateur Trano, puis l’arrêt
 et l’invalidation des états ont été vérifiés. L’interface TV reste à construire ; une mire vidéo a ensuite été vérifiée le
-22 octobre, voir atlas-tv-direction.md.
+22 octobre, voir atlas-tv-direction.md dans Atlas (`AtlasTV/docs/`).
 
 ## Administration temporaire de Funnel
 
